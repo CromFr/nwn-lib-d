@@ -1,9 +1,12 @@
 language: d
-d: dmd ldc gdc
+d: dmd
 
 script:
     - dub build --compiler=${DC} --build=release
     - dub test --compiler=${DC} --build=unittest-cov && bash <(curl -s https://codecov.io/bash)
+
+after_success:
+    - bash <(curl -s https://codecov.io/bash)
 
 notifications:
     email:
