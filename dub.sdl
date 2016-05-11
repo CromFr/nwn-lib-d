@@ -1,0 +1,21 @@
+name "nwn-lib-d"
+description "Library & tooling for Neverwinter Nights 2 resource files"
+license "GPL-3.0"
+copyright "Copyright © 2016, Thibaut CHARLES"
+authors "Thibaut CHARLES (CromFr)"
+
+targetType "none"
+
+subPackage {
+	name "nwn-gff"
+	targetName "nwn-gff"
+	targetType "executable"
+	mainSourceFile "tools/gff.d"
+}
+
+subPackage {
+	name "lib"
+	targetName "nwn-d"
+	targetType "library"
+	sourcePaths "source/"
+}

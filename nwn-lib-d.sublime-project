@@ -1,0 +1,22 @@
+{
+	"folders":
+	[
+		{
+			"path": "."
+		}
+	],
+	"build_systems":
+	[
+		{
+			"name": "Project",
+			"file_regex": "^([^\\(^\n]*?)(?:-mixin-[0-9]+)?\\(([0-9]+),([0-9]+)\\): ((Error|Warning|Deprecation):)? (.*)$",
+			"working_dir": "${project_path:${folder:${file_path}}}",
+			"variants": [
+				{
+					"name": "nwn-gff",
+					"shell_cmd": "dub build -q --nodeps --compiler=dmd --vquiet :nwn-gff",
+				}
+			]
+		}
+	]
+}
