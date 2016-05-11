@@ -286,6 +286,7 @@ struct GffNode{
 		throw new GffValueSetException("Cannot set GffNode of type "~type.to!string~" with "~rhs.to!string~" of type "~T.stringof);
 	}
 	unittest{
+		import std.conv: ConvOverflowException;
 		with(GffType){
 			auto node = GffNode(Byte);
 			assertThrown!ConvOverflowException(node = -1);
@@ -1084,7 +1085,7 @@ private:
 unittest{
 	import std.file : read;
 	with(GffType){
-		auto gff = new Gff("unittest/vault/CromFr/krogar.bic");
+		auto gff = new Gff("unittest/krogar.bic");
 
 		//Parsing checks
 		assert(gff.fileType == "BIC");
@@ -1108,7 +1109,7 @@ unittest{
 		assert(gff["Tint_Head"]["Tintable"]["Tint"]["1"]["b"].as!Byte == 109);
 		assert(gff["ClassList"][0]["Class"].as!Int == 4);
 
-		auto krogarDataOrig = cast(ubyte[])read("unittest/vault/CromFr/krogar.bic");
+		auto krogarDataOrig = cast(ubyte[])read("unittest/krogar.bic");
 		gff = new Gff(krogarDataOrig);
 
 		auto krogarDataSerialized = cast(ubyte[])gff.serialize();

@@ -4,7 +4,8 @@ license "GPL-3.0"
 copyright "Copyright © 2016, Thibaut CHARLES"
 authors "Thibaut CHARLES (CromFr)"
 
-targetType "none"
+targetType "library"
+dependency ":lib" version="*"
 
 subPackage {
 	name "nwn-gff"
