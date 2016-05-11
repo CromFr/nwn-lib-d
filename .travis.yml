@@ -1,0 +1,10 @@
+language: d
+d: dmd ldc gdc
+
+script:
+    - dub build --compiler=${DC} --build=release
+    - dub test --compiler=${DC} --build=unittest-cov && bash <(curl -s https://codecov.io/bash)
+
+notifications:
+    email:
+        - cromfr@gmail.com
