@@ -1085,7 +1085,8 @@ private:
 unittest{
 	import std.file : read;
 	with(GffType){
-		auto gff = new Gff("unittest/krogar.bic");
+		immutable krogarDataOrig = cast(immutable void[])import("krogar.bic");
+		auto gff = new Gff(krogarDataOrig);
 
 		//Parsing checks
 		assert(gff.fileType == "BIC");
@@ -1109,8 +1110,7 @@ unittest{
 		assert(gff["Tint_Head"]["Tintable"]["Tint"]["1"]["b"].as!Byte == 109);
 		assert(gff["ClassList"][0]["Class"].as!Int == 4);
 
-		auto krogarDataOrig = cast(ubyte[])read("unittest/krogar.bic");
-		gff = new Gff(krogarDataOrig);
+
 
 		auto krogarDataSerialized = cast(ubyte[])gff.serialize();
 		auto gffSerialized = new Gff(krogarDataSerialized);
