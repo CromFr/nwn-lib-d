@@ -9,6 +9,11 @@ import std.conv: to;
 debug import std.stdio: writeln;
 version(unittest) import std.exception: assertThrown, assertNotThrown;
 
+class GffParseException : Exception{
+	@safe pure nothrow this(string msg, string f=__FILE__, size_t l=__LINE__, Throwable t=null){
+		super(msg, f, l, t);
+	}
+}
 class GffValueSetException : Exception{
 	@safe pure nothrow this(string msg, string f=__FILE__, size_t l=__LINE__, Throwable t=null){
 		super(msg, f, l, t);
@@ -176,6 +181,7 @@ struct GffNode{
 				}
 			}
 		}
+		assert(0);
 	}
 	unittest{
 		with(GffType){
@@ -502,7 +508,9 @@ class Gff{
 	this(File stream){
 		void[] data;
 		data.length = GffHeader.sizeof;
-		stream.rawRead(data);
+		auto readCount = stream.rawRead(data).length;
+		if(readCount<GffHeader.sizeof)
+			throw new GffParseException("File is too small to be GFF: "~readCount.to!string~" bytes read, "~GffHeader.sizeof.to!string~" needed !");
 
 		GffHeader* header = cast(GffHeader*)data.ptr;
 		immutable size_t fileLength =
