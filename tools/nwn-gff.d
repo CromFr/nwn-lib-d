@@ -1,3 +1,5 @@
+module nwngff;
+
 import std.stdio;
 import std.file;
 import std.conv: to;
@@ -6,7 +8,11 @@ import std.typecons: Tuple;
 
 import nwn.gff;
 
-int main(string[] args) {
+version(unittest){}
+else alias main = _main;
+
+
+int _main(string[] args){
 	import std.getopt : getopt, defaultGetoptPrinter;
 	alias required = std.getopt.config.required;
 
