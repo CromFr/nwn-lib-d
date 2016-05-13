@@ -517,7 +517,9 @@ class Gff{
 			header.list_indices_offset + header.list_indices_count;
 
 		data.length = fileLength;
-		stream.rawRead(data[GffHeader.sizeof..$]);
+		readCount += stream.rawRead(data[GffHeader.sizeof..$]).length;
+		if(readCount<GffHeader.sizeof)
+			throw new GffParseException("File is too small to be GFF: "~readCount.to!string~" bytes read, "~fileLength.to!string~" needed !");
 
 		this(data);
 	}
