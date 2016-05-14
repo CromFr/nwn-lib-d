@@ -50,4 +50,7 @@ dub build :nwn-gff --build=release
 
 # Write mycharacter.bic to mycharacter.bic.txt in pretty format
 ./nwn-gff -i mycharacter.bic:gff -o mycharacter.bic.txt:pretty
+
+# Read gff from stdin, write to stdout in pretty format
+./nwn-gff -i -:gff -o -:pretty
 ```
