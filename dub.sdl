@@ -6,12 +6,7 @@ authors "Thibaut CHARLES (CromFr)"
 
 targetType "library"
 targetName "nwn-d"
-
-configuration "library" {
-}
-configuration "unittest" {
-	stringImportPaths "unittest"
-}
+stringImportPaths "unittest"
 
 subPackage {
 	name "nwn-gff"
