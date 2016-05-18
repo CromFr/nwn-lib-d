@@ -3,7 +3,8 @@ d: dmd
 
 script:
     - dub build --compiler=${DC} --build=release
-    - dub test --compiler=${DC} --build=unittest-cov && bash <(curl -s https://codecov.io/bash)
+    - dub test --compiler=${DC} --arch=x86
+    - dub test --compiler=${DC} --arch=x86_64 --build=unittest-cov
 
 after_success:
     - bash <(curl -s https://codecov.io/bash)
