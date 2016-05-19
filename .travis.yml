@@ -1,6 +1,10 @@
 language: d
 d: dmd
 
+before_install:
+    - sudo apt-get -qq update
+    - sudo apt-get install -y gcc-multilib
+
 script:
     - dub build --compiler=${DC} --build=release
     - dub test --compiler=${DC} --arch=x86
