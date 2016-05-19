@@ -24,13 +24,13 @@ int _main(string[] args){
 		          "o|output", "<file>:<format> Output file and format", &outputArg,
 		);
 
-	FileFormatTuple iff = parseFileFormat(inputArg, stdin, "r", Format.gff);
+	FileFormatTuple iff = parseFileFormat(inputArg, stdin, Format.gff);
 
 	FileFormatTuple off;
 	if(outputArg !is null)
-		off = parseFileFormat(inputArg, stdout, "w", Format.gff);
+		off = parseFileFormat(outputArg, stdout, Format.gff);
 	else
-		off = FileFormatTuple(stdout, Format.pretty);
+		off = FileFormatTuple(stdout, null, Format.pretty);
 
 	if(res.helpWanted){
 		defaultGetoptPrinter(
@@ -49,6 +49,9 @@ int _main(string[] args){
 
 	//Parsing
 	Gff gff;
+	if(!iff.file.isOpen)
+		iff.file.open(iff.path, "r");
+
 	switch(iff.format){
 		case Format.gff:
 			gff = new Gff(iff.file);
@@ -58,6 +61,11 @@ int _main(string[] args){
 		default:
 			assert(0, iff.format.to!string~" parsing not implemented");
 	}
+
+	iff.file.close();
+
+	if(!off.file.isOpen)
+		off.file.open(off.path, "w");
 
 	//Serialization
 	switch(off.format){
@@ -74,26 +82,44 @@ int _main(string[] args){
 }
 
 enum Format{ gff, json, pretty }
-alias FileFormatTuple = Tuple!(File,"file", Format,"format");
+alias FileFormatTuple = Tuple!(File,"file", string,"path", Format,"format");
 
-FileFormatTuple parseFileFormat(string fileFormat, ref File defaultFile, string defaultFileOpenMode, Format defaultFormat){
+FileFormatTuple parseFileFormat(string fileFormat, ref File defaultFile, Format defaultFormat){
 	import std.stdio: File;
 	import std.string: lastIndexOf;
-	auto ret = FileFormatTuple(defaultFile, defaultFormat);
+	auto ret = FileFormatTuple(defaultFile, null, defaultFormat);
 
 	auto colonIndex = fileFormat.lastIndexOf(':');
 	if(colonIndex==-1){
-		if(fileFormat !is null)
-			ret.file = File(fileFormat, defaultFileOpenMode);
+		if(fileFormat !is null){
+			ret.file = File.init;
+			ret.path = fileFormat;
+		}
 	}
 	else{
-		auto file = fileFormat[0..colonIndex];
-		if(file !is null)
-			ret.file = File(file, defaultFileOpenMode);
+		immutable file = fileFormat[0..colonIndex];
+		if(file !is null){
+			ret.file = File.init;
+			ret.path = file;
+		}
 
-		auto format = fileFormat[colonIndex+1..$];
+		immutable format = fileFormat[colonIndex+1..$];
 		if(format !is null)
 			ret.format = format.to!Format;
 	}
 	return ret;
+}
+
+unittest{
+	import std.file: tempDir, read, writeFile=write;
+	import core.thread;
+
+	auto krogarData = cast(void[])import("krogar.bic");
+	auto krogarFilePath = tempDir~"/unittest-nwn-lib-d-"~__MODULE__~".krogar.bic";
+	krogarFilePath.writeFile(krogarData);
+
+
+	immutable krogarFilePathDup = krogarFilePath~".dup.bic";
+	assert(_main(["./nwn-gff","-i",krogarFilePath~":gff","-o",krogarFilePathDup~":gff"])==0);
+	assert(krogarFilePath.read == krogarFilePathDup.read);
 }
