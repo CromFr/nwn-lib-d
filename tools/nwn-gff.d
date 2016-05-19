@@ -9,7 +9,9 @@ import std.typecons: Tuple;
 import nwn.gff;
 
 version(unittest){}
-else alias main = _main;
+else{
+	int main(string[] args){return _main(args);}
+}
 
 
 int _main(string[] args){

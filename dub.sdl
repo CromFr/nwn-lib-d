@@ -10,15 +10,15 @@ stringImportPaths "unittest"
 
 subPackage {
 	name "nwn-gff"
-	targetName "nwn-gff"
-	targetType "executable"
-	importPaths "tools/" "source/"
+		sourcePaths "tools/" "source/"
+		importPaths "tools/" "source/"
 
 	configuration "application" {
+		targetType "executable"
+		targetName "nwn-gff"
 		mainSourceFile "tools/nwn-gff.d"
 	}
 	configuration "unittest" {
-		sourcePaths "tools/" "source/"
 		stringImportPaths "unittest"
 	}
 }
