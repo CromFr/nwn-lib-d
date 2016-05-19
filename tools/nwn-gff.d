@@ -5,6 +5,7 @@ import std.file;
 import std.conv: to;
 import std.traits;
 import std.typecons: Tuple;
+version(unittest) import std.exception: assertThrown, assertNotThrown;
 
 import nwn.gff;
 
@@ -122,4 +123,8 @@ unittest{
 	immutable krogarFilePathDup = krogarFilePath~".dup.bic";
 	assert(_main(["./nwn-gff","-i",krogarFilePath~":gff","-o",krogarFilePathDup~":gff"])==0);
 	assert(krogarFilePath.read == krogarFilePathDup.read);
+
+
+	assert(_main(["./nwn-gff","-i",krogarFilePath~":gff","-o",krogarFilePathDup~":pretty"])==0);
+	assertThrown!Error(_main(["./nwn-gff","-i",krogarFilePath~":pretty"]));
 }

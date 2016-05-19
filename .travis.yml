@@ -6,9 +6,13 @@ before_install:
     - sudo apt-get install -y gcc-multilib
 
 script:
-    - dub build --compiler=${DC} --build=release
-    - dub test --compiler=${DC} --arch=x86
-    - dub test --compiler=${DC} --arch=x86_64 --build=unittest-cov
+    - dub build              --build=release
+    - dub build              --build=release      :nwn-gff
+
+    - dub test --arch=x86
+    - dub test --arch=x86_64 --build=unittest-cov
+
+    - dub test               --build=unittest-cov :nwn-gff
 
 after_success:
     - bash <(curl -s https://codecov.io/bash)
