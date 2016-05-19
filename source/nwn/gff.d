@@ -89,6 +89,17 @@ struct GffNode{
 
 	@property const GffType type(){return m_type;}
 
+	@property{
+		const uint32_t structType(){
+			if(type!=GffType.Struct) throw new GffTypeException("GffNode is not a struct");
+			return m_structType;
+		}
+		void structType(uint32_t structType){
+			if(type!=GffType.Struct) throw new GffTypeException("GffNode is not a struct");
+			m_structType = structType;
+		}
+	}
+
 	/// Access by reference the underlying data stored in the GffNode.
 	/// The type of this data is determined by gffTypeToNative.
 	/// Types must match exactly or it will throw
@@ -484,7 +495,7 @@ package:
 	GffNode[] aggrContainer;
 	size_t[string] structLabelMap;
 	gffTypeToNative!(GffType.ExoLocString) exoLocStringContainer;
-	uint32_t structType = 0;
+	uint32_t m_structType = 0;
 }
 
 class Gff{
