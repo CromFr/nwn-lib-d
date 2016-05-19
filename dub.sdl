@@ -10,8 +10,8 @@ stringImportPaths "unittest"
 
 subPackage {
 	name "nwn-gff"
-		sourcePaths "tools/" "source/"
-		importPaths "tools/" "source/"
+	sourcePaths "tools/" "source/"
+	importPaths "tools/" "source/"
 
 	configuration "application" {
 		targetType "executable"
