@@ -119,12 +119,15 @@ unittest{
 	auto krogarFilePath = tempDir~"/unittest-nwn-lib-d-"~__MODULE__~".krogar.bic";
 	krogarFilePath.writeFile(krogarData);
 
+	assert(_main(["./nwn-gff","--help"])==0);
+
 
 	immutable krogarFilePathDup = krogarFilePath~".dup.bic";
 	assert(_main(["./nwn-gff","-i",krogarFilePath~":gff","-o",krogarFilePathDup~":gff"])==0);
 	assert(krogarFilePath.read == krogarFilePathDup.read);
 
 
+	assert(_main(["./nwn-gff","-i",krogarFilePath,"-o",krogarFilePathDup~":pretty"])==0);
 	assert(_main(["./nwn-gff","-i",krogarFilePath~":gff","-o",krogarFilePathDup~":pretty"])==0);
 	assertThrown!Error(_main(["./nwn-gff","-i",krogarFilePath~":pretty"]));
 }
