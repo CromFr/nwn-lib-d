@@ -56,6 +56,10 @@ int _main(string[] args){
 		case Format.gff:
 			gff = new Gff(iff.file);
 			break;
+		case Format.json:
+			gff = new Gff;
+			gff.firstNode = jsonToGff(iff.file);
+			break;
 		case Format.pretty:
 			assert(0, iff.format.to!string~" parsing not supported");
 		default:
@@ -245,4 +249,135 @@ auto ref string gffToJson(ref GffNode node, string fileType, bool rootStruct=tru
 	return ret;
 }
 
+auto ref GffNode jsonToGff(File stream){
+	import std.ascii: isWhite;
+	import orderedjson;
+	//import std.json;
+
+	GffNode ret = GffNode(GffType.Invalid);
+	GffNode*[] nodeStack = [&ret];
+
+	GffType jsonTypeToGffType(string type){
+		import std.string: toLower;
+		switch(type) with(GffType){
+			case "byte":         return GffType.Byte;
+			case "char":         return GffType.Char;
+			case "word":         return GffType.Word;
+			case "short":        return GffType.Short;
+			case "dword":        return GffType.DWord;
+			case "int":          return GffType.Int;
+			case "dword64":      return GffType.DWord64;
+			case "int64":        return GffType.Int64;
+			case "float":        return GffType.Float;
+			case "double":       return GffType.Double;
+			case "cexostr":      return GffType.ExoString;
+			case "resref":       return GffType.ResRef;
+			case "cexolocstr":   return GffType.ExoLocString;
+			case "void":         return GffType.Void;
+			case "struct":       return GffType.Struct;
+			case "list":         return GffType.List;
+			default: assert(0, "Unknown Gff type string: '"~type~"'");
+		}
+	}
+
+	string data;
+	char[500] buf;
+	char[] dataRead;
+
+	do{
+		dataRead = stream.rawRead(buf);
+		data ~= dataRead;
+	}while(dataRead.length>0);
+
+
+	auto ref GffNode buildGff(ref JSONValue jsonNode, string label, bool baseStructNode=false){
+		GffNode ret;
+		if(baseStructNode){
+			ret = GffNode(GffType.Struct);
+			ret.structType = -1;
+
+			assert(jsonNode.type == JSON_TYPE.OBJECT);
+		}
+		else
+			ret = GffNode(jsonTypeToGffType(jsonNode["type"].str), label);
+
+
+		final switch(ret.type) with(GffType){
+			case Invalid: assert(0);
+
+			case Byte,Char,Word,Short,DWord,Int,DWord64,Int64:
+				auto value = &jsonNode["value"];
+				if(value.type == JSON_TYPE.UINTEGER)
+					ret = value.uinteger;
+				else if(value.type == JSON_TYPE.INTEGER)
+					ret = value.integer;
+				break;
+
+			case Float,Double:
+				auto value = &jsonNode["value"];
+				if(value.type == JSON_TYPE.UINTEGER)
+					ret = value.uinteger;
+				else if(value.type == JSON_TYPE.INTEGER)
+					ret = value.integer;
+				else if(value.type == JSON_TYPE.FLOAT)
+					ret = value.floating;
+				break;
+
+			case ExoString,ResRef:
+				ret = jsonNode["value"].str;
+				break;
+
+			case ExoLocString:
+				alias Type = gffTypeToNative!ExoLocString;
+				ret = jsonNode["str_ref"].integer;
+
+				typeof(Type.strref) strings;
+				foreach(string key, ref str ; jsonNode["value"]){
+
+					auto id = key.to!(typeof(Type.strings.keys[0]));
+					ret.as!ExoLocString.strings[id] = str.str;
+				}
+				break;
+
+			case Void:
+				import std.base64: Base64;
+				ret = Base64.decode(jsonNode["value"].str);
+				break;
+
+			case Struct:
+				JSONValue* jsonValue;
+				if(baseStructNode) jsonValue = &jsonNode;
+				else               jsonValue = &jsonNode["value"];
+
+				auto structId = "__struct_id" in *jsonValue;
+				if(structId !is null)
+					ret.structType = cast(typeof(ret.structType))structId.integer;
+
+				assert(jsonValue.type==JSON_TYPE.OBJECT, "Struct is not a Json Object");
+
+				foreach(ref key ; jsonValue.objectKeyOrder){
+					if(key.length<2 || key[0..2]!="__")
+						ret.appendField(buildGff((*jsonValue)[key], key));
+				}
+				ret.updateFieldLabelMap();
+				break;
+			case List:
+				foreach(ref node ; jsonNode["value"].array){
+					assert(node.type==JSON_TYPE.OBJECT, "Array element is not a Json Object");
+					ret.as!List ~= buildGff(node, null, true);
+				}
+				break;
+		}
+
+		return ret;
+	}
+
+
+
+
+
+	auto json = parseJSON(data);
+	return buildGff(json, null, true);
 }
+
+
