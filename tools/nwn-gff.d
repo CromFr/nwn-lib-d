@@ -57,8 +57,7 @@ int _main(string[] args){
 			gff = new Gff(iff.file);
 			break;
 		case Format.json:
-			gff = new Gff;
-			gff.firstNode = jsonToGff(iff.file);
+			gff = jsonToGff(iff.file);
 			break;
 		case Format.pretty:
 			assert(0, iff.format.to!string~" parsing not supported");
@@ -77,7 +76,7 @@ int _main(string[] args){
 			off.file.rawWrite(gff.serialize());
 			break;
 		case Format.pretty:
-			off.file.rawWrite(gff.toPrettyString());
+			off.file.rawWrite("========== GFF-"~gff.fileType~"-"~gff.fileVersion~" ==========\n"~gff.toPrettyString());
 			break;
 		case Format.json:
 			off.file.rawWrite(gffToJson(gff, gff.fileType));
@@ -151,9 +150,12 @@ unittest{
 
 	assert(_main(["./nwn-gff","-i",dogePath~":gff","-o",dogePathJson~":json"])==0);
 	assert(_main(["./nwn-gff","-i",dogePathJson~":json","-o",dogePathDup~":gff"])==0);
+
+	_main(["./nwn-gff","-i",dogePath~":gff",      "-o","/tmp/from:pretty"]);
+	_main(["./nwn-gff","-i",dogePathJson~":json", "-o","/tmp/to:pretty"]);
+
 	assert(dogePath.read == dogePathDup.read);
 }
-
 
 string gffTypeToStringType(GffType type){
 	import std.string: toLower;
@@ -287,7 +289,7 @@ auto ref string gffToJson(ref GffNode node, string fileType, bool rootStruct=tru
 	return ret;
 }
 
-auto ref GffNode jsonToGff(File stream){
+Gff jsonToGff(File stream){
 	import std.ascii: isWhite;
 	import orderedjson;
 	//import std.json;
@@ -388,13 +390,14 @@ auto ref GffNode jsonToGff(File stream){
 
 		return ret;
 	}
-
-
-
-
-
 	auto json = parseJSON(data);
-	return buildGff(json, null, true);
+
+	auto gff = new Gff;
+	gff.firstNode = buildGff(json, null, true);
+	gff.fileType = json["__data_type"].str;
+	gff.fileVersion = "V3.2";
+
+	return gff;
 }
 
 
