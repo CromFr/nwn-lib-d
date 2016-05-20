@@ -82,13 +82,16 @@ int _main(string[] args){
 		case Format.json:
 			off.file.rawWrite(gffToJson(gff, gff.fileType));
 			break;
+		case Format.yaml:
+			off.file.rawWrite(gffToYaml(gff));
+			break;
 		default:
 			assert(0, iff.format.to!string~" serialization not implemented");
 	}
 	return 0;
 }
 
-enum Format{ gff, json, pretty }
+enum Format{ gff, json, yaml, pretty }
 alias FileFormatTuple = Tuple!(File,"file", string,"path", Format,"format");
 
 FileFormatTuple parseFileFormat(string fileFormat, ref File defaultFile, Format defaultFormat){
@@ -398,3 +401,68 @@ auto ref GffNode jsonToGff(File stream){
 }
 
 
+
+string gffToYaml(Gff gff){
+
+	import yaml;
+
+	Node gffNodeToYaml(ref GffNode gffNode){
+
+		Node ret;
+
+		typeswitch:
+		final switch(gffNode.type) with(GffType){
+			foreach(TYPE ; EnumMembers!GffType){
+				case TYPE:
+				static if(TYPE==Invalid)
+					assert(0);
+				else static if(TYPE==ExoLocString){
+					ret = Node([
+							"strref": Node(gffNode.as!ExoLocString.strref),
+							"strings": Node(gffNode.as!ExoLocString.strings),
+						], gffTypeToStringType(TYPE));
+					break typeswitch;
+				}
+				else static if(TYPE==Void){
+					import std.base64: Base64;
+					string value = Base64.encode(cast(ubyte[])gffNode.as!Void);
+					ret = Node(value, gffTypeToStringType(TYPE));
+					break typeswitch;
+				}
+				else static if(TYPE==Struct){
+					Node[string] map;
+					foreach(ref node ; gffNode.as!Struct){
+						map[node.label] = gffNodeToYaml(node);
+					}
+					ret = Node(map, gffTypeToStringType(TYPE)~":"~gffNode.structType.to!string);
+					break typeswitch;
+				}
+				else static if(TYPE==List){
+					ret = Node(0, gffTypeToStringType(TYPE));
+					//Node[] list;
+					//foreach(ref node ; gffNode.as!List){
+					//	list ~= gffNodeToYaml(node);
+					//}
+					//ret = Node(list, gffTypeToStringType(TYPE));
+					break typeswitch;
+				}
+				else{
+					ret = Node(gffNode.as!TYPE, gffTypeToStringType(TYPE));
+					break typeswitch;
+				}
+
+			}
+		}
+
+		return ret;
+	}
+
+	import dyaml.stream: YMemoryStream;
+	auto stream = new YMemoryStream();
+
+	Dumper(stream).dump(gffNodeToYaml(gff.firstNode));
+
+
+
+	return (cast(char[])stream.data).to!string;
+}

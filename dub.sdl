@@ -12,6 +12,7 @@ subPackage {
 	name "nwn-gff"
 	sourcePaths "tools/" "source/"
 	importPaths "tools/" "source/"
+	dependency "dyaml" version="~>0.5.3"
 
 	configuration "application" {
 		targetType "executable"
