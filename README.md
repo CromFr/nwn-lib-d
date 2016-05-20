@@ -10,13 +10,26 @@ Multi-platform D library & tooling for handling Neverwinter Nights 1 & 2 resourc
 
 # Features
 
-- GFF file format (ifo, are, bic, uti, ...)
-    + Parsing from:
-        * GFF
-    + Serialization to:
-        * GFF
-        * _pretty_ (human readable)
+### Command-line tools
+- `nwn-gff`
+    + Read / write GFF files (ifo, are, bic, uti, ...)
+    
+      | Format | Parsing | Serialization | Comment |
+      |:------:|:-------:|:-------------:|---------|
+      |`gff`| :white_check_mark:| :white_check_mark:|NWN binary. Generated binary file match exactly official NWN2 files (needs to be tested with NWN1)|
+      |`json`| :white_check_mark:| :white_check_mark:|Minified json, compatible with [Niv nwn-lib](https://github.com/niv/nwn-lib)|
+      |`yaml`|:x:|:x:|WIP|
+      |`pretty`|:x:| :white_check_mark:|Human-readable|
 
+### Library
+
+- GFF
+    + Read / Write / Modify
+- TLK
+    + Read only
+- 2DA
+    + Read only
+    + May refuse to parse official 2da when incorrect
 
 # Install
 
@@ -36,7 +49,7 @@ dub build :nwn-gff
 dub build :nwn-gff --build=release
 ```
 
-# Tools usage
+# Command-line usage
 
 ```sh
 ./nwn-gff --help
