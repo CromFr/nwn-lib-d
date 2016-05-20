@@ -155,20 +155,42 @@ unittest{
 }
 
 
+string gffTypeToStringType(GffType type){
+	import std.string: toLower;
+	switch(type) with(GffType){
+		case ExoLocString: return "cexolocstr";
+		case ExoString: return "cexostr";
+		default: return type.to!string.toLower;
+	}
+}
+GffType stringTypeToGffType(string type){
+	import std.string: toLower;
+	switch(type) with(GffType){
+		case "byte":         return GffType.Byte;
+		case "char":         return GffType.Char;
+		case "word":         return GffType.Word;
+		case "short":        return GffType.Short;
+		case "dword":        return GffType.DWord;
+		case "int":          return GffType.Int;
+		case "dword64":      return GffType.DWord64;
+		case "int64":        return GffType.Int64;
+		case "float":        return GffType.Float;
+		case "double":       return GffType.Double;
+		case "cexostr":      return GffType.ExoString;
+		case "resref":       return GffType.ResRef;
+		case "cexolocstr":   return GffType.ExoLocString;
+		case "void":         return GffType.Void;
+		case "struct":       return GffType.Struct;
+		case "list":         return GffType.List;
+		default: assert(0, "Unknown Gff type string: '"~type~"'");
+	}
+}
 
 
 //I could not find any Json lib in D that keeps node ordering.
 auto ref string gffToJson(ref GffNode node, string fileType, bool rootStruct=true){
 	import std.traits;
 
-	string gffTypeToJsonType(GffType type){
-		import std.string: toLower;
-		switch(type) with(GffType){
-			case ExoLocString: return "cexolocstr";
-			case ExoString: return "cexostr";
-			default: return type.to!string.toLower;
-		}
-	}
 	string escape(in string str){
 		string ret;
 		foreach(c ; str){
@@ -191,7 +213,7 @@ auto ref string gffToJson(ref GffNode node, string fileType, bool rootStruct=tru
 
 	string ret;
 	if(rootStruct) ret = `{`;
-	else         ret = `{"type":"`~gffTypeToJsonType(node.type)~`",`;
+	else         ret = `{"type":"`~gffTypeToStringType(node.type)~`",`;
 
 	typeswitch:
 	final switch(node.type) with(GffType){
@@ -273,29 +295,6 @@ auto ref GffNode jsonToGff(File stream){
 	GffNode ret = GffNode(GffType.Invalid);
 	GffNode*[] nodeStack = [&ret];
 
-	GffType jsonTypeToGffType(string type){
-		import std.string: toLower;
-		switch(type) with(GffType){
-			case "byte":         return GffType.Byte;
-			case "char":         return GffType.Char;
-			case "word":         return GffType.Word;
-			case "short":        return GffType.Short;
-			case "dword":        return GffType.DWord;
-			case "int":          return GffType.Int;
-			case "dword64":      return GffType.DWord64;
-			case "int64":        return GffType.Int64;
-			case "float":        return GffType.Float;
-			case "double":       return GffType.Double;
-			case "cexostr":      return GffType.ExoString;
-			case "resref":       return GffType.ResRef;
-			case "cexolocstr":   return GffType.ExoLocString;
-			case "void":         return GffType.Void;
-			case "struct":       return GffType.Struct;
-			case "list":         return GffType.List;
-			default: assert(0, "Unknown Gff type string: '"~type~"'");
-		}
-	}
-
 	string data;
 	char[500] buf;
 	char[] dataRead;
@@ -315,7 +314,7 @@ auto ref GffNode jsonToGff(File stream){
 			assert(jsonNode.type == JSON_TYPE.OBJECT);
 		}
 		else
-			ret = GffNode(jsonTypeToGffType(jsonNode["type"].str), label);
+			ret = GffNode(stringTypeToGffType(jsonNode["type"].str), label);
 
 
 		final switch(ret.type) with(GffType){
