@@ -433,6 +433,16 @@ struct GffNode{
 		}
 	}
 
+	///Adds a GffNode to a GffNode of type Struct, using its label as key
+	GffNode* appendField(ref GffNode field){
+		assert(type == GffType.Struct, "GffNode must be a struct");
+		assert(field.type != GffType.Invalid, "Cannot append invalid GffNode");
+
+		structLabelMap[field.label] = aggrContainer.length;
+		aggrContainer ~= field;
+		return &aggrContainer[$-1];
+	}
+
 	/// Produces a readable string of the node and its children
 	const string toPrettyString(){
 
