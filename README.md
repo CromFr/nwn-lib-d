@@ -31,7 +31,7 @@ Multi-platform D library & tooling for handling Neverwinter Nights 1 & 2 resourc
     + Read only
     + May refuse to parse official 2da when incorrect
 
-# Install
+# Build
 
 ### Requirements
 - dmd (D language compiler)

@@ -125,7 +125,10 @@ unittest{
 	auto krogarFilePath = tempDir~"/unittest-nwn-lib-d-"~__MODULE__~".krogar.bic";
 	krogarFilePath.writeFile(krogarData);
 
+	auto stdout_ = stdout;
+	stdout = File("/dev/null","w");
 	assert(_main(["./nwn-gff","--help"])==0);
+	stdout = stdout_;
 
 
 	immutable krogarFilePathDup = krogarFilePath~".dup.bic";
@@ -136,6 +139,19 @@ unittest{
 	assert(_main(["./nwn-gff","-i",krogarFilePath,"-o",krogarFilePathDup~":pretty"])==0);
 	assert(_main(["./nwn-gff","-i",krogarFilePath~":gff","-o",krogarFilePathDup~":pretty"])==0);
 	assertThrown!Error(_main(["./nwn-gff","-i",krogarFilePath~":pretty"]));
+
+
+	auto dogeData = cast(void[])import("doge.utc");
+	immutable dogePath = tempDir~"/unittest-nwn-lib-d-"~__MODULE__~".doge.utc";
+	dogePath.writeFile(dogeData);
+
+	immutable dogePathJson = dogePath~".json";
+	immutable dogePathDup = dogePath~".dup.utc";
+
+
+	assert(_main(["./nwn-gff","-i",dogePath~":gff","-o",dogePathJson~":json"])==0);
+	assert(_main(["./nwn-gff","-i",dogePathJson~":json","-o",dogePathDup~":gff"])==0);
+	assert(dogePath.read == dogePathDup.read);
 }
 
 
@@ -311,6 +327,8 @@ auto ref GffNode jsonToGff(File stream){
 					ret = value.uinteger;
 				else if(value.type == JSON_TYPE.INTEGER)
 					ret = value.integer;
+				else
+					assert(0, "Type "~value.type.to!string~" is not convertible to GffType."~ret.type.to!string);
 				break;
 
 			case Float,Double:
