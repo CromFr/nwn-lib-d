@@ -1,7 +1,6 @@
 module nwngff;
 
 import std.stdio;
-import std.file;
 import std.conv: to;
 import std.traits;
 import std.typecons: Tuple;
@@ -92,14 +91,14 @@ FileFormatTuple parseFileFormat(string fileFormat, ref File defaultFile, Format 
 
 	auto colonIndex = fileFormat.lastIndexOf(':');
 	if(colonIndex==-1){
-		if(fileFormat !is null){
+		if(fileFormat.length>0 && fileFormat!="-"){
 			ret.file = File.init;
 			ret.path = fileFormat;
 		}
 	}
 	else{
 		immutable file = fileFormat[0..colonIndex];
-		if(file !is null){
+		if(file.length>0 && file!="-"){
 			ret.file = File.init;
 			ret.path = file;
 		}
