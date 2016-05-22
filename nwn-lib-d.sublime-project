@@ -17,6 +17,10 @@
 				{
 					"name": "nwn-gff",
 					"shell_cmd": "dub build -q --nodeps --compiler=dmd --vquiet :nwn-gff",
+				},
+				{
+					"name": "nwn-gff run unittests",
+					"shell_cmd": "dub test -q --compiler=dmd :nwn-gff",
 				}
 			]
 		}
