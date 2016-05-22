@@ -9,8 +9,10 @@
 	[
 		{
 			"name": "Project",
-			"file_regex": "^([^\\(^\n]*?)(?:-mixin-[0-9]+)?\\(([0-9]+),([0-9]+)\\): ((Error|Warning|Deprecation):)? (.*)$",
-			"working_dir": "${project_path:${folder:${file_path}}}",
+
+			"working_dir": "${project_path}",
+			"syntax": "D-dmd.sublime-syntax",
+			"file_regex": "^(?:.*?@)?(?!\\?\\?:\\?)(.*?)(?:-mixin-\\d+)?[:\\(](\\d+)(?:,(\\d+))?\\)?:?\\s(.*)$",
 			"variants": [
 				{
 					"name": "nwn-gff",
