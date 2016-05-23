@@ -534,6 +534,7 @@ struct JSONValue
         }
 
         aa[key] = value;
+        this.objectKeyOrder ~= key;
         this.object = aa;
     }
     ///
@@ -1184,15 +1185,16 @@ string toJSON(const ref JSONValue root, in bool pretty = false, in JSONOptions o
                     import std.array;
                     // @@@BUG@@@ 14439
                     // auto names = obj.keys;  // aa.keys can't be called in @safe code
-                    auto names = new string[obj.length];
-                    size_t i = 0;
-                    foreach (k, v; obj)
-                    {
-                        names[i] = k;
-                        i++;
-                    }
-                    sort(names);
-                    emit(names);
+                    //auto names = new string[obj.length];
+                    //size_t i = 0;
+                    //foreach (k, v; obj)
+                    //{
+                    //    names[i] = k;
+                    //    i++;
+                    //}
+                    //sort(names);
+                    //emit(names);
+                    emit(value.objectKeyOrder);
 
                     putEOL();
                     putTabs();
