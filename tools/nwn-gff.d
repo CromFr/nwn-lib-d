@@ -56,7 +56,7 @@ int _main(string[] args){
 		case Format.gff:
 			gff = new Gff(iff.file);
 			break;
-		case Format.json:
+		case Format.json, Format.json_minified:
 			gff = jsonToGff(iff.file);
 			break;
 		case Format.pretty:
@@ -79,6 +79,9 @@ int _main(string[] args){
 			off.file.rawWrite("========== GFF-"~gff.fileType~"-"~gff.fileVersion~" ==========\n"~gff.toPrettyString());
 			break;
 		case Format.json:
+			off.file.rawWrite(gffToJsonPretty(gff));
+			break;
+		case Format.json_minified:
 			off.file.rawWrite(gffToJson(gff, gff.fileType));
 			break;
 		default:
@@ -87,7 +90,7 @@ int _main(string[] args){
 	return 0;
 }
 
-enum Format{ gff, json, pretty }
+enum Format{ gff, json, json_minified, pretty }
 alias FileFormatTuple = Tuple!(File,"file", string,"path", Format,"format");
 
 FileFormatTuple parseFileFormat(string fileFormat, ref File defaultFile, Format defaultFormat){
@@ -287,6 +290,74 @@ auto ref string gffToJson(ref GffNode node, string fileType, bool rootStruct=tru
 	ret ~= `}`;
 
 	return ret;
+}
+
+string gffToJsonPretty(Gff gff){
+	import orderedjson;
+
+
+	auto ref JSONValue buildJsonNode(ref GffNode node, bool topLevelStruct=false){
+		JSONValue ret = cast(JSONValue[string])null;
+
+		if(!topLevelStruct)
+			ret["type"] = gffTypeToStringType(node.type);
+
+		typeswitch:
+		final switch(node.type) with(GffType){
+			foreach(TYPE ; EnumMembers!GffType){
+				case TYPE:
+				static if(TYPE==Invalid){
+					assert(0, "GFF node '"~node.label~"' is of type Invalid and can't be serialized");
+				}
+				else static if(TYPE==ExoLocString){
+					ret["strref"] = node.as!ExoLocString.strref;
+					ret["value"] = JSONValue();
+					foreach(strref, str ; node.as!ExoLocString.strings)
+						ret["value"][strref.to!string] = str;
+					break typeswitch;
+				}
+				else static if(TYPE==Void){
+					import std.base64: Base64;
+					ret["value"] = JSONValue(Base64.encode(cast(ubyte[])node.as!Void));
+					break typeswitch;
+				}
+				else static if(TYPE==Struct){
+					JSONValue* value;
+					ret["__struct_id"] = JSONValue(node.structType);
+
+					if(!topLevelStruct) {
+						ret["value"] = JSONValue();
+						value = &ret["value"];
+					}
+					else
+						value = &ret;
+
+					foreach(ref child ; node.as!Struct){
+						(*value)[child.label] = buildJsonNode(child);
+					}
+					break typeswitch;
+				}
+				else static if(TYPE==List){
+					auto value = cast(JSONValue[])null;
+					foreach(i, ref child ; node.as!List){
+						value ~= buildJsonNode(child);
+					}
+					ret["value"] = value;
+					break typeswitch;
+				}
+				else{
+					ret["value"] = node.as!TYPE;
+					break typeswitch;
+				}
+			}
+		}
+		return ret;
+	}
+
+	auto json = buildJsonNode(gff.firstNode, true);
+	json["__data_type"] = JSONValue(gff.fileType);
+
+	return json.toPrettyString;
 }
 
 Gff jsonToGff(File stream){
