@@ -703,7 +703,7 @@ class Gff{
 		this(path.read());
 	}
 	this(in void[] data){
-		version(gff_verbose) parser.printData();
+		auto parser = Parser(data);
 
 		import std.string: stripRight;
 		m_fileType = parser.headerPtr.file_type.stripRight;
@@ -777,6 +777,12 @@ class Gff{
 		return serializer.serialize(m_fileType, m_fileVersion);
 	}
 
+	/// Dumps gff content with header and tables
+	/// Useful for debugging
+	static string dumpRawGffData(in void[] data){
+		return Parser(data).dumpRawGff();
+	}
+
 private:
 	string m_fileType, m_fileVersion;
 
@@ -822,14 +828,19 @@ private:
 
 	struct Parser{
 		@disable this();
-		this(const(void)* rawData){
-			headerPtr       = cast(immutable GffHeader*)      (rawData);
-			structsPtr      = cast(immutable GffStruct*)      (rawData + headerPtr.struct_offset);
-			fieldsPtr       = cast(immutable GffField*)       (rawData + headerPtr.field_offset);
-			labelsPtr       = cast(immutable GffLabel*)       (rawData + headerPtr.label_offset);
-			fieldDatasPtr   = cast(immutable GffFieldData*)   (rawData + headerPtr.field_data_offset);
-			fieldIndicesPtr = cast(immutable GffFieldIndices*)(rawData + headerPtr.field_indices_offset);
-			listIndicesPtr  = cast(immutable GffListIndices*) (rawData + headerPtr.list_indices_offset);
+		this(in void[] rawData){
+			assert(rawData.length>GffHeader.sizeof, "Data length is so small it cannot even contain the header");
+
+			headerPtr       = cast(immutable GffHeader*)      (rawData.ptr);
+			structsPtr      = cast(immutable GffStruct*)      (rawData.ptr + headerPtr.struct_offset);
+			fieldsPtr       = cast(immutable GffField*)       (rawData.ptr + headerPtr.field_offset);
+			labelsPtr       = cast(immutable GffLabel*)       (rawData.ptr + headerPtr.label_offset);
+			fieldDatasPtr   = cast(immutable GffFieldData*)   (rawData.ptr + headerPtr.field_data_offset);
+			fieldIndicesPtr = cast(immutable GffFieldIndices*)(rawData.ptr + headerPtr.field_indices_offset);
+			listIndicesPtr  = cast(immutable GffListIndices*) (rawData.ptr + headerPtr.list_indices_offset);
+
+			assert(rawData.length == headerPtr.list_indices_offset+headerPtr.list_indices_count,
+				"Data length do not match header");
 		}
 
 		immutable GffHeader*       headerPtr;
@@ -1019,53 +1030,60 @@ private:
 			}
 		}
 
-		version(gff_verbose)
-		void printData(){
+		string dumpRawGff(){
 			import std.string: center, rightJustify, toUpper;
-			import std.algorithm: chunkBy;
-			import std.stdio: write;
+
+			string ret;
 
 			void printTitle(in string title){
-				writeln("============================================================");
-				writeln(title.toUpper.center(60));
-				writeln("============================================================");
+				ret ~= "======================================================================================\n";
+				ret ~= title.toUpper.center(86)~"\n";
+				ret ~= "======================================================================================\n";
 			}
 			void printByteArray(in void* byteArray, size_t length){
 				foreach(i ; 0..20){
-					if(i==0)write("    / ");
-					write(i.to!string.rightJustify(4, '_'));
+					if(i==0)ret ~= "    / ";
+					ret ~= i.to!string.rightJustify(4, '_');
 				}
-				writeln();
+				ret ~= "\n";
 				foreach(i ; 0..length){
 					auto ptr = cast(void*)byteArray + i;
-					if(i%20==0)write((i/10).to!string.rightJustify(3), " > ");
-					write((*cast(ubyte*)ptr).to!string.rightJustify(4));
-					if(i%20==19)writeln();
+					if(i%20==0)ret ~= (i/10).to!string.rightJustify(3)~" > ";
+					ret ~= (*cast(ubyte*)ptr).to!string.rightJustify(4);
+					if(i%20==19)ret ~= "\n";
 				}
-				writeln();
+				ret ~= "\n";
 			}
 
 			printTitle("header");
 			with(headerPtr){
-				writeln("'",file_type, "'    '",file_version,"'");
-				writeln("struct: ",struct_offset," ",struct_count);
-				writeln("field: ",field_offset," ",field_count);
-				writeln("label: ",label_offset," ",label_count);
-				writeln("field_data: ",field_data_offset," ",field_data_count);
-				writeln("field_indices: ",field_indices_offset," ",field_indices_count);
-				writeln("list_indices: ",list_indices_offset," ",list_indices_count);
+				ret ~= "'"~file_type~"'    '"~file_version~"'\n";
+				ret ~= "struct:        offset="~struct_offset.to!string~"  count="~struct_count.to!string~"\n";
+				ret ~= "field:         offset="~field_offset.to!string~"  count="~field_count.to!string~"\n";
+				ret ~= "label:         offset="~label_offset.to!string~"  count="~label_count.to!string~"\n";
+				ret ~= "field_data:    offset="~field_data_offset.to!string~"  count="~field_data_count.to!string~"\n";
+				ret ~= "field_indices: offset="~field_indices_offset.to!string~"  count="~field_indices_count.to!string~"\n";
+				ret ~= "list_indices:  offset="~list_indices_offset.to!string~"  count="~list_indices_count.to!string~"\n";
 			}
 			printTitle("structs");
 			foreach(id, ref a ; structsPtr[0..headerPtr.struct_count])
-				writeln(id.to!string.rightJustify(4), " > ",a);
+				ret ~= id.to!string.rightJustify(4)~" >"
+					~"  id="~a.type.to!string
+					~"  dodo="~a.data_or_data_offset.to!string
+					~"  fc="~a.field_count.to!string
+					~"\n";
 
 			printTitle("fields");
 			foreach(id, ref a ; fieldsPtr[0..headerPtr.field_count])
-				writeln(id.to!string.rightJustify(4), " > ",a);
+				ret ~= id.to!string.rightJustify(4)~" >"
+					~"  type="~a.type.to!string
+					~"  lbl="~a.label_index.to!string
+					~"  dodo="~a.data_or_data_offset.to!string
+					~"\n";
 
 			printTitle("labels");
 			foreach(id, ref a ; labelsPtr[0..headerPtr.label_count])
-				writeln(id.to!string.rightJustify(4), " > ",a);
+				ret ~= id.to!string.rightJustify(4)~" > "~a.to!string~"\n";
 
 			printTitle("field data");
 			printByteArray(fieldDatasPtr, headerPtr.field_data_count);
@@ -1075,8 +1093,14 @@ private:
 
 			printTitle("list indices");
 			printByteArray(listIndicesPtr, headerPtr.list_indices_count);
+
+			return ret;
+		}
+		unittest{
+			writeln(Gff.dumpRawGffData(cast(void[])import("doge.utc")));
 		}
 	}
+
 
 	struct Serializer{
 		GffHeader   header;
