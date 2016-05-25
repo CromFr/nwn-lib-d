@@ -78,11 +78,8 @@ int _main(string[] args){
 		case Format.pretty:
 			off.file.rawWrite("========== GFF-"~gff.fileType~"-"~gff.fileVersion~" ==========\n"~gff.toPrettyString());
 			break;
-		case Format.json:
-			off.file.rawWrite(gffToJsonPretty(gff));
-			break;
-		case Format.json_minified:
-			off.file.rawWrite(gffToJson(gff, gff.fileType));
+		case Format.json, Format.json_minified:
+			off.file.rawWrite(gffToJson(gff, iff.format==Format.json));
 			break;
 		default:
 			assert(0, iff.format.to!string~" serialization not implemented");
@@ -192,107 +189,9 @@ GffType stringTypeToGffType(string type){
 }
 
 
-//I could not find any Json lib in D that keeps node ordering.
-auto ref string gffToJson(ref GffNode node, string fileType, bool rootStruct=true){
-	import std.traits;
 
-	string escape(in string str){
-		string ret;
-		foreach(c ; str){
-			switch(c){
-				case 0x08: ret ~= `\b`; break;
-				case 0x0C: ret ~= `\f`; break;
-				case '\n': ret ~= `\n`; break;
-				case '\r': ret ~= `\r`; break;
-				case '\t': ret ~= `\t`; break;
-				case '\"': ret ~= `\"`; break;
-				case '\\': ret ~= `\\`; break;
-				default: ret ~= c;
-			}
-		}
-		return ret;
-	}
 
-	if(rootStruct)
-		assert(node.type==GffType.Struct);
-
-	string ret;
-	if(rootStruct) ret = `{`;
-	else         ret = `{"type":"`~gffTypeToStringType(node.type)~`",`;
-
-	typeswitch:
-	final switch(node.type) with(GffType){
-		foreach(TYPE ; EnumMembers!GffType){
-			case TYPE:
-			static if(TYPE==Invalid){
-				assert(0, "GFF node '"~node.label~"' is of type Invalid and can't be serialized");
-			}
-			else static if(TYPE==ExoString || TYPE==ResRef){
-				ret ~= `"value":"`~escape(node.to!string)~`"`;
-				break typeswitch;
-			}
-			else static if(TYPE==ExoLocString){
-				ret ~= `"str_ref":`~node.as!ExoLocString.strref.to!string
-						~`,"value":`;
-
-				if(node.as!ExoLocString.strings.length>0){
-					ret ~= `{`;
-					bool first=true;
-					foreach(key, ref value ; node.as!ExoLocString.strings){
-						ret ~= (first? null : ",")~`"`~key.to!string~`":"`~escape(value.to!string)~`"`;
-						first = false;
-					}
-					ret ~= `}`;
-				}
-				else
-					ret ~= `{}`;
-				break typeswitch;
-			}
-			else static if(TYPE==Void){
-				import std.base64: Base64;
-				ret ~= `"value":"`~Base64.encode(cast(ubyte[])node.as!Void)~`"`;
-				break typeswitch;
-			}
-			else static if(TYPE==Struct){
-				if(!rootStruct)
-					ret ~= `"value":{`;
-
-				size_t index = 0;
-				foreach(ref field ; node.as!Struct){
-					ret ~= (index++>0? "," : null)~`"`~escape(field.label)~`":`~gffToJson(field, null, false);
-				}
-				//if(node.structType != typeof(node.structType).max)
-					ret ~= (index++>0? "," : null)~`"__struct_id":`~node.structType.to!string;
-
-				if(!rootStruct)
-					ret ~= `}`;
-				break typeswitch;
-			}
-			else static if(TYPE==List){
-				ret ~= `"value":[`;
-				foreach(index, ref field ; node.as!List){
-					ret ~= (index>0? "," : null)~gffToJson(field, null, true);
-				}
-				ret ~= `]`;
-				break typeswitch;
-			}
-			else{
-				ret ~= `"value":`~node.to!string;
-				break typeswitch;
-			}
-		}
-	}
-
-	if(fileType !is null){
-		ret ~= `,"__data_type":"`~fileType~`"`;
-	}
-
-	ret ~= `}`;
-
-	return ret;
-}
-
-string gffToJsonPretty(Gff gff){
+string gffToJson(Gff gff, bool pretty){
 	import orderedjson;
 
 
@@ -357,13 +256,14 @@ string gffToJsonPretty(Gff gff){
 	auto json = buildJsonNode(gff.firstNode, true);
 	json["__data_type"] = JSONValue(gff.fileType);
 
-	return json.toPrettyString;
+	if(pretty)
+		return json.toPrettyString;
+	return json.toString;
 }
 
 Gff jsonToGff(File stream){
 	import std.ascii: isWhite;
 	import orderedjson;
-	//import std.json;
 
 	GffNode ret = GffNode(GffType.Invalid);
 	GffNode*[] nodeStack = [&ret];
