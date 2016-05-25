@@ -5,6 +5,7 @@ import std.stdio: File;
 import std.stdint;
 import std.string;
 import std.conv: to;
+import nwnlibd.orderedjson;
 
 debug import std.stdio: writeln;
 version(unittest) import std.exception: assertThrown, assertNotThrown;
@@ -495,6 +496,191 @@ struct GffNode{
 		assertThrown!GffTypeException(node.updateFieldLabelMap);
 	}
 
+	/// topLevelStruct: set to true for the root struct or any list element
+	auto ref nwnlibd.orderedjson.JSONValue toJson(bool topLevelStruct=false){
+		import std.traits: EnumMembers;
+		string gffTypeToStringType(GffType type){
+			import std.string: toLower;
+			switch(type) with(GffType){
+				case ExoLocString: return "cexolocstr";
+				case ExoString: return "cexostr";
+				default: return type.to!string.toLower;
+			}
+		}
+
+		JSONValue ret = cast(JSONValue[string])null;
+
+		if(!topLevelStruct)
+			ret["type"] = gffTypeToStringType(this.type);
+
+		typeswitch:
+		final switch(this.type) with(GffType){
+			foreach(TYPE ; EnumMembers!GffType){
+				case TYPE:
+				static if(TYPE==Invalid){
+					assert(0, "GFF node '"~this.label~"' is of type Invalid and can't be serialized");
+				}
+				else static if(TYPE==ExoLocString){
+					ret["str_ref"] = this.as!ExoLocString.strref;
+					ret["value"] = JSONValue();
+					foreach(strref, str ; this.as!ExoLocString.strings)
+						ret["value"][strref.to!string] = str;
+					break typeswitch;
+				}
+				else static if(TYPE==Void){
+					import std.base64: Base64;
+					ret["value"] = JSONValue(Base64.encode(cast(ubyte[])this.as!Void));
+					break typeswitch;
+				}
+				else static if(TYPE==Struct){
+					JSONValue* value;
+					ret["__struct_id"] = JSONValue(this.structType);
+
+					if(!topLevelStruct) {
+						ret["value"] = JSONValue();
+						value = &ret["value"];
+					}
+					else
+						value = &ret;
+
+					foreach(ref child ; this.as!Struct){
+						(*value)[child.label] = child.toJson(false);
+					}
+					break typeswitch;
+				}
+				else static if(TYPE==List){
+					auto value = cast(JSONValue[])null;
+					foreach(i, ref child ; this.as!List){
+						value ~= child.toJson(true);
+					}
+					ret["value"] = value;
+					break typeswitch;
+				}
+				else{
+					ret["value"] = this.as!TYPE;
+					break typeswitch;
+				}
+			}
+		}
+		return ret;
+	}
+
+	static GffNode fromJson(in nwnlibd.orderedjson.JSONValue jsonNode, string label, bool baseStructNode=false){
+		import std.traits: isIntegral, isFloatingPoint, EnumMembers;
+		GffType stringTypeToGffType(string type){
+			import std.string: toLower;
+			switch(type) with(GffType){
+				case "byte":         return GffType.Byte;
+				case "char":         return GffType.Char;
+				case "word":         return GffType.Word;
+				case "short":        return GffType.Short;
+				case "dword":        return GffType.DWord;
+				case "int":          return GffType.Int;
+				case "dword64":      return GffType.DWord64;
+				case "int64":        return GffType.Int64;
+				case "float":        return GffType.Float;
+				case "double":       return GffType.Double;
+				case "cexostr":      return GffType.ExoString;
+				case "resref":       return GffType.ResRef;
+				case "cexolocstr":   return GffType.ExoLocString;
+				case "void":         return GffType.Void;
+				case "struct":       return GffType.Struct;
+				case "list":         return GffType.List;
+				default: assert(0, "Unknown Gff type string: '"~type~"'");
+			}
+		}
+
+		GffNode ret;
+		if(baseStructNode){
+			assert(jsonNode.type == JSON_TYPE.OBJECT);
+
+			ret = GffNode(GffType.Struct);
+			ret.structType = -1;
+		}
+		else{
+			assert(jsonNode.type == JSON_TYPE.OBJECT);
+			ret = GffNode(stringTypeToGffType(jsonNode["type"].str), label);
+		}
+
+		typeswitch:
+		final switch(ret.type) with(GffType){
+			foreach(TYPE ; EnumMembers!GffType){
+				case TYPE:
+				static if(TYPE==Invalid)
+					assert(0);
+				else static if(isIntegral!(gffTypeToNative!TYPE)){
+					auto value = &jsonNode["value"];
+					if(value.type == JSON_TYPE.UINTEGER)
+						ret = value.uinteger;
+					else if(value.type == JSON_TYPE.INTEGER)
+						ret = value.integer;
+					else
+						assert(0, "Type "~value.type.to!string~" is not convertible to GffType."~ret.type.to!string);
+					break typeswitch;
+				}
+				else static if(isFloatingPoint!(gffTypeToNative!TYPE)){
+					auto value = &jsonNode["value"];
+					if(value.type == JSON_TYPE.UINTEGER)
+						ret = value.uinteger;
+					else if(value.type == JSON_TYPE.INTEGER)
+						ret = value.integer;
+					else if(value.type == JSON_TYPE.FLOAT)
+						ret = value.floating;
+					break typeswitch;
+				}
+				else static if(TYPE==ExoString || TYPE==ResRef){
+					ret = jsonNode["value"].str;
+					break typeswitch;
+				}
+				else static if(TYPE==ExoLocString){
+					alias Type = gffTypeToNative!ExoLocString;
+					ret = jsonNode["str_ref"].integer;
+
+					typeof(Type.strref) strings;
+					if(!jsonNode["value"].isNull){
+						foreach(string key, ref str ; jsonNode["value"].object){
+							auto id = key.to!(typeof(Type.strings.keys[0]));
+							ret.as!ExoLocString.strings[id] = str.str;
+						}
+					}
+					break typeswitch;
+				}
+				else static if(TYPE==Void){
+					import std.base64: Base64;
+					ret = Base64.decode(jsonNode["value"].str);
+					break typeswitch;
+				}
+				else static if(TYPE==Struct){
+					auto jsonValue = baseStructNode? &jsonNode : &jsonNode["value"];
+
+					auto structId = "__struct_id" in *jsonValue;
+					if(structId !is null)
+						ret.structType = structId.integer.to!(typeof(ret.structType));
+
+					assert(jsonValue.type==JSON_TYPE.OBJECT, "Struct is not a Json Object");
+
+					foreach(ref key ; jsonValue.objectKeyOrder){
+						if(key.length<2 || key[0..2]!="__"){
+							auto child = GffNode.fromJson((*jsonValue)[key], key);
+							ret.appendField(child);
+						}
+					}
+					ret.updateFieldLabelMap();
+					break typeswitch;
+				}
+				else static if(TYPE==List){
+					foreach(ref node ; jsonNode["value"].array){
+						assert(node.type==JSON_TYPE.OBJECT, "Array element is not a Json Object");
+						ret.as!List ~= GffNode.fromJson(node, null, true);
+					}
+					break typeswitch;
+				}
+			}
+		}
+
+		return ret;
+	}
+
 
 package:
 	GffType m_type = GffType.Invalid;
@@ -558,6 +744,22 @@ class Gff{
 				throw new GffValueSetException("fileVersion length must be <= 4");
 			m_fileVersion = ver;
 		}
+	}
+
+	static Gff fromJson(in JSONValue json){
+		auto gff = new Gff;
+		gff.firstNode = GffNode.fromJson(json, null, true);
+
+		gff.fileType = json["__data_type"].str;
+		gff.fileVersion = "V3.2";
+
+		return gff;
+	}
+
+	auto ref JSONValue toJson(){
+		auto json = firstNode.toJson(true);
+		json["__data_type"] = JSONValue(fileType);
+		return json;
 	}
 
 
