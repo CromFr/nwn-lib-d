@@ -310,7 +310,7 @@ string gffToJsonPretty(Gff gff){
 					assert(0, "GFF node '"~node.label~"' is of type Invalid and can't be serialized");
 				}
 				else static if(TYPE==ExoLocString){
-					ret["strref"] = node.as!ExoLocString.strref;
+					ret["str_ref"] = node.as!ExoLocString.strref;
 					ret["value"] = JSONValue();
 					foreach(strref, str ; node.as!ExoLocString.strings)
 						ret["value"][strref.to!string] = str;
@@ -340,7 +340,7 @@ string gffToJsonPretty(Gff gff){
 				else static if(TYPE==List){
 					auto value = cast(JSONValue[])null;
 					foreach(i, ref child ; node.as!List){
-						value ~= buildJsonNode(child);
+						value ~= buildJsonNode(child, true);
 					}
 					ret["value"] = value;
 					break typeswitch;
@@ -381,13 +381,15 @@ Gff jsonToGff(File stream){
 	auto ref GffNode buildGff(ref JSONValue jsonNode, string label, bool baseStructNode=false){
 		GffNode ret;
 		if(baseStructNode){
+			assert(jsonNode.type == JSON_TYPE.OBJECT);
+
 			ret = GffNode(GffType.Struct);
 			ret.structType = -1;
-
-			assert(jsonNode.type == JSON_TYPE.OBJECT);
 		}
-		else
+		else{
+			assert(jsonNode.type == JSON_TYPE.OBJECT);
 			ret = GffNode(stringTypeToGffType(jsonNode["type"].str), label);
+		}
 
 
 		final switch(ret.type) with(GffType){
@@ -422,10 +424,12 @@ Gff jsonToGff(File stream){
 				ret = jsonNode["str_ref"].integer;
 
 				typeof(Type.strref) strings;
-				foreach(string key, ref str ; jsonNode["value"]){
+				if(jsonNode["value"].type != JSON_TYPE.NULL){
+					foreach(string key, ref str ; jsonNode["value"]){
 
-					auto id = key.to!(typeof(Type.strings.keys[0]));
-					ret.as!ExoLocString.strings[id] = str.str;
+						auto id = key.to!(typeof(Type.strings.keys[0]));
+						ret.as!ExoLocString.strings[id] = str.str;
+					}
 				}
 				break;
 
