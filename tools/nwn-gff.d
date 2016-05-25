@@ -57,7 +57,8 @@ int _main(string[] args){
 			gff = new Gff(iff.file);
 			break;
 		case Format.json, Format.json_minified:
-			gff = jsonToGff(iff.file);
+			import nwnlibd.orderedjson;
+			gff = Gff.fromJson(parseJSON(iff.file.readAllString));
 			break;
 		case Format.pretty:
 			assert(0, iff.format.to!string~" parsing not supported");
@@ -76,7 +77,7 @@ int _main(string[] args){
 			off.file.rawWrite(gff.serialize());
 			break;
 		case Format.pretty:
-			off.file.rawWrite("========== GFF-"~gff.fileType~"-"~gff.fileVersion~" ==========\n"~gff.toPrettyString());
+			off.file.rawWrite(gff.toPrettyString());
 			break;
 		case Format.json, Format.json_minified:
 			auto json = gff.toJson;
@@ -117,6 +118,18 @@ FileFormatTuple parseFileFormat(string fileFormat, ref File defaultFile, Format 
 	return ret;
 }
 
+string readAllString(File stream){
+	string data;
+	char[500] buf;
+	char[] dataRead;
+
+	do{
+		dataRead = stream.rawRead(buf);
+		data ~= dataRead;
+	}while(dataRead.length>0);
+
+	return data;
+}
 unittest{
 	import std.file: tempDir, read, writeFile=write;
 	import core.thread;
@@ -157,24 +170,4 @@ unittest{
 
 	assert(dogePath.read == dogePathDup.read);
 }
-
-Gff jsonToGff(File stream){
-	import std.traits: isIntegral, isFloatingPoint;
-	import nwnlibd.orderedjson;
-
-	GffNode ret = GffNode(GffType.Invalid);
-	GffNode*[] nodeStack = [&ret];
-
-	string data;
-	char[500] buf;
-	char[] dataRead;
-
-	do{
-		dataRead = stream.rawRead(buf);
-		data ~= dataRead;
-	}while(dataRead.length>0);
-
-	return Gff.fromJson(parseJSON(data));
-}
-
 

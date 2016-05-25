@@ -703,7 +703,6 @@ class Gff{
 		this(path.read());
 	}
 	this(in void[] data){
-		auto parser = Parser(data.ptr);
 		version(gff_verbose) parser.printData();
 
 		import std.string: stripRight;
@@ -744,6 +743,11 @@ class Gff{
 				throw new GffValueSetException("fileVersion length must be <= 4");
 			m_fileVersion = ver;
 		}
+	}
+
+	const string toPrettyString(){
+		return "========== GFF-"~fileType~"-"~fileVersion~" ==========\n"
+				~ firstNode.toPrettyString;
 	}
 
 	static Gff fromJson(in JSONValue json){
