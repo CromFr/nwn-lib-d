@@ -262,7 +262,7 @@ string gffToJson(Gff gff, bool pretty){
 }
 
 Gff jsonToGff(File stream){
-	import std.ascii: isWhite;
+	import std.traits: isIntegral, isFloatingPoint;
 	import orderedjson;
 
 	GffNode ret = GffNode(GffType.Invalid);
@@ -291,76 +291,79 @@ Gff jsonToGff(File stream){
 			ret = GffNode(stringTypeToGffType(jsonNode["type"].str), label);
 		}
 
-
+		typeswitch:
 		final switch(ret.type) with(GffType){
-			case Invalid: assert(0);
+			foreach(TYPE ; EnumMembers!GffType){
+				case TYPE:
+				static if(TYPE==Invalid)
+					assert(0);
+				else static if(isIntegral!(gffTypeToNative!TYPE)){
+					auto value = &jsonNode["value"];
+					if(value.type == JSON_TYPE.UINTEGER)
+						ret = value.uinteger;
+					else if(value.type == JSON_TYPE.INTEGER)
+						ret = value.integer;
+					else
+						assert(0, "Type "~value.type.to!string~" is not convertible to GffType."~ret.type.to!string);
+					break typeswitch;
+				}
+				else static if(isFloatingPoint!(gffTypeToNative!TYPE)){
+					auto value = &jsonNode["value"];
+					if(value.type == JSON_TYPE.UINTEGER)
+						ret = value.uinteger;
+					else if(value.type == JSON_TYPE.INTEGER)
+						ret = value.integer;
+					else if(value.type == JSON_TYPE.FLOAT)
+						ret = value.floating;
+					break typeswitch;
+				}
+				else static if(TYPE==ExoString || TYPE==ResRef){
+					ret = jsonNode["value"].str;
+					break typeswitch;
+				}
+				else static if(TYPE==ExoLocString){
+					alias Type = gffTypeToNative!ExoLocString;
+					ret = jsonNode["str_ref"].integer;
 
-			case Byte,Char,Word,Short,DWord,Int,DWord64,Int64:
-				auto value = &jsonNode["value"];
-				if(value.type == JSON_TYPE.UINTEGER)
-					ret = value.uinteger;
-				else if(value.type == JSON_TYPE.INTEGER)
-					ret = value.integer;
-				else
-					assert(0, "Type "~value.type.to!string~" is not convertible to GffType."~ret.type.to!string);
-				break;
+					typeof(Type.strref) strings;
+					if(!jsonNode["value"].isNull){
+						foreach(string key, ref str ; jsonNode["value"]){
 
-			case Float,Double:
-				auto value = &jsonNode["value"];
-				if(value.type == JSON_TYPE.UINTEGER)
-					ret = value.uinteger;
-				else if(value.type == JSON_TYPE.INTEGER)
-					ret = value.integer;
-				else if(value.type == JSON_TYPE.FLOAT)
-					ret = value.floating;
-				break;
-
-			case ExoString,ResRef:
-				ret = jsonNode["value"].str;
-				break;
-
-			case ExoLocString:
-				alias Type = gffTypeToNative!ExoLocString;
-				ret = jsonNode["str_ref"].integer;
-
-				typeof(Type.strref) strings;
-				if(jsonNode["value"].type != JSON_TYPE.NULL){
-					foreach(string key, ref str ; jsonNode["value"]){
-
-						auto id = key.to!(typeof(Type.strings.keys[0]));
-						ret.as!ExoLocString.strings[id] = str.str;
+							auto id = key.to!(typeof(Type.strings.keys[0]));
+							ret.as!ExoLocString.strings[id] = str.str;
+						}
 					}
+					break typeswitch;
 				}
-				break;
-
-			case Void:
-				import std.base64: Base64;
-				ret = Base64.decode(jsonNode["value"].str);
-				break;
-
-			case Struct:
-				JSONValue* jsonValue;
-				if(baseStructNode) jsonValue = &jsonNode;
-				else               jsonValue = &jsonNode["value"];
-
-				auto structId = "__struct_id" in *jsonValue;
-				if(structId !is null)
-					ret.structType = cast(typeof(ret.structType))structId.integer;
-
-				assert(jsonValue.type==JSON_TYPE.OBJECT, "Struct is not a Json Object");
-
-				foreach(ref key ; jsonValue.objectKeyOrder){
-					if(key.length<2 || key[0..2]!="__")
-						ret.appendField(buildGff((*jsonValue)[key], key));
+				else static if(TYPE==Void){
+					import std.base64: Base64;
+					ret = Base64.decode(jsonNode["value"].str);
+					break typeswitch;
 				}
-				ret.updateFieldLabelMap();
-				break;
-			case List:
-				foreach(ref node ; jsonNode["value"].array){
-					assert(node.type==JSON_TYPE.OBJECT, "Array element is not a Json Object");
-					ret.as!List ~= buildGff(node, null, true);
+				else static if(TYPE==Struct){
+					JSONValue* jsonValue = baseStructNode? &jsonNode : &jsonNode["value"];
+
+					auto structId = "__struct_id" in *jsonValue;
+					if(structId !is null)
+						ret.structType = structId.integer.to!(typeof(ret.structType));
+
+					assert(jsonValue.type==JSON_TYPE.OBJECT, "Struct is not a Json Object");
+
+					foreach(ref key ; jsonValue.objectKeyOrder){
+						if(key.length<2 || key[0..2]!="__")
+							ret.appendField(buildGff((*jsonValue)[key], key));
+					}
+					ret.updateFieldLabelMap();
+					break typeswitch;
 				}
-				break;
+				else static if(TYPE==List){
+					foreach(ref node ; jsonNode["value"].array){
+						assert(node.type==JSON_TYPE.OBJECT, "Array element is not a Json Object");
+						ret.as!List ~= buildGff(node, null, true);
+					}
+					break typeswitch;
+				}
+			}
 		}
 
 		return ret;
