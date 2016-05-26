@@ -1097,7 +1097,7 @@ private:
 			return ret;
 		}
 		unittest{
-			writeln(Gff.dumpRawGffData(cast(void[])import("doge.utc")));
+			Gff.dumpRawGffData(cast(void[])import("doge.utc"));
 		}
 	}
 
