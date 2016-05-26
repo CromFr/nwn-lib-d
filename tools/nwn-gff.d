@@ -3,7 +3,7 @@ module nwngff;
 import std.stdio;
 import std.conv: to;
 import std.traits;
-import std.typecons: Tuple;
+import std.typecons: Tuple, Nullable;
 version(unittest) import std.exception: assertThrown, assertNotThrown;
 
 import nwn.gff;
@@ -13,6 +13,11 @@ else{
 	int main(string[] args){return _main(args);}
 }
 
+class ArgException : Exception{
+	@safe pure nothrow this(string msg, string f=__FILE__, size_t l=__LINE__, Throwable t=null){
+		super(msg, f, l, t);
+	}
+}
 
 int _main(string[] args){
 	import std.getopt : getopt, defaultGetoptPrinter;
@@ -23,15 +28,6 @@ int _main(string[] args){
 		required, "i|input", "<file>:<format> Input file and format", &inputArg,
 		          "o|output", "<file>:<format> Output file and format", &outputArg,
 		);
-
-	FileFormatTuple iff = parseFileFormat(inputArg, stdin, Format.gff);
-
-	FileFormatTuple off;
-	if(outputArg !is null)
-		off = parseFileFormat(outputArg, stdout, Format.gff);
-	else
-		off = FileFormatTuple(stdout, null, Format.pretty);
-
 	if(res.helpWanted){
 		defaultGetoptPrinter(
 			 "Parsing and serialization tool for GFF files like ifo, are, bic, uti, ...\n"
@@ -41,24 +37,34 @@ int _main(string[] args){
 			~"    - Leave empty or '-' to read from stdin/write to stdout\n"
 			~"format:\n"
 			~"    - Any of "~EnumMembers!Format.stringof[6..$-1]~"\n"
-			//~"    - Leave empty or '-' to guess from file extension\n" //TODO
+			~"    - Leave empty or '-' to guess from file extension\n"
 			,
 			res.options);
 		return 0;
 	}
 
+	FileFormatTuple iff = parseFileFormat(inputArg);
+	if(iff.format.isNull)
+		throw new ArgException("Cannot guess input format using stdin. Please set '-i -:<format>'");
+
+	FileFormatTuple off;
+	if(outputArg !is null){
+		off = parseFileFormat(outputArg);
+	}
+	if(off.format.isNull)
+		iff.format = Format.pretty;
+
 	//Parsing
 	Gff gff;
-	if(!iff.file.isOpen)
-		iff.file.open(iff.path, "r");
+	File inputFile = iff.path is null? stdin : File(iff.path, "r");
 
 	switch(iff.format){
 		case Format.gff:
-			gff = new Gff(iff.file);
+			gff = new Gff(inputFile);
 			break;
 		case Format.json, Format.json_minified:
 			import nwnlibd.orderedjson;
-			gff = Gff.fromJson(parseJSON(iff.file.readAllString));
+			gff = Gff.fromJson(parseJSON(inputFile.readAllString));
 			break;
 		case Format.pretty:
 			assert(0, iff.format.to!string~" parsing not supported");
@@ -66,22 +72,21 @@ int _main(string[] args){
 			assert(0, iff.format.to!string~" parsing not implemented");
 	}
 
-	iff.file.close();
+	inputFile.close();
 
-	if(!off.file.isOpen)
-		off.file.open(off.path, "w");
+	File outputFile = off.path is null? stdout : File(off.path, "w");
 
 	//Serialization
 	switch(off.format){
 		case Format.gff:
-			off.file.rawWrite(gff.serialize());
+			outputFile.rawWrite(gff.serialize());
 			break;
 		case Format.pretty:
-			off.file.rawWrite(gff.toPrettyString());
+			outputFile.rawWrite(gff.toPrettyString());
 			break;
 		case Format.json, Format.json_minified:
 			auto json = gff.toJson;
-			off.file.rawWrite(iff.format==Format.json? json.toPrettyString : json.toString);
+			outputFile.rawWrite(iff.format==Format.json? json.toPrettyString : json.toString);
 			break;
 		default:
 			assert(0, iff.format.to!string~" serialization not implemented");
@@ -90,32 +95,63 @@ int _main(string[] args){
 }
 
 enum Format{ gff, json, json_minified, pretty }
-alias FileFormatTuple = Tuple!(File,"file", string,"path", Format,"format");
+alias FileFormatTuple = Tuple!(string,"path", Nullable!Format,"format");
 
-FileFormatTuple parseFileFormat(string fileFormat, ref File defaultFile, Format defaultFormat){
+FileFormatTuple parseFileFormat(string str){
 	import std.stdio: File;
 	import std.string: lastIndexOf;
-	auto ret = FileFormatTuple(defaultFile, null, defaultFormat);
 
-	auto colonIndex = fileFormat.lastIndexOf(':');
+	auto colonIndex = str.lastIndexOf(':');
 	if(colonIndex==-1){
-		if(fileFormat.length>0 && fileFormat!="-"){
-			ret.file = File.init;
-			ret.path = fileFormat;
-		}
+		immutable filePath = str;
+		if(filePath.length>0 && str!="-")
+			return FileFormatTuple(filePath, Nullable!Format(guessFormat(filePath)));
+		else
+			return FileFormatTuple(null, Nullable!Format());
 	}
 	else{
-		immutable file = fileFormat[0..colonIndex];
-		if(file.length>0 && file!="-"){
-			ret.file = File.init;
-			ret.path = file;
-		}
+		immutable filePath = str[0..colonIndex];
+		immutable format = str[colonIndex+1..$];
 
-		immutable format = fileFormat[colonIndex+1..$];
-		if(format !is null)
+		auto ret = FileFormatTuple(null, Nullable!Format());
+
+		if(filePath.length>0 && filePath!="-"){
+			ret.path = filePath;
+		}
+		if(format.length>0 && format!="-")
 			ret.format = format.to!Format;
+		else
+			ret.format = guessFormat(filePath);
+
+		return ret;
 	}
-	return ret;
+}
+Format guessFormat(in string fileName){
+	import std.path: extension;
+	import std.string: toLower;
+	if(fileName is null || fileName=="-")
+		assert(0, "Cannot guess file format without file name. Please specify format using <filename>:<format>'");
+
+	immutable ext = fileName.extension.toLower;
+	switch(ext){
+		case ".gff":
+		case ".are",".gic",".git"://areas
+		case ".dlg"://dialogs
+		case ".fac",".ifo",".jrl"://module files
+		case ".bic"://characters
+		case ".ult",".upe",".utc",".utd",".ute",".uti",".utm",".utp",".utr",".utt",".utw",".pfb"://blueprints
+			return Format.gff;
+
+		case ".json":
+			return Format.json;
+
+		case ".txt":
+			return Format.pretty;
+
+		default:
+			throw new ArgException("Unrecognized file extension: '"~ext~"'");
+	}
+
 }
 
 string readAllString(File stream){
@@ -130,8 +166,14 @@ string readAllString(File stream){
 
 	return data;
 }
+
+
+
+
+
+
 unittest{
-	import std.file: tempDir, read, writeFile=write;
+	import std.file: tempDir, read, writeFile=write, exists;
 	import core.thread;
 
 	auto krogarData = cast(void[])import("krogar.bic");
@@ -165,8 +207,10 @@ unittest{
 	assert(_main(["./nwn-gff","-i",dogePath~":gff","-o",dogePathJson~":json"])==0);
 	assert(_main(["./nwn-gff","-i",dogePathJson~":json","-o",dogePathDup~":gff"])==0);
 
-	_main(["./nwn-gff","-i",dogePath~":gff",      "-o","/tmp/from:pretty"]);
-	_main(["./nwn-gff","-i",dogePathJson~":json", "-o","/tmp/to:pretty"]);
+	assertThrown!ArgException(_main(["./nwn-gff","-i","nothing.yolo","-o","something:gff"]));
+	assert(!"nothing.yolo".exists);
+	assert(!"something".exists);
+
 
 	assert(dogePath.read == dogePathDup.read);
 }
