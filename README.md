@@ -17,8 +17,8 @@ Multi-platform D library & tooling for handling Neverwinter Nights 1 & 2 resourc
       | Format | Parsing | Serialization | Comment |
       |:------:|:-------:|:-------------:|---------|
       |`gff`| :white_check_mark:| :white_check_mark:|NWN binary. Generated binary file match exactly official NWN2 files (needs to be tested with NWN1)|
-      |`json`| :white_check_mark:| :white_check_mark:|Minified json, compatible with [Niv nwn-lib](https://github.com/niv/nwn-lib)|
-      |`yaml`|:x:|:x:|WIP|
+      |`json`| :white_check_mark:| :white_check_mark:|Json, compatible with [Niv nwn-lib](https://github.com/niv/nwn-lib)|
+      |`json_minified`|:white_check_mark:|:white_check_mark:|Same as `json` but minified|
       |`pretty`|:x:| :white_check_mark:|Human-readable|
 
 ### Library
