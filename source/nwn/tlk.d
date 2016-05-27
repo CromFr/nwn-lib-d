@@ -1,7 +1,3 @@
-/// Authors: Thibaut CHARLES (Crom) cromfr@gmail.com
-/// License: GPL-3.0
-/// Copyright: Copyright Thibaut CHARLES 2016
-
 /// TalkTable (tlk)
 module nwn.tlk;
 
