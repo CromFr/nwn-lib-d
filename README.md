@@ -23,6 +23,8 @@ Multi-platform D library & tooling for handling Neverwinter Nights 1 & 2 resourc
 
 ### Library
 
+__[API reference](https://cromfr.github.io/nwn-lib-d/)__
+
 - GFF
     + Read / Write / Modify
 - TLK
@@ -30,6 +32,7 @@ Multi-platform D library & tooling for handling Neverwinter Nights 1 & 2 resourc
 - 2DA
     + Read only
     + May refuse to parse official 2da when incorrect
+
 
 # Build
 
