@@ -974,18 +974,14 @@ private:
 
 		void buildNodeFromFieldInPlace(in size_t fieldIndex, GffNode* destField){
 			import std.typetuple: TypeTuple;
-			auto ref string parseLabel(in uint32_t labelIndex){
-				immutable lbl = getLabel(labelIndex).value;
-				if(lbl[$-1]=='\0') return lbl.ptr.fromStringz.idup;
-				else               return lbl.idup;
-			}
+			import nwnlibd.parseutils;
 
 			try{
 				import std.conv : to;
 				immutable f = getField(fieldIndex);
 
 				destField.m_type = cast(GffType)f.type;
-				destField.label = parseLabel(f.label_index);
+				destField.label = charArrayToString(getLabel(f.label_index).value);
 
 				version(gff_verbose){
 					writeln(gff_verbose_rtIndent, "Parsing  field: '", destField.label,
@@ -1074,6 +1070,7 @@ private:
 
 		string dumpRawGff(){
 			import std.string: center, rightJustify, toUpper;
+			import nwnlibd.parseutils;
 
 			string ret;
 
@@ -1081,20 +1078,6 @@ private:
 				ret ~= "======================================================================================\n";
 				ret ~= title.toUpper.center(86)~"\n";
 				ret ~= "======================================================================================\n";
-			}
-			void printByteArray(in void* byteArray, size_t length){
-				foreach(i ; 0..20){
-					if(i==0)ret ~= "    / ";
-					ret ~= i.to!string.rightJustify(4, '_');
-				}
-				ret ~= "\n";
-				foreach(i ; 0..length){
-					auto ptr = cast(void*)byteArray + i;
-					if(i%20==0)ret ~= (i/10).to!string.rightJustify(3)~" > ";
-					ret ~= (*cast(ubyte*)ptr).to!string.rightJustify(4);
-					if(i%20==19)ret ~= "\n";
-				}
-				ret ~= "\n";
 			}
 
 			printTitle("header");
@@ -1128,13 +1111,13 @@ private:
 				ret ~= id.to!string.rightJustify(4)~" > "~a.to!string~"\n";
 
 			printTitle("field data");
-			printByteArray(fieldDatasPtr, headerPtr.field_data_count);
+			ret ~= dumpByteArray(fieldDatasPtr[0..headerPtr.field_data_count]);
 
 			printTitle("field indices");
-			printByteArray(fieldIndicesPtr, headerPtr.field_indices_count);
+			ret ~= dumpByteArray(fieldIndicesPtr[0..headerPtr.field_indices_count]);
 
 			printTitle("list indices");
-			printByteArray(listIndicesPtr, headerPtr.list_indices_count);
+			ret ~= dumpByteArray(listIndicesPtr[0..headerPtr.list_indices_count]);
 
 			return ret;
 		}
