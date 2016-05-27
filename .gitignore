@@ -1,4 +1,5 @@
 .dub/
+docs/
 docs.json
 __dummy.html
 __test__*__

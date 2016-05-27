@@ -1,3 +1,8 @@
+/// Authors: Thibaut CHARLES (Crom) cromfr@gmail.com
+/// License: GPL-3.0
+/// Copyright: Copyright Thibaut CHARLES 2016
+
+/// Generic File Format (gff)
 module nwn.gff;
 
 
@@ -10,43 +15,48 @@ import nwnlibd.orderedjson;
 debug import std.stdio: writeln;
 version(unittest) import std.exception: assertThrown, assertNotThrown;
 
+/// Parsing exception
 class GffParseException : Exception{
 	@safe pure nothrow this(string msg, string f=__FILE__, size_t l=__LINE__, Throwable t=null){
 		super(msg, f, l, t);
 	}
 }
+/// Value doesn't match constraints (ex: label too long)
 class GffValueSetException : Exception{
 	@safe pure nothrow this(string msg, string f=__FILE__, size_t l=__LINE__, Throwable t=null){
 		super(msg, f, l, t);
 	}
 }
+/// Type mismatch (ex: trying to add a $(D GffNode) to a $(D GffType.Int))
 class GffTypeException : Exception{
 	@safe pure nothrow this(string msg, string f=__FILE__, size_t l=__LINE__, Throwable t=null){
 		super(msg, f, l, t);
 	}
 }
 
-/// Type of data stored in the GffNode
+/// Type of data owned by a $(D GffNode)
+/// See_Also: $(D gffTypeToNative)
 enum GffType{
-	Invalid      = -1,
-	Byte         = 0,
-	Char         = 1,
-	Word         = 2,
-	Short        = 3,
-	DWord        = 4,
-	Int          = 5,
-	DWord64      = 6,
-	Int64        = 7,
-	Float        = 8,
-	Double       = 9,
-	ExoString    = 10,
-	ResRef       = 11,
-	ExoLocString = 12,
-	Void         = 13,
-	Struct       = 14,
-	List         = 15
+	Invalid      = -1, /// Init value
+	Byte         = 0,  /// Signed 8-bit int
+	Char         = 1,  /// Unsigned 8-bit int
+	Word         = 2,  /// Signed 16-bit int
+	Short        = 3,  /// Unsigned 16-bit int
+	DWord        = 4,  /// Signed 32-bit int
+	Int          = 5,  /// Unsigned 32-bit int
+	DWord64      = 6,  /// Signed 64-bit int
+	Int64        = 7,  /// Unsigned 64-bit int
+	Float        = 8,  /// 32-bit float
+	Double       = 9,  /// 64-bit float
+	ExoString    = 10, /// String
+	ResRef       = 11, /// String with width <= 16 (32 for NWN2)
+	ExoLocString = 12, /// Localized string
+	Void         = 13, /// Binary data
+	Struct       = 14, /// Map of other $(D GffNode)
+	List         = 15  /// Array of other $(D GffNode)
 }
 
+/// Maps $(D GffType) to native D type
 template gffTypeToNative(GffType t){
 	import std.typecons: Tuple;
 	static if(t==GffType.Invalid)      static assert(0, "No native type for GffType.Invalid");
@@ -68,14 +78,18 @@ template gffTypeToNative(GffType t){
 	static if(t==GffType.List)         alias gffTypeToNative = GffNode[];
 }
 
+/// Gff node containing data
 struct GffNode{
+	///
 	this(GffType t, string lbl=null){
 		m_type = t;
 		label = lbl;
 	}
 
 	@property{
-		const string label(){return m_label;}
+		/// GFF node label
+		/// Max width: 16 chars
+		string label()const{return m_label;}
 		void label(string lbl){
 			if(lbl.length>16)
 				throw new GffValueSetException("Labels cannot be longer than 16 characters");
@@ -88,23 +102,26 @@ struct GffNode{
 		assertThrown!GffValueSetException(node.label = "ThisLabelIsLongerThan16Chars");
 	}
 
-	@property const GffType type(){return m_type;}
+	/// GFF type
+	@property GffType type()const{return m_type;}
 
 	@property{
-		const uint32_t structType(){
+		/// Struct ID. Only if the node is a $(D GffType.Struct)
+		uint32_t structType()const{
 			if(type!=GffType.Struct) throw new GffTypeException("GffNode is not a struct");
 			return m_structType;
 		}
+		/// ditto
 		void structType(uint32_t structType){
 			if(type!=GffType.Struct) throw new GffTypeException("GffNode is not a struct");
 			m_structType = structType;
 		}
 	}
 
-	/// Access by reference the underlying data stored in the GffNode.
+	/// Access by reference the underlying data stored in the $(D GffNode).
 	/// The type of this data is determined by gffTypeToNative.
 	/// Types must match exactly or it will throw
-	const ref const(gffTypeToNative!T) as(GffType T)(){
+	ref const(gffTypeToNative!T) as(GffType T)()const{
 		return cast(const)((cast(GffNode)this).as!T);
 	}
 	/// ditto
@@ -146,7 +163,7 @@ struct GffNode{
 
 	/// Convert the node value to a certain type.
 	/// If the type is string, any type of value gets converted into string. Structs and lists are not expanded.
-	const auto ref const(DestType) to(DestType)(){
+	auto ref const(DestType) to(DestType)()const{
 		import std.traits;
 
 		final switch(type) with(GffType){
@@ -236,6 +253,7 @@ struct GffNode{
 		}
 	}
 
+	/// Assign a value to the node. Assigned type must be convertible to the native node type;
 	void opAssign(T)(T rhs) if(!is(T==GffNode)){
 		import std.traits;
 
@@ -381,13 +399,12 @@ struct GffNode{
 		}
 	}
 
-	const ref const(GffNode) opIndex(in string label){
+
+	/// Gets child node from a $(D GffNode.Struct) using its label as key
+	ref const(GffNode) opIndex(in string label)const{
 		return (cast(GffNode)this).opIndex(label);
 	}
-	const ref const(GffNode) opIndex(in size_t index){
-		return (cast(GffNode)this).opIndex(index);
-	}
-
+	/// ditto
 	ref GffNode opIndex(in string label){
 		if(type!=GffType.Struct)
 			throw new GffTypeException("Not a struct");
@@ -400,6 +417,12 @@ struct GffNode{
 		}
 		return aggrContainer[*index];
 	}
+
+	/// Gets child node from a $(D GffNode.List) using its index
+	ref const(GffNode) opIndex(in size_t index)const{
+		return (cast(GffNode)this).opIndex(index);
+	}
+	/// ditto
 	ref GffNode opIndex(in size_t index){
 		if(type!=GffType.List)
 			throw new GffTypeException("Not a list");
@@ -434,7 +457,7 @@ struct GffNode{
 		}
 	}
 
-	///Adds a GffNode to a GffNode of type Struct, using its label as key
+	/// Adds a GffNode to a $(D GffNode.Struct), using its label as key
 	GffNode* appendField(ref GffNode field){
 		assert(type == GffType.Struct, "GffNode must be a struct");
 		assert(field.type != GffType.Invalid, "Cannot append invalid GffNode");
@@ -445,7 +468,7 @@ struct GffNode{
 	}
 
 	/// Produces a readable string of the node and its children
-	const string toPrettyString(){
+	string toPrettyString()const{
 
 		string toPrettyStringInternal(const(GffNode)* node, string tabs){
 			import std.string: leftJustify;
@@ -481,6 +504,7 @@ struct GffNode{
 
 	/// Updates the structLabelMap for struct fields lookup.
 	/// Should be called each time the struct field list is modified or a field's label is modified
+	/// Note: you don't need to call this function if you use $(D appendField).
 	void updateFieldLabelMap(){
 		if(type != GffType.Struct)
 			throw new GffTypeException(__FUNCTION__~" can only be called on a GffNode of type Struct");
@@ -496,7 +520,9 @@ struct GffNode{
 		assertThrown!GffTypeException(node.updateFieldLabelMap);
 	}
 
-	/// topLevelStruct: set to true for the root struct or any list element
+	/// Builds a $(D nwnlibd.orderedjson.JSONValue) from a $(D GffNode)
+	/// Params:
+	///   topLevelStruct = Set to true for the root struct or any list element
 	auto ref nwnlibd.orderedjson.JSONValue toJson(bool topLevelStruct=false){
 		import std.traits: EnumMembers;
 		string gffTypeToStringType(GffType type){
@@ -507,6 +533,9 @@ struct GffNode{
 				default: return type.to!string.toLower;
 			}
 		}
+
+		if(topLevelStruct && type!=GffType.Struct)
+			throw new GffTypeException("topLevelStruct should only be set for a GffType.Struct");
 
 		JSONValue ret = cast(JSONValue[string])null;
 
@@ -565,6 +594,7 @@ struct GffNode{
 		return ret;
 	}
 
+	/// Constructs a GFF node from a $(D nwnlibd.orderedjson.JSONValue) structure
 	static GffNode fromJson(in nwnlibd.orderedjson.JSONValue jsonNode, string label, bool baseStructNode=false){
 		import std.traits: isIntegral, isFloatingPoint, EnumMembers;
 		GffType stringTypeToGffType(string type){
@@ -694,14 +724,17 @@ package:
 	uint32_t m_structType = 0;
 }
 
+/// Gff class for building complete $(D GffNode) from a file, binary data, json, ...
 class Gff{
 
+	/// Empty GFF
 	this(){}
 
+	/// Read and parse GFF file
 	this(in string path){
-		import std.file : read;
-		this(path.read());
+		this(File(path, "r"));
 	}
+	/// Read and parse GFF data in memory
 	this(in void[] data){
 		auto parser = Parser(data);
 
@@ -711,10 +744,11 @@ class Gff{
 
 		parser.buildNodeFromStructInPlace(0, &firstNode);
 	}
-	this(File stream){
+	/// Read and parse a GFF file
+	this(File file){
 		void[] data;
 		data.length = GffHeader.sizeof;
-		auto readCount = stream.rawRead(data).length;
+		auto readCount = file.rawRead(data).length;
 		if(readCount<GffHeader.sizeof)
 			throw new GffParseException("File is too small to be GFF: "~readCount.to!string~" bytes read, "~GffHeader.sizeof.to!string~" needed !");
 
@@ -723,7 +757,7 @@ class Gff{
 			header.list_indices_offset + header.list_indices_count;
 
 		data.length = fileLength;
-		readCount += stream.rawRead(data[GffHeader.sizeof..$]).length;
+		readCount += file.rawRead(data[GffHeader.sizeof..$]).length;
 		if(readCount<GffHeader.sizeof)
 			throw new GffParseException("File is too small to be GFF: "~readCount.to!string~" bytes read, "~fileLength.to!string~" needed !");
 
@@ -731,12 +765,17 @@ class Gff{
 	}
 
 	@property{
+		/// GFF type name stored in the GFF file
+		/// Max width: 4 chars
 		const string fileType(){return m_fileType;}
+		/// ditto
 		void fileType(in string type){
 			if(type.length>4)
 				throw new GffValueSetException("fileType length must be <= 4");
 			m_fileType = type;
 		}
+		/// GFF version stored in the GFF file. Usually "V3.2"
+		/// Max width: 4 chars
 		const string fileVersion(){return m_fileVersion;}
 		void fileVersion(in string ver){
 			if(ver.length>4)
@@ -745,11 +784,13 @@ class Gff{
 		}
 	}
 
+	/// Produces a readable string of the node and its children
 	const string toPrettyString(){
 		return "========== GFF-"~fileType~"-"~fileVersion~" ==========\n"
 				~ firstNode.toPrettyString;
 	}
 
+	/// Constructs a $(D Gff) from a $(D nwnlibd.orderedjson.JSONValue) structure
 	static Gff fromJson(in JSONValue json){
 		auto gff = new Gff;
 		gff.firstNode = GffNode.fromJson(json, null, true);
@@ -760,17 +801,18 @@ class Gff{
 		return gff;
 	}
 
+	/// Builds a $(D nwnlibd.orderedjson.JSONValue) from a $(D Gff)
 	auto ref JSONValue toJson(){
 		auto json = firstNode.toJson(true);
 		json["__data_type"] = JSONValue(fileType);
 		return json;
 	}
 
-
 	alias firstNode this;
+	/// Root $(D GffNode)
 	GffNode firstNode;
 
-
+	/// Serializes the $(D Gff) to the binary nwn GFF format
 	void[] serialize(){
 		Serializer serializer;
 		serializer.registerStruct(&firstNode);
