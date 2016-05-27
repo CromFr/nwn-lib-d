@@ -738,7 +738,7 @@ class Gff{
 		m_fileType = parser.headerPtr.file_type.stripRight;
 		m_fileVersion = parser.headerPtr.file_version.stripRight;
 
-		parser.buildNodeFromStructInPlace(0, &firstNode);
+		parser.buildNodeFromStructInPlace(0, &root);
 	}
 	/// Read and parse a GFF file
 	this(File file){
@@ -783,13 +783,13 @@ class Gff{
 	/// Produces a readable string of the node and its children
 	const string toPrettyString(){
 		return "========== GFF-"~fileType~"-"~fileVersion~" ==========\n"
-				~ firstNode.toPrettyString;
+				~ root.toPrettyString;
 	}
 
 	/// Constructs a $(D Gff) from a $(D nwnlibd.orderedjson.JSONValue) structure
 	static Gff fromJson(in JSONValue json){
 		auto gff = new Gff;
-		gff.firstNode = GffNode.fromJson(json, null, true);
+		gff.root = GffNode.fromJson(json, null, true);
 
 		gff.fileType = json["__data_type"].str;
 		gff.fileVersion = "V3.2";
@@ -799,19 +799,19 @@ class Gff{
 
 	/// Builds a $(D nwnlibd.orderedjson.JSONValue) from a $(D Gff)
 	auto ref JSONValue toJson(){
-		auto json = firstNode.toJson(true);
+		auto json = root.toJson(true);
 		json["__data_type"] = JSONValue(fileType);
 		return json;
 	}
 
-	alias firstNode this;
+	alias root this;
 	/// Root $(D GffNode)
-	GffNode firstNode;
+	GffNode root;
 
 	/// Serializes the $(D Gff) to the binary nwn GFF format
 	void[] serialize(){
 		Serializer serializer;
-		serializer.registerStruct(&firstNode);
+		serializer.registerStruct(&root);
 		return serializer.serialize(m_fileType, m_fileVersion);
 	}
 
