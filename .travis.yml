@@ -14,8 +14,11 @@ script:
 
     - dub test               --build=unittest-cov :nwn-gff
 
+    - dub build --build=ddox
+
 after_success:
     - bash <(curl -s https://codecov.io/bash)
+    - ./gh-pages.sh
 
 notifications:
     email:
