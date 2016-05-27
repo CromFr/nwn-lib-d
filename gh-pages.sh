@@ -25,7 +25,7 @@ git checkout $TARGET_BRANCH || git checkout --orphan $TARGET_BRANCH
 git config user.name "Travis CI"
 git config user.email "cromfr@gmail.com"
 
-# Reinstall content content
+# Reinstall content
 rm -rf *
 cp -R ../docs/* .
 
