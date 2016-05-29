@@ -32,3 +32,30 @@ string dumpByteArray(in void[] byteArray){
 	ret ~= "\n";
 	return ret;
 }
+
+/// Read a $(D void[]) by chunks
+struct ChunkReader{
+	const void[] data;
+	size_t read_ptr = 0;
+
+	size_t bytesLeft()const{
+		return data.length - read_ptr;
+	}
+
+	ref T read(T)(){
+		read_ptr += T.sizeof;
+		return *cast(T*)(data.ptr+read_ptr-T.sizeof);
+	}
+
+	const(T) readArray(T=ubyte[])(size_t length) if(isDynamicArray!T){
+		read_ptr += length;
+		return cast(const T)(data[read_ptr-length .. read_ptr]);
+	}
+
+	T readStruct(T)(){
+		T ret;
+		foreach(MEMBER ; FieldNameTuple!T)
+			mixin("ret."~MEMBER~" = read!(typeof(ret."~MEMBER~"));");
+		return ret;
+	}
+}
