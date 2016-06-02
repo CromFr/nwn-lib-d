@@ -16,7 +16,7 @@ REPO=`git config remote.origin.url`
 SSH_REPO=${REPO/https:\/\/github.com\//git@github.com:}
 SHA=`git rev-parse --verify HEAD`
 
-# Clone
+# Clone ===============================
 git clone $REPO out
 cd out
 git checkout $TARGET_BRANCH || git checkout --orphan $TARGET_BRANCH
@@ -25,12 +25,21 @@ git checkout $TARGET_BRANCH || git checkout --orphan $TARGET_BRANCH
 git config user.name "Travis CI"
 git config user.email "cromfr@gmail.com"
 
-# Reinstall content
+# Reinstall content ===================
 rm -rf *
-cp -R ../docs/* .
+# Home
+cp ../gh-pages/index.html .
+# API ref
+cp -R ../docs .
+# binaries
+install -d downloads/{win32,linux32,linux64}
+cp ../nwn-gff.w32 downloads/win32/nwn-gff.exe
+cp ../nwn-gff.l32 downloads/linux32/nwn-gff
+cp ../nwn-gff.l64 downloads/linux64/nwn-gff
 
 
-# Commit
+
+# Commit ==============================
 if [ -z `git diff --exit-code` ]; then
     echo "No changes found"
     exit 0

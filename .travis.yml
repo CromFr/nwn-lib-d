@@ -4,21 +4,21 @@ d: dmd
 before_install:
     - sudo apt-get -qq update
     - sudo apt-get install -y gcc-multilib
+    - ./travis-build-win32.sh before_install
 
 script:
-    - dub build              --build=release
-    - dub build              --build=release      :nwn-gff
+    - dub test --arch=x86                         :nwn-gff
+    - dub test --arch=x86_64 --build=unittest-cov :nwn-gff
 
-    - dub test --arch=x86
-    - dub test --arch=x86_64 --build=unittest-cov
-
-    - dub test               --build=unittest-cov :nwn-gff
-
+    # Release objects
     - ./build-doc.sh
+    - dub build --release --arch=x86    :nwn-gff  &&  mv nwn-gff nwn-gff.l32
+    - dub build --release --arch=x86_64 :nwn-gff  &&  mv nwn-gff nwn-gff.l64
+    - ./travis-build-win32.sh exec dub build --release --arch=x86 :nwn-gff  &&  mv nwn-gff.exe nwn-gff.w32
 
 after_success:
     - bash <(curl -s https://codecov.io/bash)
-    - ./gh-pages.sh
+    - ./gh-pages/upload.sh
 
 notifications:
     email:

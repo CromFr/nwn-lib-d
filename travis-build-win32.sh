@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 set -e
 export WINEPREFIX=$HOME/.wine-dmd
@@ -19,7 +19,7 @@ if [[ "$1" == "before_install" ]]; then
 
 	DUB_VERSION=`dub --version | grep -P -o "\d+\.\d+\.\d+"`
 
-	wget https://code.dlang.org/files/dub-${DUB_VERSION}-windows-x86.zip -O /tmp/dub.zip
+	wget http://code.dlang.org/files/dub-${DUB_VERSION}-windows-x86.zip -O /tmp/dub.zip
 	unzip -o /tmp/dub.zip -d $INSTALL_DIR/dmd2/windows/bin/
 
 
