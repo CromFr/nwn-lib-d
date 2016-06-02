@@ -6,7 +6,7 @@ export WINEARCH=win32
 export WINEDEBUG=-all
 
 if [[ "$1" == "before_install" ]]; then
-	apt-get install -y wine p7zip
+	sudo apt-get install -y wine p7zip
 	wineboot
 
 	INSTALL_DIR=$WINEPREFIX/drive_c/dmd-win32
