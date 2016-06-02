@@ -31,10 +31,10 @@ cp ../gh-pages/index.html .
 # API ref
 cp -R ../docs .
 # binaries
-install -d downloads/{win32,linux32,linux64}
-cp ../nwn-gff.w32 downloads/win32/nwn-gff.exe
-cp ../nwn-gff.l32 downloads/linux32/nwn-gff
-cp ../nwn-gff.l64 downloads/linux64/nwn-gff
+install -d binaries/{win32,linux32,linux64}
+cp ../nwn-gff.w32 binaries/win32/nwn-gff.exe
+cp ../nwn-gff.l32 binaries/linux32/nwn-gff
+cp ../nwn-gff.l64 binaries/linux64/nwn-gff
 
 
 # Commit ==============================
