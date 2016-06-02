@@ -12,9 +12,9 @@ script:
 
     # Release objects
     - ./build-doc.sh
-    - dub build --release --arch=x86    :nwn-gff  &&  mv nwn-gff nwn-gff.l32
-    - dub build --release --arch=x86_64 :nwn-gff  &&  mv nwn-gff nwn-gff.l64
-    - ./travis-build-win32.sh exec dub build --release --arch=x86 :nwn-gff  &&  mv nwn-gff.exe nwn-gff.w32
+    - dub build --build=release --arch=x86    :nwn-gff  &&  mv nwn-gff nwn-gff.l32
+    - dub build --build=release --arch=x86_64 :nwn-gff  &&  mv nwn-gff nwn-gff.l64
+    - ./travis-build-win32.sh exec dub build --build=release :nwn-gff  &&  mv nwn-gff.exe nwn-gff.w32
 
 after_success:
     - bash <(curl -s https://codecov.io/bash)
