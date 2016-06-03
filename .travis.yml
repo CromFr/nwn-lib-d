@@ -14,7 +14,7 @@ script:
     - ./build-doc.sh
     - dub build --build=release --arch=x86    :nwn-gff  &&  mv nwn-gff nwn-gff.linux-x86
     - dub build --build=release --arch=x86_64 :nwn-gff  &&  mv nwn-gff nwn-gff.linux-x86_64
-    - ./travis-build-win32.sh exec dub build --build=release :nwn-gff  &&  mv nwn-gff.exe nwn-gff.win-x86.exe
+    - ./travis-build-win32.sh exec dub build --build=release :nwn-gff  &&  mv nwn-gff.exe nwn-gff.win-x86
 
 after_success:
     - bash <(curl -s https://codecov.io/bash)
