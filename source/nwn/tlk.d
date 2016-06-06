@@ -25,7 +25,7 @@ class StrRefResolver{
 	}
 
 	/// Get a localized string in the tlk tables (can be a standard or user strref)
-	const ref string opIndex(in StrRef strref){
+	string opIndex(in StrRef strref)const{
 		if(strref<Tlk.UserTlkIndexOffset){
 			assert(standartTable !is null, "standartTable is null");
 			return standartTable[strref];
@@ -37,7 +37,7 @@ class StrRefResolver{
 	}
 
 	/// Resolves an ExoLocString GffNode to the appropriate language using the tlk tables and language ID
-	const auto ref string opIndex(in GffNode node){
+	string opIndex(in GffNode node)const{
 		assert(node.type==GffType.ExoLocString, "Node '"~node.label~"' is not an ExoLocString");
 
 		if(node.exoLocStringContainer.strref!=StrRef.max){
@@ -127,7 +127,7 @@ class Tlk{
 		strEntriesPtr = cast(immutable char*)         (data.ptr + headerPtr.string_entries_offset);
 	}
 
-	const auto ref string opIndex(in StrRef strref){
+	string opIndex(in StrRef strref) const{
 		assert(strref < UserTlkIndexOffset, "Tlk indexes must be lower than "~UserTlkIndexOffset.to!string);
 
 		if(strref>=headerPtr.string_count)
