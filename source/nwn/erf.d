@@ -6,6 +6,7 @@ import std.stdint;
 import std.string;
 import std.conv: to;
 import nwnlibd.parseutils;
+import nwn.constants;
 public import nwn.constants: NwnVersion, ResourceType, Language;
 
 debug import std.stdio: writeln;
@@ -30,10 +31,29 @@ alias NWN2ErfFile = ErfFile!(NwnVersion.NWN2);
 /// File stored in Erf class
 struct ErfFile(NwnVersion NV){
 	this(string filePath){
-		import std.path: baseName, stripExtension;
+		import std.file: read;
+		import std.path: baseName, stripExtension, extension;
 
 		m_name = filePath.stripExtension.baseName;
 
+		immutable ext = filePath.extension;
+		if(ext.length>1)
+			type = ext[1..$].fileExtensionToResourceType;
+		else
+			type = ResourceType.invalid;
+
+		data = filePath.read;
+	}
+	unittest{
+		import std.file: tempDir, writeFile=write;
+
+		auto filePath = tempDir~"/unittest-nwn-lib-d-"~__MODULE__~".test.txt";
+		filePath.writeFile("YOLO");
+
+		auto erfFile = NWN2ErfFile(filePath);
+		assert(erfFile.name == "unittest-nwn-lib-d-nwn.erf.test");
+		assert(erfFile.type == ResourceType.txt);
+		assert(erfFile.data == "YOLO");
 	}
 
 
@@ -50,25 +70,24 @@ struct ErfFile(NwnVersion NV){
 	}
 	private string m_name;
 
-	///
+	/// File type (related with its extension)
 	ResourceType type;
 
-	///
+	/// File raw data
 	void[] data;
 }
 
 alias NWN1Erf = Erf!(NwnVersion.NWN1);
 alias NWN2Erf = Erf!(NwnVersion.NWN2);
 
-/// ERF file parsing
+/// ERF file parsing (.erf, .hak, .mod files)
 class Erf(NwnVersion NV){
 
-	///
+	/// Parse raw binary data
 	this(in void[] data){
 		const header = cast(ErfHeader*)data.ptr;
 		fileType = header.file_type.charArrayToString;
 		fileVersion = header.file_version.charArrayToString;
-
 
 		const keys = cast(ErfKey*)(data.ptr+header.keys_offset);
 		const resources = cast(ErfResource*)(data.ptr+header.resources_offset);
@@ -83,12 +102,13 @@ class Erf(NwnVersion NV){
 		}
 	}
 
-	///
+	/// Files contained in the erf file
 	ErfFile!NV[] files;
 
 
 	@property{
-		///
+		/// File type (ERF, HAK, MOD, ...)
+		/// Max width: 4 chars
 		string fileType()const{return m_fileType;}
 		/// ditto
 		void fileType(string value){
@@ -99,7 +119,8 @@ class Erf(NwnVersion NV){
 	}
 	private string m_fileType;
 	@property{
-		///
+		/// File version ("V1.0" for NWN1, "V1.1" for NWN2)
+		/// Max width: 4 chars
 		string fileVersion()const{return m_fileVersion;}
 		/// ditto
 		void fileVersion(string value){
@@ -148,6 +169,8 @@ unittest{
 	auto erf = new NWN2Erf(hakData);
 
 	assert(erf.files[0].name == "eye");
+	assert(erf.files[0].type == ResourceType.tga);
 	assert(erf.files[1].name == "test");
+	assert(erf.files[1].type == ResourceType.txt);
 	assert(cast(string)erf.files[1].data == "Hello world\n");
 }
