@@ -2,9 +2,9 @@
 set -e
 
 # dub fetch -q scod
-if [ ! -d ../scod ]; then
-	git clone https://github.com/CromFr/scod.git ../scod
-	dub add-local ../scod
+if [ ! -d scod ]; then
+	git clone https://github.com/CromFr/scod.git scod
+	dub add-local scod
 fi
 
 # Gen doc
