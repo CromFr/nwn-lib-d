@@ -10,6 +10,8 @@ import nwn.gff : GffNode, GffType, gffTypeToNative;
 debug import std.stdio: writeln;
 version(unittest) import std.exception: assertThrown, assertNotThrown;
 
+public import nwn.constants: Language;
+
 class TlkOutOfBoundsException : Exception{
 	@safe pure nothrow this(string msg, string f=__FILE__, size_t l=__LINE__, Throwable t=null){
 		super(msg, f, l, t);
@@ -84,7 +86,7 @@ unittest{
 		~"\n"
 		~"Tous les trois niveaux effectifs de lanceur de sorts, vous gagnez un bonus de +1 à vos jets d'attaque et un bonus de +1 de dégâts magiques (minimum +1, maximum +3).";
 
-	assert(strref.standartTable.language == Tlk.Language.French);
+	assert(strref.standartTable.language == Language.French);
 	assert(strref[0] == "Bad Strref");
 	assert(strref[54] == lastLine);
 	assertThrown!TlkOutOfBoundsException(strref[55]);
@@ -137,19 +139,6 @@ class Tlk{
 		immutable str = strEntriesPtr + strData.offset_to_string;
 
 		return str[0..strData.string_size];
-	}
-
-	enum Language{
-		English=0,
-		French=1,
-		German=2,
-		Italian=3,
-		Spanish=4,
-		Polish=5,
-		Korean=128,
-		ChineseTrad=129,
-		ChineseSimp=130,
-		Japanese=131,
 	}
 
 	@property{
