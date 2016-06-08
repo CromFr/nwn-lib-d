@@ -89,6 +89,17 @@ class Erf(NwnVersion NV){
 		fileType = header.file_type.charArrayToString;
 		fileVersion = header.file_version.charArrayToString;
 
+		auto locStrings = ChunkReader(
+				data[header.localizedstrings_offset
+				.. header.localizedstrings_offset+header.localizedstrings_size]);
+
+		foreach(i ; 0..header.localizedstrings_count){
+			immutable langage = cast(Language)locStrings.read!uint32_t;
+			immutable length = locStrings.read!uint32_t;
+
+			description[langage] = locStrings.readArray!char(length).idup;
+		}
+
 		const keys = cast(ErfKey*)(data.ptr+header.keys_offset);
 		const resources = cast(ErfResource*)(data.ptr+header.resources_offset);
 
@@ -101,6 +112,8 @@ class Erf(NwnVersion NV){
 			files[i].data = data[res.resource_offset .. res.resource_offset+res.resource_size].dup;
 		}
 	}
+
+	string[Language] description;
 
 	/// Files contained in the erf file
 	ErfFile!NV[] files;
@@ -173,4 +186,8 @@ unittest{
 	assert(erf.files[1].name == "test");
 	assert(erf.files[1].type == ResourceType.txt);
 	assert(cast(string)erf.files[1].data == "Hello world\n");
+
+
+	import std.file: read;
+	auto a = new NWN2Erf(read("/home/crom/Documents/Neverwinter Nights 2/modules/test_trigger.mod"));
 }

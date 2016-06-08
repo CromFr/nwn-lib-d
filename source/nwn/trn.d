@@ -237,7 +237,7 @@ struct TrnNWN2MegatilePayload{
 			g.name = data.read!(typeof(g.name));
 			g.texture = data.read!(typeof(g.texture));
 			immutable blades_count = data.read!uint32_t;
-			g.blades = data.readArray!(Grass.Blade[])(blades_count*Grass.Blade.sizeof).dup;
+			g.blades = data.readArray!(Grass.Blade)(blades_count*Grass.Blade.sizeof).dup;
 		}
 		assert(data.read_ptr == payload.length, "some bytes were not read");
 	}
@@ -310,7 +310,7 @@ struct TrnNWN2WaterPayload{
 		foreach(ref triangle ; triangles){
 			triangle = data.readStruct!Triangle;
 		}
-		triangles_flags = data.readArray!(uint32_t[])(triangles.length).dup;
+		triangles_flags = data.readArray!uint32_t(triangles.length).dup;
 
 		immutable dds_length = data.read!uint32_t;
 		dds = data.readArray(dds_length).dup;

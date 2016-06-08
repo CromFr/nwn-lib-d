@@ -47,9 +47,9 @@ struct ChunkReader{
 		return *cast(T*)(data.ptr+read_ptr-T.sizeof);
 	}
 
-	const(T) readArray(T=ubyte[])(size_t length) if(isDynamicArray!T){
-		read_ptr += length;
-		return cast(const T)(data[read_ptr-length .. read_ptr]);
+	const(T[]) readArray(T=ubyte)(size_t length){
+		read_ptr += length*T.sizeof;
+		return cast(const(T[]))(data[read_ptr-length*T.sizeof .. read_ptr]);
 	}
 
 	T readStruct(T)(){
