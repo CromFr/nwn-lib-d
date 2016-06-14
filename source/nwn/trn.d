@@ -10,7 +10,7 @@ import nwnlibd.parseutils;
 
 import nwn.gff : GffNode, GffType, gffTypeToNative;
 
-import std.stdio: writeln;
+import std.stdio: writeln, writefln;
 version(unittest) import std.exception: assertThrown, assertNotThrown;
 
 class TrnParseException : Exception{
@@ -323,25 +323,71 @@ struct TrnNWN2WaterPayload{
 }
 struct TrnNWN2WalkmeshPayload{
 
-	string header;
-	void[] walkmesh;
+	string data_type;
+
+	static align(1) struct Header{
+		static assert(this.sizeof==53);
+		align(1):
+		void[37] unknownA;
+		uint32_t terrain_vertices_count;
+		uint32_t unknown0_count;
+		uint32_t triangles_count;
+		uint32_t unknownB;
+	}
+	Header header;
+	static align(1) struct Vertex{
+		static assert(this.sizeof==12);
+		align(1):
+		float[3] position;
+	}
+	Vertex[] vertices;
+
+	static align(1) struct Unknown0{
+		static assert(this.sizeof==16);
+		align(1):
+		uint32_t[4] data;
+	}
+	Unknown0[] unknown0_block;
+
+	static align(1) struct Triangle{
+		static assert(this.sizeof==64);
+		align(1):
+		uint32_t[3] vertices;
+		uint32_t[6] dataA;
+		float[6] dataB;
+		uint16_t[2] flags;
+	}
+	Triangle[] triangles;
+
+
+	ubyte[] remaining_data;
+
+
 
 
 
 	package this(in void[] payload){
 		auto data = ChunkReader(payload);
 
-		header                  = data.read!(char[4]).charArrayToString;
+		data_type               = data.read!(char[4]).charArrayToString;
 		immutable comp_length   = data.read!uint32_t;
 		immutable uncomp_length = data.read!uint32_t;
 		auto comp_wm            = data.readArray(comp_length);
 
-		writeln("Parsed walkmesh");
-		writeln("  ", uncomp_length, " uncompressed");
-
+		// zlib deflate
 		import std.zlib: uncompress;
-		walkmesh = uncompress(comp_wm, uncomp_length);
-		assert(walkmesh.length == uncomp_length, "Length mismatch");
+		auto walkmeshData = uncompress(comp_wm, uncomp_length);
+		assert(walkmeshData.length == uncomp_length, "Length mismatch");
 
+		auto wmdata = ChunkReader(walkmeshData);
+
+		header = wmdata.read!Header;
+		assert(wmdata.read_ptr==0x35);
+
+		vertices       = wmdata.readArray!Vertex(header.terrain_vertices_count).dup;
+		unknown0_block = wmdata.readArray!Unknown0(header.unknown0_count).dup;
+		triangles      = wmdata.readArray!Triangle(header.triangles_count).dup;
+
+		remaining_data = wmdata.readArray(wmdata.bytesLeft).dup;
 	}
 }
