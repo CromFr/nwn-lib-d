@@ -30,19 +30,25 @@ alias NWN2ErfFile = ErfFile!(NwnVersion.NWN2);
 
 /// File stored in Erf class
 struct ErfFile(NwnVersion NV){
+	this(in string name, ResourceType type, void[] data){
+		this.name = name;
+		this.type = type;
+		this.data = data;
+	}
+
 	this(string filePath){
 		import std.file: read;
 		import std.path: baseName, stripExtension, extension;
 
-		m_name = filePath.stripExtension.baseName;
+		auto ext = ResourceType.invalid;
+		immutable extStr = filePath.extension;
+		if(extStr.length>1)
+			ext = extStr[1..$].fileExtensionToResourceType;
 
-		immutable ext = filePath.extension;
-		if(ext.length>1)
-			type = ext[1..$].fileExtensionToResourceType;
-		else
-			type = ResourceType.invalid;
-
-		data = filePath.read;
+		this(
+			filePath.stripExtension.baseName,
+			ext,
+			filePath.read);
 	}
 	unittest{
 		import std.file: tempDir, writeFile=write;
@@ -113,6 +119,7 @@ class Erf(NwnVersion NV){
 		}
 	}
 
+	/// Localized module description
 	string[Language] description;
 
 	/// Files contained in the erf file
@@ -178,16 +185,11 @@ private:
 }
 
 unittest{
-	auto hakData = import("test.hak");
-	auto erf = new NWN2Erf(hakData);
+	auto erf = new NWN2Erf(import("test.hak"));
 
 	assert(erf.files[0].name == "eye");
 	assert(erf.files[0].type == ResourceType.tga);
 	assert(erf.files[1].name == "test");
 	assert(erf.files[1].type == ResourceType.txt);
 	assert(cast(string)erf.files[1].data == "Hello world\n");
-
-
-	import std.file: read;
-	auto a = new NWN2Erf(read("/home/crom/Documents/Neverwinter Nights 2/modules/test_trigger.mod"));
 }

@@ -2,6 +2,7 @@
 module nwn.constants;
 
 import std.stdint;
+version(unittest) import std.exception: assertThrown, assertNotThrown;
 
 /// Neverwinter nights version (1/2)
 enum NwnVersion{
@@ -60,13 +61,20 @@ enum ResourceType: uint16_t{
 ///
 ResourceType fileExtensionToResourceType(in string fileExtension){
 	import std.string: toLower;
-	import std.conv: to;
+	import std.conv: to, ConvException;
 
 	auto rtu = fileExtension.toLower;
 	if(rtu == "2da") return ResourceType.twoda;
 
-	return rtu.to!ResourceType;
+	try return rtu.to!ResourceType;
+	catch(ConvException) return ResourceType.invalid;
 }
+unittest{
+	assert(fileExtensionToResourceType("txt")==ResourceType.txt);
+	assert(fileExtensionToResourceType("2da")==ResourceType.twoda);
+	assert(fileExtensionToResourceType("oia")==ResourceType.invalid);
+}
+
 ///
 string resourceTypeToFileExtension(in ResourceType resourceType){
 	import std.conv: to;
@@ -74,6 +82,11 @@ string resourceTypeToFileExtension(in ResourceType resourceType){
 		return "2da";
 	}
 	return resourceType.to!string;
+}
+unittest{
+	assert(resourceTypeToFileExtension(ResourceType.txt)=="txt");
+	assert(resourceTypeToFileExtension(ResourceType.twoda)=="2da");
+	assert(resourceTypeToFileExtension(ResourceType.invalid)=="invalid");
 }
 
 
