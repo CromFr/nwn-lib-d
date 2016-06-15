@@ -5,6 +5,7 @@ import std.stdio: File;
 import std.stdint;
 import std.string;
 import std.conv: to;
+import std.datetime;
 import nwnlibd.parseutils;
 import nwn.constants;
 public import nwn.constants: NwnVersion, ResourceType, Language;
@@ -94,6 +95,8 @@ class Erf(NwnVersion NV){
 		const header = cast(ErfHeader*)data.ptr;
 		fileType = header.file_type.charArrayToString;
 		fileVersion = header.file_version.charArrayToString;
+		buildDate = Date(header.build_year+1900, 1, 1);
+		buildDate.dayOfYear = header.build_day;
 
 		auto locStrings = ChunkReader(
 				data[header.localizedstrings_offset
@@ -138,6 +141,7 @@ class Erf(NwnVersion NV){
 		}
 	}
 	private string m_fileType;
+
 	@property{
 		/// File version ("V1.0" for NWN1, "V1.1" for NWN2)
 		/// Max width: 4 chars
@@ -150,6 +154,18 @@ class Erf(NwnVersion NV){
 		}
 	}
 	private string m_fileVersion;
+
+	@property{
+		/// Date when the erf file has been created
+		Date buildDate()const{return m_buildDate;}
+		/// ditto
+		void buildDate(Date value){
+			if(value.year<1900)
+				throw new ErfValueSetException("buildDate year must be >= 1900");
+			m_buildDate = value;
+		}
+	}
+	private Date m_buildDate;
 
 
 
