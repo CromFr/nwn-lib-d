@@ -93,8 +93,8 @@ class Erf(NwnVersion NV){
 	/// Parse raw binary data
 	this(in void[] data){
 		const header = cast(ErfHeader*)data.ptr;
-		fileType = header.file_type.charArrayToString;
-		fileVersion = header.file_version.charArrayToString;
+		fileType = header.file_type.idup.stripRight;
+		fileVersion = header.file_version.idup.stripRight;
 		auto date = Date(header.build_year+1900, 1, 1);
 		date.dayOfYear = header.build_day;
 		buildDate = date;
@@ -176,8 +176,10 @@ class Erf(NwnVersion NV){
 		ret.length = ErfHeader.sizeof;
 
 		with(cast(ErfHeader*)ret.ptr){
-			file_type = fileType;
-			file_version = fileVersion;
+			file_type = "    ";
+			file_type[0..fileType.length] = fileType;
+			file_version = "    ";
+			file_version[0..fileVersion.length] = fileVersion;
 
 			localizedstrings_count = cast(uint32_t)description.length;
 			keys_count = cast(uint32_t)files.length;
