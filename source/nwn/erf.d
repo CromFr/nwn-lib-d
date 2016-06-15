@@ -95,8 +95,9 @@ class Erf(NwnVersion NV){
 		const header = cast(ErfHeader*)data.ptr;
 		fileType = header.file_type.charArrayToString;
 		fileVersion = header.file_version.charArrayToString;
-		buildDate = Date(header.build_year+1900, 1, 1);
-		buildDate.dayOfYear = header.build_day;
+		auto date = Date(header.build_year+1900, 1, 1);
+		date.dayOfYear = header.build_day;
+		buildDate = date;
 
 		auto locStrings = ChunkReader(
 				data[header.localizedstrings_offset
@@ -120,6 +121,7 @@ class Erf(NwnVersion NV){
 			const res = resources + key.resource_id;
 			files[i].data = data[res.resource_offset .. res.resource_offset+res.resource_size].dup;
 		}
+
 	}
 
 	/// Localized module description
@@ -168,6 +170,74 @@ class Erf(NwnVersion NV){
 	private Date m_buildDate;
 
 
+	///
+	void[] serialize(){
+		void[] ret;
+		ret.length = ErfHeader.sizeof;
+
+		with(cast(ErfHeader*)ret.ptr){
+			file_type = fileType;
+			file_version = fileVersion;
+
+			localizedstrings_count = cast(uint32_t)description.length;
+			keys_count = cast(uint32_t)files.length;
+
+			build_year = m_buildDate.year - 1900;
+			build_day = m_buildDate.dayOfYear;
+
+			file_description_strref = 0;//TODO: seems to be always 0
+			//reserved: keep null values
+
+			localizedstrings_offset = ErfHeader.sizeof;
+		}
+
+		size_t locstringLength = 0;
+
+		import std.algorithm: sort;
+		import std.array: array;
+		foreach(ref kv ; description.byKeyValue.array.sort!((a,b)=>a.key<b.key)){
+			immutable langID = cast(uint32_t)kv.key;
+			immutable length = cast(uint32_t)kv.value.length;
+
+			locstringLength += 4+4+length;
+
+			ret ~= (&langID)[0..1].dup;
+			ret ~= (&length)[0..1].dup;
+			ret ~= kv.value.dup;
+		}
+
+		immutable keysOffset = ret.length;
+		immutable resourcesOffset = keysOffset + files.length*ErfKey.sizeof;
+
+		with(cast(ErfHeader*)ret.ptr){
+			localizedstrings_size = cast(uint32_t)locstringLength;
+			keys_offset = cast(uint32_t)keysOffset;
+			resources_offset = cast(uint32_t)resourcesOffset;
+		}
+
+		ret.length += files.length*(ErfKey.sizeof + ErfResource.sizeof);
+
+
+
+		foreach(index, ref file ; files){
+			with((cast(ErfKey*)(ret.ptr+keysOffset))[index]){
+				file_name[0..file.name.length] = file.name.dup[0..$];
+				resource_id   = cast(uint32_t)index;
+				resource_type = file.type;
+				reserved      = 0;
+			}
+
+			with((cast(ErfResource*)(ret.ptr+resourcesOffset))[index]){
+				resource_offset = cast(uint32_t)ret.length;
+				resource_size   = cast(uint32_t)file.data.length;
+			}
+
+			ret ~= file.data;
+		}
+
+		return ret;
+	}
+
 
 private:
 	align(1) static struct ErfHeader{
@@ -201,11 +271,18 @@ private:
 }
 
 unittest{
-	auto erf = new NWN2Erf(import("test.hak"));
+	auto hak = new NWN2Erf(import("test.hak"));
 
-	assert(erf.files[0].name == "eye");
-	assert(erf.files[0].type == ResourceType.tga);
-	assert(erf.files[1].name == "test");
-	assert(erf.files[1].type == ResourceType.txt);
-	assert(cast(string)erf.files[1].data == "Hello world\n");
+	assert(hak.files[0].name == "eye");
+	assert(hak.files[0].type == ResourceType.tga);
+	assert(hak.files[1].name == "test");
+	assert(hak.files[1].type == ResourceType.txt);
+	assert(cast(string)hak.files[1].data == "Hello world\n");
+
+	immutable modData = import("module.mod");
+	auto mod = new NWN2Erf(modData);
+	assert(mod.description[Language.English]=="module description");
+	assert(mod.buildDate == Date(2016, 06, 08));
+
+	assert(mod.serialize() == modData);
 }
