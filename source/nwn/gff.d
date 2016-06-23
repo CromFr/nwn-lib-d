@@ -82,6 +82,7 @@ struct GffNode{
 		label = lbl;
 	}
 
+	/// Duplicate GffNode data
 	GffNode dup() const
 	{
 		GffNode ret;
@@ -467,7 +468,7 @@ struct GffNode{
 	}
 
 	/// Adds a GffNode to a $(D GffNode.Struct), using its label as key
-	GffNode* appendField(ref GffNode field){
+	GffNode* appendField(GffNode field){
 		assert(type == GffType.Struct, "GffNode must be a struct");
 		assert(field.type != GffType.Invalid, "Cannot append invalid GffNode");
 
