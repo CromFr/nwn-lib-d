@@ -82,6 +82,19 @@ struct GffNode{
 		label = lbl;
 	}
 
+	GffNode dup() const
+	{
+		GffNode ret;
+		foreach (m; __traits(allMembers, GffNode))
+		{
+			static if (is(typeof(__traits(getMember, ret, m) = __traits(getMember, this, m).dup)))
+				__traits(getMember, ret, m) = __traits(getMember, this, m).dup;
+			else static if (is(typeof(__traits(getMember, ret, m) = __traits(getMember, this, m))))
+				__traits(getMember, ret, m) = __traits(getMember, this, m);
+		}
+		return ret;
+	}
+
 	@property{
 		/// GFF node label
 		/// Max width: 16 chars
