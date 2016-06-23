@@ -10,6 +10,7 @@ __test__*__
 nwn-lib-d.sublime-workspace
 
 nwn-gff
-nwn-gff.exe
+*.exe
+*.lib
 libnwn-d.*
 

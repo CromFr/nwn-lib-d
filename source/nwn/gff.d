@@ -82,6 +82,20 @@ struct GffNode{
 		label = lbl;
 	}
 
+	/// Duplicate GffNode data
+	GffNode dup() const
+	{
+		GffNode ret;
+		foreach (m; __traits(allMembers, GffNode))
+		{
+			static if (is(typeof(__traits(getMember, ret, m) = __traits(getMember, this, m).dup)))
+				__traits(getMember, ret, m) = __traits(getMember, this, m).dup;
+			else static if (is(typeof(__traits(getMember, ret, m) = __traits(getMember, this, m))))
+				__traits(getMember, ret, m) = __traits(getMember, this, m);
+		}
+		return ret;
+	}
+
 	@property{
 		/// GFF node label
 		/// Max width: 16 chars
@@ -454,7 +468,7 @@ struct GffNode{
 	}
 
 	/// Adds a GffNode to a $(D GffNode.Struct), using its label as key
-	GffNode* appendField(ref GffNode field){
+	GffNode* appendField(GffNode field){
 		assert(type == GffType.Struct, "GffNode must be a struct");
 		assert(field.type != GffType.Invalid, "Cannot append invalid GffNode");
 
