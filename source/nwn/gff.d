@@ -474,6 +474,11 @@ struct GffNode{
 		assert(type == GffType.Struct, "GffNode must be a struct");
 		structContainer[key] = value;
 	}
+	///
+	void opIndexAssign(GffNode value, size_t index){
+		assert(type == GffType.List, "GffNode must be a list");
+		listContainer[index] = value;
+	}
 
 	/// Adds a GffNode to a $(D GffNode.Struct), using its label as key
 	GffNode* appendField(GffNode field){
