@@ -104,8 +104,11 @@ alias FileFormatTuple = Tuple!(string,"path", Nullable!Format,"format");
 FileFormatTuple parseFileFormat(string str){
 	import std.stdio: File;
 	import std.string: lastIndexOf;
+	import std.path: driveName;
 
-	auto colonIndex = str.lastIndexOf(':');
+	immutable driveNameLength = str.driveName.length;
+
+	auto colonIndex = str[driveNameLength..$].lastIndexOf(':');
 	if(colonIndex==-1){
 		immutable filePath = str;
 		if(filePath.length>0 && str!="-")
@@ -114,6 +117,7 @@ FileFormatTuple parseFileFormat(string str){
 			return FileFormatTuple(null, Nullable!Format());
 	}
 	else{
+		colonIndex += driveNameLength;
 		immutable filePath = str[0..colonIndex];
 		immutable format = str[colonIndex+1..$];
 
@@ -178,14 +182,16 @@ string readAllString(File stream){
 
 unittest{
 	import std.file: tempDir, read, writeFile=write, exists;
+	import std.path: buildPath;
 	import core.thread;
 
 	auto krogarData = cast(void[])import("krogar.bic");
-	auto krogarFilePath = tempDir~"/unittest-nwn-lib-d-"~__MODULE__~".krogar.bic";
+	auto krogarFilePath = buildPath(tempDir, "unittest-nwn-lib-d-"~__MODULE__~".krogar.bic");
 	krogarFilePath.writeFile(krogarData);
 
 	auto stdout_ = stdout;
-	stdout = File("/dev/null","w");
+	version(Windows) stdout = File("nul","w");
+	else             stdout = File("/dev/null","w");
 	assert(_main(["./nwn-gff","--help"])==0);
 	stdout = stdout_;
 
@@ -201,7 +207,7 @@ unittest{
 
 
 	auto dogeData = cast(void[])import("doge.utc");
-	immutable dogePath = tempDir~"/unittest-nwn-lib-d-"~__MODULE__~".doge.utc";
+	immutable dogePath = buildPath(tempDir, "unittest-nwn-lib-d-"~__MODULE__~".doge.utc");
 	dogePath.writeFile(dogeData);
 
 	immutable dogePathJson = dogePath~".json";
