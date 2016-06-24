@@ -81,6 +81,11 @@ struct GffNode{
 		m_type = t;
 		label = lbl;
 	}
+	///
+	this(T)(GffType t, string lbl, T value){
+		this(t, lbl);
+		this = value;
+	}
 
 	/// Duplicate GffNode data
 	GffNode dup() inout
@@ -1414,6 +1419,10 @@ unittest{
 		assert(gff.toPrettyString() == gffSerialized.toPrettyString(), "Serialization data mismatch");
 		assert(krogarDataOrig == krogarDataSerialized, "Serialization not byte perfect");
 
+		//Dup
+		auto gffRoot2 = gff.root.dup;
+		assert(gffRoot2 == gff.root);
+
 		assertThrown!GffValueSetException(gff.fileType = "FILETYPE");
 		gff.fileType = "A C";
 		assert(gff.fileType == "A C");
@@ -1424,6 +1433,8 @@ unittest{
 		auto data = cast(char[])gff.serialize();
 		assert(data[0..4]=="A C ");
 		assert(data[4..8]=="V42 ");
+
+
 	}
 
 }

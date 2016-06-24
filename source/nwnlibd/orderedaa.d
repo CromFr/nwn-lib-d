@@ -33,11 +33,26 @@ struct OrderedAA(KEY, VALUE){
 	@property THIS dup() inout{
 		THIS ret;
 		ret.data.length = data.length;
-		foreach(i, ref d ; ret.data)
-			d = data[i];
+		foreach(i, ref d ; ret.data){
+			import std.meta: AliasSeq;
+			foreach(TUPLEI ; AliasSeq!(0,1)){
+				static if(is(typeof(d[TUPLEI] = data[i][TUPLEI].dup)))
+					d[TUPLEI] = data[i][TUPLEI].dup;
+				else static if(is(typeof(d[TUPLEI] = data[i][TUPLEI])))
+					d[TUPLEI] = data[i][TUPLEI];
+				else
+					static assert(0, "Cannot duplicate type "~typeof(ret.data[0][TUPLEI]).stringof);
+			}
+		}
 
-		foreach(ref k, ref v ; map)
-			ret.map[k] = v;
+		foreach(ref k, ref v ; map){
+			static if(is(typeof(ret.map[k] = v.dup)))
+				ret.map[k] = v.dup;
+			else static if(is(typeof(ret.map[k] = v)))
+				ret.map[k] = v;
+			else
+				static assert(0, "Cannot duplicate type "~typeof(ret.data[0][TUPLEI]).stringof);
+		}
 
 		return ret;
 	}
@@ -127,7 +142,7 @@ struct OrderedAA(KEY, VALUE){
 
 	///
 	auto ref byKeyValue() inout{
-	    return data;
+		return data;
 	}
 
 
