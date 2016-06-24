@@ -4,6 +4,25 @@ module nwnlibd.orderedaa;
 import std.typecons;
 debug import std.stdio: writeln;
 
+template isOpApplyDg(DG, KEY, VALUE) {
+	import std.traits;
+	static if (is(DG == delegate) && is(ReturnType!DG : int)) {
+		private alias PTT = ParameterTypeTuple!(DG);
+		private alias PSCT = ParameterStorageClassTuple!(DG);
+		private alias STC = ParameterStorageClass;
+		// Just a value
+		static if (PTT.length == 1) {
+			enum isOpApplyDg = (is(PTT[0] == VALUE));
+		} else static if (PTT.length == 2) {
+			enum isOpApplyDg = (is(PTT[0] == KEY))
+				&& (is(PTT[1] == VALUE));
+		} else
+			enum isOpApplyDg = false;
+	} else {
+		enum isOpApplyDg = false;
+	}
+}
+
 
 /// Ordered Associative Array
 struct OrderedAA(KEY, VALUE){
@@ -88,10 +107,20 @@ struct OrderedAA(KEY, VALUE){
 	}
 
 	///
-	int opApply(scope int delegate(KEY, VALUE) del){
+	int opApply(DG)(scope DG dg) if(isOpApplyDg!(DG, KEY, VALUE)){
+		import std.traits : arity;
+
 		foreach(ref kv ; data){
-			if(auto res = del(kv.key, kv.value))
-				return res;
+			static if(arity!dg == 1){
+				if(auto res = dg(kv.value))
+					return res;
+			}
+			else static if(arity!dg == 2){
+				if(auto res = dg(kv.key, kv.value))
+					return res;
+			}
+			else
+				static assert(0);
 		}
 		return 0;
 	}
@@ -126,7 +155,7 @@ unittest{
 	orderedAA["Yolo"] = "Yay";
 
 	size_t i = 0;
-	foreach(k, v ; orderedAA){
+	foreach(string k, string v ; orderedAA){
 		switch(i++){
 			case 0: assert(k=="Hello"); assert(v=="World"); break;
 			case 1: assert(k=="Foo");   assert(v=="Bar");   break;
@@ -162,5 +191,9 @@ unittest{
 	}
 
 
-
+	OrderedAA!(string, int) aa;
+	foreach(ref int v ; aa){}
+	foreach(ref int v ; aa){}
+	foreach(string k, int v ; aa){}
+	foreach(ref string k, ref int v ; aa){}
 }
