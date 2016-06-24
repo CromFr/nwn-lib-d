@@ -396,17 +396,17 @@ struct GffNode{
 			];
 			listStructs[0].appendField(GffNode(Int, "TestInt"));
 			listStructs[0].appendField(GffNode(Float, "TestFloat"));
-			listStructs[0]["TestInt"] = 6;
-			listStructs[0]["TestFloat"] = float.epsilon;
+			listStructs[0]["TestInt"].as!Int = 6;
+			listStructs[0]["TestFloat"].as!Float = float.epsilon;
 			listStructs[1].appendField(GffNode(Void, "TestVoid"));
 
 			node = GffNode(List);
 			node = listStructs;
 			assertNotThrown(node[0]);
 			assertNotThrown(node[0]["TestInt"]);
-			assert(node[0]["TestInt"].as!(Int) == 6);
+			assert(node[0]["TestInt"].as!Int == 6);
 			assertNotThrown(node[0]["TestFloat"]);
-			assert(node[0]["TestFloat"].as!(Float) == float.epsilon);
+			assert(node[0]["TestFloat"].as!Float == float.epsilon);
 			assertNotThrown(node[1]);
 			assertNotThrown(node[1]["TestVoid"]);
 			assertThrown!GffValueSetException(node = [GffNode(Byte, "TestByte")]);
@@ -467,6 +467,12 @@ struct GffNode{
 			node = GffNode(Void);
 			assertThrown!GffTypeException(node["any"]);
 		}
+	}
+
+	///
+	void opIndexAssign(GffNode value, string key){
+		assert(type == GffType.Struct, "GffNode must be a struct");
+		structContainer[key] = value;
 	}
 
 	/// Adds a GffNode to a $(D GffNode.Struct), using its label as key
