@@ -30,7 +30,7 @@ struct OrderedAA(KEY, VALUE){
 	private alias DataContainer = Tuple!(KEY, "key", VALUE, "value");
 
 	///
-	@property THIS dup() const{
+	@property THIS dup() inout{
 		THIS ret;
 		ret.data.length = data.length;
 		foreach(i, ref d ; ret.data)
@@ -126,7 +126,7 @@ struct OrderedAA(KEY, VALUE){
 	}
 
 	///
-	auto ref byKeyValue() const{
+	auto ref byKeyValue() inout{
 	    return data;
 	}
 
