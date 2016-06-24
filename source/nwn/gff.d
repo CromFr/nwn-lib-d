@@ -4,8 +4,8 @@ module nwn.gff;
 
 import std.stdio: File;
 import std.stdint;
-import std.string;
 import std.conv: to;
+import nwnlibd.orderedaa;
 import nwnlibd.orderedjson;
 
 debug import std.stdio: writeln;
@@ -70,7 +70,7 @@ template gffTypeToNative(GffType t){
 	static if(t==GffType.ResRef)       alias gffTypeToNative = string;// length<=32
 	static if(t==GffType.ExoLocString) alias gffTypeToNative = Tuple!(uint32_t,"strref", string[int32_t],"strings");
 	static if(t==GffType.Void)         alias gffTypeToNative = void[];
-	static if(t==GffType.Struct)       alias gffTypeToNative = GffNode[];
+	static if(t==GffType.Struct)       alias gffTypeToNative = OrderedAA!(string, GffNode);
 	static if(t==GffType.List)         alias gffTypeToNative = GffNode[];
 }
 
@@ -86,13 +86,17 @@ struct GffNode{
 	GffNode dup() const
 	{
 		GffNode ret;
-		foreach (m; __traits(allMembers, GffNode))
-		{
-			static if (is(typeof(__traits(getMember, ret, m) = __traits(getMember, this, m).dup)))
-				__traits(getMember, ret, m) = __traits(getMember, this, m).dup;
-			else static if (is(typeof(__traits(getMember, ret, m) = __traits(getMember, this, m))))
-				__traits(getMember, ret, m) = __traits(getMember, this, m);
-		}
+		ret.m_type                = m_type;
+		ret.m_label               = m_label;
+		ret.rawContainer          = rawContainer.dup;
+		ret.simpleTypeContainer   = simpleTypeContainer;
+		ret.stringContainer       = stringContainer;
+		ret.listContainer         = (cast(typeof(ret.listContainer))listContainer).dup;
+		ret.structContainer       = structContainer.dup;
+		ret.exoLocStringContainer = gffTypeToNative!(GffType.ExoLocString)(
+			exoLocStringContainer.strref,
+			(cast(typeof(ret.exoLocStringContainer.strings))exoLocStringContainer.strings).dup );
+		ret.m_structType          = m_structType;
 		return ret;
 	}
 
@@ -131,11 +135,11 @@ struct GffNode{
 	/// Access by reference the underlying data stored in the $(D GffNode).
 	/// The type of this data is determined by gffTypeToNative.
 	/// Types must match exactly or it will throw
-	ref const(gffTypeToNative!T) as(GffType T)()const{
+	auto ref const(gffTypeToNative!T) as(GffType T)() const{
 		return cast(const)((cast(GffNode)this).as!T);
 	}
 	/// ditto
-	ref gffTypeToNative!T as(GffType T)(){
+	auto ref gffTypeToNative!T as(GffType T)(){
 		static assert(T!=GffType.Invalid, "Cannot use GffNode.as with type Invalid");
 		if(T != type || type==GffType.Invalid)
 			throw new GffTypeException("Type mismatch: GffNode of type "~type.to!string~" cannot be used with as!(GffNode."~T.to!string~")");
@@ -153,8 +157,10 @@ struct GffNode{
 			return stringContainer;
 		else static if(T==ExoLocString) return exoLocStringContainer;
 		else static if(T==Void)         return rawContainer;
-		else static if(T==Struct || T==List)
-			return aggrContainer;
+		else static if(T==Struct)
+			return structContainer;
+		else static if(T==List)
+			return listContainer;
 		else
 			static assert(0, "Type "~T.stringof~" not implemented");
 	}
@@ -183,6 +189,8 @@ struct GffNode{
 			foreach(TYPE ; EnumMembers!GffType){
 				static if(TYPE!=Invalid){
 					case TYPE:
+						//pragma(msg, "TYPE=",TYPE.to!string, " DESTTYPE=",DestType, "  =>  ",__traits(compiles, (as!TYPE.to!DestType) )	);
+
 						alias NativeType = gffTypeToNative!TYPE;
 						static if(is(DestType==NativeType) || isImplicitlyConvertible!(NativeType, DestType)){
 							static if(TYPE==Void) return as!Void.dup;
@@ -199,12 +207,14 @@ struct GffNode{
 								return "{{INVALID_LOCSTRING}}".to!DestType;
 							}
 						}
-						else static if(__traits(compiles, as!TYPE.to!DestType)){
-							static if(TYPE==Struct && isSomeString!DestType)
-								return "{{Struct}}".to!DestType;
-							else static if(TYPE==List && isSomeString!DestType)
-								return "{{List("~aggrContainer.length.to!string~")}}".to!string;
-							else static if(TYPE==Void && isSomeString!DestType){
+						else static if(TYPE==Struct && isSomeString!DestType)
+							return "{{Struct}}".to!DestType;
+						else static if(TYPE==List && isSomeString!DestType)
+							return "{{List("~listContainer.length.to!string~")}}".to!string;
+						else static if(TYPE!=List && TYPE!=Struct && __traits(compiles, as!TYPE.to!DestType)){
+
+							static if(TYPE==Void && isSomeString!DestType){
+								import std.string: format;
 								string ret = "0x";
 								foreach(i, b ; cast(ubyte[])rawContainer){
 									ret ~= format("%s%02x", (i%2==0 && i!=0)? " ":null, b);
@@ -313,8 +323,6 @@ struct GffNode{
 							}
 						}
 						as!TYPE = rhs;
-						static if(TYPE==Struct)
-							updateFieldLabelMap();
 						return;
 					}
 					else static if(
@@ -374,10 +382,11 @@ struct GffNode{
 			assert((cast(ubyte[])node.rawContainer)[3] == 3);
 
 			node = GffNode(Struct);
-			node = [
-				GffNode(Byte, "TestByte"),
-				GffNode(ExoString, "TestExoString"),
-			];
+			auto testStruct = gffTypeToNative!Struct();
+			testStruct["TestByte"] = GffNode(Byte, "TestByte");
+			testStruct["TestExoString"] = GffNode(ExoString, "TestExoString");
+
+			node = testStruct;
 			assertNotThrown(node["TestByte"]);
 			assertNotThrown(node["TestExoString"]);
 
@@ -385,13 +394,11 @@ struct GffNode{
 				GffNode(Struct, "StructA"),
 				GffNode(Struct, "StructB"),
 			];
-			listStructs[0].as!(Struct) ~= GffNode(Int, "TestInt");
-			listStructs[0].as!(Struct) ~= GffNode(Float, "TestFloat");
-			listStructs[0].updateFieldLabelMap();
+			listStructs[0].appendField(GffNode(Int, "TestInt"));
+			listStructs[0].appendField(GffNode(Float, "TestFloat"));
 			listStructs[0]["TestInt"] = 6;
 			listStructs[0]["TestFloat"] = float.epsilon;
-			listStructs[1].as!(Struct) ~= GffNode(Void, "TestVoid");
-			listStructs[1].updateFieldLabelMap();
+			listStructs[1].appendField(GffNode(Void, "TestVoid"));
 
 			node = GffNode(List);
 			node = listStructs;
@@ -419,13 +426,7 @@ struct GffNode{
 		if(type!=GffType.Struct)
 			throw new GffTypeException("Not a struct");
 
-		auto index = label in structLabelMap;
-		if(!index){
-			//Try to find it by updating the label map
-			updateFieldLabelMap();
-			return aggrContainer[structLabelMap[label]];
-		}
-		return aggrContainer[*index];
+		return structContainer[label];
 	}
 
 	/// Gets child node from a $(D GffNode.List) using its index
@@ -437,7 +438,7 @@ struct GffNode{
 		if(type!=GffType.List)
 			throw new GffTypeException("Not a list");
 
-		return aggrContainer[index];
+		return listContainer[index];
 	}
 	unittest{
 		with(GffType){
@@ -446,7 +447,8 @@ struct GffNode{
 
 			node = GffNode(Struct);
 			constNode = &node;
-			node = [GffNode(Byte, "TestByte"), GffNode(Float, "TestFloat")];
+			node.appendField(GffNode(Byte, "TestByte"));
+			node.appendField(GffNode(Float, "TestFloat"));
 
 			assertNotThrown((*constNode)["TestByte"]);
 			assertNotThrown((*constNode)["TestFloat"]);
@@ -472,9 +474,8 @@ struct GffNode{
 		assert(type == GffType.Struct, "GffNode must be a struct");
 		assert(field.type != GffType.Invalid, "Cannot append invalid GffNode");
 
-		structLabelMap[field.label] = aggrContainer.length;
-		aggrContainer ~= field;
-		return &aggrContainer[$-1];
+		structContainer[field.label] = field;
+		return &structContainer[field.label];
 	}
 
 	/// Produces a readable string of the node and its children
@@ -488,14 +489,14 @@ struct GffNode{
 				if(node.label !is null)
 					ret ~= " "~node.label;
 				ret ~= "\n";
-				foreach(ref childNode ; node.aggrContainer){
-					ret ~= toPrettyStringInternal(&childNode, tabs~"   | ");
+				foreach(ref kv ; node.structContainer.byKeyValue){
+					ret ~= toPrettyStringInternal(&kv.value, tabs~"   | ");
 				}
 				return ret;
 			}
 			else if(node.type == GffType.List){
 				string ret = tabs~node.label.leftJustify(16)~": ("~node.type.to!string~")\n";
-				foreach(ref childNode ; node.aggrContainer){
+				foreach(ref childNode ; node.listContainer){
 					ret ~= toPrettyStringInternal(&childNode, tabs~"   | ");
 				}
 				return ret;
@@ -512,28 +513,10 @@ struct GffNode{
 		return toPrettyStringInternal(&this, "");
 	}
 
-	/// Updates the structLabelMap for struct fields lookup.
-	/// Should be called each time the struct field list is modified or a field's label is modified
-	/// Note: you don't need to call this function if you use $(D appendField).
-	void updateFieldLabelMap(){
-		if(type != GffType.Struct)
-			throw new GffTypeException(__FUNCTION__~" can only be called on a GffNode of type Struct");
-
-		structLabelMap.clear();
-		foreach(index, ref node ; aggrContainer){
-			structLabelMap[node.label] = index;
-		}
-		structLabelMap.rehash();
-	}
-	unittest{
-		auto node = GffNode(GffType.Int64);
-		assertThrown!GffTypeException(node.updateFieldLabelMap);
-	}
-
 	/// Builds a $(D nwnlibd.orderedjson.JSONValue) from a $(D GffNode)
 	/// Params:
 	///   topLevelStruct = Set to true for the root struct or any list element
-	auto ref nwnlibd.orderedjson.JSONValue toJson(bool topLevelStruct=false){
+	auto ref nwnlibd.orderedjson.JSONValue toJson(bool topLevelStruct=false) const{
 		import std.traits: EnumMembers;
 		string gffTypeToStringType(GffType type){
 			import std.string: toLower;
@@ -582,8 +565,8 @@ struct GffNode{
 					else
 						value = &ret;
 
-					foreach(ref child ; this.as!Struct){
-						(*value)[child.label] = child.toJson(false);
+					foreach(ref kv ; this.as!Struct.byKeyValue){
+						(*value)[kv.value.label] = kv.value.toJson(false);
 					}
 					break typeswitch;
 				}
@@ -705,7 +688,6 @@ struct GffNode{
 							ret.appendField(child);
 						}
 					}
-					ret.updateFieldLabelMap();
 					break typeswitch;
 				}
 				else static if(TYPE==List){
@@ -728,8 +710,8 @@ package:
 	void[] rawContainer;
 	uint64_t simpleTypeContainer;
 	string stringContainer;
-	GffNode[] aggrContainer;
-	size_t[string] structLabelMap;
+	GffNode[] listContainer;
+	OrderedAA!(string, GffNode) structContainer;
 	gffTypeToNative!(GffType.ExoLocString) exoLocStringContainer;
 	uint32_t m_structType = 0;
 }
@@ -945,22 +927,20 @@ private:
 			}
 
 			if(s.field_count==1){
-				destNode.aggrContainer.length++;
-				GffNode* field = &destNode.aggrContainer[0];
+				GffNode field;
+				buildNodeFromFieldInPlace(s.data_or_data_offset, &field);
 
-				buildNodeFromFieldInPlace(s.data_or_data_offset, field);
-				destNode.structLabelMap[field.label] = 0;
+				destNode.structContainer.dirtyAppendKeyValue(field.label, field);
 			}
 			else if(s.field_count > 1){
 				auto fi = getFieldIndices(s.data_or_data_offset);
 
-				destNode.aggrContainer.length = s.field_count;
-
-				foreach(i, ref field ; destNode.aggrContainer)
+				foreach(i ; 0..s.field_count){
+					GffNode field;
 					buildNodeFromFieldInPlace(fi[i].field_index, &field);
 
-				foreach(i, ref field ; destNode.aggrContainer)
-					destNode.structLabelMap[field.label] = i;
+					destNode.structContainer.dirtyAppendKeyValue(field.label, field);
+				}
 			}
 
 			version(gff_verbose) gff_verbose_rtIndent = gff_verbose_rtIndent[0..$-4];
@@ -973,9 +953,9 @@ private:
 			if(li.length>0){
 				immutable uint32_t* indices = &li.first_struct_index;
 
-				destList.aggrContainer.length = li.length;
+				destList.listContainer.length = li.length;
 
-				foreach(i, ref structNode ; destList.aggrContainer){
+				foreach(i, ref structNode ; destList.listContainer){
 					buildNodeFromStructInPlace(indices[i], &structNode);
 				}
 			}
@@ -1078,7 +1058,7 @@ private:
 			}
 		}
 
-		string dumpRawGff(){
+		string dumpRawGff() const{
 			import std.string: center, rightJustify, toUpper;
 			import nwnlibd.parseutils;
 
@@ -1155,7 +1135,7 @@ private:
 			immutable createdStructIndex = cast(uint32_t)structs.length;
 			structs ~= GffStruct();
 
-			immutable fieldCount = cast(uint32_t)node.aggrContainer.length;
+			immutable fieldCount = cast(uint32_t)node.structContainer.length;
 			structs[createdStructIndex].type = node.structType;
 			structs[createdStructIndex].field_count = fieldCount;
 
@@ -1170,7 +1150,7 @@ private:
 
 			if(fieldCount == 1){
 				//index in field array
-				immutable fieldId = registerField(&node.aggrContainer[0]);
+				immutable fieldId = registerField(&node.structContainer.byKeyValue[0].value);
 				structs[createdStructIndex].data_or_data_offset = fieldId;
 			}
 			else if(fieldCount>1){
@@ -1179,11 +1159,11 @@ private:
 				structs[createdStructIndex].data_or_data_offset = fieldIndicesIndex;
 
 				fieldIndices.length += uint32_t.sizeof*fieldCount;
-				foreach(i, ref field ; node.aggrContainer){
+				foreach(i, ref kv ; node.structContainer.byKeyValue){
 
-					immutable fieldId = registerField(&field);
+					immutable fieldId = registerField(&kv.value);
 
-					immutable offset = fieldIndicesIndex + +i*uint32_t.sizeof;
+					immutable offset = fieldIndicesIndex + i*uint32_t.sizeof;
 					fieldIndices[offset..offset+uint32_t.sizeof] = (cast(uint32_t*)&fieldId)[0..1];
 				}
 			}
@@ -1294,11 +1274,11 @@ private:
 					immutable createdListOffset = cast(uint32_t)listIndices.length;
 					fields[createdFieldIndex].data_or_data_offset = createdListOffset;
 
-					uint32_t listLength = cast(uint32_t)node.aggrContainer.length;
+					uint32_t listLength = cast(uint32_t)node.listContainer.length;
 					listIndices ~= (&listLength)[0..1];
 					listIndices.length += listLength * uint32_t.sizeof;
-					if(node.aggrContainer !is null){
-						foreach(i, ref listField ; node.aggrContainer){
+					if(node.listContainer !is null){
+						foreach(i, ref listField ; node.listContainer){
 							immutable offset = createdListOffset+uint32_t.sizeof*(i+1);
 
 							uint32_t structIndex = registerStruct(&listField);
@@ -1406,13 +1386,20 @@ unittest{
 		assert(gff["Tint_Head"]["Tintable"]["Tint"]["1"]["b"].as!Byte == 109);
 		assert(gff["ClassList"][0]["Class"].as!Int == 4);
 
+		// Tintable appears two times in the gff
+		// Both must be stored but only the last one should be accessed by its key
+		assert(gff.as!Struct.byKeyValue[53].key == "Tintable");
+		assert(gff.as!Struct.byKeyValue[53].value["Tint"]["1"]["r"].as!Byte == 255);
+		assert(gff.as!Struct.byKeyValue[188].key == "Tintable");
+		assert(gff.as!Struct.byKeyValue[188].value["Tint"]["1"]["r"].as!Byte == 253);
+		assert(gff["Tintable"]["Tint"]["1"]["r"].as!Byte == 253);
 
 
 		auto krogarDataSerialized = cast(ubyte[])gff.serialize();
 		auto gffSerialized = new Gff(krogarDataSerialized);
 
 		assert(gff.toPrettyString() == gffSerialized.toPrettyString(), "Serialization data mismatch");
-		assert(krogarDataSerialized == krogarDataOrig, "Serialization not byte perfect");
+		assert(krogarDataOrig == krogarDataSerialized, "Serialization not byte perfect");
 
 		assertThrown!GffValueSetException(gff.fileType = "FILETYPE");
 		gff.fileType = "A C";

@@ -7,18 +7,20 @@ debug import std.stdio: writeln;
 
 /// Ordered Associative Array
 struct OrderedAA(KEY, VALUE){
-	alias THIS = OrderedAA!(KEY, VALUE);
-	alias DataContainer = Tuple!(string, "key", string, "value");
-
-	///
-	this(in THIS copy){
-		data = copy.data.dup;
-		map = cast(typeof(map))(copy.map.dup);
-	}
+	private alias THIS = OrderedAA!(KEY, VALUE);
+	private alias DataContainer = Tuple!(KEY, "key", VALUE, "value");
 
 	///
 	@property THIS dup() const{
-		return THIS(this);
+		THIS ret;
+		ret.data.length = data.length;
+		foreach(i, ref d ; ret.data)
+			d = data[i];
+
+		foreach(ref k, ref v ; map)
+			ret.map[k] = v;
+
+		return ret;
 	}
 
 	///
@@ -47,6 +49,7 @@ struct OrderedAA(KEY, VALUE){
 		map.rehash;
 	}
 
+	///
 	void remove(KEY key)
 	{
 		immutable idx = map[key];
@@ -87,7 +90,8 @@ struct OrderedAA(KEY, VALUE){
 	///
 	int opApply(scope int delegate(KEY, VALUE) del){
 		foreach(ref kv ; data){
-			return del(kv.key, kv.value);
+			if(auto res = del(kv.key, kv.value))
+				return res;
 		}
 		return 0;
 	}
@@ -98,13 +102,21 @@ struct OrderedAA(KEY, VALUE){
 	}
 
 
+	/// This function should not be used by sane people.
+	///
+	/// Workaround for storing multiple values for a same key like in half-broken nwn2 gff files.
+	/// Only the newest value will be accessible using its key.
+	/// The older value will only be accessible using byKeyValue or iterating with foreach.
+	void dirtyAppendKeyValue(KEY key, VALUE value){
+		map[key] = data.length;
+		data ~= DataContainer(key, value);
+	}
+
+
 
 private:
 	DataContainer[] data;
 	size_t[KEY] map;
-
-
-
 }
 
 unittest{
