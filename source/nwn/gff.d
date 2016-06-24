@@ -83,7 +83,7 @@ struct GffNode{
 	}
 
 	/// Duplicate GffNode data
-	GffNode dup() const
+	GffNode dup() inout
 	{
 		GffNode ret;
 		ret.m_type                = m_type;
@@ -91,11 +91,13 @@ struct GffNode{
 		ret.rawContainer          = rawContainer.dup;
 		ret.simpleTypeContainer   = simpleTypeContainer;
 		ret.stringContainer       = stringContainer;
-		ret.listContainer         = (cast(typeof(ret.listContainer))listContainer).dup;
+		ret.listContainer.length  = listContainer.length;
+		foreach(i, ref node ; listContainer)
+			ret.listContainer[i] = node.dup;
 		ret.structContainer       = structContainer.dup;
-		ret.exoLocStringContainer = gffTypeToNative!(GffType.ExoLocString)(
-			exoLocStringContainer.strref,
-			(cast(typeof(ret.exoLocStringContainer.strings))exoLocStringContainer.strings).dup );
+		ret.exoLocStringContainer = gffTypeToNative!(GffType.ExoLocString)(exoLocStringContainer.strref, null);
+		foreach(k, ref v ; exoLocStringContainer.strings)
+			ret.exoLocStringContainer.strings[k] = v;
 		ret.m_structType          = m_structType;
 		return ret;
 	}
