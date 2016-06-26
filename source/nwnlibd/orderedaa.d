@@ -92,6 +92,9 @@ struct OrderedAA(KEY, VALUE){
 		else
 			data = data[0..idx];
 		map.remove(key);
+		foreach(ref k, ref v ; map){
+			if(v>idx) v--;
+		}
 	}
 
 	///
@@ -161,6 +164,12 @@ struct OrderedAA(KEY, VALUE){
 private:
 	DataContainer[] data;
 	size_t[KEY] map;
+
+	invariant{
+		foreach(ref k, ref v ; map){
+			assert(v<data.length && data[v].key == k, "Corrupted OrderedAA");
+		}
+	}
 }
 
 unittest{
