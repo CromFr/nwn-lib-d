@@ -503,10 +503,10 @@ struct GffNode{
 			import std.string: leftJustify;
 
 			if(node.type == GffType.Struct){
-				string ret = tabs~"("~node.type.to!string~")";
+				string ret = tabs;
 				if(node.label !is null)
-					ret ~= " "~node.label;
-				ret ~= "\n";
+					ret ~= node.label~": ";
+				ret ~= "(Struct "~node.structType.to!string~")\n";
 				foreach(ref kv ; node.structContainer.byKeyValue){
 					ret ~= toPrettyStringInternal(&kv.value, tabs~"   | ");
 				}
