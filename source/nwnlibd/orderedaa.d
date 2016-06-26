@@ -121,7 +121,11 @@ struct OrderedAA(KEY, VALUE){
 
 	///
 	inout(VALUE)* opBinaryRight(string op)(KEY key) inout if(op == "in"){
-		return &((key in map).value);
+		auto idx = key in map;
+		if(idx is null)
+			return null;
+
+		return &(data[*idx].value);
 	}
 
 	///
@@ -187,6 +191,9 @@ unittest{
 			default: assert(0);
 		}
 	}
+
+	assert(*("Hello" in orderedAA)=="World");
+	assert(("nothing" in orderedAA) is null);
 
 	auto orderedAA2 = orderedAA.dup;
 	assert(orderedAA2 == orderedAA);
