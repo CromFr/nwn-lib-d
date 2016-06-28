@@ -732,6 +732,14 @@ package:
 	OrderedAA!(string, GffNode) structContainer;
 	gffTypeToNative!(GffType.ExoLocString) exoLocStringContainer;
 	uint32_t m_structType = 0;
+
+	invariant{
+		if(m_type == GffType.Struct){
+			foreach(ref kv ; structContainer.byKeyValue){
+				assert(kv.key == kv.value.label, "Corrupted GffNode Struct: Key does not match child's label");
+			}
+		}
+	}
 }
 
 /// Gff class for building complete $(D GffNode) from a file, binary data, json, ...
