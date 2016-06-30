@@ -88,8 +88,7 @@ struct GffNode{
 	}
 
 	/// Duplicate GffNode data
-	GffNode dup() inout
-	{
+	GffNode dup() inout {
 		GffNode ret;
 		ret.m_type                = m_type;
 		ret.m_label               = m_label;
@@ -98,7 +97,7 @@ struct GffNode{
 		ret.stringContainer       = stringContainer;
 		ret.listContainer.length  = listContainer.length;
 		foreach(i, ref node ; listContainer)
-			ret.listContainer[i] = node.dup;
+			ret.listContainer[i]  = node.dup;
 		ret.structContainer       = structContainer.dup;
 		ret.exoLocStringContainer = gffTypeToNative!(GffType.ExoLocString)(exoLocStringContainer.strref, null);
 		foreach(k, ref v ; exoLocStringContainer.strings)
@@ -764,7 +763,7 @@ class Gff{
 	}
 	/// Read and parse a GFF file
 	this(File file){
-		void[] data;
+		ubyte[] data;
 		data.length = GffHeader.sizeof;
 		auto readCount = file.rawRead(data).length;
 		if(readCount<GffHeader.sizeof)
