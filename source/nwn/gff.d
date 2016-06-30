@@ -775,7 +775,7 @@ class Gff{
 
 		data.length = fileLength;
 		readCount += file.rawRead(data[GffHeader.sizeof..$]).length;
-		if(readCount<GffHeader.sizeof)
+		if(readCount<fileLength)
 			throw new GffParseException("File is too small to be GFF: "~readCount.to!string~" bytes read, "~fileLength.to!string~" needed !");
 
 		this(data);
