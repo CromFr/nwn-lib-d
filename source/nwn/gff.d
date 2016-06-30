@@ -69,7 +69,7 @@ template gffTypeToNative(GffType t){
 	static if(t==GffType.ExoString)    alias gffTypeToNative = string;
 	static if(t==GffType.ResRef)       alias gffTypeToNative = string;// length<=32
 	static if(t==GffType.ExoLocString) alias gffTypeToNative = Tuple!(uint32_t,"strref", string[int32_t],"strings");
-	static if(t==GffType.Void)         alias gffTypeToNative = void[];
+	static if(t==GffType.Void)         alias gffTypeToNative = ubyte[];
 	static if(t==GffType.Struct)       alias gffTypeToNative = OrderedAA!(string, GffNode);
 	static if(t==GffType.List)         alias gffTypeToNative = GffNode[];
 }
@@ -724,7 +724,7 @@ struct GffNode{
 package:
 	GffType m_type = GffType.Invalid;
 	string m_label;
-	void[] rawContainer;
+	ubyte[] rawContainer;
 	uint64_t simpleTypeContainer;
 	string stringContainer;
 	GffNode[] listContainer;
@@ -752,7 +752,7 @@ class Gff{
 		this(File(path, "r"));
 	}
 	/// Read and parse GFF data in memory
-	this(in void[] data){
+	this(in ubyte[] data){
 		auto parser = Parser(data);
 
 		import std.string: stripRight;
@@ -830,7 +830,7 @@ class Gff{
 	GffNode root;
 
 	/// Serializes the $(D Gff) to the binary nwn GFF format
-	void[] serialize(){
+	ubyte[] serialize(){
 		Serializer serializer;
 		serializer.registerStruct(&root);
 		return serializer.serialize(m_fileType, m_fileVersion);
@@ -838,7 +838,7 @@ class Gff{
 
 	/// Dumps gff content with header and tables
 	/// Useful for debugging
-	static string dumpRawGffData(in void[] data){
+	static string dumpRawGffData(in ubyte[] data){
 		return Parser(data).dumpRawGff();
 	}
 
@@ -887,7 +887,7 @@ private:
 
 	struct Parser{
 		@disable this();
-		this(in void[] rawData){
+		this(in ubyte[] rawData){
 			assert(rawData.length>GffHeader.sizeof, "Data length is so small it cannot even contain the header");
 
 			headerPtr       = cast(immutable GffHeader*)      (rawData.ptr);
@@ -1060,7 +1060,7 @@ private:
 					case Void:
 						immutable data = getFieldData(f.data_or_data_offset);
 						immutable size = cast(immutable uint32_t*)data;
-						immutable dataVoid = cast(immutable void*)(data+uint32_t.sizeof);
+						immutable dataVoid = cast(immutable ubyte*)(data+uint32_t.sizeof);
 
 						destField.rawContainer = dataVoid[0..*size].dup;
 						break;
@@ -1137,7 +1137,7 @@ private:
 			return ret;
 		}
 		unittest{
-			Gff.dumpRawGffData(cast(void[])import("doge.utc"));
+			Gff.dumpRawGffData(cast(ubyte[])import("doge.utc"));
 		}
 	}
 
@@ -1147,9 +1147,9 @@ private:
 		GffStruct[] structs;
 		GffField[]  fields;
 		GffLabel[]  labels;
-		void[]      fieldDatas;
-		void[]      fieldIndices;
-		void[]      listIndices;
+		ubyte[]     fieldDatas;
+		ubyte[]     fieldIndices;
+		ubyte[]     listIndices;
 
 		version(gff_verbose) string gff_verbose_rtIndent;
 
@@ -1189,7 +1189,7 @@ private:
 					immutable fieldId = registerField(&kv.value);
 
 					immutable offset = fieldIndicesIndex + i*uint32_t.sizeof;
-					fieldIndices[offset..offset+uint32_t.sizeof] = (cast(uint32_t*)&fieldId)[0..1];
+					fieldIndices[offset..offset+uint32_t.sizeof] = cast(ubyte[])(cast(uint32_t*)&fieldId)[0..1];
 				}
 			}
 			else{
@@ -1238,14 +1238,14 @@ private:
 				case DWord64, Int64, Double:
 					//stored in fieldDatas
 					fields[createdFieldIndex].data_or_data_offset = cast(uint32_t)fieldDatas.length;
-					fieldDatas ~= (&node.simpleTypeContainer)[0..1].dup;
+					fieldDatas ~= cast(ubyte[])(&node.simpleTypeContainer)[0..1].dup;
 					break;
 				case ExoString:
 					immutable stringLength = cast(uint32_t)node.stringContainer.length;
 
 					fields[createdFieldIndex].data_or_data_offset = cast(uint32_t)fieldDatas.length;
-					fieldDatas ~= (&stringLength)[0..1].dup;
-					fieldDatas ~= (cast(void*)node.stringContainer.ptr)[0..stringLength].dup;
+					fieldDatas ~= cast(ubyte[])(&stringLength)[0..1].dup;
+					fieldDatas ~= (cast(ubyte*)node.stringContainer.ptr)[0..stringLength].dup;
 					break;
 				case ResRef:
 					assert(node.stringContainer.length<=32, "Resref too long (max length: 32 characters)");//TODO: Throw exception on GffNode value set
@@ -1253,42 +1253,42 @@ private:
 					immutable stringLength = cast(uint8_t)node.stringContainer.length;
 
 					fields[createdFieldIndex].data_or_data_offset = cast(uint32_t)fieldDatas.length;
-					fieldDatas ~= (&stringLength)[0..1].dup;
-					fieldDatas ~= (cast(void*)node.stringContainer.ptr)[0..stringLength].dup;
+					fieldDatas ~= cast(ubyte[])(&stringLength)[0..1].dup;
+					fieldDatas ~= (cast(ubyte*)node.stringContainer.ptr)[0..stringLength].dup;
 					break;
 				case ExoLocString:
 					immutable fieldDataIndex = fieldDatas.length;
 					fields[createdFieldIndex].data_or_data_offset = cast(uint32_t)fieldDataIndex;
 
 					//total size
-					fieldDatas ~= [cast(uint32_t)0];
+					fieldDatas ~= [0,0,0,0];//uint32_t
 
 					immutable strref = cast(uint32_t)node.exoLocStringContainer.strref;
-					fieldDatas ~= (&strref)[0..1].dup;
+					fieldDatas ~= cast(ubyte[])(&strref)[0..1].dup;
 
 					immutable strcount = cast(uint32_t)node.exoLocStringContainer.strings.length;
-					fieldDatas ~= (&strcount)[0..1].dup;
+					fieldDatas ~= cast(ubyte[])(&strcount)[0..1].dup;
 
 					import std.algorithm: sort;
 					import std.array: array;
 					foreach(locstr ; node.exoLocStringContainer.strings.byKeyValue.array.sort!((a,b)=>a.key<b.key)){
 						immutable key = cast(int32_t)locstr.key;
-						fieldDatas ~= (&key)[0..1].dup;//string id
+						fieldDatas ~= cast(ubyte[])(&key)[0..1].dup;//string id
 
 						immutable length = cast(int32_t)locstr.value.length;
-						fieldDatas ~= (&length)[0..1].dup;
+						fieldDatas ~= cast(ubyte[])(&length)[0..1].dup;
 
-						fieldDatas ~= locstr.value.ptr[0..length].dup;
+						fieldDatas ~= cast(ubyte[])locstr.value.ptr[0..length].dup;
 					}
 
 					//total size
 					immutable totalSize = cast(uint32_t)(fieldDatas.length-fieldDataIndex) - 4;//totalSize does not count first 4 bytes
-					fieldDatas[fieldDataIndex..fieldDataIndex+4] = (&totalSize)[0..1].dup;
+					fieldDatas[fieldDataIndex..fieldDataIndex+4] = cast(ubyte[])(&totalSize)[0..1].dup;
 					break;
 				case Void:
 					auto dataLength = cast(uint32_t)node.rawContainer.length;
 					fields[createdFieldIndex].data_or_data_offset = cast(uint32_t)fieldDatas.length;
-					fieldDatas ~= (&dataLength)[0..1];
+					fieldDatas ~= cast(ubyte[])(&dataLength)[0..1];
 					fieldDatas ~= node.rawContainer;
 					break;
 				case Struct:
@@ -1300,14 +1300,14 @@ private:
 					fields[createdFieldIndex].data_or_data_offset = createdListOffset;
 
 					uint32_t listLength = cast(uint32_t)node.listContainer.length;
-					listIndices ~= (&listLength)[0..1];
+					listIndices ~= cast(ubyte[])(&listLength)[0..1];
 					listIndices.length += listLength * uint32_t.sizeof;
 					if(node.listContainer !is null){
 						foreach(i, ref listField ; node.listContainer){
 							immutable offset = createdListOffset+uint32_t.sizeof*(i+1);
 
 							uint32_t structIndex = registerStruct(&listField);
-							listIndices[offset..offset+uint32_t.sizeof] = (&structIndex)[0..1];
+							listIndices[offset..offset+uint32_t.sizeof] = cast(ubyte[])(&structIndex)[0..1];
 						}
 
 					}
@@ -1317,7 +1317,7 @@ private:
 			return createdFieldIndex;
 		}
 
-		void[] serialize(in string fileType, in string fileVersion){
+		ubyte[] serialize(in string fileType, in string fileVersion){
 			assert(fileType.length <= 4);
 			header.file_type = "    ";
 			header.file_type[0..fileType.length] = fileType.dup;
@@ -1354,21 +1354,21 @@ private:
 
 
 			version(unittest) auto offsetCheck = 0;
-			void[] data;
+			ubyte[] data;
 			data.reserve(offset);
-			data ~= (&header)[0..1];
+			data ~= cast(ubyte[])(&header)[0..1];
 			version(unittest) offsetCheck += GffHeader.sizeof;
 			version(unittest) assert(data.length == offsetCheck);
-			data ~= structs;
+			data ~= cast(ubyte[])structs;
 			version(unittest) offsetCheck += structs.length * GffStruct.sizeof;
 			version(unittest) assert(data.length == offsetCheck);
-			data ~= fields;
+			data ~= cast(ubyte[])fields;
 			version(unittest) offsetCheck += fields.length * GffStruct.sizeof;
 			version(unittest) assert(data.length == offsetCheck);
-			data ~= labels;
+			data ~= cast(ubyte[])labels;
 			version(unittest) offsetCheck += labels.length * GffLabel.sizeof;
 			version(unittest) assert(data.length == offsetCheck);
-			data ~= fieldDatas;
+			data ~= cast(ubyte[])fieldDatas;
 			version(unittest) offsetCheck += fieldDatas.length;
 			version(unittest) assert(data.length == offsetCheck);
 			data ~= fieldIndices;
@@ -1386,7 +1386,7 @@ private:
 unittest{
 	import std.file : read;
 	with(GffType){
-		immutable krogarDataOrig = cast(immutable void[])import("krogar.bic");
+		immutable krogarDataOrig = cast(immutable ubyte[])import("krogar.bic");
 		auto gff = new Gff(krogarDataOrig);
 
 		//Parsing checks
@@ -1419,12 +1419,12 @@ unittest{
 		assert(gff.as!Struct.byKeyValue[188].value["Tint"]["1"]["r"].as!Byte == 253);
 		assert(gff["Tintable"]["Tint"]["1"]["r"].as!Byte == 253);
 
-
-		auto krogarDataSerialized = cast(ubyte[])gff.serialize();
+		auto krogarDataSerialized = gff.serialize();
 		auto gffSerialized = new Gff(krogarDataSerialized);
 
 		assert(gff.toPrettyString() == gffSerialized.toPrettyString(), "Serialization data mismatch");
 		assert(krogarDataOrig == krogarDataSerialized, "Serialization not byte perfect");
+
 
 		//Dup
 		auto gffRoot2 = gff.root.dup;
@@ -1440,8 +1440,6 @@ unittest{
 		auto data = cast(char[])gff.serialize();
 		assert(data[0..4]=="A C ");
 		assert(data[4..8]=="V42 ");
-
-
 	}
 
 }
