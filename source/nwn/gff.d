@@ -141,11 +141,7 @@ struct GffNode{
 	/// Access by reference the underlying data stored in the $(D GffNode).
 	/// The type of this data is determined by gffTypeToNative.
 	/// Types must match exactly or it will throw
-	auto ref const(gffTypeToNative!T) as(GffType T)() const{
-		return cast(const)((cast(GffNode)this).as!T);
-	}
-	/// ditto
-	auto ref gffTypeToNative!T as(GffType T)(){
+	auto ref as(GffType T)() inout{
 		static assert(T!=GffType.Invalid, "Cannot use GffNode.as with type Invalid");
 		if(T != type || type==GffType.Invalid)
 			throw new GffTypeException("Type mismatch: GffNode of type "~type.to!string~" cannot be used with as!(GffNode."~T.to!string~")");
