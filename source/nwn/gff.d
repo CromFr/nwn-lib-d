@@ -74,6 +74,24 @@ template gffTypeToNative(GffType t){
 	static if(t==GffType.List)         alias gffTypeToNative = GffNode[];
 }
 
+alias GffByte         = gffTypeToNative!(GffType.Byte);
+alias GffChar         = gffTypeToNative!(GffType.Char);
+alias GffWord         = gffTypeToNative!(GffType.Word);
+alias GffShort        = gffTypeToNative!(GffType.Short);
+alias GffDWord        = gffTypeToNative!(GffType.DWord);
+alias GffInt          = gffTypeToNative!(GffType.Int);
+alias GffDWord64      = gffTypeToNative!(GffType.DWord64);
+alias GffInt64        = gffTypeToNative!(GffType.Int64);
+alias GffFloat        = gffTypeToNative!(GffType.Float);
+alias GffDouble       = gffTypeToNative!(GffType.Double);
+alias GffExoString    = gffTypeToNative!(GffType.ExoString);
+alias GffResRef       = gffTypeToNative!(GffType.ResRef);
+alias GffExoLocString = gffTypeToNative!(GffType.ExoLocString);
+alias GffVoid         = gffTypeToNative!(GffType.Void);
+//alias GffStruct       = gffTypeToNative!(GffType.Struct);//Moved at the end of file
+alias GffList         = gffTypeToNative!(GffType.List);
+
+
 /// Gff node containing data
 struct GffNode{
 	///
@@ -99,7 +117,7 @@ struct GffNode{
 		foreach(i, ref node ; listContainer)
 			ret.listContainer[i]  = node.dup;
 		ret.structContainer       = structContainer.dup;
-		ret.exoLocStringContainer = gffTypeToNative!(GffType.ExoLocString)(exoLocStringContainer.strref, null);
+		ret.exoLocStringContainer = GffExoLocString(exoLocStringContainer.strref, null);
 		foreach(k, ref v ; exoLocStringContainer.strings)
 			ret.exoLocStringContainer.strings[k] = v;
 		ret.m_structType          = m_structType;
@@ -296,7 +314,7 @@ struct GffNode{
 					}
 				}
 				else static if(TYPE==ExoLocString){
-					static if(is(T==gffTypeToNative!ExoLocString)){
+					static if(is(T==GffExoLocString)){
 						case TYPE:
 						as!TYPE = rhs;
 						return;
@@ -307,7 +325,7 @@ struct GffNode{
 						as!TYPE.strref = rhs.to!uint32_t;
 						return;
 					}
-					else static if(is(T==typeof(gffTypeToNative!ExoLocString.strings))){
+					else static if(is(T==typeof(GffExoLocString.strings))){
 						//set strings
 						case TYPE:
 						as!TYPE.strings = rhs;
@@ -384,7 +402,7 @@ struct GffNode{
 			assert((cast(ubyte[])node.rawContainer)[3] == 3);
 
 			node = GffNode(Struct);
-			auto testStruct = gffTypeToNative!Struct();
+			auto testStruct = GffStruct();
 			testStruct["TestByte"] = GffNode(Byte, "TestByte");
 			testStruct["TestExoString"] = GffNode(ExoString, "TestExoString");
 
@@ -725,7 +743,7 @@ package:
 	string stringContainer;
 	GffNode[] listContainer;
 	OrderedAA!(string, GffNode) structContainer;
-	gffTypeToNative!(GffType.ExoLocString) exoLocStringContainer;
+	GffExoLocString exoLocStringContainer;
 	uint32_t m_structType = 0;
 
 	invariant{
@@ -1439,3 +1457,6 @@ unittest{
 	}
 
 }
+
+
+alias GffStruct       = gffTypeToNative!(GffType.Struct);
