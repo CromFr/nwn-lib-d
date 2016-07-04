@@ -232,7 +232,7 @@ private:
 				case State.Field:
 					if(c.isWhite){
 						if(fieldBuf=="****")
-							ret ~= "";
+							ret ~= null;
 						else
 							ret ~= fieldBuf;
 						state = State.Whitespace;
