@@ -55,41 +55,63 @@ enum GffType{
 /// Maps $(D GffType) to native D type
 template gffTypeToNative(GffType t){
 	import std.typecons: Tuple;
-	static if(t==GffType.Invalid)      static assert(0, "No native type for GffType.Invalid");
-	static if(t==GffType.Byte)         alias gffTypeToNative = uint8_t;
-	static if(t==GffType.Char)         alias gffTypeToNative = int8_t;
-	static if(t==GffType.Word)         alias gffTypeToNative = uint16_t;
-	static if(t==GffType.Short)        alias gffTypeToNative = int16_t;
-	static if(t==GffType.DWord)        alias gffTypeToNative = uint32_t;
-	static if(t==GffType.Int)          alias gffTypeToNative = int32_t;
-	static if(t==GffType.DWord64)      alias gffTypeToNative = uint64_t;
-	static if(t==GffType.Int64)        alias gffTypeToNative = int64_t;
-	static if(t==GffType.Float)        alias gffTypeToNative = float;
-	static if(t==GffType.Double)       alias gffTypeToNative = double;
-	static if(t==GffType.ExoString)    alias gffTypeToNative = string;
-	static if(t==GffType.ResRef)       alias gffTypeToNative = string;// length<=32
-	static if(t==GffType.ExoLocString) alias gffTypeToNative = Tuple!(uint32_t,"strref", string[int32_t],"strings");
-	static if(t==GffType.Void)         alias gffTypeToNative = ubyte[];
-	static if(t==GffType.Struct)       alias gffTypeToNative = OrderedAA!(string, GffNode);
-	static if(t==GffType.List)         alias gffTypeToNative = GffNode[];
+	     static if(t==GffType.Invalid)      static assert(0, "No native type for GffType.Invalid");
+	else static if(t==GffType.Byte)         alias gffTypeToNative = uint8_t;
+	else static if(t==GffType.Char)         alias gffTypeToNative = int8_t;
+	else static if(t==GffType.Word)         alias gffTypeToNative = uint16_t;
+	else static if(t==GffType.Short)        alias gffTypeToNative = int16_t;
+	else static if(t==GffType.DWord)        alias gffTypeToNative = uint32_t;
+	else static if(t==GffType.Int)          alias gffTypeToNative = int32_t;
+	else static if(t==GffType.DWord64)      alias gffTypeToNative = uint64_t;
+	else static if(t==GffType.Int64)        alias gffTypeToNative = int64_t;
+	else static if(t==GffType.Float)        alias gffTypeToNative = float;
+	else static if(t==GffType.Double)       alias gffTypeToNative = double;
+	else static if(t==GffType.ExoString)    alias gffTypeToNative = string;
+	else static if(t==GffType.ResRef)       alias gffTypeToNative = string;// length<=32
+	else static if(t==GffType.ExoLocString) alias gffTypeToNative = Tuple!(uint32_t,"strref", string[int32_t],"strings");
+	else static if(t==GffType.Void)         alias gffTypeToNative = ubyte[];
+	else static if(t==GffType.Struct)       alias gffTypeToNative = OrderedAA!(string, GffNode);
+	else static if(t==GffType.List)         alias gffTypeToNative = GffNode[];
+	else static assert(0);
+}
+/// Converts a native type $(D T) to the associated $(D GffType). Types must match exactly
+template nativeToGffType(T){
+	import std.typecons: Tuple;
+	     static if(is(T == gffTypeToNative!(GffType.Byte)))         alias nativeToGffType = GffType.Byte;
+	else static if(is(T == gffTypeToNative!(GffType.Char)))         alias nativeToGffType = GffType.Char;
+	else static if(is(T == gffTypeToNative!(GffType.Word)))         alias nativeToGffType = GffType.Word;
+	else static if(is(T == gffTypeToNative!(GffType.Short)))        alias nativeToGffType = GffType.Short;
+	else static if(is(T == gffTypeToNative!(GffType.DWord)))        alias nativeToGffType = GffType.DWord;
+	else static if(is(T == gffTypeToNative!(GffType.Int)))          alias nativeToGffType = GffType.Int;
+	else static if(is(T == gffTypeToNative!(GffType.DWord64)))      alias nativeToGffType = GffType.DWord64;
+	else static if(is(T == gffTypeToNative!(GffType.Int64)))        alias nativeToGffType = GffType.Int64;
+	else static if(is(T == gffTypeToNative!(GffType.Float)))        alias nativeToGffType = GffType.Float;
+	else static if(is(T == gffTypeToNative!(GffType.Double)))       alias nativeToGffType = GffType.Double;
+	else static if(is(T == gffTypeToNative!(GffType.ExoString)))    alias nativeToGffType = GffType.ExoString;
+	else static if(is(T == gffTypeToNative!(GffType.ResRef)))       alias nativeToGffType = GffType.ResRef;
+	else static if(is(T == gffTypeToNative!(GffType.ExoLocString))) alias nativeToGffType = GffType.ExoLocString;
+	else static if(is(T == gffTypeToNative!(GffType.Void)))         alias nativeToGffType = GffType.Void;
+	else static if(is(T == gffTypeToNative!(GffType.Struct)))       alias nativeToGffType = GffType.Struct;
+	else static if(is(T == gffTypeToNative!(GffType.List)))         alias nativeToGffType = GffType.List;
+	else static assert(0, "Type "~T.stringof~" is not a valid GffType");
 }
 
-alias GffByte         = gffTypeToNative!(GffType.Byte);
-alias GffChar         = gffTypeToNative!(GffType.Char);
-alias GffWord         = gffTypeToNative!(GffType.Word);
-alias GffShort        = gffTypeToNative!(GffType.Short);
-alias GffDWord        = gffTypeToNative!(GffType.DWord);
-alias GffInt          = gffTypeToNative!(GffType.Int);
-alias GffDWord64      = gffTypeToNative!(GffType.DWord64);
-alias GffInt64        = gffTypeToNative!(GffType.Int64);
-alias GffFloat        = gffTypeToNative!(GffType.Float);
-alias GffDouble       = gffTypeToNative!(GffType.Double);
-alias GffExoString    = gffTypeToNative!(GffType.ExoString);
-alias GffResRef       = gffTypeToNative!(GffType.ResRef);
-alias GffExoLocString = gffTypeToNative!(GffType.ExoLocString);
-alias GffVoid         = gffTypeToNative!(GffType.Void);
+alias GffByte         = gffTypeToNative!(GffType.Byte);        //GFF type Byte ( $(D uint8_t) )
+alias GffChar         = gffTypeToNative!(GffType.Char);        //GFF type Char ( $(D int8_t) )
+alias GffWord         = gffTypeToNative!(GffType.Word);        //GFF type Word ( $(D uint16_t) )
+alias GffShort        = gffTypeToNative!(GffType.Short);       //GFF type Short ( $(D int16_t) )
+alias GffDWord        = gffTypeToNative!(GffType.DWord);       //GFF type DWord ( $(D uint32_t) )
+alias GffInt          = gffTypeToNative!(GffType.Int);         //GFF type Int ( $(D int32_t) )
+alias GffDWord64      = gffTypeToNative!(GffType.DWord64);     //GFF type DWord64 ( $(D uint64_t) )
+alias GffInt64        = gffTypeToNative!(GffType.Int64);       //GFF type Int64 ( $(D int64_t) )
+alias GffFloat        = gffTypeToNative!(GffType.Float);       //GFF type Float ( $(D float) )
+alias GffDouble       = gffTypeToNative!(GffType.Double);      //GFF type Double ( $(D double) )
+alias GffExoString    = gffTypeToNative!(GffType.ExoString);   //GFF type ExoString ( $(D string) )
+alias GffResRef       = gffTypeToNative!(GffType.ResRef);      //GFF type ResRef ( $(D string;// length<=3) )
+alias GffExoLocString = gffTypeToNative!(GffType.ExoLocString);//GFF type ExoLocString ( $(D Tuple!(uint32_t,"strref", string[int32_t],"strings")) )
+alias GffVoid         = gffTypeToNative!(GffType.Void);        //GFF type Void ( $(D ubyte[]) )
 //alias GffStruct       = gffTypeToNative!(GffType.Struct);//Moved at the end of file
-alias GffList         = gffTypeToNative!(GffType.List);
+alias GffList         = gffTypeToNative!(GffType.List);        //GFF type List ( $(D GffNode[]) )
 
 
 /// Gff node containing data
@@ -159,6 +181,10 @@ struct GffNode{
 	/// Access by reference the underlying data stored in the $(D GffNode).
 	/// The type of this data is determined by gffTypeToNative.
 	/// Types must match exactly or it will throw
+	auto ref as(T)() inout{
+		return as!(nativeToGffType!T);
+	}
+
 	auto ref as(GffType T)() inout{
 		static assert(T!=GffType.Invalid, "Cannot use GffNode.as with type Invalid");
 		if(T != type || type==GffType.Invalid)
@@ -1459,4 +1485,4 @@ unittest{
 }
 
 
-alias GffStruct       = gffTypeToNative!(GffType.Struct);
+alias GffStruct       = gffTypeToNative!(GffType.Struct);/// GFF type Void ( $(D OrderedAA!(string, GffNode)) )
