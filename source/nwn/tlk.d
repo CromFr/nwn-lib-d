@@ -65,8 +65,8 @@ class StrRefResolver{
 	const Tlk userTable;
 }
 unittest{
-	immutable dialogTlk = cast(immutable void[])import("dialog.tlk");
-	immutable userTlk = cast(immutable void[])import("user.tlk");
+	immutable dialogTlk = cast(immutable ubyte[])import("dialog.tlk");
+	immutable userTlk = cast(immutable ubyte[])import("user.tlk");
 
 	auto strref = new StrRefResolver(
 		new Tlk(dialogTlk),
