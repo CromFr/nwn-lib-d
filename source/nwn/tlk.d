@@ -119,10 +119,10 @@ unittest{
 class Tlk{
 	this(in string path){
 		import std.file: read;
-		this(path.read());
+		this(cast(ubyte[])path.read());
 	}
 
-	this(in void[] rawData){
+	this(in ubyte[] rawData){
 		data = rawData.idup;
 		headerPtr =     cast(immutable TlkHeader*)    data.ptr;
 		strDataPtr =    cast(immutable TlkStringData*)(data.ptr + TlkHeader.sizeof);
@@ -150,7 +150,7 @@ class Tlk{
 	enum UserTlkIndexOffset = 16777216;
 
 private:
-	immutable void[] data;
+	immutable ubyte[] data;
 	immutable TlkHeader* headerPtr;
 	immutable TlkStringData* strDataPtr;
 	immutable char* strEntriesPtr;
