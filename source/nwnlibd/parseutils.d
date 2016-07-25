@@ -14,7 +14,7 @@ auto ref string charArrayToString(T)(in T str) if(isStaticArray!T && isSomeChar!
 }
 
 /// Formats a binary array to something readable
-string dumpByteArray(in void[] byteArray){
+string dumpByteArray(in ubyte[] byteArray){
 	import std.string: rightJustify;
 	import std.conv: to;
 	string ret;
@@ -33,9 +33,9 @@ string dumpByteArray(in void[] byteArray){
 	return ret;
 }
 
-/// Read a $(D void[]) by chunks
+/// Read a $(D ubyte[]) by chunks
 struct ChunkReader{
-	const void[] data;
+	const ubyte[] data;
 	size_t read_ptr = 0;
 
 	size_t bytesLeft()const{

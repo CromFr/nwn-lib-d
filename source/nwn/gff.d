@@ -1166,13 +1166,13 @@ private:
 				ret ~= id.to!string.rightJustify(4)~" > "~a.to!string~"\n";
 
 			printTitle("field data");
-			ret ~= dumpByteArray(fieldDatasPtr[0..headerPtr.field_data_count]);
+			ret ~= dumpByteArray(cast(ubyte[])fieldDatasPtr[0..headerPtr.field_data_count]);
 
 			printTitle("field indices");
-			ret ~= dumpByteArray(fieldIndicesPtr[0..headerPtr.field_indices_count]);
+			ret ~= dumpByteArray(cast(ubyte[])fieldIndicesPtr[0..headerPtr.field_indices_count]);
 
 			printTitle("list indices");
-			ret ~= dumpByteArray(listIndicesPtr[0..headerPtr.list_indices_count]);
+			ret ~= dumpByteArray(cast(ubyte[])listIndicesPtr[0..headerPtr.list_indices_count]);
 
 			return ret;
 		}

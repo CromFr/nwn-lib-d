@@ -185,7 +185,7 @@ unittest{
 	import std.path: buildPath;
 	import core.thread;
 
-	auto krogarData = cast(void[])import("krogar.bic");
+	auto krogarData = cast(ubyte[])import("krogar.bic");
 	auto krogarFilePath = buildPath(tempDir, "unittest-nwn-lib-d-"~__MODULE__~".krogar.bic");
 	krogarFilePath.writeFile(krogarData);
 
@@ -206,7 +206,7 @@ unittest{
 	assertThrown!Error(_main(["./nwn-gff","-i",krogarFilePath~":pretty"]));
 
 
-	auto dogeData = cast(void[])import("doge.utc");
+	auto dogeData = cast(ubyte[])import("doge.utc");
 	immutable dogePath = buildPath(tempDir, "unittest-nwn-lib-d-"~__MODULE__~".doge.utc");
 	dogePath.writeFile(dogeData);
 

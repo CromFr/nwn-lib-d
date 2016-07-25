@@ -39,11 +39,11 @@ class TwoDA{
 	this(string filepath){
 		import std.file: readFile=read;
 		import std.path: baseName;
-		this(filepath.readFile, filepath.baseName);
+		this(cast(ubyte[])filepath.readFile, filepath.baseName);
 	}
 
 	/// Parse raw data
-	this(in void[] rawData, in string name=null){
+	this(in ubyte[] rawData, in string name=null){
 		fileName = name;
 
 		foreach(lineIndex, line ; (cast(string)rawData).splitLines){
@@ -133,7 +133,7 @@ class TwoDA{
 		}
 	}
 
-	void[] serialize() const{
+	ubyte[] serialize() const{
 		import std.algorithm: map, sort;
 		import std.array: array;
 		import std.string: leftJustify;
@@ -193,7 +193,7 @@ class TwoDA{
 			ret ~= "\n";
 		}
 
-		return ret;
+		return cast(ubyte[])ret;
 	}
 
 	///
@@ -255,7 +255,7 @@ private:
 	}
 }
 unittest{
-	immutable polymorphTwoDA = cast(immutable void[])import("polymorph.2da");
+	immutable polymorphTwoDA = cast(immutable ubyte[])import("polymorph.2da");
 	auto twoda = new TwoDA(polymorphTwoDA);
 
 	assert(twoda.fileType == "2DA");

@@ -31,7 +31,7 @@ alias NWN2ErfFile = ErfFile!(NwnVersion.NWN2);
 
 /// File stored in Erf class
 struct ErfFile(NwnVersion NV){
-	this(in string name, ResourceType type, void[] data){
+	this(in string name, ResourceType type, ubyte[] data){
 		this.name = name;
 		this.type = type;
 		this.data = data;
@@ -49,7 +49,7 @@ struct ErfFile(NwnVersion NV){
 		this(
 			filePath.stripExtension.baseName,
 			ext,
-			filePath.read);
+			cast(ubyte[])filePath.read);
 	}
 	unittest{
 		import std.file: tempDir, writeFile=write;
@@ -81,7 +81,7 @@ struct ErfFile(NwnVersion NV){
 	ResourceType type;
 
 	/// File raw data
-	void[] data;
+	ubyte[] data;
 }
 
 alias NWN1Erf = Erf!(NwnVersion.NWN1);
@@ -91,7 +91,7 @@ alias NWN2Erf = Erf!(NwnVersion.NWN2);
 class Erf(NwnVersion NV){
 
 	/// Parse raw binary data
-	this(in void[] data){
+	this(in ubyte[] data){
 		const header = cast(ErfHeader*)data.ptr;
 		fileType = header.file_type.idup.stripRight;
 		fileVersion = header.file_version.idup.stripRight;
@@ -171,8 +171,8 @@ class Erf(NwnVersion NV){
 
 
 	///
-	void[] serialize(){
-		void[] ret;
+	ubyte[] serialize(){
+		ubyte[] ret;
 		ret.length = ErfHeader.sizeof;
 
 		with(cast(ErfHeader*)ret.ptr){
@@ -203,8 +203,8 @@ class Erf(NwnVersion NV){
 
 			locstringLength += 4+4+length;
 
-			ret ~= (&langID)[0..1].dup;
-			ret ~= (&length)[0..1].dup;
+			ret ~= cast(ubyte[])(&langID)[0..1].dup;
+			ret ~= cast(ubyte[])(&length)[0..1].dup;
 			ret ~= kv.value.dup;
 		}
 
@@ -273,7 +273,7 @@ private:
 }
 
 unittest{
-	auto hak = new NWN2Erf(import("test.hak"));
+	auto hak = new NWN2Erf(cast(ubyte[])import("test.hak"));
 
 	assert(hak.files[0].name == "eye");
 	assert(hak.files[0].type == ResourceType.tga);
@@ -281,7 +281,7 @@ unittest{
 	assert(hak.files[1].type == ResourceType.txt);
 	assert(cast(string)hak.files[1].data == "Hello world\n");
 
-	immutable modData = import("module.mod");
+	auto modData = cast(ubyte[])import("module.mod");
 	auto mod = new NWN2Erf(modData);
 	assert(mod.description[Language.English]=="module description");
 	assert(mod.buildDate == Date(2016, 06, 08));
