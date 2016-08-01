@@ -8,8 +8,6 @@ import std.traits;
 import std.exception: enforce;
 import nwnlibd.parseutils;
 
-import nwn.gff : GffNode, GffType, gffTypeToNative;
-
 import std.stdio: writeln, writefln;
 version(unittest) import std.exception: assertThrown, assertNotThrown;
 
@@ -64,7 +62,7 @@ struct TrnPacket{
 	}
 
 private:
-	this(TrnPacketType type, in void[] payloadData){
+	this(TrnPacketType type, in ubyte[] payloadData){
 		import std.traits: EnumMembers;
 
 		m_type = type;
@@ -80,7 +78,7 @@ private:
 			}
 		}
 	}
-	void[] payload;
+	ubyte[] payload;
 }
 
 
@@ -92,7 +90,7 @@ private:
 class Trn{
 	this(in string path){
 		import std.file: read;
-		this(path.read());
+		this(cast(ubyte[])path.read());
 	}
 
 	@property string nwnVersion()const{return m_nwnVersion;}
@@ -104,7 +102,7 @@ class Trn{
 	@property uint versionMinor()const{return m_versionMinor;}
 	package uint m_versionMinor;
 
-	this(in void[] rawData){
+	this(in ubyte[] rawData){
 		align(1) struct Header{
 			char[4] file_type;
 			uint16_t version_major;
@@ -159,7 +157,7 @@ struct TrnNWN2TerrainDimPayload{
 	uint32_t height;/// Height in megatiles
 	uint32_t unknown;/// Unknown/unused
 
-	package this(in void[] payload){
+	package this(in ubyte[] payload){
 		width = *(cast(uint32_t*)&payload[0]);
 		height = *(cast(uint32_t*)&payload[4]);
 		unknown = *(cast(uint32_t*)&payload[8]);
@@ -206,7 +204,7 @@ struct TrnNWN2MegatilePayload{
 	Grass[] grass;/// Grass "objects"
 
 
-	package this(in void[] payload){
+	package this(in ubyte[] payload){
 		auto data = ChunkReader(payload);
 
 		name = data.read!(char[128]).ptr.fromStringz.idup;
@@ -282,7 +280,7 @@ struct TrnNWN2WaterPayload{
 	uint32_t[2] megatile_position;/// Position of the associated megatile in the terrain
 
 
-	package this(in void[] payload){
+	package this(in ubyte[] payload){
 		auto data = ChunkReader(payload);
 
 		unknown       = data.read!(typeof(unknown));
@@ -366,7 +364,7 @@ struct TrnNWN2WalkmeshPayload{
 
 
 
-	package this(in void[] payload){
+	package this(in ubyte[] payload){
 		auto data = ChunkReader(payload);
 
 		data_type               = data.read!(char[4]).charArrayToString;
@@ -376,7 +374,7 @@ struct TrnNWN2WalkmeshPayload{
 
 		// zlib deflate
 		import std.zlib: uncompress;
-		auto walkmeshData = uncompress(comp_wm, uncomp_length);
+		auto walkmeshData = cast(ubyte[])uncompress(comp_wm, uncomp_length);
 		assert(walkmeshData.length == uncomp_length, "Length mismatch");
 
 		auto wmdata = ChunkReader(walkmeshData);
