@@ -286,6 +286,7 @@ struct TrnNWN2WaterPayload{
 
 		unknown       = data.read!(typeof(unknown));
 		color         = data.read!(typeof(color));
+		ripple         = data.read!(typeof(ripple));
 		smoothness    = data.read!(typeof(smoothness));
 		reflect_bias  = data.read!(typeof(reflect_bias));
 		reflect_power = data.read!(typeof(reflect_power));
@@ -306,8 +307,9 @@ struct TrnNWN2WaterPayload{
 		foreach(ref vertex ; vertices){
 			vertex = data.readStruct!Vertex;
 		}
-		foreach(ref triangle ; triangles){
-			triangle = data.readStruct!Triangle;
+
+		foreach(ref t ; triangles){
+			t = data.readStruct!Triangle;
 		}
 		triangles_flags = data.readArray!uint32_t(triangles.length).dup;
 
@@ -316,7 +318,6 @@ struct TrnNWN2WaterPayload{
 
 		megatile_position = data.read!(typeof(megatile_position));
 
-		//writeln(data.read_ptr, "=====", payload.length);
 		assert(data.read_ptr == payload.length, "some bytes were not read");
 	}
 }
