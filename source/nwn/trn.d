@@ -128,8 +128,6 @@ class Trn{
 		m_versionMinor = header.version_minor;
 
 		foreach(i ; 0..header.resource_count){
-			//writeln("=====> ", packetIndices[i]);
-
 			immutable type = packetIndices[i].type.toTrnPacketType(nwnVersion);
 			immutable offset = packetIndices[i].offset;
 
@@ -223,6 +221,7 @@ struct TrnNWN2MegatilePayload{
 		foreach(ref triangle ; triangles){
 			triangle = data.read!Triangle;
 		}
+
 		immutable dds_a_length = data.read!uint32_t;
 		dds_a = data.readArray(dds_a_length).dup;
 		immutable dds_b_length = data.read!uint32_t;
@@ -231,10 +230,13 @@ struct TrnNWN2MegatilePayload{
 		immutable grass_count = data.read!uint32_t;
 		grass.length = grass_count;
 		foreach(ref g ; grass){
-			g.name = data.read!(typeof(g.name));
+			g.name = data.read!(typeof(g.name)).dup;
 			g.texture = data.read!(typeof(g.texture));
 			immutable blades_count = data.read!uint32_t;
-			g.blades = data.readArray!(Grass.Blade)(blades_count*Grass.Blade.sizeof).dup;
+			g.blades.length = blades_count;
+			foreach(ref blade ; g.blades){
+				blade = data.readStruct!(Grass.Blade);
+			}
 		}
 		assert(data.read_ptr == payload.length, "some bytes were not read");
 	}
