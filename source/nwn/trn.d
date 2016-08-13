@@ -52,16 +52,16 @@ struct TrnPacket{
 		///
 		TrnPacketType type()const{return m_type;}
 	}
-	package TrnPacketType m_type;
+	private TrnPacketType m_type;
 
 	///
 	ref TrnPacketTypeToPayload!T as(TrnPacketType T)(){
 		if(type != T)
 			throw new TrnTypeException("Type mismatch");
-		return *cast(TrnPacketTypeToPayload!T*)payload.ptr;
+		return *cast(TrnPacketTypeToPayload!T*)structData.ptr;
 	}
 
-private:
+package:
 	this(TrnPacketType type, in ubyte[] payloadData){
 		import std.traits: EnumMembers;
 
@@ -71,14 +71,13 @@ private:
 		final switch(type) with(TrnPacketType){
 			foreach(TYPE ; EnumMembers!TrnPacketType){
 				case TYPE:
-					payload.length = TrnPacketTypeToPayload!TYPE.sizeof;
 					alias PAYLOAD = TrnPacketTypeToPayload!TYPE;
-					*(cast(PAYLOAD*)payload.ptr) = PAYLOAD(payloadData);
+					structData = cast(ubyte[])([PAYLOAD(payloadData)][0..1]);
 					break typeswitch;
 			}
 		}
 	}
-	ubyte[] payload;
+	ubyte[] structData;
 }
 
 
