@@ -106,7 +106,9 @@ FileFormatTuple parseFileFormat(string str){
 	import std.string: lastIndexOf;
 	import std.path: driveName;
 
-	immutable driveNameLength = str.driveName.length;
+	size_t driveNameLength;
+	if(str.driveName!="-:")
+		driveNameLength = str.driveName.length;
 
 	auto colonIndex = str[driveNameLength..$].lastIndexOf(':');
 	if(colonIndex==-1){
