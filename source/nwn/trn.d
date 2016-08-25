@@ -43,6 +43,9 @@ template TrnPacketTypeToPayload(TrnPacketType type){
 TrnPacketType toTrnPacketType(char[4] str, string nwnVersion){
 	return (nwnVersion~"_"~str.charArrayToString).to!TrnPacketType;
 }
+char[4] toTrnPacketStr(TrnPacketType type){
+	return type.to!(char[])[5..9];
+}
 
 
 
@@ -59,6 +62,15 @@ struct TrnPacket{
 		if(type != T)
 			throw new TrnTypeException("Type mismatch");
 		return *cast(TrnPacketTypeToPayload!T*)structData.ptr;
+	}
+
+	ubyte[] serialize(){
+		final switch(type) with(TrnPacketType){
+			foreach(TYPE ; EnumMembers!TrnPacketType){
+				case TYPE:
+					return as!TYPE.serialize();
+			}
+		}
 	}
 
 package:
@@ -102,22 +114,6 @@ class Trn{
 	package uint m_versionMinor;
 
 	this(in ubyte[] rawData){
-		align(1) struct Header{
-			char[4] file_type;
-			uint16_t version_major;
-			uint16_t version_minor;
-			uint32_t resource_count;
-		}
-		align(1) struct PacketIndices{
-			char[4] type;
-			uint32_t offset;
-		}
-		align(1) struct Packet{
-			char[4] type;
-			uint32_t payload_length;
-			ubyte payload_start;
-		}
-
 		enforce!TrnParseException(rawData.length>Header.sizeof, "Data is too small to contain the header");
 
 		auto header =        cast(Header*)        rawData.ptr;
@@ -137,13 +133,70 @@ class Trn{
 
 			enforce!TrnParseException(type==packetType, "Packet type does not match the one referenced in packet indices");
 
-			writeln(packets.length,": ",type);
+			//writeln(packets.length,": ",type,"   (off=",offset," size=",packetLength,")");
 			packets ~= TrnPacket(type, (&packet.payload_start)[0..packetLength]);
 		}
+
+		assert(serialize() == rawData);
+	}
+
+	ubyte[] serialize(){
+
+		auto header = Header(
+			m_nwnVersion.dup[0..4],
+			m_versionMajor.to!uint16_t,
+			m_versionMinor.to!uint16_t,
+			packets.length.to!uint32_t);
+
+		PacketIndices[] indices;
+		indices.length = packets.length;
+
+		uint32_t offset = (header.sizeof + PacketIndices.sizeof*indices.length).to!uint32_t;
+		ubyte[] packetsData;
+		foreach(i, ref packet ; packets){
+			auto typeStr = packet.type.toTrnPacketStr();
+			//writeln(offset);
+			indices[i].type = typeStr;
+			indices[i].offset = offset;
+			auto packetData = packet.serialize();
+
+			ChunkWriter cw;
+			cw.put(typeStr, packetData.length.to!uint32_t, packetData);
+			packetsData ~= cw.data;
+			offset += cw.data.length;
+		}
+
+
+		ChunkWriter cw;
+		cw.put(
+			header,
+			indices,
+			packetsData);
+		return cw.data;
 	}
 
 
 	TrnPacket[] packets;
+
+private:
+	static align(1) struct Header{
+		static assert(this.sizeof == 12);
+		char[4] file_type;
+		uint16_t version_major;
+		uint16_t version_minor;
+		uint32_t resource_count;
+	}
+	static align(1) struct PacketIndices{
+		static assert(this.sizeof == 8);
+		char[4] type;
+		uint32_t offset;
+	}
+	static align(1) struct Packet{
+		static assert(this.sizeof == 8+1);
+		char[4] type;
+		uint32_t payload_length;
+		ubyte payload_start;
+	}
 }
 
 
@@ -159,28 +212,36 @@ struct TrnNWN2TerrainDimPayload{
 		height = *(cast(uint32_t*)&payload[4]);
 		unknown = *(cast(uint32_t*)&payload[8]);
 	}
+
+	ubyte[] serialize(){
+		ChunkWriter cw;
+		cw.put(width, height, unknown);
+		return cw.data;
+	}
 }
 
 /// Megatile information
 struct TrnNWN2MegatilePayload{
-	string name;///name of the terrain
+	char[128] name;///name of the terrain
 	///
-	static struct Texture{
-		string name;
+	static align(1) struct Texture{
+		static assert(this.sizeof == 44);
+		char[32] name;
 		float[3] color;/// rgb
 	}
 	Texture[6] textures;/// Textures on the megatile, with their blend color
 	///
-	static struct Vertex{
+	static align(1) struct Vertex{
+		static assert(this.sizeof == 44);
 		float[3] position;/// x y z
 		float[3] normal;  /// normal vector
 		ubyte[4] tinting; /// argb
 		float[2] xy_0to10;/// ?
 		float[2] xy_0to1; /// ?
 	}
-	Vertex[] vertices;/// Terrain geometry
+	align(1) Vertex[] vertices;/// Terrain geometry
 	///
-	static struct Triangle{
+	static align(1) struct Triangle{
 		uint16_t[3] vertices;///Triangle vertex indices in $(D TrnNWN2TerrainDimPayload.vertices)
 	}
 	/// Walkmesh grid triangles positions.
@@ -191,7 +252,8 @@ struct TrnNWN2MegatilePayload{
 	static struct Grass{
 		char[32] name;
 		char[32] texture;
-		static struct Blade{
+		static align(1) struct Blade{
+			static assert(this.sizeof == 36);
 			float[3] position;
 			float[3] direction;
 			float[3] dimension;
@@ -204,23 +266,19 @@ struct TrnNWN2MegatilePayload{
 	package this(in ubyte[] payload){
 		auto data = ChunkReader(payload);
 
-		name = data.read!(char[128]).ptr.fromStringz.idup;
+		name = data.read!(char[128]);
+		//TODO: there is other data than name in this array
 
 		foreach(ref texture ; textures){
-			texture.name = data.read!(char[32]).ptr.fromStringz.idup;
+			texture.name = data.read!(char[32]);
 		}
 		foreach(ref texture ; textures){
 			texture.color = data.read!(float[3]);
 		}
-		vertices.length  = data.read!uint32_t;
-		triangles.length = data.read!uint32_t;
-
-		foreach(ref vertex ; vertices){
-			vertex = data.readPackedStruct!Vertex;
-		}
-		foreach(ref triangle ; triangles){
-			triangle = data.read!Triangle;
-		}
+		immutable vertices_length  = data.read!uint32_t;
+		immutable triangles_length = data.read!uint32_t;
+		vertices = data.readArray!Vertex(vertices_length).dup;
+		triangles = data.readArray!Triangle(triangles_length).dup;
 
 		immutable dds_a_length = data.read!uint32_t;
 		dds_a = data.readArray(dds_a_length).dup;
@@ -240,6 +298,34 @@ struct TrnNWN2MegatilePayload{
 		}
 		assert(data.read_ptr == payload.length, "some bytes were not read");
 	}
+
+
+	ubyte[] serialize(){
+		ChunkWriter cw;
+		cw.put(name);
+		foreach(ref texture ; textures)
+			cw.put(texture.name);
+		foreach(ref texture ; textures)
+			cw.put(texture.color);
+
+		cw.put(
+			vertices.length.to!uint32_t,
+			triangles.length.to!uint32_t,
+			vertices,
+			triangles,
+			dds_a.length.to!uint32_t, dds_a,
+			dds_b.length.to!uint32_t, dds_b,
+			grass.length.to!uint32_t);
+
+		foreach(ref g ; grass){
+			cw.put(
+				g.name,
+				g.texture,
+				g.blades.length.to!uint32_t, g.blades);
+		}
+
+		return cw.data;
+	}
 }
 
 /// Water information
@@ -254,8 +340,9 @@ struct TrnNWN2WaterPayload{
 	float unknown2;/// Always 180.0
 	float unknown3;/// Always 0.5
 	///
-	static struct Texture{
-		string name;/// Texture name
+	static align(1) struct Texture{
+		static assert(this.sizeof == 48);
+		char[32] name;/// Texture name
 		float[2] direction;/// Scrolling direction
 		float rate;/// Scrolling speed
 		float angle;/// Scrolling angle in radiant
@@ -263,14 +350,16 @@ struct TrnNWN2WaterPayload{
 	Texture[3] textures;/// Water textures
 	float[2] offset;/// x,y offset in water-space <=> megatile_coordinates/8
 	///
-	static struct Vertex{
+	static align(1) struct Vertex{
+		static assert(this.sizeof == 28);
 		float[3] position;/// x y z
 		float[2] xy_0to5;/// ?
 		float[2] xy_0to1;/// ?
 	}
 	Vertex[] vertices;
 	///
-	static struct Triangle{
+	static align(1) struct Triangle{
+		static assert(this.sizeof == 6);
 		uint16_t[3] vertices;///Triangle vertex indices in $(D TrnNWN2WaterPayload.vertices)
 	}
 	/// Walkmesh grid triangles positions.
@@ -294,24 +383,21 @@ struct TrnNWN2WaterPayload{
 		unknown3      = data.read!(typeof(unknown3));
 
 		foreach(ref texture ; textures){
-			texture.name      = data.read!(char[32]).ptr.fromStringz.idup;
+			texture.name      = data.read!(char[32]);
 			texture.direction = data.read!(typeof(texture.direction));
 			texture.rate      = data.read!(typeof(texture.rate));
 			texture.angle     = data.read!(typeof(texture.angle));
 		}
 
-		offset           = data.read!(typeof(offset));
-		vertices.length  = data.read!uint32_t;
-		triangles.length = data.read!uint32_t;
 
-		foreach(ref vertex ; vertices){
-			vertex = data.readPackedStruct!Vertex;
-		}
+		offset = data.read!(typeof(offset));
+		immutable vertices_length  = data.read!uint32_t;
+		immutable triangles_length = data.read!uint32_t;
 
-		foreach(ref t ; triangles){
-			t = data.readPackedStruct!Triangle;
-		}
-		triangles_flags = data.readArray!uint32_t(triangles.length).dup;
+		vertices = data.readArray!Vertex(vertices_length).dup;
+		triangles = data.readArray!Triangle(triangles_length).dup;
+
+		triangles_flags = data.readArray!uint32_t(triangles_length).dup;
 
 		immutable dds_length = data.read!uint32_t;
 		dds = data.readArray(dds_length).dup;
@@ -319,6 +405,30 @@ struct TrnNWN2WaterPayload{
 		megatile_position = data.read!(typeof(megatile_position));
 
 		assert(data.read_ptr == payload.length, "some bytes were not read");
+	}
+
+
+	ubyte[] serialize(){
+		ChunkWriter cw;
+		cw.put(
+			unknown,
+			color,
+			ripple,
+			smoothness,
+			reflect_bias,
+			reflect_power,
+			unknown2,
+			unknown3,
+			textures,
+			offset,
+			vertices.length.to!uint32_t,
+			triangles.length.to!uint32_t,
+			vertices,
+			triangles,
+			triangles_flags,
+			dds.length.to!uint32_t, dds,
+			megatile_position);
+		return cw.data;
 	}
 }
 struct TrnNWN2WalkmeshPayload{
@@ -393,9 +503,11 @@ struct TrnNWN2WalkmeshPayload{
 		junctions      = wmdata.readArray!Junction(header.junctions_count).dup;
 		triangles      = wmdata.readArray!Triangle(header.triangles_count).dup;
 
-		remaining_data = wmdata.readArray(wmdata.bytesLeft).dup;
+		//import std.file: writeFile=write;
+		//writeFile("walkmesh.wm", walkmeshData);
+		//writeln("offset: ", wmdata.read_ptr, ", ",wmdata.bytesLeft," remaining bytes");
 
-		assert(serialize == payload);
+		remaining_data = wmdata.readArray(wmdata.bytesLeft).dup;
 	}
 
 
@@ -406,23 +518,23 @@ struct TrnNWN2WalkmeshPayload{
 		header.triangles_count = triangles.length.to!uint32_t;
 
 		//build uncompressed data
-		const uncompressedData =
-			  cast(ubyte[])((&header)[0..1])
-			~ cast(ubyte[])vertices
-			~ cast(ubyte[])junctions
-			~ cast(ubyte[])triangles
-			~ cast(ubyte[])remaining_data;
+		ChunkWriter uncompData;
+		uncompData.put(
+			header,
+			vertices,
+			junctions,
+			triangles,
+			remaining_data);
 
 		import std.zlib: compress;
-		const data = compress(uncompressedData);
+		const compData = compress(uncompData.data);
 
-		const compLength = data.length.to!uint32_t;
-		const uncompLength = uncompressedData.length.to!uint32_t;
+		const compLength = compData.length.to!uint32_t;
+		const uncompLength = uncompData.data.length.to!uint32_t;
 
 
-		return cast(ubyte[])(data_type[0..4].dup)
-		     ~ cast(ubyte[])((&compLength)[0..1])
-		     ~ cast(ubyte[])((&uncompLength)[0..1])
-		     ~ data;
+		ChunkWriter cw;
+		cw.put(data_type, compLength, uncompLength, compData);
+		return cw.data;
 	}
 }

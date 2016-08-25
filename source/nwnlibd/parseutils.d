@@ -12,6 +12,18 @@ auto ref string charArrayToString(T)(in T str) if(isStaticArray!T && isSomeChar!
 	else
 		return str.idup;
 }
+T stringToChararray(T)(in string str) if(isStaticArray!T && isSomeChar!(ForeachType!T)){
+	T ret;
+
+	import std.algorithm: min;
+	auto e = min(str.length, T.length);
+	ret[0..e] = str[0..e];
+
+	if(e+1<T.length)
+		ret[e+1..$] = 0;
+
+	return ret;
+}
 
 /// Formats a binary array to something readable
 string dumpByteArray(in ubyte[] byteArray){
@@ -57,5 +69,31 @@ struct ChunkReader{
 		foreach(MEMBER ; FieldNameTuple!T)
 			mixin("ret."~MEMBER~" = read!(typeof(ret."~MEMBER~"));");
 		return ret;
+	}
+}
+
+
+struct ChunkWriter{
+	ubyte[] data;
+
+	void put(T...)(in T chunks){
+		foreach(chunk ; chunks){
+			static if(isArray!(typeof(chunk)))
+				data ~= cast(ubyte[])chunk;
+			else
+				data ~= (cast(ubyte*)&chunk)[0..chunk.sizeof];
+		}
+	}
+
+
+private:
+	template sizeofStruct(T) if(is(T==struct)){
+		auto sizeofStruct(){
+			size_t ret = 0;
+			foreach(MEMBER ; FieldNameTuple!T){
+				ret += mixin("sizeof(T."~MEMBER~")");
+			}
+			return ret;
+		}
 	}
 }
