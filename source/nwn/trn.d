@@ -328,9 +328,9 @@ struct TrnNWN2WalkmeshPayload{
 	static align(1) struct Header{
 		static assert(this.sizeof==53);
 		align(1):
-		void[37] unknownA;
-		uint32_t terrain_vertices_count;
-		uint32_t unknown0_count;
+		ubyte[37] unknownA;
+		uint32_t vertices_count;
+		uint32_t junctions_count;
 		uint32_t triangles_count;
 		uint32_t unknownB;
 	}
@@ -342,20 +342,25 @@ struct TrnNWN2WalkmeshPayload{
 	}
 	Vertex[] vertices;
 
-	static align(1) struct Unknown0{
+	static align(1) struct Junction{
 		static assert(this.sizeof==16);
 		align(1):
-		uint32_t[4] data;
+		uint32_t[2] vertices;
+		uint32_t[2] triangles;
 	}
-	Unknown0[] unknown0_block;
+	Junction[] junctions;
 
 	static align(1) struct Triangle{
 		static assert(this.sizeof==64);
 		align(1):
 		uint32_t[3] vertices;
-		uint32_t[6] dataA;
-		float[6] dataB;
-		uint16_t[2] flags;
+		uint32_t[3] linked_junctions;
+		uint32_t[3] linked_triangles;
+		float[2] center;
+		float[3] normal;
+		float unknownA;
+		uint16_t microtileId;
+		uint16_t flags;
 	}
 	Triangle[] triangles;
 
@@ -384,10 +389,40 @@ struct TrnNWN2WalkmeshPayload{
 		header = wmdata.read!Header;
 		assert(wmdata.read_ptr==0x35);
 
-		vertices       = wmdata.readArray!Vertex(header.terrain_vertices_count).dup;
-		unknown0_block = wmdata.readArray!Unknown0(header.unknown0_count).dup;
+		vertices       = wmdata.readArray!Vertex(header.vertices_count).dup;
+		junctions      = wmdata.readArray!Junction(header.junctions_count).dup;
 		triangles      = wmdata.readArray!Triangle(header.triangles_count).dup;
 
 		remaining_data = wmdata.readArray(wmdata.bytesLeft).dup;
+
+		assert(serialize == payload);
+	}
+
+
+	ubyte[] serialize(){
+		//update header values
+		header.vertices_count  = vertices.length.to!uint32_t;
+		header.junctions_count = junctions.length.to!uint32_t;
+		header.triangles_count = triangles.length.to!uint32_t;
+
+		//build uncompressed data
+		const uncompressedData =
+			  cast(ubyte[])((&header)[0..1])
+			~ cast(ubyte[])vertices
+			~ cast(ubyte[])junctions
+			~ cast(ubyte[])triangles
+			~ cast(ubyte[])remaining_data;
+
+		import std.zlib: compress;
+		const data = compress(uncompressedData);
+
+		const compLength = data.length.to!uint32_t;
+		const uncompLength = uncompressedData.length.to!uint32_t;
+
+
+		return cast(ubyte[])(data_type[0..4].dup)
+		     ~ cast(ubyte[])((&compLength)[0..1])
+		     ~ cast(ubyte[])((&uncompLength)[0..1])
+		     ~ data;
 	}
 }
