@@ -52,7 +52,7 @@ struct ChunkReader{
 		return cast(const(T[]))(data[read_ptr-length*T.sizeof .. read_ptr]);
 	}
 
-	T readStruct(T)(){
+	T readPackedStruct(T)(){
 		T ret;
 		foreach(MEMBER ; FieldNameTuple!T)
 			mixin("ret."~MEMBER~" = read!(typeof(ret."~MEMBER~"));");

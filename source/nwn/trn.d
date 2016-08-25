@@ -216,7 +216,7 @@ struct TrnNWN2MegatilePayload{
 		triangles.length = data.read!uint32_t;
 
 		foreach(ref vertex ; vertices){
-			vertex = data.readStruct!Vertex;
+			vertex = data.readPackedStruct!Vertex;
 		}
 		foreach(ref triangle ; triangles){
 			triangle = data.read!Triangle;
@@ -235,7 +235,7 @@ struct TrnNWN2MegatilePayload{
 			immutable blades_count = data.read!uint32_t;
 			g.blades.length = blades_count;
 			foreach(ref blade ; g.blades){
-				blade = data.readStruct!(Grass.Blade);
+				blade = data.readPackedStruct!(Grass.Blade);
 			}
 		}
 		assert(data.read_ptr == payload.length, "some bytes were not read");
@@ -305,11 +305,11 @@ struct TrnNWN2WaterPayload{
 		triangles.length = data.read!uint32_t;
 
 		foreach(ref vertex ; vertices){
-			vertex = data.readStruct!Vertex;
+			vertex = data.readPackedStruct!Vertex;
 		}
 
 		foreach(ref t ; triangles){
-			t = data.readStruct!Triangle;
+			t = data.readPackedStruct!Triangle;
 		}
 		triangles_flags = data.readArray!uint32_t(triangles.length).dup;
 
