@@ -5,8 +5,9 @@
 module nwngff;
 
 import std.stdio;
-import std.conv: to;
+import std.conv: to, ConvException;
 import std.traits;
+import std.string;
 import std.typecons: Tuple, Nullable;
 version(unittest) import std.exception: assertThrown, assertNotThrown;
 
@@ -28,9 +29,11 @@ int _main(string[] args){
 	alias required = std.getopt.config.required;
 
 	string inputArg, outputArg;
+	string[] setValuesList;
 	auto res = getopt(args,
 		required, "i|input", "<file>:<format> Input file and format", &inputArg,
 		          "o|output", "<file>:<format> Output file and format", &outputArg,
+		          "set", "Set values in the GFF file. Ex: 'DayNight.7.SkyDomeModel=my_sky_dome.tga'", &setValuesList,
 		);
 	if(res.helpWanted){
 		defaultGetoptPrinter(
@@ -75,12 +78,63 @@ int _main(string[] args){
 		default:
 			assert(0, iff.format.to!string~" parsing not implemented");
 	}
-
 	inputFile.close();
 
-	File outputFile = off.path is null? stdout : File(off.path, "w");
+
+
+	//Modifications
+	foreach(setValue ; setValuesList){
+		GffNode* node = &gff.root;
+
+		auto eq = setValue.indexOf('=');
+		string[] path = setValue[0 .. eq].split(".");
+		string value = setValue[eq+1..$];
+		foreach(p ; path){
+			if(node.type == GffType.Struct){
+				try node = &(*node)[p];
+				catch(Exception e)
+					throw new Exception(e.msg~" for argument --set '"~setValue~"'");
+			}
+			else if(node.type == GffType.List){
+				size_t idx;
+				try idx = p.to!size_t;
+				catch(ConvException e)
+					throw new Exception("Cannot convert '"~p~"' to int for argument --set='"~setValue~"'");
+
+				try node = &(*node)[idx];
+				catch(Exception e)
+					throw new Exception(e.msg~" for argument --set '"~setValue~"'");
+			}
+		}
+
+		typeswitch:
+		final switch(node.type) with(GffType){
+			foreach(TYPE ; EnumMembers!GffType){
+				case TYPE:
+				static if(TYPE==Invalid){
+					assert(0);
+				}
+				else static if(TYPE==ExoLocString){
+					node.as!(GffType.ExoLocString).strings[0] = value;
+				}
+				else static if(TYPE==Struct || TYPE==List){
+					throw new Exception("Cannot set GffType."~TYPE.to!string);
+				}
+				else{
+					node.as!TYPE = value.to!(gffTypeToNative!TYPE);
+					break typeswitch;
+				}
+			}
+		}
+	}
+
+
+
+
+
 
 	//Serialization
+	File outputFile = off.path is null? stdout : File(off.path, "w");
 	switch(off.format){
 		case Format.gff:
 			outputFile.rawWrite(gff.serialize());
