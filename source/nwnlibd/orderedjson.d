@@ -338,7 +338,7 @@ struct JSONValue
         return type == JSON_TYPE.NULL;
     }
 
-    private void assign(T)(T arg) @safe
+    private void assign(T)(T arg) @trusted
     {
         static if (is(T : typeof(null)))
         {
