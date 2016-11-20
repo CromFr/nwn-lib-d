@@ -1,10 +1,14 @@
 #!/bin/bash
-set -e
+set -ev
 
 # dub fetch -q scod
 if [ ! -d scod ]; then
-	git clone https://github.com/CromFr/scod.git scod
+	git clone https://github.com/MartinNowak/scod.git scod
 	dub add-local scod
+
+	cd scod
+	rm dub.selections.json
+	cd ..
 fi
 
 # Gen doc
