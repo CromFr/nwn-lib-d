@@ -46,6 +46,8 @@ class TwoDA{
 	this(in ubyte[] rawData, in string name=null){
 		fileName = name;
 
+		size_t columnsCount;
+
 		foreach(lineIndex, line ; (cast(string)rawData).splitLines){
 			switch(lineIndex){
 				case 0:
@@ -66,18 +68,15 @@ class TwoDA{
 						header[title] = index;
 					}
 					header.rehash();
+					columnsCount = header.length;
 					break;
 
 				default:
 					//Data
 					auto data = extractRowData(line);
-					//if(data.length != header.length+1)
-					//	throw new TwoDAParseException("Incorrect number of fields", fileName, lineIndex);
-
-					auto lineNo = data[0].to!size_t;
-					if(lineNo >= values.length)
-						values.length = lineNo+1;
-					values[lineNo] = data[1..$];
+					values ~= data[1..$];
+					if(values[$-1].length != columnsCount)
+						values[$-1].length = columnsCount;
 					break;
 			}
 		}
@@ -149,7 +148,14 @@ class TwoDA{
 
 		//column width calculation
 		import std.math: log10, floor;
-		size_t[] columnsWidth = (cast(int)log10(values.length)+2)~(header.keys.map!(a=>a.length+1).array);
+		size_t[] columnsWidth =
+			(cast(int)log10(values.length)+2)
+			~(header
+				.byKeyValue
+				.array
+				.sort!((a, b) => a.value < b.value)
+				.map!(a => (a.key.length < 4 ? 4 : a.key.length) + 1)
+				.array);
 		immutable columnsCount = columnsWidth.length;
 
 		foreach(ref line ; values){
@@ -183,7 +189,7 @@ class TwoDA{
 						serializedValue = value;
 				}
 
-				if(i==columnsCount-1)
+				if(i==columnsCount-2)
 					ret ~= serializedValue;
 				else
 					ret ~= serializedValue.leftJustify(columnsWidth[i+1]);
@@ -267,16 +273,24 @@ unittest{
 	assert(twoda.get!int("RacialType", 0) == 23);
 	assert(twoda.get("EQUIPPED", 0) == null);
 	assert(twoda.get!int("MergeA", 13) == 1);
-	assert(twoda.get("Name", 21) == "MULTI WORD VALUE");
+	assert(twoda.get("Name", 20) == "MULTI WORD VALUE");
 
 	assert(twoda.get("Name", 1) == "POLYMORPH_TYPE_WERERAT");
-	assert(twoda.get("Name", 8) == null);//deleted line
-	assert(twoda.get("Name", 17) == "POLYMORPH_TYPE_ELDER_FIRE_ELEMENTAL");//misordered line
-	assert(twoda.get("Name", 26) == null);//empty value
-	assert(twoda.get("Name", 207) == "POLYMORPH_TYPE_LESS_EMBER_GUARD");//last line
+	assert(twoda.get("Name", 8) == "POLYMORPH_TYPE_FIRE_GIANT");//deleted line
+	assert(twoda.get("Name", 10) == "POLYMORPH_TYPE_ELDER_FIRE_ELEMENTAL");//misordered line
+	assert(twoda.get("Name", 25) == null);//empty value
+	assert(twoda.get("Name", 206) == "POLYMORPH_TYPE_LESS_EMBER_GUARD");//last line
 
 	assertThrown!TwoDAColumnNotFoundException(twoda.get("Yolooo", 1));
-	assertThrown!TwoDAOutOfBoundsException(twoda.get("Name", 208));
+	assertThrown!TwoDAOutOfBoundsException(twoda.get("Name", 207));
 
+	twoda = new TwoDA(polymorphTwoDA);
+	auto twodaSerialized = twoda.serialize();
+	import std.file;
+	std.file.write("test.2da", twodaSerialized);
+	auto twodaReparsed = new TwoDA(twodaSerialized);
+
+	assert(twoda.header == twodaReparsed.header);
+	assert(twoda.values == twodaReparsed.values);
 
 }
