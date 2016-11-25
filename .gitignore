@@ -6,6 +6,7 @@ __dummy.html
 __test__*__
 *.o
 *.obj
+*.lst
 
 nwn-lib-d.sublime-workspace
 
