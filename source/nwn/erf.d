@@ -90,13 +90,16 @@ alias NWN2Erf = Erf!(NwnVersion.NWN2);
 /// ERF file parsing (.erf, .hak, .mod files)
 class Erf(NwnVersion NV){
 
+	///
+	this(){}
+
 	/// Parse raw binary data
 	this(in ubyte[] data){
 		const header = cast(ErfHeader*)data.ptr;
 		fileType = header.file_type.idup.stripRight;
 		fileVersion = header.file_version.idup.stripRight;
 		auto date = Date(header.build_year+1900, 1, 1);
-		date.dayOfYear = header.build_day;
+		date.dayOfYear = header.build_day + 1;
 		buildDate = date;
 
 		auto locStrings = ChunkReader(
@@ -167,7 +170,7 @@ class Erf(NwnVersion NV){
 			m_buildDate = value;
 		}
 	}
-	private Date m_buildDate;
+	private Date m_buildDate = Date(1900, 1, 1);
 
 
 	///
@@ -287,4 +290,10 @@ unittest{
 	assert(mod.buildDate == Date(2016, 06, 08));
 
 	assert(mod.serialize() == modData);
+
+	import std.file;
+	auto n = new NWN2Erf(cast(ubyte[])read(`C:\Users\Crom\Desktop\test.hak`));
+	foreach(ref file ; n.files)
+		writeln("==>",file.name, "  -  ", file.type);
+
 }

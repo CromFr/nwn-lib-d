@@ -133,6 +133,7 @@ ResourceType fileExtensionToResourceType(in string fileExtension){
 
 	auto rtu = fileExtension.toLower;
 	if(rtu == "2da") return ResourceType.twoda;
+	if(rtu == "4pc") return ResourceType.fourpc;
 
 	try return rtu.to!ResourceType;
 	catch(ConvException) return ResourceType.invalid;
@@ -146,10 +147,11 @@ unittest{
 ///
 string resourceTypeToFileExtension(in ResourceType resourceType){
 	import std.conv: to;
-	if(resourceType==ResourceType.twoda){
-		return "2da";
+	switch(resourceType){
+		case ResourceType.twoda:  return "2da";
+		case ResourceType.fourpc: return "4pc";
+		default: return resourceType.to!string;
 	}
-	return resourceType.to!string;
 }
 unittest{
 	assert(resourceTypeToFileExtension(ResourceType.txt)=="txt");

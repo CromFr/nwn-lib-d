@@ -22,4 +22,18 @@ subPackage {
 		stringImportPaths "unittest"
 	}
 }
+subPackage {
+	name "nwn-erf"
+	sourcePaths "source/"
+	importPaths "source/"
+
+	configuration "application" {
+		targetType "executable"
+		targetName "nwn-erf"
+		mainSourceFile "tools/nwn-erf.d"
+	}
+	configuration "unittest" {
+		stringImportPaths "unittest"
+	}
+}
 
