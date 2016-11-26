@@ -50,9 +50,9 @@ int _main(string[] args){
 				auto erf = new NWN2Erf();
 				erf.fileVersion = "V1.1";
 				erf.fileType = outputPath.extension[1..$].toUpper;
-				writeln(erf.buildDate);
 
 				void addFile(in DirEntry file){
+				void addFile(DirEntry file){
 					if(file.isFile){
 						erf.files ~= NWN2ErfFile(file);
 					}

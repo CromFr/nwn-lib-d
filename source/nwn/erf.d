@@ -47,7 +47,7 @@ struct ErfFile(NwnVersion NV){
 			ext = extStr[1..$].fileExtensionToResourceType;
 
 		this(
-			filePath.stripExtension.baseName,
+			filePath.stripExtension.baseName.toLower,
 			ext,
 			cast(ubyte[])filePath.read);
 	}
