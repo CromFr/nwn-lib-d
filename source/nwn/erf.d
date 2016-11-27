@@ -173,8 +173,8 @@ class Erf(NwnVersion NV){
 	private Date m_buildDate = Date(1900, 1, 1);
 
 
-	///
-	ubyte[] serialize(){
+	/// Serialize erf data except file content
+	ubyte[] serializeHead(){
 		ubyte[] ret;
 		ret.length = ErfHeader.sizeof;
 
@@ -188,7 +188,7 @@ class Erf(NwnVersion NV){
 			keys_count = cast(uint32_t)files.length;
 
 			build_year = m_buildDate.year - 1900;
-			build_day = m_buildDate.dayOfYear;
+			build_day = m_buildDate.dayOfYear - 1;
 
 			file_description_strref = 0;//TODO: seems to be always 0
 			//reserved: keep null values
@@ -223,6 +223,7 @@ class Erf(NwnVersion NV){
 		ret.length += files.length*(ErfKey.sizeof + ErfResource.sizeof);
 
 
+		size_t fileDataOffset = ret.length;
 
 		foreach(index, ref file ; files){
 			with((cast(ErfKey*)(ret.ptr+keysOffset))[index]){
@@ -233,14 +234,35 @@ class Erf(NwnVersion NV){
 			}
 
 			with((cast(ErfResource*)(ret.ptr+resourcesOffset))[index]){
-				resource_offset = cast(uint32_t)ret.length;
+				resource_offset = cast(uint32_t)fileDataOffset;
 				resource_size   = cast(uint32_t)file.data.length;
-			}
 
-			ret ~= file.data;
+				fileDataOffset += resource_size;
+			}
 		}
 
 		return ret;
+	}
+
+	/// Serializes the erf data.
+	/// Warning: can allocate a huge chunk of RAM
+	ubyte[] serialize(){
+		ubyte[] ret = serializeHead();
+
+		foreach(ref f ; files){
+			ret ~= f.data;
+		}
+		return ret;
+	}
+
+	/// Efficient writing to file, with less RAM consumption
+	void writeToFile(File file){
+		auto wr = file.lockingBinaryWriter;
+		wr.rawWrite(serializeHead());
+
+		foreach(ref f ; files){
+			wr.rawWrite(f.data);
+		}
 	}
 
 
@@ -287,13 +309,7 @@ unittest{
 	auto modData = cast(ubyte[])import("module.mod");
 	auto mod = new NWN2Erf(modData);
 	assert(mod.description[Language.English]=="module description");
-	assert(mod.buildDate == Date(2016, 06, 08));
+	assert(mod.buildDate == Date(2016, 06, 09));
 
 	assert(mod.serialize() == modData);
-
-	import std.file;
-	auto n = new NWN2Erf(cast(ubyte[])read(`C:\Users\Crom\Desktop\test.hak`));
-	foreach(ref file ; n.files)
-		writeln("==>",file.name, "  -  ", file.type);
-
 }

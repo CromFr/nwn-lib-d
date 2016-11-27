@@ -51,7 +51,7 @@ int _main(string[] args){
 				erf.fileVersion = "V1.1";
 				erf.fileType = outputPath.extension[1..$].toUpper;
 
-				void addFile(in DirEntry file){
+
 				void addFile(DirEntry file){
 					if(file.isFile){
 						erf.files ~= NWN2ErfFile(file);
@@ -70,7 +70,7 @@ int _main(string[] args){
 					addFile(DirEntry(path));
 				}
 
-				outputPath.writeFile(erf.serialize());
+				erf.writeToFile(File(outputPath, "w+"));
 
 			}break;
 
