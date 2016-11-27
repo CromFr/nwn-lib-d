@@ -25,6 +25,14 @@
 					"shell_cmd": "dub test -q --compiler=dmd :nwn-gff",
 				},
 				{
+					"name": "nwn-erf",
+					"shell_cmd": "dub build -b debug -q --compiler=dmd :nwn-erf",
+				},
+				{
+					"name": "nwn-erf run unittests",
+					"shell_cmd": "dub test -q --compiler=dmd :nwn-erf",
+				},
+				{
 					"name": "Documentation",
 					"shell_cmd": "./build-doc.sh",
 				}

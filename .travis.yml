@@ -16,6 +16,10 @@ script:
     - dub build -b release -a x86_64 :nwn-gff  &&  mv nwn-gff nwn-gff.linux-x86_64
     - ./travis-build-win32.sh exec dub build -b release :nwn-gff  &&  mv nwn-gff.exe nwn-gff.win-x86
 
+    - dub build -b release -a x86    :nwn-erf  &&  mv nwn-erf nwn-erf.linux-x86
+    - dub build -b release -a x86_64 :nwn-erf  &&  mv nwn-erf nwn-erf.linux-x86_64
+    - ./travis-build-win32.sh exec dub build -b release :nwn-erf  &&  mv nwn-erf.exe nwn-erf.win-x86
+
 after_success:
     - bash <(curl -s https://codecov.io/bash)
     - ./gh-pages/upload.sh
