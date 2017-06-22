@@ -181,10 +181,6 @@ struct GffNode{
 	/// Access by reference the underlying data stored in the $(D GffNode).
 	/// The type of this data is determined by gffTypeToNative.
 	/// Types must match exactly or it will throw
-	auto ref as(T)() inout{
-		return as!(nativeToGffType!T);
-	}
-
 	auto ref as(GffType T)() inout{
 		static assert(T!=GffType.Invalid, "Cannot use GffNode.as with type Invalid");
 		if(T != type || type==GffType.Invalid)
