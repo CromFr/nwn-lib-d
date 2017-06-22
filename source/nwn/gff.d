@@ -29,6 +29,12 @@ class GffTypeException : Exception{
 		super(msg, f, l, t);
 	}
 }
+/// Child node not found
+class GffNotFoundException : Exception{
+	@safe pure nothrow this(string msg, string f=__FILE__, size_t l=__LINE__, Throwable t=null){
+		super(msg, f, l, t);
+	}
+}
 
 /// Type of data owned by a $(D GffNode)
 /// See_Also: $(D gffTypeToNative)
@@ -163,7 +169,7 @@ struct GffNode{
 	}
 
 	/// GFF type
-	@property GffType type()const{return m_type;}
+	@property GffType type()const @safe {return m_type;}
 
 	@property{
 		/// Struct ID. Only if the node is a $(D GffType.Struct)
@@ -529,6 +535,49 @@ struct GffNode{
 
 		structContainer[field.label] = field;
 		return &structContainer[field.label];
+	}
+
+	/// Support for $D(in) operator
+	auto opBinaryRight(string op : "in")(string k) @safe
+	{
+		if(type == GffType.Struct)
+			return k in structContainer;
+		return null;
+	}
+
+	/// Find a child from this node, using the node path
+	/// The path must be a dot-separated list, containing either words or numbers, eg "Tint_Head.Tintable.Tint.1.b"
+	GffNode* getChild(in string path){
+		import std.string: split, join;
+		import std.conv: ConvException;
+		GffNode* node = &this;
+
+		string[] pathElmts = path.split(".");
+		foreach(i, p ; pathElmts){
+			if(node.type == GffType.Struct){
+
+				auto n = p in *node;
+				if(n)
+					node = n;
+				else
+					throw new GffNotFoundException("Cannot find GFF struct child with key='"~p~"', in path '"~(pathElmts[0..i].join("."))~"'");
+			}
+			else if(node.type == GffType.List){
+				size_t idx;
+				try idx = p.to!size_t;
+				catch(ConvException e)
+					throw new GffTypeException("Cannot convert '"~p~"' to int (because GffNode is a list) for argument in path '"~(pathElmts[0..idx].join("."))~"'");
+
+				auto listLength = node.as!(GffType.List).length;
+				if(idx < 0 || idx >= listLength)
+					throw new GffNotFoundException("Cannot find GFF list child with index='"~p~"', in path '"~(pathElmts[0..i].join("."))~"'");
+				node = &(*node)[idx];
+			}
+			else{
+				throw new GffTypeException("GFF node at path '"~(pathElmts[0..i].join("."))~"' is of type "~node.type.to!string~" and cannot containchild nodes");
+			}
+		}
+		return node;
 	}
 
 	/// Produces a readable string of the node and its children
@@ -1460,6 +1509,11 @@ unittest{
 
 		assert(gff.toPrettyString() == gffSerialized.toPrettyString(), "Serialization data mismatch");
 		assert(krogarDataOrig == krogarDataSerialized, "Serialization not byte perfect");
+
+		//getChild tests
+		assert(gff.getChild("Tint_Head.Tintable.Tint.1.b").as!Byte == 109);
+		assertThrown!GffNotFoundException(gff.getChild("Tint_Head.Tintable.Tint.4.b"));
+		assertThrown!GffNotFoundException(gff.getChild("Tint_Head.Tintable.Tintsss.1.b"));
 
 
 		//Dup
