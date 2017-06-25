@@ -12,6 +12,13 @@ auto ref string charArrayToString(T)(in T str) if(isStaticArray!T && isSomeChar!
 	else
 		return str.idup;
 }
+auto ref string charArrayToString(T)(in T str, size_t length) if(isDynamicArray!T && isSomeChar!(ForeachType!T)){
+	import std.string: fromStringz;
+	if(str[length-1]=='\0')
+		return str.ptr.fromStringz.idup;
+	else
+		return str.idup;
+}
 T stringToChararray(T)(in string str) if(isStaticArray!T && isSomeChar!(ForeachType!T)){
 	T ret;
 
@@ -24,6 +31,8 @@ T stringToChararray(T)(in string str) if(isStaticArray!T && isSomeChar!(ForeachT
 
 	return ret;
 }
+
+
 
 /// Formats a binary array to something readable
 string dumpByteArray(in ubyte[] byteArray){
