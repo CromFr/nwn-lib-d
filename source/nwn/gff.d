@@ -526,11 +526,16 @@ struct GffNode{
 	///
 	void opIndexAssign(GffNode value, string key){
 		assert(type == GffType.Struct, "GffNode must be a struct");
+
+		if(value.label is null) value.label = key;
+		assert(key == value.label, "Key and GffNode's label mismatch");
+
 		structContainer[key] = value;
 	}
 	///
 	void opIndexAssign(GffNode value, size_t index){
 		assert(type == GffType.List, "GffNode must be a list");
+		enforce!GffTypeException(value.type == GffType.Struct, "value must be a struct");
 		listContainer[index] = value;
 	}
 
@@ -1554,6 +1559,25 @@ unittest{
 		auto data = cast(char[])gff.serialize();
 		assert(data[0..4]=="A C ");
 		assert(data[4..8]=="V42 ");
+
+
+		//Gff modifications
+		gff["Deity"] = GffNode(ExoString, null, "Crom");
+		assert(gff["Deity"].as!ExoString == "Crom");
+
+		gff["ScriptHeartbeat"] = GffNode(ExoString, "ScriptHeartbeat", "123456");
+		assert(gff["ScriptHeartbeat"].as!ExoString == "123456");
+
+		assertThrown!Error(gff["OriginHeartbeat"] = GffNode(ExoString, "ScriptHeartbeat", "hello"));
+
+
+		assertThrown!GffTypeException(gff["Equip_ItemList"][0] = GffNode(ExoString, "Equip_ItemList", "yolo"));
+
+		gff["Equip_ItemList"][1] = GffNode(Struct, null);
+		gff["Equip_ItemList"][1]["Hello"] = GffNode(ExoString, null, "world");
+		assert(gff["Equip_ItemList"][1]["Hello"].as!ExoString == "world");
+		assertThrown!Error(gff["Equip_ItemList"][99] = GffNode(Struct, null));
+
 
 
 
