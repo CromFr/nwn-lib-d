@@ -5,16 +5,12 @@ set -ev
 if [ ! -d scod ]; then
 	git clone https://github.com/MartinNowak/scod.git scod
 	dub add-local scod
-
-	cd scod
-	rm dub.selections.json
-	cd ..
 fi
 
 # Gen doc
-DFLAGS='-c -o- -Df__dummy.html -Xfdocs.json' dub build
-dub run -q scod -- filter --min-protection=Protected --only-documented docs.json
-dub run -q scod -- generate-html --navigation-type=ModuleTree docs.json docs
+#DFLAGS='-c -o- -Df__dummy.html -Xfdocs.json' dub build
+#dub run -q scod -- filter --min-protection=Protected --only-documented docs.json
+#dub run -q scod -- generate-html --navigation-type=ModuleTree docs.json docs
 
 # Install static files
 pkg_path=$(dub list | sed -n 's|.*scod.*: ||p')
