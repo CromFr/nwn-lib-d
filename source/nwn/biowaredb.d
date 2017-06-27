@@ -10,6 +10,8 @@ import std.datetime;
 import std.typecons: Tuple;
 import std.variant;
 import std.string;
+import std.array;
+import std.range.interfaces;
 import std.exception: enforce;
 import nwnlibd.parseutils;
 
@@ -28,6 +30,17 @@ class FoxproValueSetException : Exception{
 	}
 }
 
+/// Type of the GFF raw data stored when using StoreCampaignObject
+alias BinaryObject = ubyte[];
+
+struct BDBVariable{
+	string name;
+	string playerid;
+	DateTime timestamp;
+	Value value;
+
+	alias Value = VariantN!(NWLocation.sizeof, NWInt, NWFloat, NWString, NWVector, NWLocation, BinaryObject);
+}
 
 class BiowareDB{
 
@@ -35,9 +48,16 @@ class BiowareDB{
 		this.db = db;
 	}
 
-	alias VarValue = VariantN!(NWLocation.sizeof, NWInt, NWFloat, NWString, NWVector, NWLocation);
 
-	VarValue getVariableValue(in string playerAccount, in string charName, in string sVarName) const{
+
+
+	BDBVariable getVariable(size_t index){
+		return to!BDBVariable(db.data[index]);
+	}
+	BDBVariable.Value getVariableValue(size_t index) const{
+		return to!(BDBVariable.Value)(db.data[index]);
+	}
+	BDBVariable.Value getVariableValue(in string playerAccount, in string charName, in string sVarName) const{
 		immutable pcId = playerAccount~charName;
 		foreach(index, ref entry ; db.data){
 			if( entry[Column.VarName] == sVarName
@@ -45,70 +65,77 @@ class BiowareDB{
 				return getVariableValue(index);
 			}
 		}
-		return VarValue();
+		return BDBVariable.Value();
 	}
 
-	VarValue getVariableValue(size_t index) const{
-		auto entry = db.data[index];
 
-		final switch(entry[Column.VarType].get!string[0].to!VarType) with(VarType){
-			case Int:    return VarValue(entry[Column.Int].get!double.to!NWInt);
-			case Float:  return VarValue(entry[Column.DBL1].get!double.to!NWFloat);
-			case String: return VarValue(entry[Column.Memo].get!(ubyte[]).to!NWString);
-			case Vector:
-				return VarValue(cast(NWVector)[
-					entry[Column.DBL1].get!double.to!NWFloat,
-					entry[Column.DBL2].get!double.to!NWFloat,
-					entry[Column.DBL3].get!double.to!NWFloat]);
-			case Location:
-				import std.math: atan2, PI;
-				auto angle = atan2(entry[Column.DBL5].get!double, entry[Column.DBL4].get!double);
-				return VarValue(NWLocation(
-					entry[Column.Int].get!double.to!NWObject,
-					cast(NWVector)[
-						entry[Column.DBL1].get!double.to!NWFloat,
-						entry[Column.DBL2].get!double.to!NWFloat,
-						entry[Column.DBL3].get!double.to!NWFloat],
-					angle*180.0/PI));
+
+
+	bool empty() @property{
+		return db.data.empty;
+	}
+
+
+	@property BDBVariable front(){
+		return getVariable(0);
+	}
+	void popFront(){
+		db.data.popFront();
+	}
+	@property BDBVariable back(){
+		return getVariable(length-1);
+	}
+	void popBack(){
+		if(db.data.length > 0)
+			db.data.length = db.data.length - 1;
+	}
+
+
+	int opApply(scope int delegate(BDBVariable) dlg){
+		int res;
+		foreach(i ; 0..length){
+			res = dlg(getVariable(i));
+			if(res != 0) break;
 		}
+		return res;
+	}
+	int opApply(scope int delegate(ulong, BDBVariable) dlg){
+		int res;
+		foreach(i ; 0..length){
+			res = dlg(i, getVariable(i));
+			if(res != 0) break;
+		}
+		return res;
 	}
 
-	enum VarType : char{
-		Int = 'I',
-		Float = 'F',
-		String = 'S',
-		Vector = 'V',
-		Location = 'L',
+
+	@property BiowareDB save() {
+		//TODO: implement and make const
+		return this;//return BiowareDB(data.dup);
 	}
-	struct Variable{
-		string name;
-		string playerid;
-		DateTime timestamp;
-		VarType type;
-		VarValue value;
+	BDBVariable opIndex(size_t index){
+		return getVariable(index);
+	}
+	void opIndexAssign(BDBVariable val, size_t index){
+		db.data[index] = to!(Variant[])(val);
 	}
 
-	Variable getVariable(size_t index){
-		auto entry = db.data[index];
-
-		auto timestampstr = entry[Column.Timestamp].get!string;
-
-		auto timestamp = DateTime(
-			timestampstr[6..8].to!int + 2000,
-			timestampstr[0..2].to!int,
-			timestampstr[3..5].to!int,
-			timestampstr[8..10].to!int,
-			timestampstr[11..13].to!int,
-			timestampstr[14..16].to!int);
-		return Variable(
-			entry[Column.VarName].get!string,
-			entry[Column.PlayerID].get!string,
-			timestamp,
-			entry[Column.VarType].get!string[0].to!VarType,
-			getVariableValue(index)
-			);
+	@property size_t length() const{
+		return db.length;
 	}
 
+	alias opDollar = length;
+
+	BDBVariable[] opSlice(size_t start, size_t end){
+		import std.array: array;
+		import std.algorithm: map;
+
+		BDBVariable[] res;
+		foreach(i ; start..end){
+			res ~= getVariable(i);
+		}
+		return res;
+	}
 
 private:
 	enum Column {
@@ -125,12 +152,128 @@ private:
 		DBL6,
 		Memo,
 	}
+	enum VarType : char{
+		Int = 'I',
+		Float = 'F',
+		String = 'S',
+		Vector = 'V',
+		Location = 'L',
+		BinObject = 'O',
+	}
 
+
+	static auto to(T: BDBVariable)(in Variant[] entry){
+		immutable ts = entry[Column.Timestamp].get!string;
+		return BDBVariable(
+			entry[Column.VarName].get!string,
+			entry[Column.PlayerID].get!string,
+			DateTime(
+				ts[6..8].to!int + 2000,
+				ts[0..2].to!int,
+				ts[3..5].to!int,
+				ts[8..10].to!int,
+				ts[11..13].to!int,
+				ts[14..16].to!int),
+			to!(BDBVariable.Value)(entry)
+			);
+	}
+	static auto to(T: BDBVariable.Value)(in Variant[] entry){
+		final switch(entry[Column.VarType].get!string[0].to!VarType) with(VarType){
+			case Int:    return BDBVariable.Value(entry[Column.Int].get!double.to!NWInt);
+			case Float:  return BDBVariable.Value(entry[Column.DBL1].get!double.to!NWFloat);
+			case String: return BDBVariable.Value((cast(char[])entry[Column.Memo].get!(ubyte[])).to!NWString);
+			case Vector:
+				return BDBVariable.Value(cast(NWVector)[
+					entry[Column.DBL1].get!double.to!NWFloat,
+					entry[Column.DBL2].get!double.to!NWFloat,
+					entry[Column.DBL3].get!double.to!NWFloat]);
+			case Location:
+				import std.math: atan2, PI;
+				auto angle = atan2(entry[Column.DBL5].get!double, entry[Column.DBL4].get!double);
+
+				return BDBVariable.Value(NWLocation(
+					entry[Column.Int].get!double.to!NWObject,
+					cast(NWVector)[
+						entry[Column.DBL1].get!double.to!NWFloat,
+						entry[Column.DBL2].get!double.to!NWFloat,
+						entry[Column.DBL3].get!double.to!NWFloat],
+					angle*180.0/PI));
+			case BinObject:
+				return BDBVariable.Value(entry[Column.Memo].get!(ubyte[]).to!BinaryObject);
+		}
+	}
+
+	static auto to(T: Variant[])(in BDBVariable var){
+		Variant[] entry;
+		entry.length = 12;
+
+		import std.string: format;
+		entry[Column.VarName] = Variant(var.name);
+		entry[Column.PlayerID] = Variant(var.playerid);
+		entry[Column.Timestamp] = Variant(format("%02d/%02d/%02d%02d:%02d:%02d",
+			var.timestamp.month,
+			var.timestamp.day,
+			var.timestamp.year-2000,
+			var.timestamp.hour,
+			var.timestamp.minute,
+			var.timestamp.second,
+			));
+
+		if(var.value.type == typeid(NWInt)){
+			entry[Column.VarType] = "I";
+			entry[Column.Int] = var.value.get!NWInt.to!double;
+		}
+		else if(var.value.type == typeid(NWFloat)){
+				entry[Column.VarType] = "F";
+				entry[Column.DBL1] = var.value.get!NWFloat.to!double;
+		}
+		else if(var.value.type == typeid(NWString)){
+				entry[Column.VarType] = "S";
+				entry[Column.Memo] = cast(ubyte[])var.value.get!NWString;
+		}
+		else if(var.value.type == typeid(NWVector)){
+				entry[Column.VarType] = "V";
+				auto value = var.value.get!NWVector;
+				entry[Column.DBL1] = value[0].to!double;
+				entry[Column.DBL2] = value[1].to!double;
+				entry[Column.DBL3] = value[2].to!double;
+		}
+		else if(var.value.type == typeid(NWLocation)){
+				entry[Column.VarType] = "L";
+				auto value = var.value.get!NWLocation;
+				entry[Column.Int] = value.area.to!double;
+				entry[Column.DBL1] = value.position[0].to!double;
+				entry[Column.DBL2] = value.position[1].to!double;
+				entry[Column.DBL3] = value.position[2].to!double;
+
+				import std.math: cos, sin, PI;
+				auto facing = value.facing * PI / 180.0;
+				entry[Column.DBL4] = cos(facing).to!NWFloat;
+				entry[Column.DBL5] = sin(facing).to!NWFloat;
+				entry[Column.DBL6] = 0f;
+		}
+		else if(var.value.type == typeid(BinaryObject)){
+				entry[Column.VarType] = "O";
+				entry[Column.Memo] = var.value.get!BinaryObject.to!(ubyte[]);
+		}
+		else
+			assert(0);
+		return entry;
+	}
 
 
 	FoxproDB db;
 }
 unittest{
+	import std.range.primitives;
+
+	static assert(isInputRange!BiowareDB);
+	static assert(isInfinite!BiowareDB == false);
+	static assert(isForwardRange!BiowareDB);
+	static assert(isBidirectionalRange!BiowareDB);
+	static assert(isRandomAccessRange!BiowareDB);
+
+
 	import std.math: fabs;
 
 	auto db = new BiowareDB(new FoxproDB(
@@ -139,24 +282,54 @@ unittest{
 		"unittest/testcampaign.fpt",
 		));
 
-	auto var = db.getVariable(0);
+	//Read checks
+	auto var = db[0];
 	assert(var.name == "ThisIsAFloat");
 	assert(var.playerid == "");
-	assert(var.timestamp == DateTime(2017,06,24, 19,02,20));
-	assert(var.type == BiowareDB.VarType.Float);
+	assert(var.timestamp == DateTime(2017,06,25, 23,19,26));
 	assert(fabs(var.value.get!NWFloat - 13.37) <= 0.001);
 
-	var = db.getVariable(3);
+	var = db[1];
+	assert(var.name == "ThisIsAnInt");
+	assert(var.playerid == "");
+	assert(var.timestamp == DateTime(2017,06,25, 23,19,27));
+	assert(var.value.get!NWInt == 42);
+
+	var = db[2];
+	assert(var.name == "ThisIsAVector");
+	assert(var.playerid == "");
+	assert(var.timestamp == DateTime(2017,06,25, 23,19,28));
+	assert(var.value.get!NWVector == [1.1f, 2.2f, 3.3f]);
+
+	var = db[3];
 	assert(var.name == "ThisIsALocation");
 	assert(var.playerid == "");
-	assert(var.timestamp == DateTime(2017,06,24, 19,02,20));
-	assert(var.type == BiowareDB.VarType.Location);
+	assert(var.timestamp == DateTime(2017,06,25, 23,19,29));
 	auto loc = var.value.get!NWLocation;
 	assert(loc.area == 61031);
-	assert(fabs(loc.position[0] - 100.256) <= 0.001);
-	assert(fabs(loc.position[1] - 100.259) <= 0.001);
-	assert(fabs(loc.position[2] - 0) <= 0.001);
-	assert(fabs(loc.facing - 90) <= 0.001);
+	assert(fabs(loc.position[0] - 103.060) <= 0.001);
+	assert(fabs(loc.position[1] - 104.923) <= 0.001);
+	assert(fabs(loc.position[2] - 40.080) <= 0.001);
+	assert(fabs(loc.facing - 62.314) <= 0.001);
+
+	var = db[4];
+	assert(var.name == "ThisIsAString");
+	assert(var.playerid == "");
+	assert(var.timestamp == DateTime(2017,06,25, 23,19,30));
+	assert(var.value.get!NWString == "Hello World");
+
+	var = db[5];
+	assert(var.playerid == "Crom 29Adaur Harbor");
+
+	var = db[6];
+	import nwn.gff;
+	auto gff = new Gff(var.value.get!BinaryObject);
+	assert(gff["LocalizedName"].as!(GffType.ExoLocString).strref == 162153);
+
+
+	//Internal conversions
+	foreach(entry ; db)
+		assert(entry == BiowareDB.to!(BDBVariable)(BiowareDB.to!(Variant[])(entry)));
 }
 
 
@@ -432,34 +605,4 @@ private:
 		const ubyte[] memoData;
 		uint16_t blockSize;
 	}
-}
-
-
-
-unittest{
-
-	{
-		auto db = new BiowareDB(new FoxproDB(
-			"/home/crom/Documents/Neverwinter Nights 2/database/pctools--crom29_aoroducormyr.dbf",
-			"/home/crom/Documents/Neverwinter Nights 2/database/pctools--crom29_aoroducormyr.cdx",
-			"/home/crom/Documents/Neverwinter Nights 2/database/pctools--crom29_aoroducormyr.fpt",
-			));
-	}
-
-	//auto db = new BiowareDB(
-	//	"/home/crom/Documents/Neverwinter Nights 2/database/a.dbf",
-	//	"/home/crom/Documents/Neverwinter Nights 2/database/a.cdx",
-	//	"/home/crom/Documents/Neverwinter Nights 2/database/a.fpt",
-	//	);
-
-	//{
-	//	auto db = new BiowareDB(
-	//		"/home/crom/Documents/Neverwinter Nights 2/database/xp_craftkaf3j6u4.dbf",
-	//		"/home/crom/Documents/Neverwinter Nights 2/database/xp_craftkaf3j6u4.cdx",
-	//		"/home/crom/Documents/Neverwinter Nights 2/database/xp_craftkaf3j6u4.fpt",
-	//		);
-	//}
-
-
-
 }
