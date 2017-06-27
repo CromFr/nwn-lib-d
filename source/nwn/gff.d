@@ -5,6 +5,7 @@ module nwn.gff;
 import std.stdio: File;
 import std.stdint;
 import std.conv: to;
+import std.exception: enforce;
 import nwnlibd.orderedaa;
 import nwnlibd.orderedjson;
 
@@ -31,6 +32,12 @@ class GffTypeException : Exception{
 }
 /// Child node not found
 class GffNotFoundException : Exception{
+	@safe pure nothrow this(string msg, string f=__FILE__, size_t l=__LINE__, Throwable t=null){
+		super(msg, f, l, t);
+	}
+}
+/// Child node not found
+class GffJsonParseException : Exception{
 	@safe pure nothrow this(string msg, string f=__FILE__, size_t l=__LINE__, Throwable t=null){
 		super(msg, f, l, t);
 	}
@@ -157,8 +164,8 @@ struct GffNode{
 		/// Max width: 16 chars
 		string label()const{return m_label;}
 		void label(string lbl){
-			if(lbl.length>16)
-				throw new GffValueSetException("Labels cannot be longer than 16 characters");
+			enforce!GffValueSetException(lbl.length <= 16,
+				"Labels cannot be longer than 16 characters");
 			m_label = lbl;
 		}
 	}
@@ -174,12 +181,12 @@ struct GffNode{
 	@property{
 		/// Struct ID. Only if the node is a $(D GffType.Struct)
 		uint32_t structType()const{
-			if(type!=GffType.Struct) throw new GffTypeException("GffNode is not a struct");
+			enforce!GffTypeException(type == GffType.Struct, "GffNode is not a struct");
 			return m_structType;
 		}
 		/// ditto
 		void structType(uint32_t structType){
-			if(type!=GffType.Struct) throw new GffTypeException("GffNode is not a struct");
+			enforce!GffTypeException(type == GffType.Struct, "GffNode is not a struct");
 			m_structType = structType;
 		}
 	}
@@ -189,8 +196,9 @@ struct GffNode{
 	/// Types must match exactly or it will throw
 	auto ref as(GffType T)() inout{
 		static assert(T!=GffType.Invalid, "Cannot use GffNode.as with type Invalid");
-		if(T != type || type==GffType.Invalid)
-			throw new GffTypeException("Type mismatch: GffNode of type "~type.to!string~" cannot be used with as!(GffNode."~T.to!string~")");
+
+		enforce!GffTypeException(T == type && type != GffType.Invalid,
+			"Type mismatch: GffNode of type "~type.to!string~" cannot be used with as!(GffNode."~T.to!string~")");
 
 		with(GffType)
 		static if(
@@ -471,8 +479,7 @@ struct GffNode{
 	}
 	/// ditto
 	ref GffNode opIndex(in string label){
-		if(type!=GffType.Struct)
-			throw new GffTypeException("Not a struct");
+		enforce!GffTypeException(type == GffType.Struct, "GffNode is not a struct");
 
 		return structContainer[label];
 	}
@@ -483,8 +490,7 @@ struct GffNode{
 	}
 	/// ditto
 	ref GffNode opIndex(in size_t index){
-		if(type!=GffType.List)
-			throw new GffTypeException("Not a list");
+		enforce!GffTypeException(type == GffType.List, "GffNode is not a list");
 
 		return listContainer[index];
 	}
@@ -573,9 +579,8 @@ struct GffNode{
 					throw new GffNotFoundException("Cannot find GFF list child with index='"~p~"', in path '"~(pathElmts[0..i].join("."))~"'");
 				node = &(*node)[idx];
 			}
-			else{
+			else
 				throw new GffTypeException("GFF node at path '"~(pathElmts[0..i].join("."))~"' is of type "~node.type.to!string~" and cannot containchild nodes");
-			}
 		}
 		return node;
 	}
@@ -629,8 +634,8 @@ struct GffNode{
 			}
 		}
 
-		if(topLevelStruct && type!=GffType.Struct)
-			throw new GffTypeException("topLevelStruct should only be set for a GffType.Struct");
+		enforce!GffTypeException(topLevelStruct? type == GffType.Struct : true,
+			"topLevelStruct should only be set for a GffType.Struct");
 
 		JSONValue ret = cast(JSONValue[string])null;
 
@@ -711,7 +716,30 @@ struct GffNode{
 				case "void":         return GffType.Void;
 				case "struct":       return GffType.Struct;
 				case "list":         return GffType.List;
-				default: assert(0, "Unknown Gff type string: '"~type~"'");
+				default: throw new GffJsonParseException("Unknown Gff type string: '"~type~"'");
+			}
+		}
+
+		uint64_t jsonToUint(in JSONValue json){
+			switch(json.type) with(JSON_TYPE){
+				case INTEGER: return json.integer;
+				case UINTEGER: return json.uinteger;
+				default: throw new GffJsonParseException("Type "~json.type~" is not an unsigned int");
+			}
+		}
+		int64_t jsonToInt(in JSONValue json){
+			switch(json.type) with(JSON_TYPE){
+				case INTEGER: return json.integer;
+				case UINTEGER: return json.uinteger;
+				default: throw new GffJsonParseException("Type "~json.type~" is not an int");
+			}
+		}
+		double jsonToFloat(in JSONValue json){
+			switch(json.type) with(JSON_TYPE){
+				case INTEGER: return json.integer;
+				case UINTEGER: return json.uinteger;
+				case FLOAT: return json.floating;
+				default: throw new GffJsonParseException("Type "~json.type~" is not an int");
 			}
 		}
 
@@ -734,23 +762,11 @@ struct GffNode{
 				static if(TYPE==Invalid)
 					assert(0);
 				else static if(isIntegral!(gffTypeToNative!TYPE)){
-					auto value = &jsonNode["value"];
-					if(value.type == JSON_TYPE.UINTEGER)
-						ret = value.uinteger;
-					else if(value.type == JSON_TYPE.INTEGER)
-						ret = value.integer;
-					else
-						assert(0, "Type "~value.type.to!string~" is not convertible to GffType."~ret.type.to!string);
+					ret = jsonToInt(jsonNode["value"]);
 					break typeswitch;
 				}
 				else static if(isFloatingPoint!(gffTypeToNative!TYPE)){
-					auto value = &jsonNode["value"];
-					if(value.type == JSON_TYPE.UINTEGER)
-						ret = value.uinteger;
-					else if(value.type == JSON_TYPE.INTEGER)
-						ret = value.integer;
-					else if(value.type == JSON_TYPE.FLOAT)
-						ret = value.floating;
+					ret = jsonToFloat(jsonNode["value"]);
 					break typeswitch;
 				}
 				else static if(TYPE==ExoString || TYPE==ResRef){
@@ -759,9 +775,8 @@ struct GffNode{
 				}
 				else static if(TYPE==ExoLocString){
 					alias Type = gffTypeToNative!ExoLocString;
-					ret = jsonNode["str_ref"].integer;
+					ret = jsonToUint(jsonNode["str_ref"]);
 
-					typeof(Type.strref) strings;
 					if(!jsonNode["value"].isNull){
 						foreach(string key, ref str ; jsonNode["value"].object){
 							auto id = key.to!(typeof(Type.strings.keys[0]));
@@ -778,11 +793,16 @@ struct GffNode{
 				else static if(TYPE==Struct){
 					auto jsonValue = baseStructNode? &jsonNode : &jsonNode["value"];
 
-					auto structId = "__struct_id" in *jsonValue;
+					auto structId = "__struct_id" in jsonNode;
 					if(structId !is null)
-						ret.structType = structId.integer.to!(typeof(ret.structType));
+						ret.structType = jsonToUint(*structId).to!(typeof(ret.structType));
+
+
+					if(jsonValue.type == JSON_TYPE.NULL)
+						break typeswitch;
 
 					assert(jsonValue.type==JSON_TYPE.OBJECT, "Struct is not a Json Object");
+
 
 					foreach(ref key ; jsonValue.objectKeyOrder){
 						if(key.length<2 || key[0..2]!="__"){
@@ -794,7 +814,7 @@ struct GffNode{
 				}
 				else static if(TYPE==List){
 					foreach(ref node ; jsonNode["value"].array){
-						assert(node.type==JSON_TYPE.OBJECT, "Array element is not a Json Object");
+						enforce!GffJsonParseException(node.type == JSON_TYPE.OBJECT, "Array element children must be a Json Object");
 						ret.as!List ~= GffNode.fromJson(node, null, true);
 					}
 					break typeswitch;
@@ -851,8 +871,8 @@ class Gff{
 		ubyte[] data;
 		data.length = GffHeader.sizeof;
 		auto readCount = file.rawRead(data).length;
-		if(readCount<GffHeader.sizeof)
-			throw new GffParseException("File is too small to be GFF: "~readCount.to!string~" bytes read, "~GffHeader.sizeof.to!string~" needed !");
+		enforce!GffParseException(readCount >= GffHeader.sizeof,
+			"File is too small to be GFF: "~readCount.to!string~" bytes read, "~GffHeader.sizeof.to!string~" needed !");
 
 		GffHeader* header = cast(GffHeader*)data.ptr;
 		immutable size_t fileLength =
@@ -860,8 +880,8 @@ class Gff{
 
 		data.length = fileLength;
 		readCount += file.rawRead(data[GffHeader.sizeof..$]).length;
-		if(readCount<fileLength)
-			throw new GffParseException("File is too small to be GFF: "~readCount.to!string~" bytes read, "~fileLength.to!string~" needed !");
+		enforce!GffParseException(readCount >= fileLength,
+			"File is too small to be GFF: "~readCount.to!string~" bytes read, "~fileLength.to!string~" needed !");
 
 		this(data);
 	}
@@ -872,16 +892,14 @@ class Gff{
 		const string fileType(){return m_fileType;}
 		/// ditto
 		void fileType(in string type){
-			if(type.length>4)
-				throw new GffValueSetException("fileType length must be <= 4");
+			enforce!GffValueSetException(type.length <= 4, "fileType length must be <= 4");
 			m_fileType = type;
 		}
 		/// GFF version stored in the GFF file. Usually "V3.2"
 		/// Max width: 4 chars
 		const string fileVersion(){return m_fileVersion;}
 		void fileVersion(in string ver){
-			if(ver.length>4)
-				throw new GffValueSetException("fileVersion length must be <= 4");
+			enforce!GffValueSetException(ver.length <= 4, "fileVersion length must be <= 4");
 			m_fileVersion = ver;
 		}
 	}
@@ -1504,6 +1522,7 @@ unittest{
 		assert(gff.as!Struct.byKeyValue[188].value["Tint"]["1"]["r"].as!Byte == 253);
 		assert(gff["Tintable"]["Tint"]["1"]["r"].as!Byte == 253);
 
+		//Perfect Serialization
 		auto krogarDataSerialized = gff.serialize();
 		auto gffSerialized = new Gff(krogarDataSerialized);
 
@@ -1514,6 +1533,11 @@ unittest{
 		assert(gff.getChild("Tint_Head.Tintable.Tint.1.b").as!Byte == 109);
 		assertThrown!GffNotFoundException(gff.getChild("Tint_Head.Tintable.Tint.4.b"));
 		assertThrown!GffNotFoundException(gff.getChild("Tint_Head.Tintable.Tintsss.1.b"));
+
+		assert(gff.getChild("FeatList.42.Feat").as!Word == 1394);
+		assertThrown!GffTypeException(gff.getChild("FeatList.yolo.Feat"));
+		assertThrown!GffTypeException(gff.getChild("FeatList.-1.Feat"));
+		assertThrown!GffNotFoundException(gff.getChild("FeatList.50.Feat"));
 
 
 		//Dup
@@ -1530,6 +1554,19 @@ unittest{
 		auto data = cast(char[])gff.serialize();
 		assert(data[0..4]=="A C ");
 		assert(data[4..8]=="V42 ");
+
+
+
+
+		immutable dogeDataOrig = cast(immutable ubyte[])import("doge.utc");
+		auto dogeGff = new Gff(dogeDataOrig);
+
+		// duplication fixing serializations
+		auto dogeJson = dogeGff.toJson();
+		auto dogeFromJson = Gff.fromJson(dogeJson);
+		auto dogeFromJsonStr = Gff.fromJson(parseJSON(dogeJson.toString()));
+		assert(dogeFromJson.serialize() == dogeDataOrig);
+		assert(dogeFromJsonStr.serialize() == dogeDataOrig);
 	}
 
 }
