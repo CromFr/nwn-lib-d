@@ -7,7 +7,7 @@ import std.stdio: File, stderr;
 import std.stdint;
 import std.conv: to;
 import std.datetime;
-import std.typecons: Tuple;
+import std.typecons: Tuple, Nullable, nullable;
 import std.variant;
 import std.string;
 import std.array;
@@ -45,53 +45,62 @@ struct BDBVariable{
 class BiowareDB{
 
 	this(FoxproDB db){
-		this.db = db;
+		this.fpdb = db;
 	}
 
 
-
-
-	BDBVariable getVariable(size_t index){
-		return to!BDBVariable(db.data[index]);
+	BDBVariable getVariable(size_t index) const{
+		return to!BDBVariable(fpdb.data[index]);
 	}
 	BDBVariable.Value getVariableValue(size_t index) const{
-		return to!(BDBVariable.Value)(db.data[index]);
+		return to!(BDBVariable.Value)(fpdb.data[index]);
 	}
-	BDBVariable.Value getVariableValue(in string playerAccount, in string charName, in string sVarName) const{
+
+
+	Nullable!size_t getVariableIndex(in string playerAccount, in string charName, in string sVarName) const{
 		immutable pcId = playerAccount~charName;
-		foreach(index, ref entry ; db.data){
+		foreach(index, ref entry ; fpdb.data){
 			if( entry[Column.VarName] == sVarName
 			&& entry[Column.PlayerID] == pcId){
-				return getVariableValue(index);
+				return Nullable!size_t(index);
 			}
 		}
-		return BDBVariable.Value();
+		return Nullable!size_t();
+	}
+
+
+	Nullable!(BDBVariable.Value) getVariableValue(in string playerAccount, in string charName, in string sVarName) const{
+		auto res = getVariableIndex(playerAccount, charName, sVarName);
+		if(!res.isNull)
+			return Nullable!(BDBVariable.Value)(getVariableValue(res.get));
+		else
+			return Nullable!(BDBVariable.Value)();
 	}
 
 
 
 
-	bool empty() @property{
-		return db.data.empty;
+	@property bool empty() const{
+		return fpdb.data.empty;
 	}
 
 
-	@property BDBVariable front(){
+	@property BDBVariable front() const{
 		return getVariable(0);
 	}
 	void popFront(){
-		db.data.popFront();
+		fpdb.data.popFront();
 	}
-	@property BDBVariable back(){
+	@property BDBVariable back() const{
 		return getVariable(length-1);
 	}
 	void popBack(){
-		if(db.data.length > 0)
-			db.data.length = db.data.length - 1;
+		if(fpdb.data.length > 0)
+			fpdb.data.length = fpdb.data.length - 1;
 	}
 
 
-	int opApply(scope int delegate(BDBVariable) dlg){
+	int opApply(scope int delegate(in BDBVariable) dlg) const{
 		int res;
 		foreach(i ; 0..length){
 			res = dlg(getVariable(i));
@@ -99,10 +108,40 @@ class BiowareDB{
 		}
 		return res;
 	}
-	int opApply(scope int delegate(ulong, BDBVariable) dlg){
+	int opApply(scope int delegate(ulong, in BDBVariable) dlg) const{
 		int res;
 		foreach(i ; 0..length){
 			res = dlg(i, getVariable(i));
+			if(res != 0) break;
+		}
+		return res;
+	}
+
+
+	int opApply(scope int delegate(ref BDBVariable) dlg){
+		int res;
+		foreach(i ; 0..length){
+			auto var = getVariable(i);
+			auto varOrigin = cast(immutable)var;
+			res = dlg(var);
+
+			if(var != varOrigin)
+				this[i] = var;
+
+			if(res != 0) break;
+		}
+		return res;
+	}
+	int opApply(scope int delegate(ulong, ref BDBVariable) dlg){
+		int res;
+		foreach(i ; 0..length){
+			auto var = getVariable(i);
+			auto varOrigin = cast(immutable)var;
+			res = dlg(i, var);
+
+			if(var != varOrigin)
+				this[i] = var;
+
 			if(res != 0) break;
 		}
 		return res;
@@ -117,11 +156,11 @@ class BiowareDB{
 		return getVariable(index);
 	}
 	void opIndexAssign(BDBVariable val, size_t index){
-		db.data[index] = to!(Variant[])(val);
+		fpdb.data[index] = to!(Variant[])(val);
 	}
 
 	@property size_t length() const{
-		return db.length;
+		return fpdb.length;
 	}
 
 	alias opDollar = length;
@@ -135,6 +174,13 @@ class BiowareDB{
 			res ~= getVariable(i);
 		}
 		return res;
+	}
+
+	void opOpAssign(string op: "~")(in BDBVariable var){
+		fpdb.data ~= var.to!(Variant[]);
+	}
+	void opOpAssign(string op: "~")(in BDBVariable[] vars){
+		fpdb.data ~= vars[].to!(Variant[][]);
 	}
 
 private:
@@ -262,7 +308,7 @@ private:
 	}
 
 
-	FoxproDB db;
+	FoxproDB fpdb;
 }
 unittest{
 	import std.range.primitives;
@@ -277,9 +323,9 @@ unittest{
 	import std.math: fabs;
 
 	auto db = new BiowareDB(new FoxproDB(
-		"unittest/testcampaign.dbf",
-		"unittest/testcampaign.cdx",
-		"unittest/testcampaign.fpt",
+		cast(immutable ubyte[])import("testcampaign.dbf"),
+		cast(immutable ubyte[])import("testcampaign.cdx"),
+		cast(immutable ubyte[])import("testcampaign.fpt"),
 		));
 
 	//Read checks
@@ -328,8 +374,20 @@ unittest{
 
 
 	//Internal conversions
-	foreach(entry ; db)
-		assert(entry == BiowareDB.to!(BDBVariable)(BiowareDB.to!(Variant[])(entry)));
+	foreach(var ; db)
+		assert(var == BiowareDB.to!(BDBVariable)(BiowareDB.to!(Variant[])(var)));
+
+
+	//Modification
+	foreach(i, ref var ; db){
+		if(var.name == "ThisIsAFloat"){
+			var.value = NWFloat(42.424242f);
+		}
+	}
+	assert(db.getVariableValue(null, null, "ThisIsAFloat").get.get!NWFloat == 42.424242f);
+
+	assert(db.getVariableIndex("any", "body", "ThisIsAFloat").isNull);
+	assert(db.getVariableValue(null, null, "ThisIsSparta").isNull);
 }
 
 
