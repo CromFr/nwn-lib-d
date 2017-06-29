@@ -28,8 +28,16 @@ class ArgException : Exception{
 	}
 }
 
+
 int _main(string[] args){
 	import std.getopt;
+
+	if(args.length > 1){
+		if(args[1] == "--help" || args[1] == "-h"){
+			writeln("Parsing and serialization tool for ERF archive files (erf, hak, mod, ...)");
+			writeln("Usage: ", args[0], " (create|info|list)");
+		}
+	}
 
 	if(args.length > 2){
 		immutable command = args[1];
@@ -38,11 +46,14 @@ int _main(string[] args){
 		switch(command){
 			case "create":{
 				string outputPath;
+				string buildDateStr;
 				auto res = getopt(args,
-					"o|output", "Output file name", &outputPath);
+					config.required, "o|output", "Output file name", &outputPath,
+					"date", "Set erf build date field. Format 'YYYY-MM-DD', or just 'now'. Defaults to 1900-01-01", &buildDateStr);
 				if(res.helpWanted){
 					defaultGetoptPrinter(
-						"Parsing and serialization tool for ERF archive files (erf, hak, mod, ...)",
+						"Pack multiple files into a single NWN2 ERF/HAK/MOD file\n"
+						~"Example: "~args[0]~" create -o out_file.erf file1 file2 ...",
 						res.options);
 					return 0;
 				}
@@ -50,6 +61,12 @@ int _main(string[] args){
 				auto erf = new NWN2Erf();
 				erf.fileVersion = "V1.1";
 				erf.fileType = outputPath.extension[1..$].toUpper;
+
+				import std.datetime: Clock, Date;
+				if(buildDateStr == "now")
+					erf.buildDate = cast(Date)Clock.currTime;
+				else if(buildDateStr !is null)
+					erf.buildDate = Date.fromISOExtString(buildDateStr);
 
 
 				void addFile(DirEntry file){
@@ -74,12 +91,35 @@ int _main(string[] args){
 
 			}break;
 
+			case "extract":{
+				string outputPath;
+				auto res = getopt(args,
+					config.required, "o|output", "Output folder path", &outputPath);
+				if(res.helpWanted){
+					defaultGetoptPrinter(
+						"Extract an ERF file content"
+						~"Example: "~args[0]~" extract -o dir/ yourfile.erf",
+						res.options);
+					return 0;
+				}
+
+				auto erf = new NWN2Erf(cast(ubyte[])args[$-1].read);
+				foreach(ref file ; erf.files){
+					immutable filePath = buildNormalizedPath(
+						outputPath,
+						file.name ~ "." ~ resourceTypeToFileExtension(file.type));
+					std.file.write(filePath, file.data);
+				}
+
+			}break;
+
 			case "info":{
 				auto erf = new NWN2Erf(cast(ubyte[])args[$-1].read);
 				writeln("File type: ", erf.fileType);
 				writeln("File version: ", erf.fileVersion);
 				writeln("Build date: ", erf.buildDate);
 				writeln("Module description: ", erf.description);
+				writeln("File count: ", erf.files.length);
 			}break;
 
 			case "list":{
@@ -93,8 +133,9 @@ int _main(string[] args){
 						file.type);
 				}
 			}break;
+
 			default:
-				writeln(command, " not implemented");
+				writeln("Unknown command '",command, "'. Try ",args[0]," --help");
 				return -1;
 		}
 	}

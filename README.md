@@ -12,14 +12,29 @@ Multi-platform D library & tooling for handling Neverwinter Nights 1 & 2 resourc
 
 ### Command-line tools
 - `nwn-gff`
-    + Read / write GFF files (ifo, are, bic, uti, ...)
-    
-      | Format | Parsing | Serialization | Comment |
-      |:------:|:-------:|:-------------:|---------|
-      |`gff`| :white_check_mark:| :white_check_mark:|NWN binary. Generated binary file match exactly official NWN2 files (needs to be tested with NWN1)|
-      |`json`| :white_check_mark:| :white_check_mark:|Json, compatible with [Niv nwn-lib](https://github.com/niv/nwn-lib)|
-      |`json_minified`|:white_check_mark:|:white_check_mark:|Same as `json` but minified|
-      |`pretty`|:x:| :white_check_mark:|Human-readable|
+  + Read / write GFF files (ifo, are, bic, uti, ...)
+  
+    | Format | Parsing | Serialization | Comment |
+    |:------:|:-------:|:-------------:|---------|
+    |`gff`| :white_check_mark:| :white_check_mark:|NWN binary. Generated binary file match exactly official NWN2 files (needs to be tested with NWN1)|
+    |`json`| :white_check_mark:| :white_check_mark:|Json, compatible with [Niv nwn-lib](https://github.com/niv/nwn-lib)|
+    |`json_minified`|:white_check_mark:|:white_check_mark:|Same as `json` but minified|
+    |`pretty`|:x:| :white_check_mark:|Human-readable|
+
+  + Pros
+    * Fast
+    * GFF nodes keeps original ordering
+    * Basic GFF modifications
+  + Cons
+    * Limited serialization targets
+
+- `nwn-erf`
+  + Create / Extract / View ERF files (erf, hak, mod, ...)
+  + Pros
+    * Allows to set the ERF buildDate field, to create reproducible erf files.
+  + Cons
+    * No support for NWN1 ERF
+    * Not very memory efficient
 
 ### Library
 
