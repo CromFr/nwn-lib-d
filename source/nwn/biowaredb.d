@@ -47,6 +47,13 @@ class BiowareDB{
 	this(FoxproDB db){
 		this.fpdb = db;
 	}
+	this(in string pathWithoutExtension){
+		this(new FoxproDB(
+			pathWithoutExtension~".dbf",
+			pathWithoutExtension~".cdx",
+			pathWithoutExtension~".fpt",
+			));
+	}
 
 
 	BDBVariable getVariable(size_t index) const{
