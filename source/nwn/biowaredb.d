@@ -61,14 +61,17 @@ class BiowareDB{
 		VarType type;
 	}
 
-	Nullable!size_t getVariableIndex(in string account, in string character, in string variable){
-		if(auto i = Key(account~character, variable) in index)
+	Nullable!size_t getVariableIndex(in string pcid, in string variable) const{
+		if(auto i = Key(pcid, variable) in index)
 			return Nullable!size_t(*i);
 		return Nullable!size_t();
 	}
+	Nullable!size_t getVariableIndex(in string account, in string character, in string variable) const{
+		return getVariableIndex(account~character, variable);
+	}
 
 
-	T getVariableValue(T)(size_t index)
+	const(T) getVariableValue(T)(size_t index) const
 	if(is(T == NWInt) || is(T == NWFloat) || is(T == NWString) || is(T == NWVector) || is(T == NWLocation) || is(T == BinaryObject))
 	{
 		auto record = table.getRecord(index);
@@ -128,7 +131,7 @@ class BiowareDB{
 	}
 
 
-	Nullable!T getVariableValue(T)(in string account, in string character, in string variable)
+	Nullable!(const(T)) getVariableValue(T)(in string account, in string character, in string variable) const
 	if(is(T == NWInt) || is(T == NWFloat) || is(T == NWString) || is(T == NWVector) || is(T == NWLocation) || is(T == BinaryObject))
 	{
 		auto idx = getVariableIndex(account, character, variable);
@@ -137,7 +140,7 @@ class BiowareDB{
 		return Nullable!T();
 	}
 
-	Variable getVariable(size_t index) inout{
+	Variable getVariable(size_t index) const{
 		auto record = table.getRecord(index);
 		auto ts = cast(const char[])record[RecOffset.Timestamp .. RecOffset.VarType];
 
@@ -157,11 +160,15 @@ class BiowareDB{
 			);
 	}
 
-	Nullable!T getVariable(T)(in string account, in string character, in string variable){
-		auto idx = getVariableIndex(account, character, variable);
-		if(idx.hasValue)
-			return Nullable!T(getVariable(idx.get));
-		return Nullable!T();
+	Nullable!Variable getVariable(in string pcid, in string variable) const{
+		auto idx = getVariableIndex(pcid, variable);
+		if(idx.isNull == false)
+			return Nullable!Variable(getVariable(idx.get));
+		return Nullable!Variable();
+	}
+
+	Nullable!Variable getVariable(in string account, in string character, in string variable) const{
+		return getVariable(account~character, variable);
 	}
 
 
@@ -173,8 +180,16 @@ class BiowareDB{
 
 	int opApply(scope int delegate(in Variable) dlg) const{
 		int res;
-		foreach(i ; 0..length){
+		foreach(i ; 0 .. length){
 			res = dlg(getVariable(i));
+			if(res != 0) break;
+		}
+		return res;
+	}
+	int opApply(scope int delegate(size_t, in Variable) dlg) const{
+		int res;
+		foreach(i ; 0 .. length){
+			res = dlg(i, getVariable(i));
 			if(res != 0) break;
 		}
 		return res;
@@ -199,8 +214,8 @@ private:
 			if(record[0] == Table.DeletedFlag.False){
 				//Not deleted
 				index[Key(
-					(cast(const char[])record[RecOffset.VarName .. RecOffset.PlayerID]).dup.strip(),
 					(cast(const char[])record[RecOffset.PlayerID .. RecOffset.Timestamp]).dup.strip(),
+					(cast(const char[])record[RecOffset.VarName .. RecOffset.PlayerID]).dup.strip(),
 					)] = i;
 			}
 			index.rehash();
@@ -524,6 +539,7 @@ unittest{
 
 	var = db[6];
 	assert(var.deleted == false);
+	assert(var.name == "StoredObject");
 	assert(var.type == 'O');
 	import nwn.gff;
 	auto gff = new Gff(db.getVariableValue!BinaryObject(var.index));
@@ -532,6 +548,33 @@ unittest{
 	var = db[7];
 	assert(var.deleted == true);
 	assert(var.name == "DeletedVarExample");
+
+
+	auto var2 = db.getVariable(null, null, "ThisIsAString");
+	assert(var2.name == "ThisIsAString");
+	assert(var2.index == 4);
+
+	var2 = db.getVariable("Crom 29", "Adaur Harbor", "StoredObjectName");
+	assert(var2.name == "StoredObjectName");
+	assert(var2.index == 5);
+
+	var2 = db["Crom 29", "Adaur Harbor", "StoredObjectName"];
+	assert(var2.name == "StoredObjectName");
+	assert(var2.index == 5);
+
+	var2 = db["Crom 29Adaur Harbor", "StoredObject"];
+	assert(var2.name == "StoredObject");
+	assert(var2.index == 6);
+
+	var2 = db["Crom 29", "Adaur Harb", "StoredObject"];
+	assert(var2.isNull);
+
+
+	assertThrown!BiowareDBException(db.getVariableValue!BinaryObject(0));
+
+
+	foreach(var ; db){}
+	foreach(i, var ; db){}
 
 }
 
