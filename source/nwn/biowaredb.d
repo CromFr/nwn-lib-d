@@ -34,10 +34,27 @@ class BiowareDB{
 
 	this(in ubyte[] dbfData, in ubyte[] cdxData, in ubyte[] fptData){
 		table.data = dbfData.dup();
-		//index.data = cdxData.dup();
+		//index.data = null;//Not used
 		memo.data = fptData.dup();
 
 		buildIndex();
+	}
+
+	this(in string dbfPath, in string cdxPath, in string fptPath){
+		import std.file: read;
+		this(
+			cast(ubyte[])read(dbfPath),
+			null,//Not used
+			cast(ubyte[])read(fptPath),
+			);
+	}
+
+	this(in string dbFilesPath){
+		this(
+			dbFilesPath~".dbf",
+			null,//Not used
+			dbFilesPath~".fpt",
+			);
 	}
 
 
@@ -131,13 +148,19 @@ class BiowareDB{
 	}
 
 
+	Nullable!(const(T)) getVariableValue(T)(in string pcid, in string variable) const
+	if(is(T == NWInt) || is(T == NWFloat) || is(T == NWString) || is(T == NWVector) || is(T == NWLocation) || is(T == BinaryObject))
+	{
+		auto idx = getVariableIndex(pcid, variable);
+		if(idx.isNull == false)
+			return Nullable!(const(T))(getVariableValue!T(idx.get));
+		return Nullable!(const(T))();
+	}
+
 	Nullable!(const(T)) getVariableValue(T)(in string account, in string character, in string variable) const
 	if(is(T == NWInt) || is(T == NWFloat) || is(T == NWString) || is(T == NWVector) || is(T == NWLocation) || is(T == BinaryObject))
 	{
-		auto idx = getVariableIndex(account, character, variable);
-		if(idx.hasValue)
-			return Nullable!T(getVariableValue(idx.get));
-		return Nullable!T();
+		return getVariableValue(account~character, variable);
 	}
 
 	Variable getVariable(size_t index) const{
@@ -218,8 +241,8 @@ private:
 					(cast(const char[])record[RecOffset.VarName .. RecOffset.PlayerID]).dup.strip(),
 					)] = i;
 			}
-			index.rehash();
 		}
+		index.rehash();
 	}
 
 
