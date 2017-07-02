@@ -106,8 +106,8 @@ class BiowareDB{
 		}
 		else static if(is(T == NWString)){
 			if(type == VarType.String){
-				auto memoIndex = (cast(const char[])record[RecOffset.Memo .. RecOffset.End]).strip().to!ulong;
-				return (cast(char[])memo.getBlockContent(memoIndex)).to!string;
+				auto memoIndex = (cast(const char[])record[RecOffset.Memo .. RecOffset.End]).strip().to!size_t;
+				return (cast(const char[])memo.getBlockContent(memoIndex)).to!string;
 			}
 		}
 		else static if(is(T == NWVector)){
@@ -139,7 +139,7 @@ class BiowareDB{
 		}
 		else static if(is(T == BinaryObject)){
 			if(type == VarType.BinaryObject){
-				auto memoIndex = (cast(const char[])record[RecOffset.Memo .. RecOffset.End]).strip().to!ulong;
+				auto memoIndex = (cast(const char[])record[RecOffset.Memo .. RecOffset.End]).strip().to!size_t;
 				return memo.getBlockContent(memoIndex);
 			}
 		}
