@@ -10,7 +10,11 @@ alias NWString = string;
 
 alias NWObject = uint32_t;
 
-alias NWVector = float[3];
+struct NWVector{
+	float[3] value;
+
+	alias value this;
+}
 
 struct NWLocation{
 	NWObject area;

@@ -6,12 +6,9 @@ public import nwn.types;
 import std.stdio: File, stderr;
 import std.stdint;
 import std.conv: to;
-import std.datetime;
+import std.datetime: Clock, DateTime;
 import std.typecons: Tuple, Nullable;
-import std.variant;
 import std.string;
-import std.array;
-import std.range.interfaces;
 import std.exception: enforce;
 import nwnlibd.parseutils;
 
@@ -57,6 +54,10 @@ class BiowareDB{
 			);
 	}
 
+	auto serialize(){
+		return Tuple!(const ubyte[], "dbf", const ubyte[], "fpt")(table.data, memo.data);
+	}
+
 
 
 	enum VarType : char{
@@ -66,6 +67,15 @@ class BiowareDB{
 		Vector = 'V',
 		Location = 'L',
 		BinaryObject = 'O',
+	}
+	template toVarType(T){
+		static if(is(T == NWInt))             alias toVarType = VarType.Int;
+		else static if(is(T == NWFloat))      alias toVarType = VarType.Float;
+		else static if(is(T == NWString))     alias toVarType = VarType.String;
+		else static if(is(T == NWVector))     alias toVarType = VarType.Vector;
+		else static if(is(T == NWLocation))   alias toVarType = VarType.Location;
+		else static if(is(T == BinaryObject)) alias toVarType = VarType.BinaryObject;
+		else static assert(0);
 	}
 	static struct Variable{
 		size_t index;
@@ -94,57 +104,46 @@ class BiowareDB{
 		auto record = table.getRecord(index);
 		char type = record[RecOffset.VarType];
 
+		enforce!BiowareDBException(type == toVarType!T,
+			"Variable is not a "~T.stringof);
+
 		static if(is(T == NWInt)){
-			if(type == VarType.Int){
-				return (cast(const char[])record[RecOffset.Int .. RecOffset.DBL1]).strip().to!T;
-			}
+			return (cast(const char[])record[RecOffset.Int .. RecOffset.IntEnd]).strip().to!T;
 		}
 		else static if(is(T == NWFloat)){
-			if(type == VarType.Float){
-				return (cast(const char[])record[RecOffset.DBL1 .. RecOffset.DBL2]).strip().to!T;
-			}
+			return (cast(const char[])record[RecOffset.DBL1 .. RecOffset.DBL1End]).strip().to!T;
 		}
 		else static if(is(T == NWString)){
-			if(type == VarType.String){
-				auto memoIndex = (cast(const char[])record[RecOffset.Memo .. RecOffset.End]).strip().to!size_t;
-				return (cast(const char[])memo.getBlockContent(memoIndex)).to!string;
-			}
+			auto memoIndex = (cast(const char[])record[RecOffset.Memo .. RecOffset.MemoEnd]).strip().to!size_t;
+			return (cast(const char[])memo.getBlockContent(memoIndex)).to!string;
 		}
 		else static if(is(T == NWVector)){
-			if(type == VarType.Vector){
-				return cast(NWVector)[
-						(cast(const char[])record[RecOffset.DBL1 .. RecOffset.DBL2]).strip().to!NWFloat,
-						(cast(const char[])record[RecOffset.DBL2 .. RecOffset.DBL3]).strip().to!NWFloat,
-						(cast(const char[])record[RecOffset.DBL3 .. RecOffset.DBL4]).strip().to!NWFloat,
-					];
-			}
+			return NWVector([
+					(cast(const char[])record[RecOffset.DBL1 .. RecOffset.DBL1End]).strip().to!NWFloat,
+					(cast(const char[])record[RecOffset.DBL2 .. RecOffset.DBL2End]).strip().to!NWFloat,
+					(cast(const char[])record[RecOffset.DBL3 .. RecOffset.DBL3End]).strip().to!NWFloat,
+				]);
 		}
 		else static if(is(T == NWLocation)){
-			if(type == VarType.Location){
-				import std.math: atan2, PI;
-				auto facing = atan2(
-					(cast(const char[])record[RecOffset.DBL5 .. RecOffset.DBL6]).strip().to!double,
-					(cast(const char[])record[RecOffset.DBL4 .. RecOffset.DBL5]).strip().to!double);
+			import std.math: atan2, PI;
+			auto facing = atan2(
+				(cast(const char[])record[RecOffset.DBL5 .. RecOffset.DBL5End]).strip().to!double,
+				(cast(const char[])record[RecOffset.DBL4 .. RecOffset.DBL4End]).strip().to!double);
 
-				return NWLocation(
-					(cast(const char[])record[RecOffset.Int .. RecOffset.DBL1]).strip().to!NWObject,
-					cast(NWVector)[
-						(cast(const char[])record[RecOffset.DBL1 .. RecOffset.DBL2]).strip().to!NWFloat,
-						(cast(const char[])record[RecOffset.DBL2 .. RecOffset.DBL3]).strip().to!NWFloat,
-						(cast(const char[])record[RecOffset.DBL3 .. RecOffset.DBL4]).strip().to!NWFloat,
-					],
-					facing * 180.0 / PI
-					);
-			}
+			return NWLocation(
+				(cast(const char[])record[RecOffset.Int .. RecOffset.IntEnd]).strip().to!NWObject,
+				NWVector([
+					(cast(const char[])record[RecOffset.DBL1 .. RecOffset.DBL1End]).strip().to!NWFloat,
+					(cast(const char[])record[RecOffset.DBL2 .. RecOffset.DBL2End]).strip().to!NWFloat,
+					(cast(const char[])record[RecOffset.DBL3 .. RecOffset.DBL3End]).strip().to!NWFloat,
+				]),
+				facing * 180.0 / PI
+				);
 		}
 		else static if(is(T == BinaryObject)){
-			if(type == VarType.BinaryObject){
-				auto memoIndex = (cast(const char[])record[RecOffset.Memo .. RecOffset.End]).strip().to!size_t;
-				return memo.getBlockContent(memoIndex);
-			}
+			auto memoIndex = (cast(const char[])record[RecOffset.Memo .. RecOffset.MemoEnd]).strip().to!size_t;
+			return memo.getBlockContent(memoIndex);
 		}
-
-		throw new BiowareDBException("Variable is not a "~T.stringof);
 	}
 
 
@@ -165,13 +164,13 @@ class BiowareDB{
 
 	Variable getVariable(size_t index) const{
 		auto record = table.getRecord(index);
-		auto ts = cast(const char[])record[RecOffset.Timestamp .. RecOffset.VarType];
+		auto ts = cast(const char[])record[RecOffset.Timestamp .. RecOffset.TimestampEnd];
 
 		return Variable(
 			index,
 			record[0] == Table.DeletedFlag.True,
-			(cast(const char[])record[RecOffset.VarName .. RecOffset.PlayerID]).strip().to!string,
-			(cast(const char[])record[RecOffset.PlayerID .. RecOffset.Timestamp]).strip().to!string,
+			(cast(const char[])record[RecOffset.VarName .. RecOffset.VarNameEnd]).strip().to!string,
+			(cast(const char[])record[RecOffset.PlayerID .. RecOffset.PlayerIDEnd]).strip().to!string,
 			DateTime(
 				ts[6..8].to!int + 2000,
 				ts[0..2].to!int,
@@ -193,6 +192,117 @@ class BiowareDB{
 	Nullable!Variable getVariable(in string account, in string character, in string variable) const{
 		return getVariable(account~character, variable);
 	}
+
+
+	/// Sets the value of an existing variable
+	/// Params:
+	///  updateTimestamp = true to change the variable modified date, false to keep current value
+	void setVariableValue(T)(size_t index, in T value, bool updateTimestamp = true)
+	if(is(T == NWInt) || is(T == NWFloat) || is(T == NWString) || is(T == NWVector) || is(T == NWLocation) || is(T == BinaryObject))
+	{
+		auto record = table.getRecord(index);
+		char type = record[RecOffset.VarType];
+
+		enforce!BiowareDBException(type == toVarType!T,
+			"Variable is not a "~T.stringof);
+
+		import std.string: leftJustify, format;
+
+		with(RecOffset){
+			static if(is(T == NWInt)){
+				record[Int .. IntEnd] =
+					cast(ubyte[])value.to!string.leftJustify(IntEnd - Int);
+			}
+			else static if(is(T == NWFloat)){
+				record[DBL1 .. DBL1End] =
+					cast(ubyte[])value.to!string.leftJustify(DBL1End - DBL1);
+			}
+			else static if(is(T == NWString) || is(T == BinaryObject)){
+				auto oldMemoIndexStr = (cast(const char[])record[Memo .. MemoEnd]).strip();
+				auto oldMemoIndex = oldMemoIndexStr != ""? oldMemoIndexStr.to!size_t : 0;
+
+				auto memoIndex = memo.setBlockValue(cast(const ubyte[])value, oldMemoIndex);
+
+				record[Memo .. MemoEnd] =
+					cast(ubyte[])memoIndex.to!string.leftJustify(MemoEnd - Memo);
+			}
+			else static if(is(T == NWVector)){
+				record[DBL1 .. DBL1End] =
+					cast(ubyte[])value[0].to!string.leftJustify(DBL1End - DBL1);
+				record[DBL2 .. DBL2End] =
+					cast(ubyte[])value[1].to!string.leftJustify(DBL2End - DBL2);
+				record[DBL3 .. DBL3End] =
+					cast(ubyte[])value[2].to!string.leftJustify(DBL3End - DBL3);
+			}
+			else static if(is(T == NWLocation)){
+				import std.math: cos, sin, PI;
+
+				record[Int .. IntEnd] =
+					cast(ubyte[])value.area.to!string.leftJustify(IntEnd - Int);
+
+				record[DBL1 .. DBL1End] =
+					cast(ubyte[])value.position[0].to!string.leftJustify(DBL1End - DBL1);
+				record[DBL2 .. DBL2End] =
+					cast(ubyte[])value.position[1].to!string.leftJustify(DBL2End - DBL2);
+				record[DBL3 .. DBL3End] =
+					cast(ubyte[])value.position[2].to!string.leftJustify(DBL3End - DBL3);
+
+				immutable float facingx = cos(value.facing * PI / 180.0) * 180.0 / PI;
+				immutable float facingy = sin(value.facing * PI / 180.0) * 180.0 / PI;
+
+				record[DBL4 .. DBL4End] =
+					cast(ubyte[])facingx.to!string.leftJustify(DBL4End - DBL4);
+				record[DBL5 .. DBL5End] =
+					cast(ubyte[])facingy.to!string.leftJustify(DBL5End - DBL5);
+				record[DBL6 .. DBL6End] =
+					cast(ubyte[])"0.0".leftJustify(DBL6End - DBL6);
+			}
+			else static assert(0);
+
+			//Update timestamp
+			if(updateTimestamp){
+				auto now = cast(DateTime)Clock.currTime;
+				immutable ts = format("%02d/%02d/%02d%02d:%02d:%02d",
+					now.month,
+					now.day,
+					now.year-2000,
+					now.hour,
+					now.minute,
+					now.second);
+				record[Timestamp .. TimestampEnd] =
+					cast(ubyte[])ts.leftJustify(TimestampEnd - Timestamp);
+			}
+
+		}
+	}
+
+	void setVariableValue(T)(in string pcid, in string varName, in T value, bool updateTimestamp = true)
+	if(is(T == NWInt) || is(T == NWFloat) || is(T == NWString) || is(T == NWVector) || is(T == NWLocation) || is(T == BinaryObject))
+	{
+		auto existingIndex = getVariableIndex(pcid, varName);
+		if(existingIndex.isNull == false){
+			//Reuse existing var
+			setVariableValue(existingIndex.get, value, updateTimestamp);
+		}
+		else{
+			//new var
+			auto index = table.addRecord();
+			auto record = table.getRecord(index);
+			record[0..$][] = ' ';
+
+			with(RecOffset){
+				record[VarName .. VarName + varName.length] = cast(const ubyte[])varName;
+				record[PlayerID .. PlayerID + pcid.length] = cast(const ubyte[])pcid;
+				record[VarType] = toVarType!T;
+
+				setVariableValue(index, value, true);
+			}
+
+			this.index[Key(pcid, varName)] = index;
+		}
+
+	}
+
 
 
 	alias opIndex = getVariable;
@@ -237,8 +347,8 @@ private:
 			if(record[0] == Table.DeletedFlag.False){
 				//Not deleted
 				index[Key(
-					(cast(const char[])record[RecOffset.PlayerID .. RecOffset.Timestamp]).dup.strip(),
-					(cast(const char[])record[RecOffset.VarName .. RecOffset.PlayerID]).dup.strip(),
+					(cast(const char[])record[RecOffset.PlayerID .. RecOffset.PlayerIDEnd]).dup.strip(),
+					(cast(const char[])record[RecOffset.VarName .. RecOffset.VarNameEnd]).dup.strip(),
 					)] = i;
 			}
 		}
@@ -261,19 +371,30 @@ private:
 		Memo,
 	}
 	enum RecOffset{
-		VarName   = 1,
-		PlayerID  = 1 + 32,
-		Timestamp = 1 + 32 + 32,
-		VarType   = 1 + 32 + 32 + 16,
-		Int       = 1 + 32 + 32 + 16 + 1,
-		DBL1      = 1 + 32 + 32 + 16 + 1 + 10,
-		DBL2      = 1 + 32 + 32 + 16 + 1 + 10 + 20,
-		DBL3      = 1 + 32 + 32 + 16 + 1 + 10 + 20 + 20,
-		DBL4      = 1 + 32 + 32 + 16 + 1 + 10 + 20 + 20 + 20,
-		DBL5      = 1 + 32 + 32 + 16 + 1 + 10 + 20 + 20 + 20 + 20,
-		DBL6      = 1 + 32 + 32 + 16 + 1 + 10 + 20 + 20 + 20 + 20 + 20,
-		Memo      = 1 + 32 + 32 + 16 + 1 + 10 + 20 + 20 + 20 + 20 + 20 + 20,
-		End       = 1 + 32 + 32 + 16 + 1 + 10 + 20 + 20 + 20 + 20 + 20 + 20 + 10,
+		VarName      = 1,
+		VarNameEnd   = PlayerID,
+		PlayerID     = 1 + 32,
+		PlayerIDEnd  = Timestamp,
+		Timestamp    = 1 + 32 + 32,
+		TimestampEnd = VarType,
+		VarType      = 1 + 32 + 32 + 16,
+		VarTypeEnd   = Int,
+		Int          = 1 + 32 + 32 + 16 + 1,
+		IntEnd       = DBL1,
+		DBL1         = 1 + 32 + 32 + 16 + 1 + 10,
+		DBL1End      = DBL2,
+		DBL2         = 1 + 32 + 32 + 16 + 1 + 10 + 20,
+		DBL2End      = DBL3,
+		DBL3         = 1 + 32 + 32 + 16 + 1 + 10 + 20 + 20,
+		DBL3End      = DBL4,
+		DBL4         = 1 + 32 + 32 + 16 + 1 + 10 + 20 + 20 + 20,
+		DBL4End      = DBL5,
+		DBL5         = 1 + 32 + 32 + 16 + 1 + 10 + 20 + 20 + 20 + 20,
+		DBL5End      = DBL6,
+		DBL6         = 1 + 32 + 32 + 16 + 1 + 10 + 20 + 20 + 20 + 20 + 20,
+		DBL6End      = Memo,
+		Memo         = 1 + 32 + 32 + 16 + 1 + 10 + 20 + 20 + 20 + 20 + 20 + 20,
+		MemoEnd      = 1 + 32 + 32 + 16 + 1 + 10 + 20 + 20 + 20 + 20 + 20 + 20 + 10,
 	}
 
 
@@ -345,6 +466,7 @@ private:
 			inout(Header)* header() inout{
 				return cast(inout(Header)*)data.ptr;
 			}
+			version(none)//Unused: we assume fields follow BDB format
 			inout(FieldSubrecord[]) fieldSubrecords() inout{
 
 				auto subrecordStart = cast(FieldSubrecord*)(data.ptr + Header.sizeof);
@@ -366,6 +488,12 @@ private:
 
 			inout(ubyte*) record = records + (i * header.record_size);
 			return cast(inout)record[0 .. header.record_size];
+		}
+		size_t addRecord(){
+			auto recordIndex = header.records_count;
+			data.length += header.record_size;
+			header.records_count++;
+			return recordIndex;
 		}
 	}
 
@@ -490,6 +618,49 @@ private:
 			auto block = getBlock(i);
 			return cast(inout)block.data.ptr[0 .. block.size_bigendian.bigEndianToNative];
 		}
+
+		///Return new index if it has been reallocated
+		size_t setBlockValue(in ubyte[] content, size_t previousIndex = 0){
+			immutable blockSize = header.block_size_bigendian.bigEndianToNative;
+
+			//size_t requiredBlocks = content.length / blockSize + 1;
+
+			Block* block = null;
+			size_t blockIndex = 0;
+
+			if(previousIndex > 0){
+				auto previousMemoBlock = getBlock(previousIndex);
+				auto previousBlocksWidth = previousMemoBlock.size_bigendian.bigEndianToNative / blockSize + 1;
+
+				if(content.length <= previousBlocksWidth * blockSize){
+					//Available room in this block
+					block = previousMemoBlock;
+					blockIndex = previousIndex;
+				}
+			}
+
+			if(block is null){
+				//New block needs to be allocated
+				auto requiredBlocks = content.length / blockSize + 1;
+
+				//Resize data
+				data.length += requiredBlocks * blockSize;
+
+				//Update header
+				immutable freeBlockIndex = header.next_free_block_bigendian.bigEndianToNative;
+				header.next_free_block_bigendian = (freeBlockIndex + requiredBlocks).to!uint32_t.nativeToBigEndian;
+
+				//Set pointer to new block
+				block = getBlock(freeBlockIndex);
+				blockIndex = freeBlockIndex;
+			}
+
+			block.signature_bigendian = 1.nativeToBigEndian;//BDB only store Text blocks
+			block.size_bigendian = content.length.to!uint32_t.nativeToBigEndian;
+			block.data.ptr[0 .. content.length] = content;
+
+			return blockIndex;
+		}
 	}
 
 
@@ -573,9 +744,11 @@ unittest{
 	assert(var.name == "DeletedVarExample");
 
 
+	//Variable searching
 	auto var2 = db.getVariable(null, null, "ThisIsAString");
 	assert(var2.name == "ThisIsAString");
 	assert(var2.index == 4);
+	assert(db.getVariableIndex(null, null, "ThisIsAString") == 4);
 
 	var2 = db.getVariable("Crom 29", "Adaur Harbor", "StoredObjectName");
 	assert(var2.name == "StoredObjectName");
@@ -589,16 +762,82 @@ unittest{
 	assert(var2.name == "StoredObject");
 	assert(var2.index == 6);
 
-	var2 = db["Crom 29", "Adaur Harb", "StoredObject"];
-	assert(var2.isNull);
+	assert(db["Crom 29", "Adaur Harb", "StoredObject"].isNull);
+	assert(db.getVariableValue!BinaryObject(null, "StoredObject").isNull);
+
+	assertThrown!BiowareDBException(db.getVariableValue!BinaryObject(0));//var type mismatch
 
 
-	assertThrown!BiowareDBException(db.getVariableValue!BinaryObject(0));
-
-
+	//Iteration
 	foreach(var ; db){}
 	foreach(i, var ; db){}
 
+
+
+	//Value set
+	assertThrown!BiowareDBException(db.setVariableValue(0, 88));
+
+	db.setVariableValue(0, 42.42f);
+	var = db[0];
+	assert(var.timestamp != DateTime(2017,06,25, 23,19,26));
+	assert(var.type == 'F');
+	assert(db.getVariableValue!NWFloat(var.index) == 42.42f);
+
+	db.setVariableValue(1, 12);
+	var = db[1];
+	assert(var.timestamp != DateTime(2017,06,25, 23,19,27));
+	assert(var.type == 'I');
+	assert(db.getVariableValue!NWInt(var.index) == 12);
+
+	db.setVariableValue(2, NWVector([10.0f, 20.0f, 30.0f]));
+	var = db[2];
+	assert(var.timestamp != DateTime(2017,06,25, 23,19,28));
+	assert(var.type == 'V');
+	assert(db.getVariableValue!NWVector(var.index) == [10.0f, 20.0f, 30.0f]);
+
+	db.setVariableValue(3, NWLocation(100, NWVector([10.0f, 20.0f, 30.0f]), 60.0f));
+	var = db[3];
+	assert(var.timestamp != DateTime(2017,06,25, 23,19,29));
+	assert(var.type == 'L');
+	with(db.getVariableValue!NWLocation(var.index)){
+		assert(area == 100);
+		assert(position == NWVector([10.0f, 20.0f, 30.0f]));
+		assert(fabs(facing - 60.0f) <= 0.001);
+	}
+
+
+	// Memo reallocations
+	size_t getMemoIndex(size_t varIndex){
+		auto record = db.table.getRecord(varIndex);
+		return (cast(const char[])record[BiowareDB.RecOffset.Memo .. BiowareDB.RecOffset.MemoEnd]).strip().to!size_t;
+	}
+
+	size_t oldMemoIndex;
+
+	oldMemoIndex = getMemoIndex(4);
+	db.setVariableValue(4, "small");//Can fit in the same memo block
+	assert(getMemoIndex(4) == oldMemoIndex);
+	assert(db.getVariableValue!NWString(4) == "small");
+
+	import std.array: replicate, array, join;
+	string veryLongValue = replicate(["ten chars!"], 52).array.join;//520 chars
+	db.setVariableValue(4, veryLongValue);
+	assert(getMemoIndex(4)  == 35);//Should reallocate
+	assert(db.memo.header.next_free_block_bigendian.bigEndianToNative == 37);
+
+
+	oldMemoIndex = getMemoIndex(6);
+	db.setVariableValue(6, cast(BinaryObject)[0, 1, 2, 3, 4, 5]);
+	assert(getMemoIndex(6)  == oldMemoIndex);
+	assert(db.getVariableValue!BinaryObject(6) == [0, 1, 2, 3, 4, 5]);
+
+	db.setVariableValue(null, "ThisIsAString", "yolo string");
+	assert(db.getVariableValue!NWString(4) == "yolo string");
+
+	// Variable creation
+	db.setVariableValue("playerid", "varname", "Hello string :)");
+	writeln(db.getVariableValue!NWString("playerid", "varname"));
+	assert(db.getVariableValue!NWString("playerid", "varname") == "Hello string :)");
 }
 
 
@@ -607,4 +846,8 @@ unittest{
 private T bigEndianToNative(T)(inout T i){
 	import std.bitmanip: bigEndianToNative;
 	return bigEndianToNative!T(cast(inout ubyte[T.sizeof])(&i)[0 .. 1]);
+}
+private T nativeToBigEndian(T)(inout T i){
+	import std.bitmanip: nativeToBigEndian;
+	return *(cast(T*)nativeToBigEndian(i).ptr);
 }
