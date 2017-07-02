@@ -55,6 +55,7 @@ class BiowareDB{
 	}
 
 	auto serialize(){
+		//TODO: check if serialization does not break nwn2 since CDX isn't generated
 		return Tuple!(const ubyte[], "dbf", const ubyte[], "fpt")(table.data, memo.data);
 	}
 
