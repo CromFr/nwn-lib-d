@@ -303,6 +303,23 @@ class BiowareDB{
 
 	}
 
+	void deleteVariable(size_t index){
+		auto var = this[index];
+
+		this.index.remove(Key(var.playerid, var.name));
+		table.getRecord(index)[0] = '*';
+	}
+
+	void deleteVariable(in string pcid, in string varName){
+		auto var = this[pcid, varName];
+
+		enforce!BiowareDBException(var.isNull == false,
+			"Variable not found");
+
+		this.index.remove(Key(var.playerid, var.name));
+		table.getRecord(var.index)[0] = '*';
+	}
+
 
 
 	alias opIndex = getVariable;
@@ -486,7 +503,7 @@ private:
 		inout(ubyte[]) getRecord(size_t i) inout{
 			assert(i < header.records_count, "Out of bound");
 
-			inout(ubyte*) record = records + (i * header.record_size);
+			auto record = records + (i * header.record_size);
 			return cast(inout)record[0 .. header.record_size];
 		}
 		size_t addRecord(){
@@ -836,8 +853,20 @@ unittest{
 
 	// Variable creation
 	db.setVariableValue("playerid", "varname", "Hello string :)");
-	writeln(db.getVariableValue!NWString("playerid", "varname"));
 	assert(db.getVariableValue!NWString("playerid", "varname") == "Hello string :)");
+
+
+	//Variable deleting
+	var = db.getVariable("playerid", "varname");
+	assert(var.deleted == false);
+	db.deleteVariable("playerid", "varname");
+	assert(db.getVariable("playerid", "varname").isNull);
+	var = db.getVariable(var.index);
+	assert(var.deleted == true);
+
+	assertThrown!BiowareDBException(db.deleteVariable("playerid", "varname"));
+	assertNotThrown(db.deleteVariable(var.index));
+
 }
 
 
