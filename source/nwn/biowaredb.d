@@ -1,4 +1,55 @@
-/// Foxpro database format (bioware database)
+/** Bioware campaign database (Foxpro db)
+* Macros:
+*   INDEX = Index of the variable in the table
+*   VARNAME = Campaign variable name
+*   TYPE = Type of the variable. Must match the stored variable type.
+*   PCID = player character identifier<br/>
+*          Should be his account name concatenated with his character name<br/>
+*          $(D null) for module variables
+*
+*   ACCOUNT = Player account name<br/>
+*            $(D null) for module variables
+*   CHARACTER = Character name.<br/>
+*            $(D null) for module variables
+*
+* Examples:
+* --------------------
+* // Open ./yourdatabasename.dbf, ./yourdatabasename.cdx, ./yourdatabasename.fpt
+* auto db = new BiowareDB("./yourdatabasename");
+*
+* // Set a campaign variable associated to a character
+* db.setVariableValue("YourAccount", "YourCharName", "TestFloat", 42.0f);
+*
+* // Set a campaign variable associated with the module
+* db.setVariableValue(null, null, "TestVector", NWVector([1.0f, 2.0f, 3.0f]));
+*
+* // Retrieve variable information
+* auto var = db.getVariable("YourAccount", "YourCharName", "TestFloat").get();
+*
+* // Retrieve variable value using its index (fast)
+* float f = db.getVariableValue!NWFloat(var.index);
+*
+* // Retrieve variable value by searching it
+* NWVector v = db.getVariableValue!NWVector(null, null, "TestVector").get();
+*
+* // Iterate over all variables (using variable info)
+* foreach(varinfo ; db){
+* 	if(varinfo.deleted == false)
+* 		// Variable exists
+* 	}
+* 	else{
+* 		// Variable has been deleted, skip it
+* 		continue;
+* 	}
+* }
+*
+* // Save changes
+* auto serialized = db.serialize();
+* std.file.write("./yourdatabasename.dbf", serialized.dbf);
+* std.file.write("./yourdatabasename.fpt", serialized.fpt);
+*
+* --------------------
+*/
 module nwn.biowaredb;
 
 public import nwn.types;
@@ -20,6 +71,7 @@ version(unittest) import std.exception: assertThrown, assertNotThrown;
 alias BinaryObject = ubyte[];
 
 
+///
 class BiowareDBException : Exception{
 	@safe pure nothrow this(string msg, string f=__FILE__, size_t l=__LINE__, Throwable t=null){
 		super(msg, f, l, t);
@@ -27,8 +79,12 @@ class BiowareDBException : Exception{
 }
 
 
+
+/// Bioware database (in FoxPro format, ie dbf, cdx and ftp files)
 class BiowareDB{
 
+	/// Constructor with raw data
+	/// Note: data will be copied inside the class
 	this(in ubyte[] dbfData, in ubyte[] cdxData, in ubyte[] fptData){
 		table.data = dbfData.dup();
 		//index.data = null;//Not used
@@ -37,6 +93,7 @@ class BiowareDB{
 		buildIndex();
 	}
 
+	/// Constructor with file paths
 	this(in string dbfPath, in string cdxPath, in string fptPath){
 		import std.file: read;
 		this(
@@ -46,6 +103,7 @@ class BiowareDB{
 			);
 	}
 
+	/// Constructor with file path without its extension. It will try to open the dbf and ftp files.
 	this(in string dbFilesPath){
 		this(
 			dbFilesPath~".dbf",
@@ -54,13 +112,15 @@ class BiowareDB{
 			);
 	}
 
+	/// Returns a tuple with dbf and fpt raw data (accessible with .dbf and .fpt)
+	/// Warning: Does not serialize cdx file
 	auto serialize(){
 		//TODO: check if serialization does not break nwn2 since CDX isn't generated
 		return Tuple!(const ubyte[], "dbf", const ubyte[], "fpt")(table.data, memo.data);
 	}
 
 
-
+	/// Type of a stored variable
 	enum VarType : char{
 		Int = 'I',
 		Float = 'F',
@@ -69,6 +129,7 @@ class BiowareDB{
 		Location = 'L',
 		BinaryObject = 'O',
 	}
+	/// Convert a BiowareDB.VarType into the associated native type
 	template toVarType(T){
 		static if(is(T == NWInt))             alias toVarType = VarType.Int;
 		else static if(is(T == NWFloat))      alias toVarType = VarType.Float;
@@ -78,6 +139,7 @@ class BiowareDB{
 		else static if(is(T == BinaryObject)) alias toVarType = VarType.BinaryObject;
 		else static assert(0);
 	}
+	/// Representation of a stored variable
 	static struct Variable{
 		size_t index;
 		bool deleted;
@@ -89,16 +151,38 @@ class BiowareDB{
 		VarType type;
 	}
 
-	Nullable!size_t getVariableIndex(in string pcid, in string variable) const{
-		if(auto i = Key(pcid, variable) in index)
+	/// Search and return the index of a variable
+	///
+	/// Expected O(1).
+	/// Params:
+	///   pcid = $(PCID)
+	///   varName = $(VARNAME)
+	/// Returns: `null` if not found
+	Nullable!size_t getVariableIndex(in string pcid, in string varName) const{
+		if(auto i = Key(pcid, varName) in index)
 			return Nullable!size_t(*i);
 		return Nullable!size_t();
 	}
-	Nullable!size_t getVariableIndex(in string account, in string character, in string variable) const{
-		return getVariableIndex(account~character, variable);
+
+	/// Search and return the index of a variable
+	///
+	/// Expected O(1).
+	/// Params:
+	///   account = $(ACCOUNT)
+	///   character = $(CHARACTER)
+	///   varName = $(VARNAME)
+	/// Returns: `null` if not found
+	Nullable!size_t getVariableIndex(in string account, in string character, in string varName) const{
+		return getVariableIndex(account~character, varName);
 	}
 
-
+	/// Get the variable value at `index`
+	/// Note: Can be used to retrieve deleted variable values.
+	/// Params:
+	///   T = $(TYPE)
+	///   index = $(INDEX)
+	/// Returns: the variable value
+	/// Throws: BiowareDBException if stored type != requested type
 	const(T) getVariableValue(T)(size_t index) const
 	if(is(T == NWInt) || is(T == NWFloat) || is(T == NWString) || is(T == NWVector) || is(T == NWLocation) || is(T == BinaryObject))
 	{
@@ -148,21 +232,44 @@ class BiowareDB{
 	}
 
 
-	Nullable!(const(T)) getVariableValue(T)(in string pcid, in string variable) const
+	/// Search and return the value of a variable
+	///
+	/// Expected O(1).
+	/// Params:
+	///   T = $(TYPE)
+	///   pcid = $(PCID)
+	///   varName = $(VARNAME)
+	/// Returns: the variable value, or null if not found
+	Nullable!(const(T)) getVariableValue(T)(in string pcid, in string varName) const
 	if(is(T == NWInt) || is(T == NWFloat) || is(T == NWString) || is(T == NWVector) || is(T == NWLocation) || is(T == BinaryObject))
 	{
-		auto idx = getVariableIndex(pcid, variable);
+		auto idx = getVariableIndex(pcid, varName);
 		if(idx.isNull == false)
 			return Nullable!(const(T))(getVariableValue!T(idx.get));
 		return Nullable!(const(T))();
 	}
 
-	Nullable!(const(T)) getVariableValue(T)(in string account, in string character, in string variable) const
+	/// Search and return the value of a variable
+	///
+	/// Expected O(1).
+	/// Params:
+	///   T = $(TYPE)
+	///   account = $(ACCOUNT)
+	///   character = $(CHARACTER)
+	///   varName = $(VARNAME)
+	/// Returns: the variable value, or null if not found
+	Nullable!(const(T)) getVariableValue(T)(in string account, in string character, in string varName) const
 	if(is(T == NWInt) || is(T == NWFloat) || is(T == NWString) || is(T == NWVector) || is(T == NWLocation) || is(T == BinaryObject))
 	{
-		return getVariableValue(account~character, variable);
+		return getVariableValue(account~character, varName);
 	}
 
+	/// Get variable information using its index
+	///
+	/// Note: Be sure to check `Variable.deleted` value
+	/// Params:
+	///   index = $(INDEX)
+	/// Returns: the variable information
 	Variable getVariable(size_t index) const{
 		auto record = table.getRecord(index);
 		auto ts = cast(const char[])record[RecOffset.Timestamp .. RecOffset.TimestampEnd];
@@ -183,21 +290,40 @@ class BiowareDB{
 			);
 	}
 
-	Nullable!Variable getVariable(in string pcid, in string variable) const{
-		auto idx = getVariableIndex(pcid, variable);
+	/// Search and return variable information
+	///
+	/// Expected O(1).
+	/// Params:
+	///   pcid = $(PCID)
+	///   varName = $(VARNAME)
+	/// Returns: the variable information, or null if not found
+	Nullable!Variable getVariable(in string pcid, in string varName) const{
+		auto idx = getVariableIndex(pcid, varName);
 		if(idx.isNull == false)
 			return Nullable!Variable(getVariable(idx.get));
 		return Nullable!Variable();
 	}
 
-	Nullable!Variable getVariable(in string account, in string character, in string variable) const{
-		return getVariable(account~character, variable);
+	/// Search and return variable information
+	///
+	/// Expected O(1).
+	/// Params:
+	///   account = $(ACCOUNT)
+	///   character = $(CHARACTER)
+	///   varName = $(VARNAME)
+	/// Returns: the variable information, or null if not found
+	Nullable!Variable getVariable(in string account, in string character, in string varName) const{
+		return getVariable(account~character, varName);
 	}
 
 
-	/// Sets the value of an existing variable
+	/// Set the value of an existing variable using its index.
+	///
 	/// Params:
-	///  updateTimestamp = true to change the variable modified date, false to keep current value
+	///   T = $(TYPE)
+	///   index = $(INDEX)
+	///   value = value to set
+	///   updateTimestamp = true to change the variable modified date, false to keep current value
 	void setVariableValue(T)(size_t index, in T value, bool updateTimestamp = true)
 	if(is(T == NWInt) || is(T == NWFloat) || is(T == NWString) || is(T == NWVector) || is(T == NWLocation) || is(T == BinaryObject))
 	{
@@ -277,6 +403,14 @@ class BiowareDB{
 		}
 	}
 
+	/// Set / create a variable with its value
+	///
+	/// Params:
+	///   T = $(TYPE)
+	///   pcid = $(PCID)
+	///   varName = $(VARNAME)
+	///   value = value to set
+	///   updateTimestamp = true to change the variable modified date, false to keep current value
 	void setVariableValue(T)(in string pcid, in string varName, in T value, bool updateTimestamp = true)
 	if(is(T == NWInt) || is(T == NWFloat) || is(T == NWString) || is(T == NWVector) || is(T == NWLocation) || is(T == BinaryObject))
 	{
@@ -304,6 +438,12 @@ class BiowareDB{
 
 	}
 
+
+	/// Remove a variable
+	///
+	/// Note: Only marks the variable as deleted. Data can still be accessed using the variable index.
+	/// Params:
+	///   index = $(INDEX)
 	void deleteVariable(size_t index){
 		auto var = this[index];
 
@@ -311,6 +451,12 @@ class BiowareDB{
 		table.getRecord(index)[0] = '*';
 	}
 
+	/// Remove a variable
+	///
+	/// Note: Only marks the variable as deleted. Data can still be accessed using the variable index.
+	/// Params:
+	///   pcid = $(PCID)
+	///   varName = $(VARNAME)
 	void deleteVariable(in string pcid, in string varName){
 		auto var = this[pcid, varName];
 
@@ -322,13 +468,16 @@ class BiowareDB{
 	}
 
 
-
+	/// Alias for `getVariable`
 	alias opIndex = getVariable;
 
+	/// Number of variables (both active an deleted) stored in the database
 	@property size_t length() const{
 		return table.header.records_count;
 	}
 
+	/// Iterate over all variables (both active and deleted)
+	/// Note: You need to check `Variable.deleted` value.
 	int opApply(scope int delegate(in Variable) dlg) const{
 		int res;
 		foreach(i ; 0 .. length){
@@ -337,6 +486,7 @@ class BiowareDB{
 		}
 		return res;
 	}
+	/// ditto
 	int opApply(scope int delegate(size_t, in Variable) dlg) const{
 		int res;
 		foreach(i ; 0 .. length){
