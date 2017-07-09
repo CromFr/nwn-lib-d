@@ -46,8 +46,6 @@ class TwoDA{
 	this(in ubyte[] rawData, in string name=null){
 		fileName = name;
 
-		size_t columnsCount;
-
 		foreach(lineIndex, line ; (cast(string)rawData).splitLines){
 			switch(lineIndex){
 				case 0:
@@ -74,9 +72,13 @@ class TwoDA{
 				default:
 					//Data
 					auto data = extractRowData(line);
-					values ~= data[1..$];
-					if(values[$-1].length != columnsCount)
-						values[$-1].length = columnsCount;
+					if(data.length < columnsCount + 1){
+						auto oldLength = data.length;
+						data.length = columnsCount + 1;
+						data[oldLength .. $] = null;
+					}
+
+					valueList ~= data[1 .. 1 + columnsCount];
 					break;
 			}
 		}
@@ -84,17 +86,22 @@ class TwoDA{
 
 	///
 	auto ref get(T = string)(in string colName, in size_t line)const{
-		if(line >= rows)
-			throw new TwoDAOutOfBoundsException("Line out of bounds");
+		assert(line < rows, "Line is out of bounds");
 
-		auto colIndex = colName in header;
-		if(colIndex){
-			if(values[line] is null)
-				return "".to!T;
-			return values[line][*colIndex].to!T;
+		if(auto colIndex = colName in header){
+			return this[line, *colIndex].to!T;
 		}
 		else
 			throw new TwoDAColumnNotFoundException("Column '"~colName~"' not found");
+	}
+
+	/// Note: column 0 is the first named column (not the index column)
+	ref inout(string) opIndex(size_t row, size_t column) inout {
+		assert(column < columnsCount);
+		return valueList[row * columnsCount + column];
+	}
+	ref inout(string) opIndex(size_t row, string column) inout {
+		return this[row, header[column]];
 	}
 
 
@@ -128,7 +135,7 @@ class TwoDA{
 	@property{
 		/// Number of rows in the 2da
 		size_t rows()const{
-			return values.length;
+			return valueList.length / columnsCount;
 		}
 	}
 
@@ -149,19 +156,19 @@ class TwoDA{
 		//column width calculation
 		import std.math: log10, floor;
 		size_t[] columnsWidth =
-			(cast(int)log10(values.length)+2)
+			(cast(int)log10(rows)+2)
 			~(header
 				.byKeyValue
 				.array
 				.sort!((a, b) => a.value < b.value)
 				.map!(a => (a.key.length < 4 ? 4 : a.key.length) + 1)
 				.array);
-		immutable columnsCount = columnsWidth.length;
 
-		foreach(ref line ; values){
-			foreach(i, ref value ; line){
-				if(value.length+1 > columnsWidth[i+1])
-					columnsWidth[i+1] = value.length+1;
+		foreach(row ; 0 .. rows){
+			foreach(col ; 0 .. columnsCount){
+				auto value = this[row, col];
+				if(value.length + 1 > columnsWidth[col + 1])
+					columnsWidth[col + 1] = value.length + 1;
 			}
 		}
 
@@ -173,26 +180,27 @@ class TwoDA{
 		ret ~= "\n";
 
 		//Data
-		foreach(lineIndex, ref line ; values){
-			ret ~= lineIndex.to!string.leftJustify(columnsWidth[0]);
-			foreach(i, ref value ; line){
+		foreach(row ; 0 .. rows){
+			ret ~= row.to!string.leftJustify(columnsWidth[0]);
+			foreach(col ; 0 .. columnsCount){
+				auto value = this[row, col];
 				string serializedValue;
 				if(value is null || value.length == 0)
 					serializedValue = "****";
 				else{
-					if(value.indexOf('"')>=0)
+					if(value.indexOf('"') >= 0)
 						throw new TwoDAValueException("A 2da field cannot contain double quotes");
 
-					if(value.indexOf(' ')>=0)
+					if(value.indexOf(' ') >= 0)
 						serializedValue = '"'~value~'"';
 					else
 						serializedValue = value;
 				}
 
-				if(i==columnsCount-2)
+				if(col == columnsCount - 1)
 					ret ~= serializedValue;
 				else
-					ret ~= serializedValue.leftJustify(columnsWidth[i+1]);
+					ret ~= serializedValue.leftJustify(columnsWidth[col + 1]);
 
 
 			}
@@ -206,7 +214,8 @@ class TwoDA{
 	immutable string fileName = null;
 private:
 	size_t[string] header;
-	string[][] values;
+	size_t columnsCount;
+	string[] valueList;
 
 	auto ref extractRowData(in string line){
 		import std.uni;
@@ -282,7 +291,7 @@ unittest{
 	assert(twoda.get("Name", 206) == "POLYMORPH_TYPE_LESS_EMBER_GUARD");//last line
 
 	assertThrown!TwoDAColumnNotFoundException(twoda.get("Yolooo", 1));
-	assertThrown!TwoDAOutOfBoundsException(twoda.get("Name", 207));
+	assertThrown!Error(twoda.get("Name", 207));
 
 	twoda = new TwoDA(polymorphTwoDA);
 	auto twodaSerialized = twoda.serialize();
@@ -291,6 +300,6 @@ unittest{
 	auto twodaReparsed = new TwoDA(twodaSerialized);
 
 	assert(twoda.header == twodaReparsed.header);
-	assert(twoda.values == twodaReparsed.values);
+	assert(twoda.valueList == twodaReparsed.valueList);
 
 }
