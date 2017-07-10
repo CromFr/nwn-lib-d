@@ -129,6 +129,7 @@ struct GffLocString{
 }
 alias GffVoid = ubyte[];
 struct GffStruct{
+	import std.typecons: Nullable;
 
 	@property{
 		uint32_t structType() const{
@@ -150,6 +151,14 @@ struct GffStruct{
 				return res;
 		}
 		return res;
+	}
+
+	Nullable!GffField opBinaryRight(string op : "in")(string label)
+	{
+		if(auto fieldIndex = label in index)
+			return Nullable!GffField(GffField(gff, gff.getField(*fieldIndex)));
+
+		return Nullable!GffField();
 	}
 
 
