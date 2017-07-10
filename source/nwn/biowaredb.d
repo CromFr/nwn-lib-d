@@ -95,12 +95,17 @@ class BiowareDB{
 
 	/// Constructor with file paths
 	this(in string dbfPath, in string cdxPath, in string fptPath){
-		import std.file: read;
-		this(
-			cast(ubyte[])read(dbfPath),
-			null,//Not used
-			cast(ubyte[])read(fptPath),
-			);
+		import std.stdio: File;
+
+		auto dbf = File(dbfPath, "r");
+		table.data.length = dbf.size;
+		table.data = dbf.rawRead(table.data);
+
+		auto fpt = File(fptPath, "r");
+		memo.data.length = fpt.size;
+		memo.data = fpt.rawRead(memo.data);
+
+		buildIndex();
 	}
 
 	/// Constructor with file path without its extension. It will try to open the dbf and ftp files.
@@ -479,7 +484,7 @@ class BiowareDB{
 	/// Iterate over all variables (both active and deleted)
 	/// Note: You need to check `Variable.deleted` value.
 	int opApply(scope int delegate(in Variable) dlg) const{
-		int res;
+		int res = 0;
 		foreach(i ; 0 .. length){
 			res = dlg(getVariable(i));
 			if(res != 0) break;
@@ -488,7 +493,7 @@ class BiowareDB{
 	}
 	/// ditto
 	int opApply(scope int delegate(size_t, in Variable) dlg) const{
-		int res;
+		int res = 0;
 		foreach(i ; 0 .. length){
 			res = dlg(i, getVariable(i));
 			if(res != 0) break;
@@ -504,8 +509,14 @@ private:
 	Memo memo;//fpt
 
 	struct Key{
-		string pcId;
-		string var;
+		this(in string pcid, in string var){
+			this.pcid[0 .. pcid.length] = pcid;
+			this.pcid[pcid.length .. $] = ' ';
+			this.var[0 .. var.length] = var;
+			this.var[var.length .. $] = ' ';
+		}
+		char[32] pcid;
+		char[32] var;
 	}
 	size_t[Key] index = null;
 	void buildIndex(){
@@ -515,8 +526,8 @@ private:
 			if(record[0] == Table.DeletedFlag.False){
 				//Not deleted
 				index[Key(
-					(cast(const char[])record[RecOffset.PlayerID .. RecOffset.PlayerIDEnd]).dup.strip(),
-					(cast(const char[])record[RecOffset.VarName .. RecOffset.VarNameEnd]).dup.strip(),
+					(cast(char[])record[RecOffset.PlayerID .. RecOffset.PlayerIDEnd]).to!string,
+					(cast(char[])record[RecOffset.VarName .. RecOffset.VarNameEnd]).to!string,
 					)] = i;
 			}
 		}
