@@ -98,11 +98,11 @@ class BiowareDB{
 		import std.stdio: File;
 
 		auto dbf = File(dbfPath, "r");
-		table.data.length = dbf.size;
+		table.data.length = dbf.size.to!size_t;
 		table.data = dbf.rawRead(table.data);
 
 		auto fpt = File(fptPath, "r");
-		memo.data.length = fpt.size;
+		memo.data.length = fpt.size.to!size_t;
 		memo.data = fpt.rawRead(memo.data);
 
 		buildIndex();
