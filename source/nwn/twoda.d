@@ -228,7 +228,7 @@ private:
 		}
 		string fieldBuf;
 		auto state = State.Whitespace;
-		foreach(ref c ; line~" "){
+		foreach(c ; line~" "){
 			final switch(state){
 				case State.Whitespace:
 					if(c.isWhite)
