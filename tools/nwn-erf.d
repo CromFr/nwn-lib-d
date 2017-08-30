@@ -74,7 +74,9 @@ int _main(string[] args){
 						erf.files ~= NWN2ErfFile(file);
 					}
 					else if(file.isDir){
-						foreach(path ; file.dirEntries(SpanMode.shallow)){
+						import std.algorithm: sort;
+						import std.array: array;
+						foreach(path ; file.dirEntries(SpanMode.shallow).array.sort!((a,b)=>a.name<b.name)){
 							addFile(DirEntry(path));
 						}
 					}
