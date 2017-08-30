@@ -76,7 +76,8 @@ int _main(string[] args){
 					else if(file.isDir){
 						import std.algorithm: sort;
 						import std.array: array;
-						foreach(path ; file.dirEntries(SpanMode.shallow).array.sort!((a,b)=>a.name<b.name)){
+						import std.uni: icmp;
+						foreach(path ; file.dirEntries(SpanMode.shallow).array.sort!"icmp(a.name, b.name) < 0"){
 							addFile(DirEntry(path));
 						}
 					}
