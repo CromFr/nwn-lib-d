@@ -3,7 +3,7 @@ d: dmd
 
 before_install:
     - sudo apt-get -qq update
-    - sudo apt-get install -y gcc-multilib
+    - sudo apt-get install -y gcc-multilib libevent-dev
     - ./travis-build-win32.sh before_install
 
 script:
@@ -11,7 +11,7 @@ script:
     - dub test -a x86_64 -b unittest-cov :nwn-gff
 
     # Release objects
-    - ./build-doc.sh
+    - dub build --build=ddox
     - dub build -b release -a x86    :nwn-gff  &&  mv nwn-gff nwn-gff.linux-x86
     - dub build -b release -a x86_64 :nwn-gff  &&  mv nwn-gff nwn-gff.linux-x86_64
     - ./travis-build-win32.sh exec dub build -b release :nwn-gff  &&  mv nwn-gff.exe nwn-gff.win-x86
