@@ -12,7 +12,7 @@ Multi-platform D library & tooling for handling Neverwinter Nights 1 & 2 resourc
 
 ### Command-line tools
 
-[Download nwn-lib-d tools](https://cromfr.github.io/nwn-lib-d/)
+__[Download nwn-lib-d tools](https://cromfr.github.io/nwn-lib-d/)__
 
 - `nwn-gff`
   + Read / write GFF files (ifo, are, bic, uti, ...)
