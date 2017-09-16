@@ -7,7 +7,9 @@ authors "Thibaut CHARLES (CromFr)"
 targetType "library"
 targetName "nwn-d"
 stringImportPaths "unittest"
+
 x:ddoxTool "scod"
+x:ddoxFilterArgs "--min-protection=Protected"
 
 subPackage {
 	name "nwn-gff"
