@@ -23,6 +23,20 @@ subPackage {
 	}
 }
 subPackage {
+	name "nwn-trx"
+	sourcePaths "source/"
+	importPaths "source/"
+
+	configuration "application" {
+		targetType "executable"
+		targetName "nwn-trx"
+		mainSourceFile "tools/nwn-trx.d"
+	}
+	configuration "unittest" {
+		stringImportPaths "unittest"
+	}
+}
+subPackage {
 	name "nwn-erf"
 	sourcePaths "source/"
 	importPaths "source/"

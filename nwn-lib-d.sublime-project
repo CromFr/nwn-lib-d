@@ -25,6 +25,10 @@
 					"shell_cmd": "dub test -q --compiler=dmd :nwn-gff",
 				},
 				{
+					"name": "nwn-trx",
+					"shell_cmd": "dub build -q --compiler=dmd --vquiet :nwn-trx",
+				},
+				{
 					"name": "nwn-erf",
 					"shell_cmd": "dub build -b debug -q --compiler=dmd :nwn-erf",
 				},
