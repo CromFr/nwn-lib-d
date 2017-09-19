@@ -184,6 +184,7 @@ Format guessFormat(in string fileName){
 		case ".are",".gic",".git"://areas
 		case ".dlg"://dialogs
 		case ".fac",".ifo",".jrl"://module files
+		case ".cam"://campaign files
 		case ".bic"://characters
 		case ".ult",".upe",".utc",".utd",".ute",".uti",".utm",".utp",".utr",".utt",".utw",".pfb"://blueprints
 			return Format.gff;
