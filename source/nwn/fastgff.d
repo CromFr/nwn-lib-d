@@ -194,9 +194,9 @@ package:
 
 	string toPrettyString(in string tab = null){
 		string ret;
-		ret ~= tab ~ "Struct type="~(structType == structType.max? "-1" : structType.to!string)~"\n";
+		ret ~= "(Struct "~(structType == structType.max? "-1" : structType.to!string)~")";
 		foreach(GffField field ; this){
-			ret ~= field.toPrettyString(tab ~ "| ");
+			ret ~= "\n" ~ field.toPrettyString(tab ~ "   | ");
 		}
 		return ret;
 	}
@@ -239,9 +239,9 @@ struct GffList{
 
 	string toPrettyString(in string tab = null){
 		string ret;
-		ret ~= tab ~ "List\n";
+		ret ~= "(List)";
 		foreach(index, GffStruct gffstruct ; this){
-			ret ~= tab ~ index.to!string ~ ":\n" ~ gffstruct.toPrettyString(tab ~ "| ");
+			ret ~= "\n" ~ tab ~ "   | " ~ gffstruct.toPrettyString(tab ~ "   | ");
 		}
 		return ret;
 	}
@@ -354,7 +354,7 @@ struct GffField{
 		import std.string;
 		string ret;
 
-		ret ~= tab ~ "> " ~ label.leftJustify(16) ~ " (" ~ type.to!string ~ ") = ";
+		ret ~= tab ~ label.leftJustify(16) ~ ": ";
 
 		typeswitch:
 		final switch(type) with(GffType){
@@ -362,25 +362,22 @@ struct GffField{
 				case Type:
 				static if(Type == Invalid)
 					assert(0, "Invalid type");
-				else static if(Type == LocString){
-					ret ~= "{{LOCSTRING}}\n";
-					break typeswitch;
-				}
 				else static if(Type == Void){
 					import std.base64: Base64;
-					ret ~= Base64.encode(value.get!(ToNative!Type)) ~ "\n";
+					ret ~= Base64.encode(value.get!(ToNative!Type));
 					break typeswitch;
 				}
 				else static if(Type == Struct || Type == List){
-					ret ~= "\n"~value.get!(ToNative!Type).toPrettyString(tab ~ "  | ");
-					break typeswitch;
+					ret ~= value.get!(ToNative!Type).toPrettyString(tab);
+					return ret;//Do not append type
 				}
 				else{
-					ret ~= value.get!(ToNative!Type).to!string ~ "\n";
+					ret ~= value.get!(ToNative!Type).to!string;
 					break typeswitch;
 				}
 			}
 		}
+		ret ~= " (" ~ type.to!string ~ ")";
 		return ret;
 	}
 
@@ -429,7 +426,9 @@ class FastGff{
 
 
 	string toPrettyString(){
-		return root.toPrettyString;
+		import std.string: stripRight;
+		return "========== GFF-"~header.file_type.idup.stripRight~"-"~header.file_version.idup.stripRight~" ==========\n"
+				~ root.toPrettyString;
 	}
 
 	alias root this;

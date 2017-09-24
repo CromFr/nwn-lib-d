@@ -58,6 +58,21 @@ int _main(string[] args){
 			outputFormat = guessFormat(outputPath);
 	}
 
+
+	//Special cases where FastGFF can be used
+	if(inputFormat == Format.gff && outputFormat == Format.pretty && setValuesList.length == 0){
+		import nwn.fastgff: FastGff;
+
+		File inputFile = inputPath is null? stdin : File(inputPath, "r");
+		auto gff = new FastGff(inputFile.readAll);
+
+		File outputFile = outputPath is null? stdout : File(outputPath, "w");
+		outputFile.rawWrite(gff.toPrettyString());
+		return 0;
+	}
+
+
+
 	//Parsing
 	Gff gff;
 	File inputFile = inputPath is null? stdin : File(inputPath, "r");
@@ -68,7 +83,7 @@ int _main(string[] args){
 			break;
 		case Format.json, Format.json_minified:
 			import nwnlibd.orderedjson;
-			gff = Gff.fromJson(parseJSON(inputFile.readAllString));
+			gff = Gff.fromJson(parseJSON(cast(string)inputFile.readAll.idup));
 			break;
 		case Format.pretty:
 			assert(0, inputFormat.to!string~" parsing not supported");
@@ -185,15 +200,15 @@ Format guessFormat(in string fileName){
 
 }
 
-string readAllString(File stream){
-	string data;
-	char[500] buf;
-	char[] dataRead;
+ubyte[] readAll(File stream){
+	ubyte[] data;
+	ubyte[500] buf;
 
+	size_t prevLength;
 	do{
-		dataRead = stream.rawRead(buf);
-		data ~= dataRead;
-	}while(dataRead.length>0);
+		prevLength = data.length;
+		data ~= stream.rawRead(buf);
+	}while(data.length != prevLength);
 
 	return data;
 }
