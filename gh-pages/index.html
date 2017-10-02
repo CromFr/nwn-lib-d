@@ -4,10 +4,19 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>API documentation</title>
 	<link rel="stylesheet" href="./docs/css/style.min.css">
-	<script type="text/javascript" src="./docs/js/script.min.js"></script>
-	<link rel="stylesheet" type="text/css" href="chrome-extension://pkehgijcmpdhfbdbbnkijodmdjhbjlgp/skin/socialwidgets.css">
+	<style>
+		.flex-container{
+			height: 100%;
+			display: flex;
+			flex-wrap: wrap;
+			align-content: flex-start;
+		}
+		.flex-container>div{
+			margin: 1em;
+		}
+	</style>
 </head>
-<body onload="setupDdox();">
+<body>
 	<nav id="main-nav">
 		<ul class="tree-view">
 			<li><a href="#">Downloads</a></li>
@@ -18,29 +27,37 @@
 	<div id="main-contents">
 		<h1>nwn-lib-d tools</h1>
 
-		<h2>nwn-gff</h2>
-		<table>
-			<tr><th></th>        <th>Version</th> <th>Platform</th>           <th>Link</th></tr>
-			<tr><td>nwn-gff</td> <td>master</td>  <td>Windows x86/x86_64</td> <td><a href="binaries/nwn-gff.win-x86" download="nwn-gff.exe">Download</a></td></tr>
-			<tr><td>nwn-gff</td> <td>master</td>  <td>Linux x86</td>          <td><a href="binaries/nwn-gff.linux-x86" download="nwn-gff">Download</a></td></tr>
-			<tr><td>nwn-gff</td> <td>master</td>  <td>Linux x86_64</td>       <td><a href="binaries/nwn-gff.linux-x86_64" download="nwn-gff">Download</a></td></tr>
-		</table>
+		<div class="flex-container">
+			<div>
+				<h2>nwn-gff</h2>
+				<table>
+					<tr><th></th>        <th>Version</th> <th>Platform</th>           <th>Link</th></tr>
+					<tr><td>nwn-gff</td> <td>master</td>  <td>Windows x86/x86_64</td> <td><a href="binaries/nwn-gff.win-x86" download="nwn-gff.exe">Download</a></td></tr>
+					<tr><td>nwn-gff</td> <td>master</td>  <td>Linux x86</td>          <td><a href="binaries/nwn-gff.linux-x86" download="nwn-gff">Download</a></td></tr>
+					<tr><td>nwn-gff</td> <td>master</td>  <td>Linux x86_64</td>       <td><a href="binaries/nwn-gff.linux-x86_64" download="nwn-gff">Download</a></td></tr>
+				</table>
+			</div>
 
-		<h2>nwn-erf</h2>
-		<table>
-			<tr><th></th>        <th>Version</th> <th>Platform</th>           <th>Link</th></tr>
-			<tr><td>nwn-erf</td> <td>master</td>  <td>Windows x86/x86_64</td> <td><a href="binaries/nwn-erf.win-x86" download="nwn-erf.exe">Download</a></td></tr>
-			<tr><td>nwn-erf</td> <td>master</td>  <td>Linux x86</td>          <td><a href="binaries/nwn-erf.linux-x86" download="nwn-erf">Download</a></td></tr>
-			<tr><td>nwn-erf</td> <td>master</td>  <td>Linux x86_64</td>       <td><a href="binaries/nwn-erf.linux-x86_64" download="nwn-erf">Download</a></td></tr>
-		</table>
+			<div>
+				<h2>nwn-erf</h2>
+				<table>
+					<tr><th></th>        <th>Version</th> <th>Platform</th>           <th>Link</th></tr>
+					<tr><td>nwn-erf</td> <td>master</td>  <td>Windows x86/x86_64</td> <td><a href="binaries/nwn-erf.win-x86" download="nwn-erf.exe">Download</a></td></tr>
+					<tr><td>nwn-erf</td> <td>master</td>  <td>Linux x86</td>          <td><a href="binaries/nwn-erf.linux-x86" download="nwn-erf">Download</a></td></tr>
+					<tr><td>nwn-erf</td> <td>master</td>  <td>Linux x86_64</td>       <td><a href="binaries/nwn-erf.linux-x86_64" download="nwn-erf">Download</a></td></tr>
+				</table>
+			</div>
 
-		<h2>nwn-tlk</h2>
-		<table>
-			<tr><th></th>        <th>Version</th> <th>Platform</th>           <th>Link</th></tr>
-			<tr><td>nwn-tlk</td> <td>master</td>  <td>Windows x86/x86_64</td> <td><a href="binaries/nwn-tlk.win-x86" download="nwn-tlk.exe">Download</a></td></tr>
-			<tr><td>nwn-tlk</td> <td>master</td>  <td>Linux x86</td>          <td><a href="binaries/nwn-tlk.linux-x86" download="nwn-tlk">Download</a></td></tr>
-			<tr><td>nwn-tlk</td> <td>master</td>  <td>Linux x86_64</td>       <td><a href="binaries/nwn-tlk.linux-x86_64" download="nwn-tlk">Download</a></td></tr>
-		</table>
+			<div>
+				<h2>nwn-tlk</h2>
+				<table>
+					<tr><th></th>        <th>Version</th> <th>Platform</th>           <th>Link</th></tr>
+					<tr><td>nwn-tlk</td> <td>master</td>  <td>Windows x86/x86_64</td> <td><a href="binaries/nwn-tlk.win-x86" download="nwn-tlk.exe">Download</a></td></tr>
+					<tr><td>nwn-tlk</td> <td>master</td>  <td>Linux x86</td>          <td><a href="binaries/nwn-tlk.linux-x86" download="nwn-tlk">Download</a></td></tr>
+					<tr><td>nwn-tlk</td> <td>master</td>  <td>Linux x86_64</td>       <td><a href="binaries/nwn-tlk.linux-x86_64" download="nwn-tlk">Download</a></td></tr>
+				</table>
+			</div>
+		</div>
 	</div>
 </body>
 </html>
