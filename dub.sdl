@@ -39,4 +39,18 @@ subPackage {
 		stringImportPaths "unittest"
 	}
 }
+subPackage {
+	name "nwn-tlk"
+	sourcePaths "source/"
+	importPaths "source/"
+
+	configuration "application" {
+		targetType "executable"
+		targetName "nwn-tlk"
+		mainSourceFile "tools/nwn-tlk.d"
+	}
+	configuration "unittest" {
+		stringImportPaths "unittest"
+	}
+}
 

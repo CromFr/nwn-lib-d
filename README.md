@@ -39,6 +39,15 @@ __[Download nwn-lib-d tools](https://cromfr.github.io/nwn-lib-d/)__
     * No support for NWN1 ERF
     * Not very memory efficient
 
+- `nwn-erf`
+  + TLK 
+
+    | Format | Parsing | Serialization | Comment |
+    |:------:|:-------:|:-------------:|---------|
+    |`tlk`| :white_check_mark:| :white_check_mark:|NWN TLK binary format |
+    |`text`|:x:| :white_check_mark:|Human-readable|
+
+
 ### Library
 
 __[API reference](https://cromfr.github.io/nwn-lib-d/docs)__

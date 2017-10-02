@@ -33,6 +33,14 @@
 					"shell_cmd": "dub test -q --compiler=dmd :nwn-erf",
 				},
 				{
+					"name": "nwn-tlk",
+					"shell_cmd": "dub build -b debug -q --compiler=dmd :nwn-tlk",
+				},
+				{
+					"name": "nwn-tlk run unittests",
+					"shell_cmd": "dub test -q --compiler=dmd :nwn-tlk",
+				},
+				{
 					"name": "Documentation",
 					"shell_cmd": "./build-doc.sh",
 				}

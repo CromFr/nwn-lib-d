@@ -117,43 +117,102 @@ unittest{
 
 
 class Tlk{
+
+	this(Language langId, immutable(char[4]) tlkVersion = "V3.0"){
+		header.file_type = "TLK ";
+		header.file_version = tlkVersion;
+	}
+
 	this(in string path){
 		import std.file: read;
 		this(cast(ubyte[])path.read());
 	}
 
 	this(in ubyte[] rawData){
-		data = rawData.idup;
-		headerPtr =     cast(immutable TlkHeader*)    data.ptr;
-		strDataPtr =    cast(immutable TlkStringData*)(data.ptr + TlkHeader.sizeof);
-		strEntriesPtr = cast(immutable char*)         (data.ptr + headerPtr.string_entries_offset);
+		header = *cast(TlkHeader*)rawData.ptr;
+		strData = (cast(TlkStringData[])rawData[TlkHeader.sizeof .. header.string_entries_offset]).dup();
+		strEntries = cast(char[])rawData[header.string_entries_offset .. $];
 	}
 
 	string opIndex(in StrRef strref) const{
 		assert(strref < UserTlkIndexOffset, "Tlk indexes must be lower than "~UserTlkIndexOffset.to!string);
 
-		if(strref>=headerPtr.string_count)
+		if(strref >= header.string_count)
 			throw new TlkOutOfBoundsException("strref "~strref.to!string~" out of bounds");
 
-		immutable strData = &strDataPtr[strref];
-		immutable str = strEntriesPtr + strData.offset_to_string;
+		immutable data = strData[strref];
+		return cast(immutable)strEntries[data.offset_to_string .. data.offset_to_string + data.string_size];
+	}
 
-		return str[0..strData.string_size];
+	@property size_t length() const{
+		return header.string_count;
+	}
+
+	int opApply(scope int delegate(in string) dlg) const{
+		int res = 0;
+		foreach(ref data ; strData){
+			res = dlg(cast(immutable)strEntries[data.offset_to_string .. data.offset_to_string + data.string_size]);
+			if(res != 0) break;
+		}
+		return res;
+	}
+	int opApply(scope int delegate(size_t, in string) dlg) const{
+		int res = 0;
+		foreach(i, ref data ; strData){
+			res = dlg(i, cast(immutable)strEntries[data.offset_to_string .. data.offset_to_string + data.string_size]);
+			if(res != 0) break;
+		}
+		return res;
 	}
 
 	@property{
-		const Language language(){
-			return cast(Language)(headerPtr.language_id);
+		Language language() const{
+			return cast(Language)(header.language_id);
 		}
 	}
 
+	immutable(ubyte[]) serialize() const{
+		return ((cast(ubyte*)&header)[0 .. TlkHeader.sizeof]
+		       ~(cast(ubyte[])strData)
+		       ~(cast(ubyte[])strEntries)).idup();
+	}
+
+
+
+	void opIndexAssign(string text, StrRef strref){
+
+		if(strref >= length){
+			header.string_count = strref + 1;
+			strData.length = header.string_count;
+		}
+
+		auto data = &strData[strref];
+		if(data.flags & StringFlag.TEXT_PRESENT && text.length <= data.string_size){
+			// Existing string
+			// Rewrite content in place
+			strEntries[data.offset_to_string .. data.offset_to_string + text.length] = text;
+		}
+		else{
+			// Append text at the end
+			data.flags = StringFlag.TEXT_PRESENT;
+			data.offset_to_string = strEntries.length;
+			data.sound_length = 0.0;
+
+			strEntries ~= text;
+		}
+		data.string_size = text.length;
+	}
+
+
+
+
 	enum UserTlkIndexOffset = 16777216;
 
+
 private:
-	immutable ubyte[] data;
-	immutable TlkHeader* headerPtr;
-	immutable TlkStringData* strDataPtr;
-	immutable char* strEntriesPtr;
+	TlkHeader header;
+	TlkStringData[] strData;
+	char[] strEntries;
 
 
 	align(1) struct TlkHeader{
