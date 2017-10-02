@@ -195,12 +195,12 @@ class Tlk{
 		else{
 			// Append text at the end
 			data.flags = StringFlag.TEXT_PRESENT;
-			data.offset_to_string = strEntries.length;
+			data.offset_to_string = strEntries.length.to!uint32_t;
 			data.sound_length = 0.0;
 
 			strEntries ~= text;
 		}
-		data.string_size = text.length;
+		data.string_size = text.length.to!uint32_t;
 	}
 
 
