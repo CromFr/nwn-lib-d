@@ -32,7 +32,7 @@ cp ../gh-pages/index.html .
 cp -R ../docs .
 # binaries
 install -d binaries
-cp ../nwn-gff.* ../nwn-erf.* binaries/
+cp ../nwn-gff.* ../nwn-erf.* ../nwn-tlk.* binaries/
 
 
 # Commit ==============================
