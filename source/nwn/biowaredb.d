@@ -510,10 +510,19 @@ private:
 
 	struct Key{
 		this(in string pcid, in string var){
-			this.pcid[0 .. pcid.length] = pcid;
-			this.pcid[pcid.length .. $] = ' ';
-			this.var[0 .. var.length] = var;
-			this.var[var.length .. $] = ' ';
+			if(pcid.length <= 32){
+				this.pcid[0 .. pcid.length] = pcid;
+				this.pcid[pcid.length .. $] = ' ';
+			}
+			else
+				this.pcid = pcid[0 .. 32];
+
+			if(var.length <= 32){
+				this.var[0 .. var.length] = var;
+				this.var[var.length .. $] = ' ';
+			}
+			else
+				this.var = var[0 .. 32];
 		}
 		char[32] pcid;
 		char[32] var;
