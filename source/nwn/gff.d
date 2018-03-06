@@ -1128,7 +1128,7 @@ private:
 						case TYPE:
 							alias NativeType = gffTypeToNative!TYPE;
 							immutable d = getFieldData(f.data_or_data_offset);
-							*cast(NativeType*)&destField.simpleTypeContainer = cast(NativeType)d;
+							*cast(NativeType*)&destField.simpleTypeContainer = *cast(NativeType*)d;
 							break typeswitch;
 					}
 					case ExoString:
