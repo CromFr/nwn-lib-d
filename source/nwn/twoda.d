@@ -2,7 +2,8 @@
 module nwn.twoda;
 
 import std.string;
-import std.conv : to;
+import std.conv: to, ConvException;
+import std.typecons: Nullable;
 debug import std.stdio: writeln;
 version(unittest) import std.exception: assertThrown, assertNotThrown;
 
@@ -84,16 +85,55 @@ class TwoDA{
 		}
 	}
 
-	///
-	auto ref get(T = string)(in string colName, in size_t line)const{
+	/// Get a value in the 2da, converted to T.
+	/// Returns: if T is string returns the string value, else returns a `Nullable!T` that is null if the value is empty
+	/// Throws: `std.conv.ConvException` if the conversion into T fails
+	auto ref get(T = string)(in size_t colIndex, in size_t line) const {
 		assert(line < rows, "Line is out of bounds");
+		assert(colIndex < columnsCount, "Column is out of bounds");
 
+		static if(is(T == string)){
+			return this[line, colIndex];
+		}
+		else {
+			if(this[line, colIndex] is null){
+				return Nullable!T();
+			}
+			try return Nullable!T(this[line, colIndex].to!T);
+			catch(ConvException e){
+				//Annotate conv exception
+				writeln("header: ", header);
+				writeln("colIndex: ", colIndex);
+				string colName;
+				foreach(ref name, index ; header){
+					if(index == colIndex){
+						colName = name;
+						break;
+					}
+				}
+				writeln("colName: ", colName);
+				e.msg ~= " ("~fileName~": column: "~colIndex.to!string~", line: "~line.to!string~")";
+				throw e;
+			}
+		}
+	}
+
+	/// ditto
+	/// Throws: `TwoDAColumnNotFoundException` if the column does not exist
+	auto ref get(T = string)(in string colName, in size_t line) const {
+		return get!T(columnIndex(colName), line);
+	}
+
+
+	/// Get the index of a column by its name, for faster access
+	size_t columnIndex(in string colName) const {
 		if(auto colIndex = colName in header){
-			return this[line, *colIndex].to!T;
+			return *colIndex;
 		}
 		else
 			throw new TwoDAColumnNotFoundException("Column '"~colName~"' not found");
 	}
+
 
 	/// Note: column 0 is the first named column (not the index column)
 	ref inout(string) opIndex(size_t row, size_t column) inout {
