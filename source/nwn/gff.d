@@ -123,7 +123,7 @@ alias GffExoString    = gffTypeToNative!(GffType.ExoString);   //GFF type ExoStr
 alias GffResRef       = gffTypeToNative!(GffType.ResRef);      //GFF type ResRef ( $(D string;// length<=3) )
 alias GffExoLocString = gffTypeToNative!(GffType.ExoLocString);//GFF type ExoLocString ( $(D Tuple!(uint32_t,"strref", string[int32_t],"strings")) )
 alias GffVoid         = gffTypeToNative!(GffType.Void);        //GFF type Void ( $(D ubyte[]) )
-//alias GffStruct       = gffTypeToNative!(GffType.Struct);//Moved at the end of file
+alias GffStruct       = gffTypeToNative!(GffType.Struct);//Moved at the end of file
 alias GffList         = gffTypeToNative!(GffType.List);        //GFF type List ( $(D GffNode[]) )
 
 
@@ -383,7 +383,7 @@ struct GffNode{
 					}
 					else static if(
 						   (isScalarType!T && isScalarType!(gffTypeToNative!TYPE))
-						|| (isSomeString!T && isSomeString!(gffTypeToNative!TYPE))){
+						|| ((isSomeString!T || is(T: string)) && (isSomeString!(gffTypeToNative!TYPE) || is(gffTypeToNative!TYPE: string))) ){
 						case TYPE:
 						as!TYPE = rhs.to!(gffTypeToNative!TYPE);
 						return;
@@ -393,7 +393,7 @@ struct GffNode{
 			default: break;
 		}
 
-		throw new GffValueSetException("Cannot set GffNode of type "~type.to!string~" with "~rhs.to!string~" of type "~T.stringof);
+		throw new GffValueSetException("Cannot set GffNode of type "~type.to!string~" with type "~T.stringof);
 	}
 	unittest{
 		import std.conv: ConvOverflowException;
@@ -1491,7 +1491,7 @@ private:
 		}
 	}
 }
-version(none) unittest{
+unittest{
 	import std.file : read;
 	with(GffType){
 		immutable krogarDataOrig = cast(immutable ubyte[])import("krogar.bic");
@@ -1594,6 +1594,3 @@ version(none) unittest{
 	}
 
 }
-
-
-alias GffStruct       = gffTypeToNative!(GffType.Struct);/// GFF type Void ( $(D OrderedAA!(string, GffNode)) )
