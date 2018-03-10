@@ -102,8 +102,6 @@ class TwoDA{
 			try return Nullable!T(this[line, colIndex].to!T);
 			catch(ConvException e){
 				//Annotate conv exception
-				writeln("header: ", header);
-				writeln("colIndex: ", colIndex);
 				string colName;
 				foreach(ref name, index ; header){
 					if(index == colIndex){
@@ -111,7 +109,6 @@ class TwoDA{
 						break;
 					}
 				}
-				writeln("colName: ", colName);
 				e.msg ~= " ("~fileName~": column: "~colIndex.to!string~", line: "~line.to!string~")";
 				throw e;
 			}
