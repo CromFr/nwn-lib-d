@@ -7,6 +7,7 @@ import std.stdint;
 import std.stdio: writeln;
 import std.conv: to;
 import std.traits: EnumMembers;
+import std.string: stripRight;
 
 
 /// Parsing exception
@@ -15,9 +16,15 @@ class GffParseException : Exception{
 		super(msg, f, l, t);
 	}
 }
+/// Type mismatch exception
+class GffTypeException : Exception{
+	@safe pure nothrow this(string msg, string f=__FILE__, size_t l=__LINE__, Throwable t=null){
+		super(msg, f, l, t);
+	}
+}
 
 
-/// Type of data owned by a $(D GffNode)
+/// Type of data owned by a $(D GffField)
 /// See_Also: $(D ToNative)
 enum GffType: uint32_t{
 	Invalid   = -1, /// Init value
@@ -35,9 +42,10 @@ enum GffType: uint32_t{
 	ResRef    = 11, /// String with width <= 16 (32 for NWN2)
 	LocString = 12, /// Localized string
 	Void      = 13, /// Binary data
-	Struct    = 14, /// Map of other $(D GffNode)
-	List      = 15  /// Array of other $(D GffNode)
+	Struct    = 14, /// Map of other $(D GffField)
+	List      = 15  /// Array of other $(D GffField)
 }
+/// A simple type can be stored inside the GffField value slot (32-bit or less)
 bool isSimpleType(GffType type){
 	with(GffType){
 		return type <= Int || type == Float;
@@ -65,18 +73,34 @@ template ToNative(GffType t){
 	else static assert(0);
 }
 
+/// Basic GFF value type
 alias GffByte = uint8_t;
+/// Basic GFF value type
 alias GffChar = int8_t;
+/// Basic GFF value type
 alias GffWord = uint16_t;
+/// Basic GFF value type
 alias GffShort = int16_t;
+/// Basic GFF value type
 alias GffDWord = uint32_t;
+/// Basic GFF value type
 alias GffInt = int32_t;
+/// Basic GFF value type
 alias GffDWord64 = uint64_t;
+/// Basic GFF value type
 alias GffInt64 = int64_t;
+/// Basic GFF value type
 alias GffFloat = float;
+/// Basic GFF value type
 alias GffDouble = double;
+/// Basic GFF value type
 alias GffString = string;
+
+/// GFF Resref value type (32 character string)
 struct GffResRef{
+	import nwnlibd.parseutils: stringToChararray, charArrayToString;
+
+	///
 	this(in char[] value){
 		assert(value.length <= 32, "Resref cannot be longer than 32 characters");
 		data[0 .. value.length] = value;
@@ -84,40 +108,47 @@ struct GffResRef{
 			data[value.length .. $] = 0;
 	}
 
-	char[32] data;
-	alias data this;
+	alias toString this;
 
 
-	import nwnlibd.parseutils: stringToChararray, charArrayToString;
+	version(FastGffWrite)
 	void opAssign(in string str){
 		assert(str.length <= 32, "Value is too long");
 		data = str.stringToChararray!(char[32]);
 	}
 
-	string to(T: string)(){
+	/// Converts `this.data` into a usable string (trim trailing NULL chars)
+	string toString() const {
 		return charArrayToString(data);
 	}
+
+package:
+	char[32] data;
 }
+
+/// GFF Localized string value type (strref with eventually a `nwn.constants.Language` => `string` map)
 struct GffLocString{
 	uint32_t strref;
 	string[int32_t] strings;
 
-	string to(T: string)(){
+	/// Get the string value without attempting to resolve strref using TLKs
+	string toString() const {
 		if(strref != uint32_t.max)
-			return ("{{STRREF:"~strref.to!string~"}}").to!T;
+			return "{{STRREF:"~strref.to!string~"}}";
 		else{
 			if(strings.length>0)
-				return strings.values[0].to!T;
-			return "{{INVALID_LOCSTRING}}".to!T;
+				return strings.values[0];
+			return "{{INVALID_LOCSTRING}}";
 		}
 	}
 
-	import nwn.tlk;
+	import nwn.tlk: StrRefResolver;
+	/// Get the string value using TLK tables if needed
 	string resolve(in StrRefResolver resolver){
 		if(strref != uint32_t.max)
 			return resolver[strref];
 		else{
-			auto lang = resolver.standartTable.language * 2;
+			immutable lang = resolver.standartTable.language * 2;
 			if(auto str = lang in strings)
 				return *str;
 			else if(auto str = 0 in strings)
@@ -127,21 +158,27 @@ struct GffLocString{
 		}
 	}
 }
+/// Basic GFF value type
 alias GffVoid = ubyte[];
+
+/// GFF structure value type (`string` => `GffField` map)
 struct GffStruct{
 	import std.typecons: Nullable;
 
 	@property{
+		/// Struct subtype ID
 		uint32_t structType() const{
 			return internal.type;
 		}
 	}
 
+	/// Get child GffField
 	GffField opIndex(in string label){
 		auto fieldIndex = index[label];
 		return GffField(gff, gff.getField(fieldIndex));
 	}
 
+	/// Allows `foreach(gffField ; this)`
 	int opApply(scope int delegate(GffField child) dlg){
 		int res = 0;
 		foreach(uint32_t fieldIndex ; this){
@@ -153,6 +190,7 @@ struct GffStruct{
 		return res;
 	}
 
+	/// Allows `"value" in this`
 	Nullable!GffField opBinaryRight(string op : "in")(string label)
 	{
 		if(auto fieldIndex = label in index)
@@ -161,6 +199,16 @@ struct GffStruct{
 		return Nullable!GffField();
 	}
 
+
+	/// Serialize the struct and its children in a human-readable format
+	string toPrettyString(in string tab = null){
+		string ret;
+		ret ~= "(Struct "~(structType == structType.max? "-1" : structType.to!string)~")";
+		foreach(GffField field ; this){
+			ret ~= "\n" ~ field.toPrettyString(tab ~ "   | ");
+		}
+		return ret;
+	}
 
 package:
 	this(FastGff gff, FastGff.Struct* internal){
@@ -191,16 +239,6 @@ package:
 	}
 
 
-
-	string toPrettyString(in string tab = null){
-		string ret;
-		ret ~= "(Struct "~(structType == structType.max? "-1" : structType.to!string)~")";
-		foreach(GffField field ; this){
-			ret ~= "\n" ~ field.toPrettyString(tab ~ "   | ");
-		}
-		return ret;
-	}
-
 private:
 	uint32_t[string] index;
 	void buildIndex(){
@@ -210,15 +248,17 @@ private:
 		}
 	}
 }
+/// GFF list value type (Array of GffStruct)
 struct GffList{
 
-
+	/// Get nth child GffStruct
 	GffStruct opIndex(uint32_t index){
 		assert(index < length, "Out of bound");
 		auto gffstruct = gff.getStructList(listOffset)[index + 1];
 		return GffStruct(gff, gff.getStruct(gffstruct));
 	}
 
+	/// Allows `foreach(index, gffStruct ; this)`
 	int opApply(scope int delegate(size_t index, GffStruct child) dlg){
 		int res = 0;
 		foreach(index, uint32_t structIndex ; this){
@@ -231,12 +271,13 @@ struct GffList{
 	}
 
 	@property{
+		/// Number of children elements
 		size_t length() const{
 			return listLength;
 		}
 	}
 
-
+	/// Serialize the list and its children in a human-readable format
 	string toPrettyString(in string tab = null){
 		string ret;
 		ret ~= "(List)";
@@ -245,6 +286,7 @@ struct GffList{
 		}
 		return ret;
 	}
+
 package:
 	FastGff gff = null;
 	uint32_t listOffset = -1;
@@ -271,6 +313,7 @@ package:
 }
 
 
+/// GFF generic value (used for `GffStruct` children). This can be used as a Variant.
 struct GffField{
 	import std.variant: VariantN;
 	alias Value = VariantN!(32,
@@ -285,10 +328,12 @@ struct GffField{
 	alias value this;
 
 	@property{
+		/// Value type
 		GffType type() const{
 			return internal.type;
 		}
 
+		/// Get the value as a Variant
 		Value value(){
 
 			final switch(type) with(GffType){
@@ -344,12 +389,24 @@ struct GffField{
 			}
 		}
 
+		/// Get the label of this field
 		string label() const{
 			return gff.getLabel(internal.label_index).toString;
 		}
 	}
 
+	/// Shorthand for getting child field assuming this field is a `GffStruct`
+	GffField opIndex(in string label){
+		return value.get!GffStruct[label];
+	}
 
+	/// Shorthand for getting child field assuming this field is a `GffList`
+	GffStruct opIndex(in uint32_t index){
+		return value.get!GffList[index];
+	}
+
+
+	/// Serialize the field and its children in a human-readable format
 	string toPrettyString(in string tab = null){
 		import std.string;
 		string ret;
@@ -381,6 +438,7 @@ struct GffField{
 		return ret;
 	}
 
+
 package:
 	this(FastGff gff, FastGff.Field* field){
 		this.gff = gff;
@@ -388,17 +446,20 @@ package:
 	}
 	FastGff gff = null;
 	FastGff.Field* internal = null;
+
 }
 
 
-
+/// GFF file parser
 class FastGff{
 
+	/// Parse GFF file
 	this(in string filePath){
 		import std.file: read;
 		this(cast(ubyte[])filePath.read());
 	}
 
+	/// Parse GFF raw data
 	this(in ubyte[] rawData){
 		enforce!GffParseException(rawData.length >= header.sizeof,
 			"rawData length is too small");
@@ -413,25 +474,32 @@ class FastGff{
 
 	}
 
-
-	inout(GffStruct)* getStructAtPath(in string path) inout{
-		assert(0);
-	}
+	alias root this;
 
 	@property{
+		/// Get root node (accessible with alias this)
 		GffStruct root(){
 			return GffStruct(this, getStruct(0));
 		}
+
+		/// GFF file type string
+		const string fileType(){
+			return header.file_type.idup().stripRight;
+		}
+
+		/// GFF file version string
+		const string fileVersion(){
+			return header.file_version.idup().stripRight;
+		}
 	}
 
-
+	/// Serialize the entire file in a human-readable format
 	string toPrettyString(){
 		import std.string: stripRight;
 		return "========== GFF-"~header.file_type.idup.stripRight~"-"~header.file_version.idup.stripRight~" ==========\n"
 				~ root.toPrettyString;
 	}
 
-	alias root this;
 
 package:
 	Header header;
@@ -522,8 +590,37 @@ package:
 }
 
 
-unittest{
-	auto gff = new FastGff(cast(ubyte[])import("doge.utc"));
 
-	//writeln(gff.toPrettyString());
+unittest{
+	import std.file : read;
+	with(GffType){
+		immutable krogarDataOrig = cast(immutable ubyte[])import("krogar.bic");
+		auto gff = new FastGff(krogarDataOrig);
+
+		//Parsing checks
+		assert(gff.fileType == "BIC");
+		assert(gff.fileVersion == "V3.2");
+
+		assert(gff["IsPC"].get!GffByte == true);
+		assert(gff["RefSaveThrow"].get!GffChar == 13);
+		assert(gff["SoundSetFile"].get!GffWord == 363);
+		assert(gff["HitPoints"].get!GffShort == 320);
+		assert(gff["Gold"].get!GffDWord == 6400);
+		assert(gff["Age"].get!GffInt == 50);
+		//assert(gff[""].get!GffDWord64 == );
+		//assert(gff[""].get!GffInt64 == );
+		assert(gff["XpMod"].get!GffFloat == 1);
+		//assert(gff[""].get!GffDouble == );
+		assert(gff["Deity"].get!GffString == "Gorm Gulthyn");
+		assert(gff["ScriptHeartbeat"].get!GffResRef == "gb_player_heart");
+		assert(gff["FirstName"].get!GffLocString.strref == -1);
+		assert(gff["FirstName"].get!GffLocString.strings[0] == "Krogar");
+		//assert(gff[""].get!GffVoid == );
+		assert(gff["Tint_Head"]["Tintable"]["Tint"]["1"]["b"].get!GffByte == 109);
+		assert(gff["ClassList"][0]["Class"].get!GffInt == 4);
+
+		// Tintable appears two times in the gff
+		assert(gff["Tintable"]["Tint"]["1"]["r"].get!GffByte == 253);
+	}
+
 }
