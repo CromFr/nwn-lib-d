@@ -2,7 +2,7 @@
 /// Experimental module that aims to provide faster and more memory efficient GFF file reading (and eventually writing)
 module nwn.fastgff;
 
-import std.exception: enforce;
+import std.exception: enforce, assertNotThrown;
 import std.stdint;
 import std.stdio: writeln;
 import std.conv: to;
@@ -228,11 +228,13 @@ package:
 		}
 		else{
 			int res = 0;
-			auto fieldList = gff.getFieldList(internal.data_or_data_offset);
-			foreach(i ; 0 .. internal.field_count){
-				auto fieldIndex = fieldList[i];
-				if((res = dlg(fieldIndex)) != 0)
-					return res;
+			if(internal.data_or_data_offset != uint32_t.max){
+				auto fieldList = gff.getFieldList(internal.data_or_data_offset);
+				foreach(i ; 0 .. internal.field_count){
+					auto fieldIndex = fieldList[i];
+					if((res = dlg(fieldIndex)) != 0)
+						return res;
+				}
 			}
 			return res;
 		}
@@ -621,6 +623,8 @@ unittest{
 
 		// Tintable appears two times in the gff
 		assert(gff["Tintable"]["Tint"]["1"]["r"].get!GffByte == 253);
+
+		assertNotThrown(gff.toPrettyString());
 	}
 
 }
