@@ -78,6 +78,39 @@ class BiowareDBException : Exception{
 	}
 }
 
+/// ID used by Bioware Database to 'uniquely' identify a specific character. Can be used as a char[32].
+struct PCID {
+	/// Standard way to create a PCID.
+	///
+	/// Will create a char[32] containing at most 16 chars from the account and 16 chars from the char name, right-filled with spaces.
+	this(in string accountName, in string charName){
+		string pcidTmp;
+		pcidTmp ~= accountName[0 .. accountName.length <= 16? $ : 16];
+		pcidTmp ~= charName[0 .. charName.length <= 16? $ : 16];
+
+		if(pcidTmp.length < 32){
+			pcid[0 .. pcidTmp.length] = pcidTmp;
+			pcid[pcidTmp.length .. $] = ' ';
+		}
+		else
+			pcid = pcidTmp[0 .. 32];
+	}
+
+	/// Create with existing PCID
+	this(in char[32] pcid){
+		this.pcid = pcid;
+	}
+
+
+	/// Easily readable PCID, with spaces stripped
+	string toString() const {
+		import std.string: stripRight;
+		return pcid.stripRight.idup();
+	}
+
+	alias pcid this;
+	char[32] pcid = "                                ";
+}
 
 
 /// Bioware database (in FoxPro format, ie dbf, cdx and ftp files)
@@ -150,7 +183,7 @@ class BiowareDB{
 		bool deleted;
 
 		string name;
-		string playerid;
+		PCID playerid;
 		DateTime timestamp;
 
 		VarType type;
@@ -163,7 +196,7 @@ class BiowareDB{
 	///   pcid = $(PCID)
 	///   varName = $(VARNAME)
 	/// Returns: `null` if not found
-	Nullable!size_t getVariableIndex(in string pcid, in string varName) const{
+	Nullable!size_t getVariableIndex(in PCID pcid, in string varName) const{
 		if(auto i = Key(pcid, varName) in index)
 			return Nullable!size_t(*i);
 		return Nullable!size_t();
@@ -178,7 +211,7 @@ class BiowareDB{
 	///   varName = $(VARNAME)
 	/// Returns: `null` if not found
 	Nullable!size_t getVariableIndex(in string account, in string character, in string varName) const{
-		return getVariableIndex(account~character, varName);
+		return getVariableIndex(PCID(account, character), varName);
 	}
 
 	/// Get the variable value at `index`
@@ -245,7 +278,7 @@ class BiowareDB{
 	///   pcid = $(PCID)
 	///   varName = $(VARNAME)
 	/// Returns: the variable value, or null if not found
-	Nullable!(const(T)) getVariableValue(T)(in string pcid, in string varName) const
+	Nullable!(const(T)) getVariableValue(T)(in PCID pcid, in string varName) const
 	if(is(T == NWInt) || is(T == NWFloat) || is(T == NWString) || is(T == NWVector) || is(T == NWLocation) || is(T == BinaryObject))
 	{
 		auto idx = getVariableIndex(pcid, varName);
@@ -266,7 +299,7 @@ class BiowareDB{
 	Nullable!(const(T)) getVariableValue(T)(in string account, in string character, in string varName) const
 	if(is(T == NWInt) || is(T == NWFloat) || is(T == NWString) || is(T == NWVector) || is(T == NWLocation) || is(T == BinaryObject))
 	{
-		return getVariableValue(account~character, varName);
+		return getVariableValue(PCID(account, character), varName);
 	}
 
 	/// Get variable information using its index
@@ -283,7 +316,7 @@ class BiowareDB{
 			index,
 			record[0] == Table.DeletedFlag.True,
 			(cast(const char[])record[RecOffset.VarName .. RecOffset.VarNameEnd]).strip().to!string,
-			(cast(const char[])record[RecOffset.PlayerID .. RecOffset.PlayerIDEnd]).strip().to!string,
+			PCID(cast(char[32])record[RecOffset.PlayerID .. RecOffset.PlayerIDEnd]),
 			DateTime(
 				ts[6..8].to!int + 2000,
 				ts[0..2].to!int,
@@ -302,7 +335,7 @@ class BiowareDB{
 	///   pcid = $(PCID)
 	///   varName = $(VARNAME)
 	/// Returns: the variable information, or null if not found
-	Nullable!Variable getVariable(in string pcid, in string varName) const{
+	Nullable!Variable getVariable(in PCID pcid, in string varName) const{
 		auto idx = getVariableIndex(pcid, varName);
 		if(idx.isNull == false)
 			return Nullable!Variable(getVariable(idx.get));
@@ -318,7 +351,7 @@ class BiowareDB{
 	///   varName = $(VARNAME)
 	/// Returns: the variable information, or null if not found
 	Nullable!Variable getVariable(in string account, in string character, in string varName) const{
-		return getVariable(account~character, varName);
+		return getVariable(PCID(account, character), varName);
 	}
 
 
@@ -416,7 +449,7 @@ class BiowareDB{
 	///   varName = $(VARNAME)
 	///   value = value to set
 	///   updateTimestamp = true to change the variable modified date, false to keep current value
-	void setVariableValue(T)(in string pcid, in string varName, in T value, bool updateTimestamp = true)
+	void setVariableValue(T)(in PCID pcid, in string varName, in T value, bool updateTimestamp = true)
 	if(is(T == NWInt) || is(T == NWFloat) || is(T == NWString) || is(T == NWVector) || is(T == NWLocation) || is(T == BinaryObject))
 	{
 		auto existingIndex = getVariableIndex(pcid, varName);
@@ -432,7 +465,7 @@ class BiowareDB{
 
 			with(RecOffset){
 				record[VarName .. VarName + varName.length] = cast(const ubyte[])varName;
-				record[PlayerID .. PlayerID + pcid.length] = cast(const ubyte[])pcid;
+				record[PlayerID .. PlayerID + 32] = cast(const ubyte[])pcid;
 				record[VarType] = toVarType!T;
 
 				setVariableValue(index, value, true);
@@ -462,7 +495,7 @@ class BiowareDB{
 	/// Params:
 	///   pcid = $(PCID)
 	///   varName = $(VARNAME)
-	void deleteVariable(in string pcid, in string varName){
+	void deleteVariable(in PCID pcid, in string varName){
 		auto var = this[pcid, varName];
 
 		enforce!BiowareDBException(var.isNull == false,
@@ -502,20 +535,14 @@ class BiowareDB{
 	}
 
 
-
 private:
 	Table table;//dbf
 	//Index index;//cdx
 	Memo memo;//fpt
 
 	struct Key{
-		this(in string pcid, in string var){
-			if(pcid.length <= 32){
-				this.pcid[0 .. pcid.length] = pcid;
-				this.pcid[pcid.length .. $] = ' ';
-			}
-			else
-				this.pcid = pcid[0 .. 32];
+		this(in PCID pcid, in string var){
+			this.pcid = pcid;
 
 			if(var.length <= 32){
 				this.var[0 .. var.length] = var;
@@ -535,7 +562,7 @@ private:
 			if(record[0] == Table.DeletedFlag.False){
 				//Not deleted
 				index[Key(
-					(cast(char[])record[RecOffset.PlayerID .. RecOffset.PlayerIDEnd]).to!string,
+					PCID(cast(char[32])record[RecOffset.PlayerID .. RecOffset.PlayerIDEnd]),
 					(cast(char[])record[RecOffset.VarName .. RecOffset.VarNameEnd]).to!string,
 					)] = i;
 			}
@@ -871,7 +898,7 @@ unittest{
 	auto var = db[0];
 	assert(var.deleted == false);
 	assert(var.name == "ThisIsAFloat");
-	assert(var.playerid == "");
+	assert(var.playerid == PCID());
 	assert(var.timestamp == DateTime(2017,06,25, 23,19,26));
 	assert(var.type == 'F');
 	assert(db.getVariableValue!NWFloat(var.index) == 13.37f);
@@ -879,7 +906,7 @@ unittest{
 	var = db[1];
 	assert(var.deleted == false);
 	assert(var.name == "ThisIsAnInt");
-	assert(var.playerid == "");
+	assert(var.playerid == PCID());
 	assert(var.timestamp == DateTime(2017,06,25, 23,19,27));
 	assert(var.type == 'I');
 	assert(db.getVariableValue!NWInt(var.index) == 42);
@@ -887,7 +914,7 @@ unittest{
 	var = db[2];
 	assert(var.deleted == false);
 	assert(var.name == "ThisIsAVector");
-	assert(var.playerid == "");
+	assert(var.playerid == PCID());
 	assert(var.timestamp == DateTime(2017,06,25, 23,19,28));
 	assert(var.type == 'V');
 	assert(db.getVariableValue!NWVector(var.index) == [1.1f, 2.2f, 3.3f]);
@@ -895,7 +922,7 @@ unittest{
 	var = db[3];
 	assert(var.deleted == false);
 	assert(var.name == "ThisIsALocation");
-	assert(var.playerid == "");
+	assert(var.playerid == PCID());
 	assert(var.timestamp == DateTime(2017,06,25, 23,19,29));
 	assert(var.type == 'L');
 	auto loc = db.getVariableValue!NWLocation(var.index);
@@ -908,7 +935,7 @@ unittest{
 	var = db[4];
 	assert(var.deleted == false);
 	assert(var.name == "ThisIsAString");
-	assert(var.playerid == "");
+	assert(var.playerid == PCID());
 	assert(var.timestamp == DateTime(2017,06,25, 23,19,30));
 	assert(var.type == 'S');
 	assert(db.getVariableValue!NWString(var.index) == "Hello World");
@@ -917,7 +944,7 @@ unittest{
 	assert(var.deleted == false);
 	assert(var.name == "StoredObjectName");
 	assert(var.type == 'S');
-	assert(var.playerid == "Crom 29Adaur Harbor");
+	assert(var.playerid == PCID("Crom 29", "Adaur Harbor"));
 
 	var = db[6];
 	assert(var.deleted == false);
@@ -946,12 +973,12 @@ unittest{
 	assert(var2.name == "StoredObjectName");
 	assert(var2.index == 5);
 
-	var2 = db["Crom 29Adaur Harbor", "StoredObject"];
+	var2 = db[PCID("Crom 29", "Adaur Harbor"), "StoredObject"];
 	assert(var2.name == "StoredObject");
 	assert(var2.index == 6);
 
 	assert(db["Crom 29", "Adaur Harb", "StoredObject"].isNull);
-	assert(db.getVariableValue!BinaryObject(null, "StoredObject").isNull);
+	assert(db.getVariableValue!BinaryObject(PCID(), "StoredObject").isNull);
 
 	assertThrown!BiowareDBException(db.getVariableValue!BinaryObject(0));//var type mismatch
 
@@ -1019,23 +1046,23 @@ unittest{
 	assert(getMemoIndex(6)  == oldMemoIndex);
 	assert(db.getVariableValue!BinaryObject(6) == [0, 1, 2, 3, 4, 5]);
 
-	db.setVariableValue(null, "ThisIsAString", "yolo string");
+	db.setVariableValue(PCID(), "ThisIsAString", "yolo string");
 	assert(db.getVariableValue!NWString(4) == "yolo string");
 
 	// Variable creation
-	db.setVariableValue("playerid", "varname", "Hello string :)");
-	assert(db.getVariableValue!NWString("playerid", "varname") == "Hello string :)");
+	db.setVariableValue(PCID("player", "id"), "varname", "Hello string :)");
+	assert(db.getVariableValue!NWString(PCID("player", "id"), "varname") == "Hello string :)");
 
 
 	//Variable deleting
-	var = db.getVariable("playerid", "varname");
+	var = db.getVariable(PCID("player", "id"), "varname");
 	assert(var.deleted == false);
-	db.deleteVariable("playerid", "varname");
-	assert(db.getVariable("playerid", "varname").isNull);
+	db.deleteVariable(PCID("player", "id"), "varname");
+	assert(db.getVariable(PCID("player", "id"), "varname").isNull);
 	var = db.getVariable(var.index);
 	assert(var.deleted == true);
 
-	assertThrown!BiowareDBException(db.deleteVariable("playerid", "varname"));
+	assertThrown!BiowareDBException(db.deleteVariable(PCID("player", "id"), "varname"));
 	assertNotThrown(db.deleteVariable(var.index));
 
 }
