@@ -24,6 +24,10 @@ script:
     - dub build -b release -a x86_64 :nwn-tlk  &&  mv nwn-tlk nwn-tlk.linux-x86_64
     - ./travis-build-win32.sh exec dub build -b release :nwn-tlk  &&  mv nwn-tlk.exe nwn-tlk.win-x86
 
+    - dub build -b release -a x86    :nwn-bdb  &&  mv nwn-bdb nwn-bdb.linux-x86
+    - dub build -b release -a x86_64 :nwn-bdb  &&  mv nwn-bdb nwn-bdb.linux-x86_64
+    - ./travis-build-win32.sh exec dub build -b release :nwn-bdb  &&  mv nwn-bdb.exe nwn-bdb.win-x86
+
 after_success:
     - bash <(curl -s https://codecov.io/bash)
     - ./gh-pages/upload.sh

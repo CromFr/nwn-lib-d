@@ -53,4 +53,18 @@ subPackage {
 		stringImportPaths "unittest"
 	}
 }
+subPackage {
+	name "nwn-bdb"
+	sourcePaths "source/"
+	importPaths "source/"
+
+	configuration "application" {
+		targetType "executable"
+		targetName "nwn-bdb"
+		mainSourceFile "tools/nwn-bdb.d"
+	}
+	configuration "unittest" {
+		stringImportPaths "unittest"
+	}
+}
 
