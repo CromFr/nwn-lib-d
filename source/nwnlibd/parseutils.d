@@ -59,7 +59,7 @@ struct ChunkReader{
 	const ubyte[] data;
 	size_t read_ptr = 0;
 
-	size_t bytesLeft()const{
+	@property size_t bytesLeft() const {
 		return data.length - read_ptr;
 	}
 
@@ -78,6 +78,10 @@ struct ChunkReader{
 		foreach(MEMBER ; FieldNameTuple!T)
 			mixin("ret."~MEMBER~" = read!(typeof(ret."~MEMBER~"));");
 		return ret;
+	}
+
+	const(T[]) peek(T=ubyte)(size_t length = 1){
+		return cast(const(T[]))(data[read_ptr .. read_ptr + length * T.sizeof]);
 	}
 }
 

@@ -137,7 +137,9 @@ class Trn{
 			packets ~= TrnPacket(type, (&packet.payload_start)[0..packetLength]);
 		}
 
-		assert(serialize() == rawData);
+		version(unittest){
+			assert(serialize() == rawData);
+		}
 	}
 
 	ubyte[] serialize(){
@@ -468,18 +470,153 @@ struct TrnNWN2WalkmeshPayload{
 		uint32_t[3] linked_triangles;
 		float[2] center;
 		float[3] normal;
-		float unknownA;
-		uint16_t microtileId;
+		float dot_product;/// Dot product at plane
+		uint16_t island;
 		uint16_t flags;
+
+		enum Flags {
+			walkable  = 0x01,
+			clockwise = 0x04, // vertexes are wound clockwise and not ccw
+			dirt      = 0x08,
+			grass     = 0x10,
+			stone     = 0x20,
+			wood      = 0x40,
+			carpet    = 0x80,
+			metal     = 0x100,
+			swamp     = 0x200,
+			mud       = 0x400,
+			leaves    = 0x800,
+			water     = 0x1000,
+			puddles   = 0x2000,
+		}
 	}
 	Triangle[] triangles;
 
 
+	uint32_t tiles_flags;
+	float tiles_width;
+	uint32_t tiles_grid_height;
+	uint32_t tiles_grid_width;
+
+
+
+	static struct Tile {
+
+		static align(1) struct Header {
+			static assert(this.sizeof == 57);
+			align(1):
+			char[32] name;
+			ubyte owns_data;
+			uint32_t vertices_count;
+			uint32_t junctions_count;
+			uint32_t triangles_count;
+			float size_x;
+			float size_y;
+			uint32_t triangle_offset;
+		}
+		Header header;
+		Vertex[] vertices;
+		Junction[] junctions;
+
+		static struct PathTable {
+
+			static align(1) struct Header {
+				static assert(this.sizeof == 13);
+				align(1):
+				uint32_t flags;
+				uint32_t local_count; // TileTriangles
+				ubyte node_count; // ... WalkableTriangles
+				uint32_t rle_table_size;
+
+				enum Flags {
+					rle       = 0x01,
+					zcompress = 0x02,
+				}
+			}
+			Header header;
+			ubyte[] local_to_node_index;
+			uint32_t[] node_to_local_index;
+			ubyte[] nodes;
+			uint32_t flags;
+
+			private void parse(ref ChunkReader wmdata){
+				header = wmdata.read!(typeof(header));
+
+				//writeln("PathTable: ", header);
+
+				enforce!TrnParseException((header.flags & (Header.Flags.rle | Header.Flags.rle)) == 0, "Compressed path tables not supported");
+
+				local_to_node_index = wmdata.readArray!ubyte(header.local_count).dup;
+				node_to_local_index = wmdata.readArray!uint32_t(header.node_count).dup;
+				nodes = wmdata.readArray!ubyte(header.node_count ^^ 2).dup;
+
+				flags = wmdata.read!(typeof(flags));
+			}
+			private void serialize(ref ChunkWriter uncompData){
+				uncompData.put(
+					header,
+					local_to_node_index,
+					node_to_local_index,
+					nodes,
+					flags);
+			}
+		}
+		PathTable path_table;
+	}
+
+	uint32_t tile_border_size;
+	//uint32_t island_count;
+	Tile[] tiles;
+
+	static struct Island {
+		static align(1) struct Header {
+			static assert(this.sizeof == 24);
+			align(1):
+			uint32_t index;
+			uint32_t tile;
+			Vertex center;
+			uint32_t face_count;
+		}
+		Header header;
+		uint32_t[] adjascents;
+		float[] adjascents_dist;
+		uint32_t[] exit_faces;
+
+		private void parse(ref ChunkReader wmdata){
+			header = wmdata.read!(typeof(header));
+
+			immutable adjLen = wmdata.read!uint32_t;
+			adjascents = wmdata.readArray!uint32_t(adjLen).dup;
+
+			immutable adjDistLen = wmdata.read!uint32_t;
+			adjascents_dist = wmdata.readArray!float(adjDistLen).dup;
+
+			immutable exitLen = wmdata.read!uint32_t;
+			exit_faces = wmdata.readArray!uint32_t(exitLen).dup;
+		}
+		private void serialize(ref ChunkWriter uncompData){
+			uncompData.put(
+				header,
+				cast(uint32_t)adjascents.length,
+				adjascents,
+				cast(uint32_t)adjascents_dist.length,
+				adjascents_dist,
+				cast(uint32_t)exit_faces.length,
+				exit_faces);
+		}
+	}
+	Island[] islands;
+
+
+	static align(1) struct IslandPathNode{
+		static assert(this.sizeof == 8);
+		uint16_t next;
+		uint16_t _padding;
+		float weight;
+	}
+	IslandPathNode[] islands_path_nodes;
+
 	ubyte[] remaining_data;
-
-
-
-
 
 	package this(in ubyte[] payload){
 		auto data = ChunkReader(payload);
@@ -503,15 +640,63 @@ struct TrnNWN2WalkmeshPayload{
 		junctions      = wmdata.readArray!Junction(header.junctions_count).dup;
 		triangles      = wmdata.readArray!Triangle(header.triangles_count).dup;
 
-		//import std.file: writeFile=write;
-		//writeFile("walkmesh.wm", walkmeshData);
-		//writeln("offset: ", wmdata.read_ptr, ", ",wmdata.bytesLeft," remaining bytes");
+		tiles_flags      = wmdata.read!(typeof(tiles_flags));
+		tiles_width       = wmdata.read!(typeof(tiles_width));
+		tiles_grid_height = wmdata.read!(typeof(tiles_grid_height));
+		tiles_grid_width  = wmdata.read!(typeof(tiles_grid_width));
 
-		remaining_data = wmdata.readArray(wmdata.bytesLeft).dup;
+
+		// Tile list
+		tiles.length = tiles_grid_height * tiles_grid_width;
+		foreach(ref tile ; tiles){
+			tile.header = wmdata.read!(typeof(tile.header));
+
+			if(tile.header.owns_data){
+				tile.vertices = wmdata.readArray!Vertex(tile.header.vertices_count).dup;
+				tile.junctions = wmdata.readArray!Junction(tile.header.junctions_count).dup;
+			}
+
+			// Path table
+			tile.path_table.parse(wmdata);
+		}
+
+		tile_border_size = wmdata.read!(typeof(tile_border_size));
+
+		// Islands list
+		islands.length = wmdata.read!uint32_t;
+		foreach(ref island ; islands){
+			island.parse(wmdata);
+		}
+
+		islands_path_nodes = wmdata.readArray!IslandPathNode(islands.length ^^ 2).dup;
+
+		assert(wmdata.bytesLeft == 0, "Remaining " ~ wmdata.bytesLeft.to!string ~ " bytes");
+
+		version(unittest){
+
+			auto serialized = serializeUncompressed();
+			assert(serialized.length == walkmeshData.length, "mismatch length "~walkmeshData.length.to!string~" -> "~serialized.length.to!string);
+			assert(walkmeshData == serialized, "Could not serialize correctly");
+		}
 	}
 
 
 	ubyte[] serialize(){
+		auto uncompData = serializeUncompressed();
+
+		import std.zlib: compress;
+		const compData = compress(uncompData);
+
+		const compLength = compData.length.to!uint32_t;
+		const uncompLength = uncompData.length.to!uint32_t;
+
+
+		ChunkWriter cw;
+		cw.put(data_type, compLength, uncompLength, compData);
+		return cw.data;
+	}
+
+	private ubyte[] serializeUncompressed(){
 		//update header values
 		header.vertices_count  = vertices.length.to!uint32_t;
 		header.junctions_count = junctions.length.to!uint32_t;
@@ -524,17 +709,39 @@ struct TrnNWN2WalkmeshPayload{
 			vertices,
 			junctions,
 			triangles,
-			remaining_data);
+			tiles_flags,
+			tiles_width,
+			tiles_grid_height,
+			tiles_grid_width);
 
-		import std.zlib: compress;
-		const compData = compress(uncompData.data);
+		foreach(ref tile ; tiles){
+			uncompData.put(
+				tile.header,
+				tile.vertices,
+				tile.junctions);
+			tile.path_table.serialize(uncompData);
+		}
 
-		const compLength = compData.length.to!uint32_t;
-		const uncompLength = uncompData.data.length.to!uint32_t;
+		uncompData.put(
+			tile_border_size,
+			cast(uint32_t)islands.length);
 
+		foreach(ref island ; islands){
+			island.serialize(uncompData);
+		}
 
-		ChunkWriter cw;
-		cw.put(data_type, compLength, uncompLength, compData);
-		return cw.data;
+		uncompData.put(islands_path_nodes);
+
+		return uncompData.data;
 	}
+}
+
+
+unittest {
+	auto map = cast(ubyte[])import("eauprofonde-portes.trx");
+
+	auto trn = new Trn(map);
+	auto serialized = trn.serialize();
+	assert(map.length == serialized.length && map == serialized);
+
 }
