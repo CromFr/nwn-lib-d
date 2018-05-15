@@ -788,8 +788,4 @@ unittest {
 	assert(map.length == serialized.length && map == serialized);
 
 
-
-	ubyte[] values;
-	foreach(triangle ; node_to_local_index)
-
 }
