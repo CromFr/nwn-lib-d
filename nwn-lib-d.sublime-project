@@ -3,7 +3,7 @@
 	[
 		{
 			"path": ".",
-			"file_exclude_patterns": ["__*", "id_rsa_travis.enc", "nwn-gff"],
+			"file_exclude_patterns": ["__*", "id_rsa_travis.enc", "nwn-gff", "nwn-bdb", "nwn-trn", "nwn-erf"],
 			"folder_exclude_patterns": ["docs"]
 		}
 	],
@@ -18,31 +18,47 @@
 			"variants": [
 				{
 					"name": "nwn-gff",
-					"shell_cmd": "dub build -q --compiler=dmd --vquiet :nwn-gff",
+					"shell_cmd": "dub build :nwn-gff",
 				},
 				{
-					"name": "nwn-gff run unittests",
-					"shell_cmd": "dub test -q --compiler=dmd :nwn-gff",
+					"name": "nwn-gff run unittests-coverage",
+					"shell_cmd": "dub test -b unittest-cov :nwn-gff",
 				},
 				{
 					"name": "nwn-erf",
-					"shell_cmd": "dub build -b debug -q --compiler=dmd :nwn-erf",
+					"shell_cmd": "dub build :nwn-erf",
 				},
 				{
 					"name": "nwn-erf run unittests",
-					"shell_cmd": "dub test -q --compiler=dmd :nwn-erf",
+					"shell_cmd": "dub test :nwn-erf",
 				},
 				{
 					"name": "nwn-tlk",
-					"shell_cmd": "dub build -b debug -q --compiler=dmd :nwn-tlk",
+					"shell_cmd": "dub build :nwn-tlk",
 				},
 				{
 					"name": "nwn-tlk run unittests",
-					"shell_cmd": "dub test -q --compiler=dmd :nwn-tlk",
+					"shell_cmd": "dub test :nwn-tlk",
+				},
+				{
+					"name": "nwn-bdb",
+					"shell_cmd": "dub build :nwn-bdb",
+				},
+				{
+					"name": "nwn-trn",
+					"shell_cmd": "dub build :nwn-trn",
+				},
+				{
+					"name": "nwn-trn run unittests",
+					"shell_cmd": "dub test :nwn-trn",
 				},
 				{
 					"name": "Documentation",
 					"shell_cmd": "./build-doc.sh",
+				},
+				{
+					"name": "Clean",
+					"shell_cmd": "rm -- *.lst",
 				}
 			]
 		}

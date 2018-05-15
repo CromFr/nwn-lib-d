@@ -433,12 +433,14 @@ struct TrnNWN2WaterPayload{
 		return cw.data;
 	}
 }
+
+// Walkmesh packet, only contained inside TRX files
 struct TrnNWN2WalkmeshPayload{
 
 	string data_type;
 
 	static align(1) struct Header{
-		static assert(this.sizeof==53);
+		static assert(this.sizeof == 53);
 		align(1):
 		ubyte[37] unknownA;
 		uint32_t vertices_count;
@@ -448,14 +450,14 @@ struct TrnNWN2WalkmeshPayload{
 	}
 	Header header;
 	static align(1) struct Vertex{
-		static assert(this.sizeof==12);
+		static assert(this.sizeof == 12);
 		align(1):
 		float[3] position;
 	}
 	Vertex[] vertices;
 
 	static align(1) struct Junction{
-		static assert(this.sizeof==16);
+		static assert(this.sizeof == 16);
 		align(1):
 		uint32_t[2] vertices;
 		uint32_t[2] triangles;
@@ -463,7 +465,7 @@ struct TrnNWN2WalkmeshPayload{
 	Junction[] junctions;
 
 	static align(1) struct Triangle{
-		static assert(this.sizeof==64);
+		static assert(this.sizeof == 64);
 		align(1):
 		uint32_t[3] vertices;
 		uint32_t[3] linked_junctions;
@@ -497,8 +499,7 @@ struct TrnNWN2WalkmeshPayload{
 	float tiles_width;
 	uint32_t tiles_grid_height;
 	uint32_t tiles_grid_width;
-
-
+	uint32_t tiles_border_size;
 
 	static struct Tile {
 
@@ -542,8 +543,6 @@ struct TrnNWN2WalkmeshPayload{
 			private void parse(ref ChunkReader wmdata){
 				header = wmdata.read!(typeof(header));
 
-				//writeln("PathTable: ", header);
-
 				enforce!TrnParseException((header.flags & (Header.Flags.rle | Header.Flags.rle)) == 0, "Compressed path tables not supported");
 
 				local_to_node_index = wmdata.readArray!ubyte(header.local_count).dup;
@@ -563,9 +562,6 @@ struct TrnNWN2WalkmeshPayload{
 		}
 		PathTable path_table;
 	}
-
-	uint32_t tile_border_size;
-	//uint32_t island_count;
 	Tile[] tiles;
 
 	static struct Island {
@@ -616,7 +612,6 @@ struct TrnNWN2WalkmeshPayload{
 	}
 	IslandPathNode[] islands_path_nodes;
 
-	ubyte[] remaining_data;
 
 	package this(in ubyte[] payload){
 		auto data = ChunkReader(payload);
@@ -660,7 +655,7 @@ struct TrnNWN2WalkmeshPayload{
 			tile.path_table.parse(wmdata);
 		}
 
-		tile_border_size = wmdata.read!(typeof(tile_border_size));
+		tiles_border_size = wmdata.read!(typeof(tiles_border_size));
 
 		// Islands list
 		islands.length = wmdata.read!uint32_t;
@@ -671,6 +666,9 @@ struct TrnNWN2WalkmeshPayload{
 		islands_path_nodes = wmdata.readArray!IslandPathNode(islands.length ^^ 2).dup;
 
 		assert(wmdata.bytesLeft == 0, "Remaining " ~ wmdata.bytesLeft.to!string ~ " bytes");
+
+		auto err = validate();
+		enforce!TrnParseException(err is null, "ASWM parse error: "~err);
 
 		version(unittest){
 
@@ -723,7 +721,7 @@ struct TrnNWN2WalkmeshPayload{
 		}
 
 		uncompData.put(
-			tile_border_size,
+			tiles_border_size,
 			cast(uint32_t)islands.length);
 
 		foreach(ref island ; islands){
@@ -734,6 +732,51 @@ struct TrnNWN2WalkmeshPayload{
 
 		return uncompData.data;
 	}
+
+	string validate() const {
+
+		foreach(i, ref tile ; tiles){
+
+			immutable nodes_len = tile.path_table.nodes.length;
+			immutable node_to_local_len = tile.path_table.node_to_local_index.length;
+			immutable local_to_node_len = tile.path_table.local_to_node_index.length;
+
+			if(node_to_local_len != tile.path_table.header.node_count)
+				return "In tile "~i.to!string~": Wrong number of node_to_local_index";
+			if(local_to_node_len != tile.path_table.header.local_count)
+				return "In tile "~i.to!string~": Wrong number of local_to_node_index";
+
+			if(nodes_len != tile.path_table.header.node_count ^^ 2)
+				return "In tile "~i.to!string~": Wrong number of nodes";
+			if(nodes_len < 0x7F){
+				foreach(j, node ; tile.path_table.nodes){
+					if(node == 0xff)
+						continue;
+					if((node & 0b0111_1111) >= node_to_local_len)
+						return "In tile "~i.to!string~", node "~j.to!string~": Illegal value";
+				}
+			}
+			if(nodes_len < 0xff){
+				foreach(j, node ; tile.path_table.local_to_node_index){
+					if(node == 0xff)
+						continue;
+					if(node >= nodes_len)
+						return "In tile "~i.to!string~", local_to_node_index "~j.to!string~": Illegal value";
+				}
+			}
+
+			foreach(j, ntl ; tile.path_table.node_to_local_index){
+				if(ntl > triangles.length)
+					return "In tile "~i.to!string~", node_to_local_index "~j.to!string~": face index out of bounds";
+			}
+
+		}
+
+		if(islands_path_nodes.length != islands.length ^^ 2)
+			return "Wrong number of islands / islands_path_nodes";
+
+		return null;
+	}
 }
 
 
@@ -743,5 +786,10 @@ unittest {
 	auto trn = new Trn(map);
 	auto serialized = trn.serialize();
 	assert(map.length == serialized.length && map == serialized);
+
+
+
+	ubyte[] values;
+	foreach(triangle ; node_to_local_index)
 
 }

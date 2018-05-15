@@ -8,9 +8,13 @@ __test__*__
 *.obj
 *.lst
 
-nwn-lib-d.sublime-workspace
+*.sublime-workspace
 
+nwn-bdb
+nwn-erf
 nwn-gff
+nwn-tlk
+nwn-trn
 *.exe
 *.lib
 libnwn-d.*

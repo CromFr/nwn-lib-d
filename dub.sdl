@@ -67,4 +67,18 @@ subPackage {
 		stringImportPaths "unittest"
 	}
 }
+subPackage {
+	name "nwn-trn"
+	sourcePaths "source/"
+	importPaths "source/"
+
+	configuration "application" {
+		targetType "executable"
+		targetName "nwn-trn"
+		mainSourceFile "tools/nwn-trn.d"
+	}
+	configuration "unittest" {
+		stringImportPaths "unittest"
+	}
+}
 
