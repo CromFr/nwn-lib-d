@@ -28,6 +28,10 @@ script:
     - dub build -b release -a x86_64 :nwn-bdb  &&  mv nwn-bdb nwn-bdb.linux-x86_64
     - ./travis-build-win32.sh exec dub build -b release :nwn-bdb  &&  mv nwn-bdb.exe nwn-bdb.win-x86
 
+    - dub build -b release -a x86    :nwn-trn  &&  mv nwn-trn nwn-trn.linux-x86
+    - dub build -b release -a x86_64 :nwn-trn  &&  mv nwn-trn nwn-trn.linux-x86_64
+    - ./travis-build-win32.sh exec dub build -b release :nwn-trn  &&  mv nwn-trn.exe nwn-trn.win-x86
+
 after_success:
     - bash <(curl -s https://codecov.io/bash)
     - ./gh-pages/upload.sh
