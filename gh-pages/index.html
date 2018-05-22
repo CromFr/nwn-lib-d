@@ -5,15 +5,27 @@
 	<title>API documentation</title>
 	<link rel="stylesheet" href="./docs/styles/ddox.css">
 	<style>
-		.flex-container{
+		.flex-container {
 			height: 100%;
 			display: flex;
 			flex-wrap: wrap;
 			align-content: flex-start;
+			justify-content: space-around;
 		}
-		.flex-container>div{
+		.flex-container>div {
 			margin: 1em;
+			max-width: 500px;
+			flex-grow: 1;
+			font-size: 1.1em;
+			background-color: rgba(0,0,0,0.05);
+			padding: 1.5em;
+			border-radius: 0.5em;
 		}
+		.flex-container>div table {
+			font-size: 1em;
+			width: 100%;
+		}
+
 	</style>
 </head>
 <body>
@@ -29,7 +41,7 @@
 
 		<div class="flex-container">
 			<div>
-				<h2>nwn-gff</h2>
+				<h1>nwn-gff</h1>
 				<p>
 					Serialize / deserialize GFF files (bic, utc, jrl, ...).
 				</p>
@@ -42,7 +54,7 @@
 			</div>
 
 			<div>
-				<h2>nwn-tlk</h2>
+				<h1>nwn-tlk</h1>
 				<p>
 					Serialize TLK files to readable text.
 				</p>
@@ -55,7 +67,7 @@
 			</div>
 
 			<div>
-				<h2>nwn-erf</h2>
+				<h1>nwn-erf</h1>
 				<p>
 					Create, extract or view ERF files (hak, erf, mod) in a reproducible manner (same content => same checksum).
 				</p>
@@ -68,7 +80,7 @@
 			</div>
 
 			<div>
-				<h2>nwn-bdb</h2>
+				<h1>nwn-bdb</h1>
 				<p>
 					View/search Bioware/foxpro database content (dbf + ctx + fpt) using regular expressions.
 				</p>
@@ -81,7 +93,7 @@
 			</div>
 
 			<div>
-				<h2>nwn-trn</h2>
+				<h1>nwn-trn</h1>
 				<p>
 					TRN/TRX experimental tool
 				</p>
