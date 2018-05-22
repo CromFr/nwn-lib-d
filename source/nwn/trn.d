@@ -8,7 +8,7 @@ import std.traits;
 import std.exception: enforce;
 import nwnlibd.parseutils;
 
-import std.stdio: writeln, writefln;
+import std.stdio: write, writeln, writefln;
 version(unittest) import std.exception: assertThrown, assertNotThrown;
 
 class TrnParseException : Exception{
@@ -434,11 +434,12 @@ struct TrnNWN2WaterPayload{
 	}
 }
 
-// Walkmesh packet, only contained inside TRX files
+/// Compressed walkmesh (only contained inside TRX files)
 struct TrnNWN2WalkmeshPayload{
 
 	string data_type;
 
+	/// ASWM header
 	static align(1) struct Header{
 		static assert(this.sizeof == 53);
 		align(1):
@@ -448,7 +449,9 @@ struct TrnNWN2WalkmeshPayload{
 		uint32_t triangles_count;
 		uint32_t unknownB;
 	}
+	/// ditto
 	Header header;
+
 	static align(1) struct Vertex{
 		static assert(this.sizeof == 12);
 		align(1):
@@ -456,112 +459,222 @@ struct TrnNWN2WalkmeshPayload{
 	}
 	Vertex[] vertices;
 
+	/// Junction between two triangles
 	static align(1) struct Junction{
 		static assert(this.sizeof == 16);
 		align(1):
-		uint32_t[2] vertices;
-		uint32_t[2] triangles;
+		uint32_t[2] vertices; /// Vertex indices drawing the junction line
+		uint32_t[2] triangles; /// Joined triangles (`uint32_t.max` if none)
 	}
 	Junction[] junctions;
 
+	/// Mesh Triangle + pre-calculated data + metadata
 	static align(1) struct Triangle{
 		static assert(this.sizeof == 64);
 		align(1):
-		uint32_t[3] vertices;
-		uint32_t[3] linked_junctions;
-		uint32_t[3] linked_triangles;
-		float[2] center;
-		float[3] normal;
-		float dot_product;/// Dot product at plane
-		uint16_t island;
-		uint16_t flags;
+		uint32_t[3] vertices; /// Vertex indices composing the triangle
+		uint32_t[3] linked_junctions; /// Junctions to other triangles (`uint32_t.max` if none, but there should always be 3)
+		uint32_t[3] linked_triangles; /// Adjacent triangles (`uint32_t.max` if none)
+		float[2] center; /// X / Y coordinates of the center of the triangle. Calculated by avg the 3 vertices coordinates.
+		float[3] normal; /// Normal vector
+		float dot_product; /// Dot product at plane
+		uint16_t island; /// Smaller fraction of a tile. TODO: check if WM helpers create islands?
+		uint16_t flags; /// See `Flags`
 
 		enum Flags {
-			walkable  = 0x01,
-			clockwise = 0x04, // vertexes are wound clockwise and not ccw
-			dirt      = 0x08,
-			grass     = 0x10,
-			stone     = 0x20,
-			wood      = 0x40,
-			carpet    = 0x80,
-			metal     = 0x100,
-			swamp     = 0x200,
-			mud       = 0x400,
-			leaves    = 0x800,
-			water     = 0x1000,
-			puddles   = 0x2000,
+			walkable  = 0x01, /// if the triangle can be walked on. Note the triangle needs path tables to be really walkable
+			clockwise = 0x04, /// vertices are wound clockwise and not ccw
+			dirt      = 0x08, /// Floor type (for sound effects)
+			grass     = 0x10, /// ditto
+			stone     = 0x20, /// ditto
+			wood      = 0x40, /// ditto
+			carpet    = 0x80, /// ditto
+			metal     = 0x100, /// ditto
+			swamp     = 0x200, /// ditto
+			mud       = 0x400, /// ditto
+			leaves    = 0x800, /// ditto
+			water     = 0x1000, /// ditto
+			puddles   = 0x2000, /// ditto
 		}
 	}
 	Triangle[] triangles;
 
-
+	/// Always 31?
 	uint32_t tiles_flags;
+	/// Width in meters of a terrain tile (most likely to be 10.0)
 	float tiles_width;
+	/// Number of tiles along Y axis
+	/// TODO: double check height = Y
 	uint32_t tiles_grid_height;
+	/// Number of tiles along X axis
+	/// TODO: double check width = X
 	uint32_t tiles_grid_width;
+	/// Width of the map borders in tiles (8 means that 8 tiles will be removed on each side)
 	uint32_t tiles_border_size;
 
+	/// Tile with its path table
 	static struct Tile {
 
 		static align(1) struct Header {
 			static assert(this.sizeof == 57);
 			align(1):
-			char[32] name;
-			ubyte owns_data;
+			char[32] name; /// Last time I checked it was complete garbage
+			ubyte owns_data;/// 1 if the tile stores vertices / junctions. Usually 0
 			uint32_t vertices_count;
 			uint32_t junctions_count;
 			uint32_t triangles_count;
-			float size_x;
-			float size_y;
+			float size_x;/// Always 0 ?
+			float size_y;/// Always 0 ?
+
+			/// This value will be added to each triangle index in the PathTable
 			uint32_t triangle_offset;
 		}
 		Header header;
+
+		/// Only used if `header.owns_data == true`
 		Vertex[] vertices;
+
+		/// Only used if `header.owns_data == true`
 		Junction[] junctions;
 
+		/**
+		Tile pathing information
+
+		Notes:
+		- "local" refers to the local triangle index. The aswm triangle index
+		  can be retrieved by adding Tile.triangle_offset
+		- Each triangle referenced here is only referenced once across all the
+		  tiles of the ASWM
+		*/
 		static struct PathTable {
 
 			static align(1) struct Header {
 				static assert(this.sizeof == 13);
 				align(1):
-				uint32_t flags;
-				uint32_t local_count; // TileTriangles
-				ubyte node_count; // ... WalkableTriangles
-				uint32_t rle_table_size;
 
 				enum Flags {
 					rle       = 0x01,
 					zcompress = 0x02,
 				}
+				uint32_t flags; /// Alsways 0 ?. Probably used to set path table compression
+				uint32_t local_to_node_length; /// Length of `local_to_node`
+				ubyte node_to_local_length; /// Length of `node_to_local`
+				uint32_t rle_table_size; /// Always 0 ?
+
 			}
 			Header header;
-			ubyte[] local_to_node_index;
-			uint32_t[] node_to_local_index;
-			ubyte[] nodes;
-			uint32_t flags;
 
-			private void parse(ref ChunkReader wmdata){
+			/**
+			List of node indices for each triangle in the tile
+
+			`local_to_node[triangle_local_index]` represents an index value to
+			be used with nodes (see `nodes` for how to use it)
+
+			All triangles (even non walkable) must be represented here.
+			Triangle indices that are not used in this tile must have a `0xFF`
+			value.
+			*/
+			ubyte[] local_to_node;
+
+			/**
+			Node index to local triangle index
+
+			Values must not be uint32_t.max
+			*/
+			uint32_t[] node_to_local;
+
+			/**
+			Node list
+
+			This is used to determine which triangle a creature should go next
+			to reach a destination triangle.
+
+			`nodes[header.node_to_local_length * FromLTNIndex + DestLTNIndex]
+			& 0b0111_1111` is an index in `node_to_local` array, containing
+			the next triangle to go to in order to reach destination.
+
+			`FromLTNIndex`, `DestLTNIndex` are values found inside the
+			`local_to_node` array.
+			<ul>
+			$(LI `value & 0b0111_1111` is an index in `node_to_local` table)
+			$(LI `value & 0b1000_0000` is > 0 if there is a clear line of
+			sight between the two triangle. It's not clear what LOS is since
+			two linked triangles on flat ground may not have LOS = 1 in game
+			files.)
+			</ul>
+
+			If FromLTNIndex == DestLTNIndex, the value must be set to 255.
+
+			Note: does not contain any 127 = 0b0111_1111 values
+			*/
+			ubyte[] nodes;
+
+			/// Always 0b0001_1111 = 31 ?
+			uint32_t flags;
+		}
+		PathTable path_table;
+
+
+		private void parse(ref ChunkReader wmdata){
+			header = wmdata.read!(typeof(header));
+
+			if(header.owns_data){
+				vertices = wmdata.readArray!Vertex(header.vertices_count).dup;
+				junctions = wmdata.readArray!Junction(header.junctions_count).dup;
+			}
+
+			with(path_table){
 				header = wmdata.read!(typeof(header));
 
-				enforce!TrnParseException((header.flags & (Header.Flags.rle | Header.Flags.rle)) == 0, "Compressed path tables not supported");
+				enforce!TrnParseException((header.flags & (Header.Flags.rle | Header.Flags.zcompress)) == 0, "Compressed path tables not supported");
 
-				local_to_node_index = wmdata.readArray!ubyte(header.local_count).dup;
-				node_to_local_index = wmdata.readArray!uint32_t(header.node_count).dup;
-				nodes = wmdata.readArray!ubyte(header.node_count ^^ 2).dup;
+				local_to_node = wmdata.readArray!ubyte(header.local_to_node_length).dup;
+				node_to_local = wmdata.readArray!uint32_t(header.node_to_local_length).dup;
+				nodes = wmdata.readArray!ubyte(header.node_to_local_length ^^ 2).dup;
 
 				flags = wmdata.read!(typeof(flags));
 			}
-			private void serialize(ref ChunkWriter uncompData){
+		}
+		private void serialize(ref ChunkWriter uncompData){
+			uncompData.put(
+				header,
+				vertices,
+				junctions);
+
+			with(path_table){
+				// Update header
+				header.local_to_node_length = cast(uint32_t)local_to_node.length;
+
+				assert(node_to_local.length <= ubyte.max, "node_to_local is too long");
+				header.node_to_local_length = cast(ubyte)node_to_local.length;
+
+				// serialize
 				uncompData.put(
 					header,
-					local_to_node_index,
-					node_to_local_index,
+					local_to_node,
+					node_to_local,
 					nodes,
 					flags);
 			}
 		}
-		PathTable path_table;
+
+		string dump() const {
+			return format!"TILE header: name: %(%s, %)\n"([header.name])
+			     ~ format!"        owns_data: %s, vert_cnt: %s, junc_cnt: %s, tri_cnt: %s\n"(header.owns_data, header.vertices_count, header.junctions_count, header.triangles_count)
+			     ~ format!"        size_x: %s, size_y: %s\n"(header.size_x, header.size_y)
+			     ~ format!"        triangle_offset: %s\n"(header.triangle_offset)
+			     ~ format!"     vertices: %s\n"(vertices)
+			     ~ format!"     junctions: %s\n"(junctions)
+			     ~        "     path_table: \n"
+			     ~ format!"       header: flags: %s, ltn_len: %d, ntl_len: %s, rle_len: %s\n"(path_table.header.flags, path_table.header.local_to_node_length, path_table.header.node_to_local_length, path_table.header.rle_table_size)
+			     ~ format!"       ltn: %s\n"(path_table.local_to_node)
+			     ~ format!"       ntl: %s\n"(path_table.local_to_node)
+			     ~ format!"       nodes: %s\n"(path_table.nodes)
+			     ~ format!"       flags: %s\n"(path_table.flags);
+		}
 	}
+	/// Map tile list
+	/// Non border tiles have `header.vertices_count > 0 || header.junctions_count > 0 || header.triangles_count > 0`
 	Tile[] tiles;
 
 	static struct Island {
@@ -571,40 +684,47 @@ struct TrnNWN2WalkmeshPayload{
 			uint32_t index;
 			uint32_t tile;
 			Vertex center;
-			uint32_t face_count;
+			uint32_t exit_triangles_length;
 		}
 		Header header;
-		uint32_t[] adjascents;
-		float[] adjascents_dist;
-		uint32_t[] exit_faces;
+		uint32_t[] adjacent_islands; /// Adjacent islands
+		float[] adjacent_islands_dist; /// Distances between adjacent islands (probably measured between header.center)
+		uint32_t[] exit_triangles;
 
 		private void parse(ref ChunkReader wmdata){
 			header = wmdata.read!(typeof(header));
 
 			immutable adjLen = wmdata.read!uint32_t;
-			adjascents = wmdata.readArray!uint32_t(adjLen).dup;
+			adjacent_islands = wmdata.readArray!uint32_t(adjLen).dup;
 
 			immutable adjDistLen = wmdata.read!uint32_t;
-			adjascents_dist = wmdata.readArray!float(adjDistLen).dup;
+			adjacent_islands_dist = wmdata.readArray!float(adjDistLen).dup;
 
 			immutable exitLen = wmdata.read!uint32_t;
-			exit_faces = wmdata.readArray!uint32_t(exitLen).dup;
+			exit_triangles = wmdata.readArray!uint32_t(exitLen).dup;
 		}
 		private void serialize(ref ChunkWriter uncompData){
 			uncompData.put(
 				header,
-				cast(uint32_t)adjascents.length,
-				adjascents,
-				cast(uint32_t)adjascents_dist.length,
-				adjascents_dist,
-				cast(uint32_t)exit_faces.length,
-				exit_faces);
+				cast(uint32_t)adjacent_islands.length,
+				adjacent_islands,
+				cast(uint32_t)adjacent_islands_dist.length,
+				adjacent_islands_dist,
+				cast(uint32_t)exit_triangles.length,
+				exit_triangles);
+		}
+
+		string dump() const {
+			return format!"ISLA header: index: %s, tile: %s, center: %s, exit_triangles_length: %s\n"(header.index, header.tile, header.center.position, header.exit_triangles_length)
+				~ format!"      adjacent_islands: %s\n"(adjacent_islands)
+				~ format!"      adjacent_islands_dist: %s\n"(adjacent_islands_dist)
+				~ format!"      exit_triangles: %s\n"(exit_triangles);
 		}
 	}
 	Island[] islands;
 
 
-	static align(1) struct IslandPathNode{
+	static align(1) struct IslandPathNode {
 		static assert(this.sizeof == 8);
 		uint16_t next;
 		uint16_t _padding;
@@ -630,7 +750,6 @@ struct TrnNWN2WalkmeshPayload{
 
 		header = wmdata.read!Header;
 		assert(wmdata.read_ptr==0x35);
-
 		vertices       = wmdata.readArray!Vertex(header.vertices_count).dup;
 		junctions      = wmdata.readArray!Junction(header.junctions_count).dup;
 		triangles      = wmdata.readArray!Triangle(header.triangles_count).dup;
@@ -643,16 +762,9 @@ struct TrnNWN2WalkmeshPayload{
 
 		// Tile list
 		tiles.length = tiles_grid_height * tiles_grid_width;
-		foreach(ref tile ; tiles){
-			tile.header = wmdata.read!(typeof(tile.header));
-
-			if(tile.header.owns_data){
-				tile.vertices = wmdata.readArray!Vertex(tile.header.vertices_count).dup;
-				tile.junctions = wmdata.readArray!Junction(tile.header.junctions_count).dup;
-			}
-
+		foreach(i, ref tile ; tiles){
 			// Path table
-			tile.path_table.parse(wmdata);
+			tile.parse(wmdata);
 		}
 
 		tiles_border_size = wmdata.read!(typeof(tiles_border_size));
@@ -666,9 +778,6 @@ struct TrnNWN2WalkmeshPayload{
 		islands_path_nodes = wmdata.readArray!IslandPathNode(islands.length ^^ 2).dup;
 
 		assert(wmdata.bytesLeft == 0, "Remaining " ~ wmdata.bytesLeft.to!string ~ " bytes");
-
-		auto err = validate();
-		enforce!TrnParseException(err is null, "ASWM parse error: "~err);
 
 		version(unittest){
 
@@ -694,7 +803,7 @@ struct TrnNWN2WalkmeshPayload{
 		return cw.data;
 	}
 
-	private ubyte[] serializeUncompressed(){
+	ubyte[] serializeUncompressed(){
 		//update header values
 		header.vertices_count  = vertices.length.to!uint32_t;
 		header.junctions_count = junctions.length.to!uint32_t;
@@ -713,11 +822,7 @@ struct TrnNWN2WalkmeshPayload{
 			tiles_grid_width);
 
 		foreach(ref tile ; tiles){
-			uncompData.put(
-				tile.header,
-				tile.vertices,
-				tile.junctions);
-			tile.path_table.serialize(uncompData);
+			tile.serialize(uncompData);
 		}
 
 		uncompData.put(
@@ -738,36 +843,36 @@ struct TrnNWN2WalkmeshPayload{
 		foreach(i, ref tile ; tiles){
 
 			immutable nodes_len = tile.path_table.nodes.length;
-			immutable node_to_local_len = tile.path_table.node_to_local_index.length;
-			immutable local_to_node_len = tile.path_table.local_to_node_index.length;
+			immutable node_to_local_len = tile.path_table.node_to_local.length;
+			immutable local_to_node_len = tile.path_table.local_to_node.length;
 
-			if(node_to_local_len != tile.path_table.header.node_count)
-				return "In tile "~i.to!string~": Wrong number of node_to_local_index";
-			if(local_to_node_len != tile.path_table.header.local_count)
-				return "In tile "~i.to!string~": Wrong number of local_to_node_index";
+			if(node_to_local_len != tile.path_table.header.node_to_local_length)
+				return "In tile "~i.to!string~": Wrong number of node_to_local";
+			if(local_to_node_len != tile.path_table.header.local_to_node_length)
+				return "In tile "~i.to!string~": Wrong number of local_to_node";
 
-			if(nodes_len != tile.path_table.header.node_count ^^ 2)
+			if(nodes_len != tile.path_table.header.node_to_local_length ^^ 2)
 				return "In tile "~i.to!string~": Wrong number of nodes";
 			if(nodes_len < 0x7F){
 				foreach(j, node ; tile.path_table.nodes){
 					if(node == 0xff)
 						continue;
 					if((node & 0b0111_1111) >= node_to_local_len)
-						return "In tile "~i.to!string~", node "~j.to!string~": Illegal value";
+						return "In tile "~i.to!string~", node "~j.to!string~": Illegal value "~node.to!string;
 				}
 			}
 			if(nodes_len < 0xff){
-				foreach(j, node ; tile.path_table.local_to_node_index){
+				foreach(j, node ; tile.path_table.local_to_node){
 					if(node == 0xff)
 						continue;
 					if(node >= nodes_len)
-						return "In tile "~i.to!string~", local_to_node_index "~j.to!string~": Illegal value";
+						return "In tile "~i.to!string~", local_to_node "~j.to!string~": Illegal value"~node.to!string;
 				}
 			}
 
-			foreach(j, ntl ; tile.path_table.node_to_local_index){
-				if(ntl > triangles.length)
-					return "In tile "~i.to!string~", node_to_local_index "~j.to!string~": face index out of bounds";
+			foreach(j, ntl ; tile.path_table.node_to_local){
+				if(ntl >= triangles.length)
+					return "In tile "~i.to!string~", node_to_local "~j.to!string~": triangle index "~ntl.to!string~" out of bounds";
 			}
 
 		}
@@ -776,6 +881,51 @@ struct TrnNWN2WalkmeshPayload{
 			return "Wrong number of islands / islands_path_nodes";
 
 		return null;
+	}
+
+	string dump() const {
+		import std.algorithm;
+		import std.array: array;
+
+		string ret;
+
+		ret ~= "==== HEADER ====\n";
+		ret ~= "unknownA: " ~ header.unknownA.to!string ~ "\n";
+		ret ~= "vertices_count: " ~ header.vertices_count.to!string ~ "\n";
+		ret ~= "junctions_count: " ~ header.junctions_count.to!string ~ "\n";
+		ret ~= "triangles_count: " ~ header.triangles_count.to!string ~ "\n";
+		ret ~= "unknownB: " ~ header.unknownB.to!string ~ "\n";
+
+		ret ~= "==== VERTICES ====\n";
+		ret ~= vertices.map!(a => format!"VERT %s\n"(a.position)).join;
+
+		ret ~= "==== JUNCTIONS ====\n";
+		ret ~= junctions.map!(a => format!"JUNC line: %s, tri: %s\n"(a.vertices, a.triangles)).join;
+
+		ret ~= "==== TRIANGLES ====\n";
+		ret ~= triangles.map!(a =>
+				  format!"TRI vert: %s, junc: %s, tri: %s\n"(a.vertices, a.linked_junctions, a.linked_triangles)
+				~ format!"    center: %s, normal: %s, dot_product: %s\n"(a.center, a.normal, a.dot_product)
+				~ format!"    island: %s, flags: %s\n"(a.island, a.flags)
+			).join;
+
+		ret ~= "==== TILES HEADER ====\n";
+		ret ~= "tiles_flags: " ~ tiles_flags.to!string ~ "\n";
+		ret ~= "tiles_width: " ~ tiles_width.to!string ~ "\n";
+		ret ~= "tiles_grid_height: " ~ tiles_grid_height.to!string ~ "\n";
+		ret ~= "tiles_grid_width: " ~ tiles_grid_width.to!string ~ "\n";
+		ret ~= "tiles_border_size: " ~ tiles_border_size.to!string ~ "\n";
+
+		ret ~= "==== TILES ====\n";
+		ret ~= tiles.map!(a => a.dump()).join;
+
+		ret ~= "==== ISLANDS ====\n";
+		ret ~= islands.map!(a => a.dump()).join;
+
+		ret ~= "==== ISLAND PATH NODES ====\n";
+		ret ~= islands_path_nodes.map!(a => format!"ISPN next: %s, _padding %s, weight: %s\n"(a.next, a._padding, a.weight)).join;
+
+		return ret;
 	}
 }
 
@@ -786,6 +936,4 @@ unittest {
 	auto trn = new Trn(map);
 	auto serialized = trn.serialize();
 	assert(map.length == serialized.length && map == serialized);
-
-
 }

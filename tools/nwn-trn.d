@@ -2,7 +2,7 @@
 /// License: GPL-3.0
 /// Copyright: Copyright Thibaut CHARLES 2016
 
-module nwnbdb;
+module nwntrn;
 
 import std.stdio;
 import std.conv: to, ConvException;
@@ -33,7 +33,11 @@ class ArgException : Exception{
 
 void usage(in string cmd){
 	writeln("TRN / TRX tool");
-	writeln("Usage: ", cmd, " (strip|convert) [args]");
+	writeln("Usage: ", cmd, " (aswm-strip|aswm-convert|aswm-extract|aswm-dump) [args]");
+	writeln("  aswm-strip: optimize TRX files");
+	writeln("  aswm-convert: convert walkmesh into wavefront obj");
+	writeln("  aswm-extract: unzip walkmesh data");
+	writeln("  aswm-dump: print walkmesh data using a (barely) human-readable format");
 }
 
 int _main(string[] args){
@@ -49,7 +53,7 @@ int _main(string[] args){
 		default:
 			usage(args[0]);
 			return 1;
-		case "strip":{
+		case "aswm-strip":{
 			bool inPlace = false;
 			bool postCheck = true;
 			string targetPath = null;
@@ -62,8 +66,8 @@ int _main(string[] args){
 			if(res.helpWanted || args.length == 1){
 				defaultGetoptPrinter(
 					"Reduce TRX file size by removing non walkable polygons from calculated walkmesh\n"
-					~"Usage: "~args[0]~" map.trx -o stripped_map.trx\n"
-					~"       "~args[0]~" -i map.trx",
+					~"Usage: "~args[0]~" "~command~" map.trx -o stripped_map.trx\n"
+					~"       "~args[0]~" "~command~" -i map.trx",
 					res.options);
 				return 0;
 			}
@@ -103,7 +107,7 @@ int _main(string[] args){
 		}
 		break;
 
-		case "convert":{
+		case "aswm-convert":{
 			string targetDir = null;
 			bool withJunctions = false;
 			auto res = getopt(args,
@@ -114,7 +118,7 @@ int _main(string[] args){
 			if(res.helpWanted || args.length == 1){
 				defaultGetoptPrinter(
 					"Convert NWN2 walkmeshes into TRX / OBJ (only TRX => OBJ supported for now)\n"
-					~"Usage: "~args[0]~" map.trx",
+					~"Usage: "~args[0]~" "~command~" map.trx",
 					res.options);
 				return 0;
 			}
@@ -143,6 +147,40 @@ int _main(string[] args){
 			if(!colPath.exists)
 				std.file.write(colPath, colors);
 
+		}
+		break;
+
+		case "aswm-extract":{
+			enforce(args.length == 2, "Bad argument number. Usage: "~args[0]~" "~command~" file.trx");
+
+			auto trn = new Trn(args[1]);
+
+			bool found = false;
+			foreach(i, ref packet ; trn.packets){
+				if(packet.type == TrnPacketType.NWN2_ASWM){
+					found = true;
+					std.file.write(
+						args[1].baseName~"."~i.to!string~".aswm",
+						packet.as!(TrnPacketType.NWN2_ASWM).serializeUncompressed());
+				}
+			}
+			enforce(found, "No ASWM packet found. Make sure you are targeting a TRX file.");
+		}
+		break;
+
+		case "aswm-dump":{
+			enforce(args.length == 2, "Bad argument number. Usage: "~args[0]~" "~command~" file.trx");
+
+			auto trn = new Trn(args[1]);
+
+			bool found = false;
+			foreach(i, ref packet ; trn.packets){
+				if(packet.type == TrnPacketType.NWN2_ASWM){
+					found = true;
+					writeln(packet.as!(TrnPacketType.NWN2_ASWM).dump);
+				}
+			}
+			enforce(found, "No ASWM packet found. Make sure you are targeting a TRX file.");
 		}
 		break;
 	}
@@ -225,10 +263,13 @@ void stripASWM(ref TrnNWN2WalkmeshPayload aswm, bool postCheck){
 	foreach(ref junction ; aswm.junctions){
 		foreach(ref vert ; junction.vertices){
 			vert = vertTransTable[vert];
+			assert(vert != uint32_t.max && vert < aswm.vertices.length, "Invalid vertex index");
 		}
 		foreach(ref tri ; junction.triangles){
-			if(tri != uint32_t.max)
+			if(tri != uint32_t.max){
 				tri = triTransTable[tri];
+				assert(tri == uint32_t.max || tri < aswm.triangles.length, "Invalid triangle index");
+			}
 		}
 		// Pack triangle indices
 		if(junction.triangles[0] == uint32_t.max && junction.triangles[1] != uint32_t.max){
@@ -241,33 +282,97 @@ void stripASWM(ref TrnNWN2WalkmeshPayload aswm, bool postCheck){
 	foreach(ref triangle ; aswm.triangles){
 		foreach(ref vert ; triangle.vertices){
 			vert = vertTransTable[vert];
+			assert(vert != uint32_t.max && vert < aswm.vertices.length, "Invalid vertex index");
 		}
 		foreach(ref junc ; triangle.linked_junctions){
-			if(junc != uint32_t.max)
-				junc = juncTransTable[junc];
-		}
-		//Pack junctions indices TODO quick & dirty
-		foreach(i, junc ; triangle.linked_junctions){
-			if(junc == uint32_t.max){
-				if(i + 1 < triangle.linked_junctions.length){
-					triangle.linked_junctions[i] = triangle.linked_junctions[i + 1];
-					triangle.linked_junctions[i + 1] = uint32_t.max;
-				}
-			}
+			junc = juncTransTable[junc];
+			assert(junc < aswm.junctions.length, "Invalid junction index");
 		}
 
 		foreach(ref tri ; triangle.linked_triangles){
-			if(tri != uint32_t.max)
+			if(tri != uint32_t.max){
 				tri = triTransTable[tri];
+			}
 		}
 		//Pack triangles indices TODO quick & dirty
 		foreach(i, tri ; triangle.linked_triangles){
-			if(tri == uint32_t.max){
-				if(i + 1 < triangle.linked_triangles.length){
-					triangle.linked_triangles[i] = triangle.linked_triangles[i + 1];
-					triangle.linked_triangles[i + 1] = uint32_t.max;
-				}
+			if(tri == uint32_t.max && i + 1 < triangle.linked_triangles.length){
+				triangle.linked_triangles[i] = triangle.linked_triangles[i + 1];
+				triangle.linked_triangles[i + 1] = uint32_t.max;
 			}
+
+			assert(tri == uint32_t.max || tri < aswm.triangles.length, "Invalid triangle index");
+		}
+	}
+
+
+	// Adjust indices inside tiles pathtable
+	uint32_t currentOffset = 0;
+	foreach(i, ref tile ; aswm.tiles){
+
+		struct Tri {
+			uint32_t id;
+			ubyte node;
+		}
+		Tri[] newLtn;
+		foreach(j, ltn ; tile.path_table.local_to_node){
+			// Ignore non unused/unwalkable triangles
+			if(ltn == 0xff)
+				continue;
+
+			const newTriIndex = triTransTable[j + tile.header.triangle_offset];
+
+			// Ignore removed triangles
+			if(newTriIndex == uint32_t.max)
+				continue;
+
+			newLtn ~= Tri(newTriIndex, ltn);
+		}
+
+		foreach(ref ntl ; tile.path_table.node_to_local){
+			assert(triTransTable[ntl + tile.header.triangle_offset] != uint32_t.max, "todo");
+			ntl = triTransTable[ntl + tile.header.triangle_offset];
+		}
+
+		// Find new offset
+		tile.header.triangle_offset = newLtn.length == 0? currentOffset : min(
+			newLtn.minElement!"a.id".id,
+			tile.path_table.node_to_local.minElement);
+
+		// Adjust node_to_local indices with new offset
+		tile.path_table.node_to_local[] -= tile.header.triangle_offset;
+
+		// Adjust newLtn indices with new offset
+		foreach(ref ltn ; newLtn)
+			ltn.id -= tile.header.triangle_offset;
+
+		// Resize & erase ltn data
+		tile.path_table.local_to_node.length = newLtn.length == 0? 0 : newLtn.maxElement!"a.id".id + 1;
+		tile.path_table.local_to_node[] = 0xff;
+
+		// Set ltn data
+		foreach(ltn ; newLtn){
+			tile.path_table.local_to_node[ltn.id] = ltn.node;
+		}
+
+
+		tile.header.triangles_count = tile.path_table.local_to_node.length.to!uint32_t;
+
+		currentOffset = tile.header.triangle_offset + tile.header.triangles_count;
+
+		// Re-count linked vertices / junctions
+		tile.header.vertices_count = tile.path_table.node_to_local
+			.map!(a => a != a.max? aswm.triangles[a].vertices[] : [])
+			.join.sort.uniq.array.length.to!uint32_t;
+		tile.header.junctions_count = tile.path_table.node_to_local
+			.map!(a => a != a.max?  aswm.triangles[a].linked_junctions[] : [])
+			.join.sort.uniq.array.length.to!uint32_t;
+	}
+	// Adjust indices in islands
+	foreach(ref island ; aswm.islands){
+		foreach(ref t ; island.exit_triangles){
+			t = triTransTable[t];
+			assert(t != uint32_t.max && t < aswm.triangles.length, "Invalid triangle index");
 		}
 	}
 
@@ -319,8 +424,7 @@ void writeWalkmeshObj(ref TrnNWN2WalkmeshPayload aswm, in string output, bool wi
 	obj.writeln("g walkmesh");
 
 	auto vertexOffset = aswm.vertices.length;
-	foreach(triangleIdx, ref t ; aswm.triangles){
-
+	foreach(i, ref t ; aswm.triangles){
 		with(t){
 			if(flags & Flags.walkable && island != island.max){
 				if(flags & Flags.dirt)
@@ -355,6 +459,17 @@ void writeWalkmeshObj(ref TrnNWN2WalkmeshPayload aswm, in string output, bool wi
 				obj.writefln("f %s %s %s", vertices[0]+1, vertices[1]+1, vertices[2]+1);
 		}
 
+	}
+
+	foreach(ref tile ; aswm.tiles){
+		immutable offset = tile.header.triangle_offset;
+
+		foreach(ntl ; tile.path_table.node_to_local){
+			with(aswm.triangles[offset + ntl]){
+				writeln(offset + ntl);
+				obj.writefln("f %s %s %s", vertices[2]+1, vertices[1]+1, vertices[0]+1);
+			}
+		}
 	}
 
 	if(withJunctions){
