@@ -16,7 +16,7 @@ __[Download nwn-lib-d tools](https://cromfr.github.io/nwn-lib-d/)__
 
 - `nwn-gff`
   + Read / write GFF files (ifo, are, bic, uti, ...)
-  
+
     | Format | Parsing | Serialization | Comment |
     |:------:|:-------:|:-------------:|---------|
     |`gff`| :white_check_mark:| :white_check_mark:|NWN binary. Generated binary file match exactly official NWN2 files (needs to be tested with NWN1)|
@@ -31,21 +31,32 @@ __[Download nwn-lib-d tools](https://cromfr.github.io/nwn-lib-d/)__
   + Cons
     * Limited serialization targets
 
-- `nwn-erf`
-  + Create / Extract / View ERF files (erf, hak, mod, ...)
-  + Pros
-    * Allows to set the ERF buildDate field, to create reproducible erf files.
-  + Cons
-    * No support for NWN1 ERF
-    * Not very memory efficient
-
-- `nwn-erf`
-  + TLK 
+- `nwn-tlk`
+  + Serialize TLK files to readable text.
 
     | Format | Parsing | Serialization | Comment |
     |:------:|:-------:|:-------------:|---------|
     |`tlk`| :white_check_mark:| :white_check_mark:|NWN TLK binary format |
     |`text`|:x:| :white_check_mark:|Human-readable|
+
+- `nwn-erf`
+  + Create, extract or view ERF files (hak, erf, mod) in a reproducible manner (same content => same checksum).
+  + Pros
+    * By default sets the ERF buildDate field to a 0 value, to create reproducible erf files.
+  + Cons
+    * No support for NWN1 ERF
+    * Not very memory efficient (all files are loaded to memory before the erf file is written)
+
+- `nwn-bdb`
+  + View/search Bioware/foxpro database content (dbf + ctx + fpt) using regular expressions.
+
+- `nwn-trn`
+  + TRN/TRX experimental tool:
+    * `aswm-strip`: Reduce walkmesh data size by removing non-walkable triangle & related data. Can reduce LZMA-compressed files to 50% of their non-stripped size (depending on the amount of unused triangles of course).
+    * `aswm-dump`: Dump walkmesh data to text
+    * `aswm-convert`: Convert some walkmesh data to wavefront OBJ 3d model
+    * `aswm-extract`: Uncompress & extract walkmesh raw data (useful for reverse engineering)
+
 
 
 ### Library
@@ -59,6 +70,60 @@ __[API reference](https://cromfr.github.io/nwn-lib-d/docs)__
 - 2DA
     + Read only
     + May refuse to parse official 2da when incorrect
+
+
+# Tips & tricks
+
+### Generate git diff from GFF & TLK files
+
+1. Configure Git to use the tools
+  - Using git command line:
+  ```sh
+  git config --global diff.gff.textconv "$PATH_TO_NWNLIBD_TOOLS/nwn-gff -i \$1"
+  git config --global diff.tlk.textconv "$PATH_TO_NWNLIBD_TOOLS/nwn-tlk -i \$1"
+  ```
+  - __Or__ by editing .gitconfig:
+  ```sh
+  [diff "gff"]
+    textconv = 'C:\\Program Files\\nwn-lib-d\\nwn-gff' -i $1
+  [diff "tlk"]
+    textconv = 'C:\\Program Files\\nwn-lib-d\\nwn-tlk' -i $1
+  ```
+
+2. Configure your git repository to use GFF / TLK diff by creating `.gitattributes` file:
+```
+#Areas
+*.[aA][rR][eE] diff=gff
+*.[gG][iI][cC] diff=gff
+*.[gG][iI][tT] diff=gff
+
+#Dialogs
+*.[dD][lL][gG] diff=gff
+
+#Module
+*.[fF][aA][cC] diff=gff
+*.[iI][fF][oO] diff=gff
+*.[jJ][rR][lL] diff=gff
+
+#Blueprints
+*.[uU][lL][tT] diff=gff
+*.[uU][pP][eE] diff=gff
+*.[uU][tT][cC] diff=gff
+*.[uU][tT][dD] diff=gff
+*.[uU][tT][eE] diff=gff
+*.[uU][tT][iI] diff=gff
+*.[uU][tT][mM] diff=gff
+*.[uU][tT][pP] diff=gff
+*.[uU][tT][rR] diff=gff
+*.[uU][tT][tT] diff=gff
+*.[uU][tT][wW] diff=gff
+
+#Others
+*.[pP][fF][bB] diff=gff
+*.[tT][lL][kK] diff=tlk
+```
+
+
 
 
 # Build
