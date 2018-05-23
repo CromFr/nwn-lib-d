@@ -461,17 +461,6 @@ void writeWalkmeshObj(ref TrnNWN2WalkmeshPayload aswm, in string output, bool wi
 
 	}
 
-	foreach(ref tile ; aswm.tiles){
-		immutable offset = tile.header.triangle_offset;
-
-		foreach(ntl ; tile.path_table.node_to_local){
-			with(aswm.triangles[offset + ntl]){
-				writeln(offset + ntl);
-				obj.writefln("f %s %s %s", vertices[2]+1, vertices[1]+1, vertices[0]+1);
-			}
-		}
-	}
-
 	if(withJunctions){
 		obj.writeln("g junctions");
 
