@@ -33,11 +33,14 @@ class ArgException : Exception{
 
 void usage(in string cmd){
 	writeln("TRN / TRX tool");
-	writeln("Usage: ", cmd, " (aswm-strip|aswm-convert|aswm-extract|aswm-dump) [args]");
+	writeln("Usage: ", cmd, " command [args]");
+	writeln("Commands");
 	writeln("  aswm-strip: optimize TRX files");
 	writeln("  aswm-convert: convert walkmesh into wavefront obj");
+	writeln("Advanced commands:");
 	writeln("  aswm-extract: unzip walkmesh data");
 	writeln("  aswm-dump: print walkmesh data using a (barely) human-readable format");
+	writeln("  aswm-bake: Re-bake all tiles of an already baked walkmesh");
 }
 
 int _main(string[] args){
@@ -109,23 +112,36 @@ int _main(string[] args){
 
 		case "aswm-convert":{
 			string targetDir = null;
-			bool withJunctions = false;
+			string[] features = [];
 			auto res = getopt(args,
 				"output-dir|o", "Output directory where to write converted files", &targetDir,
-				"junctions|j", "Visualize triangle junctions. Default: false", &withJunctions,
+				"feature|f", "Features to render. Can be provided multiple times. Default: [\"walkmesh\"]", &features,
 				);
 
 			if(res.helpWanted || args.length == 1){
 				defaultGetoptPrinter(
 					"Convert NWN2 walkmeshes into TRX / OBJ (only TRX => OBJ supported for now)\n"
-					~"Usage: "~args[0]~" "~command~" map.trx",
+					~"Usage: "~args[0]~" "~command~" map.trx\n"
+					~"\n"
+					~"Available features to render:\n"
+					~"- walkmesh: All triangles including non-walkable.\n"
+					~"- junctions: Junctions between two triangles.\n"
+					~"- tiles: Each tile using random colors.\n"
+					~"- pathtables-los: Line of sight pathtable property between two triangles.\n"
+					~"- islands: Each island using random colors.\n",
 					res.options);
 				return 0;
 			}
 			enforce(args.length == 2, "You can only provide one TRX file");
 
-			if(targetDir == null)
+			if(targetDir == null && targetDir != "-"){
 				targetDir = args[1].dirName;
+			}
+
+			auto outfile = targetDir == "-"? stdout : File(buildPath(targetDir, baseName(args[1])~".obj"), "w");
+
+			if(features.length == 0)
+				features = [ "walkmesh" ];
 
 
 			auto trn = new Trn(args[1]);
@@ -136,16 +152,18 @@ int _main(string[] args){
 					found = true;
 					writeWalkmeshObj(
 						packet.as!(TrnPacketType.NWN2_ASWM),
-						buildPath(targetDir, baseName(args[1])~".obj"),
-						withJunctions);
+						args[1].baseName.stripExtension,
+						outfile,
+						features);
 				}
 			}
 			enforce(found, "No ASWM packet found. Make sure you are targeting a TRX file.");
 
-
-			auto colPath = buildPath(targetDir, "nwnlibd-colors.mtl");
-			if(!colPath.exists)
-				std.file.write(colPath, colors);
+			if(targetDir != "-"){
+				auto colPath = buildPath(targetDir, "nwnlibd-colors.mtl");
+				if(!colPath.exists)
+					std.file.write(colPath, colors);
+			}
 
 		}
 		break;
@@ -181,6 +199,49 @@ int _main(string[] args){
 				}
 			}
 			enforce(found, "No ASWM packet found. Make sure you are targeting a TRX file.");
+		}
+		break;
+
+		case "aswm-bake":{
+			bool inPlace = false;
+			string targetPath = null;
+
+			auto res = getopt(args,
+				"in-place|i", "Provide this flag to overwrite the provided TRX file", &inPlace,
+				"output|o", "Output file or directory. Mandatory if --in-place is not provided.", &targetPath,
+				);
+			if(res.helpWanted || args.length == 1){
+				defaultGetoptPrinter(
+					"Re-bake all tile / islands path tables of a baked TRX file.\n"
+					~"Usage: "~args[0]~" "~command~" map.trx -o baked_map.trx\n"
+					~"       "~args[0]~" "~command~" -i map.trx",
+					res.options);
+				return 0;
+			}
+
+			if(inPlace){
+				enforce(targetPath is null, "You cannot use --in-place with --output");
+				enforce(args.length == 2, "You can only provide one TRX file with --in-place");
+				targetPath = args[1];
+			}
+			else{
+				enforce(targetPath !is null, "No output file / directory. See --help");
+				if(targetPath.exists && targetPath.isDir)
+					targetPath = buildPath(targetPath, args[1].baseName);
+			}
+
+			auto trn = new Trn(args[1]);
+
+			bool found = false;
+			foreach(i, ref packet ; trn.packets){
+				if(packet.type == TrnPacketType.NWN2_ASWM){
+					found = true;
+					packet.as!(TrnPacketType.NWN2_ASWM).bake();
+				}
+			}
+			enforce(found, "No ASWM packet found. Make sure you are targeting a TRX file.");
+
+			std.file.write(targetPath, trn.serialize());
 		}
 		break;
 	}
@@ -320,7 +381,7 @@ void stripASWM(ref TrnNWN2WalkmeshPayload aswm, bool postCheck){
 			if(ltn == 0xff)
 				continue;
 
-			const newTriIndex = triTransTable[j + tile.header.triangle_offset];
+			const newTriIndex = triTransTable[j + tile.header.triangles_offset];
 
 			// Ignore removed triangles
 			if(newTriIndex == uint32_t.max)
@@ -330,21 +391,21 @@ void stripASWM(ref TrnNWN2WalkmeshPayload aswm, bool postCheck){
 		}
 
 		foreach(ref ntl ; tile.path_table.node_to_local){
-			assert(triTransTable[ntl + tile.header.triangle_offset] != uint32_t.max, "todo");
-			ntl = triTransTable[ntl + tile.header.triangle_offset];
+			assert(triTransTable[ntl + tile.header.triangles_offset] != uint32_t.max, "todo");
+			ntl = triTransTable[ntl + tile.header.triangles_offset];
 		}
 
 		// Find new offset
-		tile.header.triangle_offset = newLtn.length == 0? currentOffset : min(
+		tile.header.triangles_offset = newLtn.length == 0? currentOffset : min(
 			newLtn.minElement!"a.id".id,
 			tile.path_table.node_to_local.minElement);
 
 		// Adjust node_to_local indices with new offset
-		tile.path_table.node_to_local[] -= tile.header.triangle_offset;
+		tile.path_table.node_to_local[] -= tile.header.triangles_offset;
 
 		// Adjust newLtn indices with new offset
 		foreach(ref ltn ; newLtn)
-			ltn.id -= tile.header.triangle_offset;
+			ltn.id -= tile.header.triangles_offset;
 
 		// Resize & erase ltn data
 		tile.path_table.local_to_node.length = newLtn.length == 0? 0 : newLtn.maxElement!"a.id".id + 1;
@@ -358,7 +419,7 @@ void stripASWM(ref TrnNWN2WalkmeshPayload aswm, bool postCheck){
 
 		tile.header.triangles_count = tile.path_table.local_to_node.length.to!uint32_t;
 
-		currentOffset = tile.header.triangle_offset + tile.header.triangles_count;
+		currentOffset = tile.header.triangles_offset + tile.header.triangles_count;
 
 		// Re-count linked vertices / junctions
 		tile.header.vertices_count = tile.path_table.node_to_local
@@ -401,10 +462,9 @@ void stripASWM(ref TrnNWN2WalkmeshPayload aswm, bool postCheck){
 }
 
 
-void writeWalkmeshObj(ref TrnNWN2WalkmeshPayload aswm, in string output, bool withJunctions){
-	auto obj = File(output, "w");
+void writeWalkmeshObj(ref TrnNWN2WalkmeshPayload aswm, in string name, ref File obj, string[] features){
 	obj.writeln("mtllib nwnlibd-colors.mtl");
-	obj.writeln("o ",output.baseName.stripExtension);
+	obj.writeln("o ",name);
 
 	foreach(ref v ; aswm.vertices){
 		obj.writefln("v %(%s %)", v.position);
@@ -417,15 +477,41 @@ void writeWalkmeshObj(ref TrnNWN2WalkmeshPayload aswm, in string output, bool wi
 			currColor = clr;
 		}
 	}
+	void randomColor(){
+		switch(uniform(0, 12)){
+			case 0:  setColor("default");    break;
+			case 1:  setColor("dirt");       break;
+			case 2:  setColor("grass");      break;
+			case 3:  setColor("stone");      break;
+			case 4:  setColor("wood");       break;
+			case 5:  setColor("carpet");     break;
+			case 6:  setColor("metal");      break;
+			case 7:  setColor("swamp");      break;
+			case 8:  setColor("mud");        break;
+			case 9:  setColor("leaves");     break;
+			case 10: setColor("water");      break;
+			case 11: setColor("unwalkable"); break;
+			default: assert(0);
+		}
+	}
+	aswm.Vertex getTriangleCenter(in aswm.Triangle t){
+		auto ret = aswm.vertices[t.vertices[0]];
+		ret.position[] += aswm.vertices[t.vertices[1]].position[];
+		ret.position[] += aswm.vertices[t.vertices[2]].position[];
+		ret.position[] /= 3.0;
+		return ret;
+	}
 
 	setColor("default");
 	obj.writeln("s off");
-
-	obj.writeln("g walkmesh");
-
 	auto vertexOffset = aswm.vertices.length;
-	foreach(i, ref t ; aswm.triangles){
-		with(t){
+
+	if(!features.find("walkmesh").empty){
+		writeln("walkmesh");
+
+		obj.writeln("g walkmesh");
+
+		foreach(i, ref t ; aswm.triangles) with(t) {
 			if(flags & Flags.walkable && island != island.max){
 				if(flags & Flags.dirt)
 					setColor("dirt");
@@ -458,29 +544,16 @@ void writeWalkmeshObj(ref TrnNWN2WalkmeshPayload aswm, in string output, bool wi
 			else
 				obj.writefln("f %s %s %s", vertices[0]+1, vertices[1]+1, vertices[2]+1);
 		}
-
 	}
 
-	if(withJunctions){
+	if(!features.find("junctions").empty){
+		writeln("junctions");
+
 		obj.writeln("g junctions");
 
 		foreach(ref junc ; aswm.junctions){
 
-			switch(uniform(0, 12)){
-				case 0:  setColor("default");    break;
-				case 1:  setColor("dirt");       break;
-				case 2:  setColor("grass");      break;
-				case 3:  setColor("stone");      break;
-				case 4:  setColor("wood");       break;
-				case 5:  setColor("carpet");     break;
-				case 6:  setColor("metal");      break;
-				case 7:  setColor("swamp");      break;
-				case 8:  setColor("mud");        break;
-				case 9:  setColor("leaves");     break;
-				case 10: setColor("water");      break;
-				case 11: setColor("unwalkable"); break;
-				default: assert(0);
-			}
+			randomColor();
 
 			auto vertA = aswm.vertices[junc.vertices[0]];
 			auto vertB = aswm.vertices[junc.vertices[1]];
@@ -516,6 +589,145 @@ void writeWalkmeshObj(ref TrnNWN2WalkmeshPayload aswm, in string output, bool wi
 				obj.writefln("f %s %s %s", vertexOffset - 2, vertexOffset - 1, vertexOffset);//Start index is 1
 			}
 
+		}
+	}
+
+	if(!features.find("tiles").empty){
+		writeln("tiles");
+
+		obj.writeln("g tiles");
+
+		foreach(ref tile ; aswm.tiles) with(tile) {
+			randomColor();
+
+			auto tileTriangles = path_table.node_to_local.dup.sort.uniq.array;
+			tileTriangles[] += header.triangles_offset;
+
+			foreach(t ; tileTriangles) with(aswm.triangles[t]) {
+				obj.writefln("f %s %s %s", vertices[2]+1, vertices[1]+1, vertices[0]+1);
+			}
+		}
+	}
+	if(!features.find("pathtables-los").empty){
+		writeln("pathtables-los");
+
+		void writeLOS(bool losStatus){
+			foreach(ref tile ; aswm.tiles) with(tile) {
+				immutable offset = tile.header.triangles_offset;
+
+				foreach(fromLocIdx, fromNodeIdx ; tile.path_table.local_to_node){
+					if(fromNodeIdx == 0xff) continue;
+					foreach(toLocIdx, toNodeIdx ; tile.path_table.local_to_node){
+						if(toNodeIdx == 0xff) continue;
+
+
+						const node = tile.path_table.nodes[fromNodeIdx * tile.path_table.header.node_to_local_length + toNodeIdx];
+						if(node != 0xff && ((node & 0b1000_0000) > 0) == losStatus){
+
+							auto a = getTriangleCenter(aswm.triangles[fromLocIdx + offset]).position;
+							auto b = getTriangleCenter(aswm.triangles[toLocIdx + offset]).position;
+
+							obj.writefln("v %(%s %)", a);
+							obj.writefln("v %(%s %)", b);
+							vertexOffset += 2;
+
+							obj.writefln("l %s %s", vertexOffset - 1, vertexOffset);
+						}
+					}
+				}
+			}
+		}
+
+		obj.writeln("g pathtables-los");
+		writeLOS(true);
+		obj.writeln("g pathtables-nolos");
+		writeLOS(false);
+	}
+
+	if(!features.find("randompaths").empty){
+		writeln("randompaths");
+
+		obj.writeln("g randompaths");
+
+		foreach(tileid, ref tile ; aswm.tiles) with(tile) {
+			immutable offset = tile.header.triangles_offset;
+			immutable len = tile.path_table.header.node_to_local_length;
+
+			if(len == 0)
+				continue;
+
+			foreach(_ ; 0 .. 2){
+				auto from = uniform(0, len) + offset;
+				auto to = uniform(0, len) + offset;
+
+
+				auto path = findPath(from, to);
+				if(path.length > 1){
+					auto firstCenter = getTriangleCenter(aswm.triangles[from]).position;
+					firstCenter[2] += 1.0;
+					obj.writefln("v %(%s %)", firstCenter);
+
+					foreach(t ; path){
+						auto center = getTriangleCenter(aswm.triangles[t]).position;
+						obj.writefln("v %(%s %)", getTriangleCenter(aswm.triangles[t]).position);
+					}
+
+					obj.write("l ");
+					foreach(i ; 0 .. path.length + 1){
+						obj.write(vertexOffset + i + 1, " ");
+					}
+					obj.write(vertexOffset + 1); // loop on first point
+					obj.writeln();
+
+					vertexOffset += path.length + 1;
+				}
+
+			}
+
+		}
+
+	}
+
+
+	if(!features.find("islands").empty){
+		writeln("islands");
+
+		obj.writeln("g islands");
+
+		foreach(ref island ; aswm.islands){
+			randomColor();
+
+			auto islandCenterIndex = vertexOffset;
+
+			auto islandCenter = aswm.Vertex(island.header.center.position.dup[0..3]);
+			float z = 0.0;
+			island.exit_triangles
+				.map!(t => aswm.triangles[t].vertices[])
+				.join
+				.each!(v => z += aswm.vertices[v].z);
+			z /= island.exit_triangles.length * 3.0;
+
+			islandCenter.z = z;
+			obj.writefln("v %(%s %)", islandCenter.position);
+			islandCenter.z += 1.0;
+			obj.writefln("v %(%s %)", islandCenter.position);
+			vertexOffset += 2;
+
+			foreach(t ; island.exit_triangles) with(aswm.triangles[t]) {
+				if(flags & Flags.clockwise)
+					obj.writefln("f %s %s %s", vertices[0]+1, vertices[1]+1, vertices[2]+1);
+				else
+					obj.writefln("f %s %s %s", vertices[2]+1, vertices[1]+1, vertices[0]+1);
+
+				float triCenterZ = 0.0;
+				vertices[].map!(v => aswm.vertices[v].z).each!(a => triCenterZ += a);
+				triCenterZ /= 3;
+
+				obj.writefln("v %(%s %)", center[0 .. 2] ~ triCenterZ);
+				vertexOffset++;
+
+				obj.writefln("f %s %s %s", islandCenterIndex + 1, islandCenterIndex + 2, vertexOffset);
+			}
 		}
 	}
 }

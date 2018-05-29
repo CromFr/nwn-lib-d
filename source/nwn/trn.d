@@ -6,9 +6,11 @@ import std.string;
 import std.conv: to;
 import std.traits;
 import std.exception: enforce;
+import std.algorithm;
+import std.array: array;
 import nwnlibd.parseutils;
 
-import std.stdio: write, writeln, writefln;
+import std.stdio: stdout, write, writeln, writefln;
 version(unittest) import std.exception: assertThrown, assertNotThrown;
 
 class TrnParseException : Exception{
@@ -452,10 +454,15 @@ struct TrnNWN2WalkmeshPayload{
 	/// ditto
 	Header header;
 
-	static align(1) struct Vertex{
+	static align(1) union Vertex {
 		static assert(this.sizeof == 12);
 		align(1):
+
 		float[3] position;
+
+		private struct Xyz{ float x, y, z; }
+		Xyz _xyz;
+		alias _xyz this;
 	}
 	Vertex[] vertices;
 
@@ -473,12 +480,18 @@ struct TrnNWN2WalkmeshPayload{
 		static assert(this.sizeof == 64);
 		align(1):
 		uint32_t[3] vertices; /// Vertex indices composing the triangle
-		uint32_t[3] linked_junctions; /// Junctions to other triangles (`uint32_t.max` if none, but there should always be 3)
-		uint32_t[3] linked_triangles; /// Adjacent triangles (`uint32_t.max` if none)
+		/// Junctions to other triangles (`uint32_t.max` if none, but there should always be 3)
+		///
+		/// Every `linked_junctions` should have its associated `linked_triangles` at the same index
+		uint32_t[3] linked_junctions;
+		/// Adjacent triangles (`uint32_t.max` if none)
+		///
+		/// Every `linked_triangles` should have its associated `linked_junctions` at the same index
+		uint32_t[3] linked_triangles;
 		float[2] center; /// X / Y coordinates of the center of the triangle. Calculated by avg the 3 vertices coordinates.
 		float[3] normal; /// Normal vector
 		float dot_product; /// Dot product at plane
-		uint16_t island; /// Smaller fraction of a tile. TODO: check if WM helpers create islands?
+		uint16_t island; /// Index in the `TrnNWN2WalkmeshPayload.islands` array.
 		uint16_t flags; /// See `Flags`
 
 		enum Flags {
@@ -520,14 +533,14 @@ struct TrnNWN2WalkmeshPayload{
 			align(1):
 			char[32] name; /// Last time I checked it was complete garbage
 			ubyte owns_data;/// 1 if the tile stores vertices / junctions. Usually 0
-			uint32_t vertices_count;
-			uint32_t junctions_count;
-			uint32_t triangles_count;
+			uint32_t vertices_count; /// Number of vertices in this tile
+			uint32_t junctions_count; /// Number of junctions in this tile
+			uint32_t triangles_count; /// Number of triangles in this tile (walkable + unwalkable)
 			float size_x;/// Always 0 ?
 			float size_y;/// Always 0 ?
 
 			/// This value will be added to each triangle index in the PathTable
-			uint32_t triangle_offset;
+			uint32_t triangles_offset;
 		}
 		Header header;
 
@@ -542,7 +555,7 @@ struct TrnNWN2WalkmeshPayload{
 
 		Notes:
 		- "local" refers to the local triangle index. The aswm triangle index
-		  can be retrieved by adding Tile.triangle_offset
+		  can be retrieved by adding Tile.triangles_offset
 		- Each triangle referenced here is only referenced once across all the
 		  tiles of the ASWM
 		*/
@@ -556,10 +569,10 @@ struct TrnNWN2WalkmeshPayload{
 					rle       = 0x01,
 					zcompress = 0x02,
 				}
-				uint32_t flags; /// Alsways 0 ?. Probably used to set path table compression
+				uint32_t flags; /// Always 0. Used to set path table compression
 				uint32_t local_to_node_length; /// Length of `local_to_node`
 				ubyte node_to_local_length; /// Length of `node_to_local`
-				uint32_t rle_table_size; /// Always 0 ?
+				uint32_t rle_table_size; /// Always 0 ? probably related to Run-Length Encoding
 
 			}
 			Header header;
@@ -659,36 +672,94 @@ struct TrnNWN2WalkmeshPayload{
 		}
 
 		string dump() const {
+			import std.range: chunks;
 			return format!"TILE header: name: %(%s, %)\n"([header.name])
 			     ~ format!"        owns_data: %s, vert_cnt: %s, junc_cnt: %s, tri_cnt: %s\n"(header.owns_data, header.vertices_count, header.junctions_count, header.triangles_count)
 			     ~ format!"        size_x: %s, size_y: %s\n"(header.size_x, header.size_y)
-			     ~ format!"        triangle_offset: %s\n"(header.triangle_offset)
+			     ~ format!"        triangles_offset: %s\n"(header.triangles_offset)
 			     ~ format!"     vertices: %s\n"(vertices)
 			     ~ format!"     junctions: %s\n"(junctions)
 			     ~        "     path_table: \n"
 			     ~ format!"       header: flags: %s, ltn_len: %d, ntl_len: %s, rle_len: %s\n"(path_table.header.flags, path_table.header.local_to_node_length, path_table.header.node_to_local_length, path_table.header.rle_table_size)
-			     ~ format!"       ltn: %s\n"(path_table.local_to_node)
-			     ~ format!"       ntl: %s\n"(path_table.local_to_node)
-			     ~ format!"       nodes: %s\n"(path_table.nodes)
+			     ~ format!"       ltn:   %(%3d %)\n"(path_table.local_to_node)
+			     ~ format!"       ntl:   %(%3d %)\n"(path_table.node_to_local)
+			     ~ format!"       nodes: %(%-(%s%)\n              %)\n"(
+			     	path_table.header.node_to_local_length == 0 ?
+			     	[] : path_table.nodes.map!(a => (((a & 128)? "*" : " ") ~ (a & 127).to!string).rightJustify(4)).chunks(path_table.header.node_to_local_length).array)
 			     ~ format!"       flags: %s\n"(path_table.flags);
+		}
+
+		ubyte getPathNode(uint32_t fromGTriIndex, uint32_t toGTriIndex) const {
+			assert(header.triangles_offset <= fromGTriIndex && fromGTriIndex < path_table.local_to_node.length + header.triangles_offset,
+				"From triangle index "~fromGTriIndex.to!string~" is not in tile path table");
+			assert(header.triangles_offset <= toGTriIndex && toGTriIndex < path_table.local_to_node.length + header.triangles_offset,
+				"To triangle index "~toGTriIndex.to!string~" is not in tile path table");
+
+
+			immutable nodeFrom = path_table.local_to_node[fromGTriIndex - header.triangles_offset];
+			immutable nodeTo = path_table.local_to_node[toGTriIndex - header.triangles_offset];
+
+			if(nodeFrom == 0xff || nodeTo == 0xff)
+				return 0xff;
+
+			return path_table.nodes[nodeFrom * path_table.node_to_local.length + nodeTo];
+		}
+
+		uint32_t[] findPath(uint32_t fromGTriIndex, uint32_t toGTriIndex){
+			assert(header.triangles_offset <= fromGTriIndex && fromGTriIndex < path_table.local_to_node.length + header.triangles_offset,
+				"From triangle index "~fromGTriIndex.to!string~" is not in tile path table");
+			assert(header.triangles_offset <= toGTriIndex && toGTriIndex < path_table.local_to_node.length + header.triangles_offset,
+				"To triangle index "~toGTriIndex.to!string~" is not in tile path table");
+
+			int iSec = 0;
+			uint32_t[] ret;
+			while(fromGTriIndex != toGTriIndex && iSec++ < 30){
+				auto node = getPathNode(fromGTriIndex, toGTriIndex);
+				if(node == 0xff)
+					return ret;
+
+				fromGTriIndex = path_table.node_to_local[node & 0b0111_1111] + header.triangles_offset;
+				ret ~= fromGTriIndex;
+
+			}
+			return ret;
 		}
 	}
 	/// Map tile list
 	/// Non border tiles have `header.vertices_count > 0 || header.junctions_count > 0 || header.triangles_count > 0`
 	Tile[] tiles;
 
+	/**
+	Tile or fraction of a tile used for pathfinding through large distances.
+
+	<ul>
+	<li>The island boundaries match exactly the tile boundaries</li>
+	<li>Generally you have one island per tile.</li>
+	<li>You can have multiple islands for one tile, like if one side of the tile is not accessible from the other side</li>
+	</ul>
+	*/
 	static struct Island {
 		static align(1) struct Header {
 			static assert(this.sizeof == 24);
 			align(1):
-			uint32_t index;
-			uint32_t tile;
-			Vertex center;
-			uint32_t exit_triangles_length;
+			uint32_t index; /// Index of the island in the aswm.islands array. TODO: weird
+			uint32_t tile; /// Value looks pretty random, but is identical for all islands
+			Vertex center; /// Center of the island. Z is always 0. TODO: find how it is calculated
+			uint32_t triangles_count; /// Number of triangles in this island
 		}
 		Header header;
 		uint32_t[] adjacent_islands; /// Adjacent islands
 		float[] adjacent_islands_dist; /// Distances between adjacent islands (probably measured between header.center)
+
+		/**
+		List of triangles that are on the island borders, and which linked_junctions
+		can lead to a triangle that have another triangle.island value.
+
+		<ul>
+		<li>There is no need to register all possible exit triangles. Only one per adjacent island is enough.</li>
+		<li>Generally it is 4 walkable triangles: 1 top left, 2 bot left and 1 bot right</li>
+		</ul>
+		*/
 		uint32_t[] exit_triangles;
 
 		private void parse(ref ChunkReader wmdata){
@@ -715,20 +786,22 @@ struct TrnNWN2WalkmeshPayload{
 		}
 
 		string dump() const {
-			return format!"ISLA header: index: %s, tile: %s, center: %s, exit_triangles_length: %s\n"(header.index, header.tile, header.center.position, header.exit_triangles_length)
-				~ format!"      adjacent_islands: %s\n"(adjacent_islands)
-				~ format!"      adjacent_islands_dist: %s\n"(adjacent_islands_dist)
-				~ format!"      exit_triangles: %s\n"(exit_triangles);
+			return format!"ISLA header: index: %s, tile: %s, center: %s, exit_triangles_length: %s\n"(header.index, header.tile, header.center.position, header.triangles_count)
+			     ~ format!"      adjacent_islands: %s\n"(adjacent_islands)
+			     ~ format!"      adjacent_islands_dist: %s\n"(adjacent_islands_dist)
+			     ~ format!"      exit_triangles: %s\n"(exit_triangles);
 		}
 	}
+
+	/// Islands list. See `Island`
 	Island[] islands;
 
 
 	static align(1) struct IslandPathNode {
 		static assert(this.sizeof == 8);
-		uint16_t next;
+		uint16_t next; /// Next island index to go to
 		uint16_t _padding;
-		float weight;
+		float weight; /// TODO: probably related to the island distance
 	}
 	IslandPathNode[] islands_path_nodes;
 
@@ -927,8 +1000,213 @@ struct TrnNWN2WalkmeshPayload{
 
 		return ret;
 	}
-}
 
+
+
+	// Each entry is one triangle index from every separate island on this tile
+	private struct IslandMeta{
+		uint32_t tile;
+		uint32_t islandTriangle;
+		// This will store all junctions that can lead to other tiles
+		uint32_t[] junctions;
+	}
+
+	void bake(){
+		import std.datetime.stopwatch: StopWatch;
+		auto sw = new StopWatch;
+
+		sw.start();
+
+		// TODO: uncomment this
+		//triangles.each!((ref a) => a.island = 0xffff);
+		//islands.length = 0;
+
+		IslandMeta[] islandsMeta;
+
+		foreach(i ; 0 .. tiles.length){
+			islandsMeta ~= bakeTile(i.to!uint32_t);
+		}
+
+		sw.stop();
+		writeln("ASWM bake: ", sw.peek.total!"msecs"/1000.0, " seconds");
+	}
+
+	IslandMeta[] bakeTile(uint32_t tileIndex){
+		//writeln("bakeTile: ", tileIndex);
+
+		auto tile = &tiles[tileIndex];
+
+		// Get tile bounding box
+		static struct AABB{
+			float[2] x, y;
+			bool contains(float x, float y){
+				return this.x[0] <= x && x < this.x[1] && this.y[0] <= y && y < this.y[1];
+			}
+			bool contains(float[2] coord){
+				return contains(coord[0], coord[1]);
+			}
+		}
+		uint32_t tileX = tileIndex % tiles_grid_width;
+		uint32_t tileY = tileIndex / tiles_grid_width;
+		auto tileAABB = AABB(
+			[tileX * tiles_width, (tileX + 1) * tiles_width],
+			[tileY * tiles_width, (tileY + 1) * tiles_width]);
+
+
+		// Find all triangles in AABB
+		uint32_t[] tileTriangles;
+		foreach(i, ref t ; triangles){
+			if(tileAABB.contains(t.center))
+				tileTriangles ~= i.to!uint32_t;
+		}
+		tileTriangles.sort;
+
+		// Calc local offset for triangle indices
+		immutable trianglesOffset = tileTriangles.length == 0 ?
+			(tileIndex == 0 ? 0 : (tiles[tileIndex-1].header.triangles_offset + tiles[tileIndex-1].header.triangles_count))
+			: tileTriangles[0];
+		tile.header.triangles_offset = trianglesOffset;
+
+		// Find walkable triangles to deduce NTL length & LTN content
+		const walkableTriangles = tileTriangles.filter!(a => triangles[a].flags & Triangle.Flags.walkable).array;
+		immutable walkableTrianglesLen = walkableTriangles.length.to!uint32_t;
+
+		// node_to_local indices are stored on 7 bits
+		enforce(walkableTrianglesLen < 0b0111_1111, "Too many walkable triangles");
+
+		// Fill NTL with walkable triangles local indices
+		tile.path_table.node_to_local = walkableTriangles.dup;
+		tile.path_table.node_to_local[] -= trianglesOffset;
+		ubyte getNtlIndex(uint32_t destTriangle){
+			destTriangle -= trianglesOffset;
+			// insert destTriangle inside ntl and return its index
+			foreach(i, t ; tile.path_table.node_to_local){
+				if(t == destTriangle)
+					return i.to!ubyte;
+			}
+			assert(0, "Triangle local idx="~destTriangle.to!string~" not found in NTL array "~tile.path_table.node_to_local.to!string);
+		}
+
+		// Set LTN content: 0xff is the triangle is unwalkable, otherwise an
+		// index in walkableTriangles
+		tile.path_table.header.local_to_node_length = tileTriangles.length > 0 ? 1 + tileTriangles[$-1] - tileTriangles[0] : 0;
+		tile.path_table.local_to_node.length = tile.path_table.header.local_to_node_length;
+
+		tile.path_table.local_to_node[] = 0xff;
+		foreach(i, triIdx ; walkableTriangles)
+			tile.path_table.local_to_node[triIdx - trianglesOffset] = i.to!ubyte;
+
+		// Resize nodes table
+		tile.path_table.nodes.length = (walkableTrianglesLen * walkableTrianglesLen).to!uint32_t;
+		tile.path_table.nodes[] = 0xff;// 0xff means inaccessible.
+
+
+		ubyte* getNode(uint32_t fromGIdx, uint32_t toGIdx) {
+			return &tile.path_table.nodes[
+				tile.path_table.local_to_node[fromGIdx - trianglesOffset] * walkableTrianglesLen
+				+ tile.path_table.local_to_node[toGIdx - trianglesOffset]
+			];
+		}
+
+
+		// Visited triangles. Not used for pathfinding, but for island detection.
+		bool[] visitedTriangles;
+		visitedTriangles.length = walkableTriangles.length;
+		visitedTriangles[] = false;
+
+
+		IslandMeta[] islands;
+
+
+		// Calculate pathfinding
+		foreach(i, fromTriIdx ; walkableTriangles){
+
+			// If the triangle has not been visited before, we add a new
+			// island All triangles accessible from this one will be marked as
+			// visited, so we don't add more than once the same island
+			if(visitedTriangles[i] == false){
+				islands ~= IslandMeta(tileIndex, fromTriIdx, []);
+			}
+
+			alias TriList = uint32_t[];
+
+			TriList explore(uint32_t currTriIdx, ubyte ntlTarget){
+				TriList nextTriangles;
+
+				foreach(j, linkedTriIdx ; triangles[currTriIdx].linked_triangles){
+					if(linkedTriIdx == uint32_t.max)
+						continue;// there is no linked triangle
+
+					if(fromTriIdx == linkedTriIdx)
+						continue;// We must not visit initial triangle (node value must stay as 0xff)
+
+					auto linkedTri = &triangles[linkedTriIdx];
+
+					if(!(linkedTri.flags & linkedTri.Flags.walkable))
+						continue;// non walkable triangle
+
+					if(tileAABB.contains(linkedTri.center)){
+						// linkedTri is inside the tile
+
+						// Mark the triangle as visited (only for island detection)
+						visitedTriangles[getNtlIndex(linkedTriIdx)] = true;
+
+						auto node = getNode(fromTriIdx, linkedTriIdx);
+						if(*node == 0xff){
+							// This is the first time we visit the triangle from this fromTriIdx
+
+							assert(ntlTarget < 0b0111_1111);
+							*node = ntlTarget;// TODO: do VISIBLE / LOS calculation
+
+							nextTriangles ~= linkedTriIdx;
+						}
+					}
+					else{
+						// linkedTri is outside the tile
+						islands[$-1].junctions ~= linkedTri.linked_junctions[j];
+					}
+				}
+				return nextTriangles;
+			}
+
+			const linkedTriangles = triangles[fromTriIdx].linked_triangles
+				.dup
+				.filter!(a =>
+					a != uint32_t.max
+					&& (triangles[a].flags & Triangle.Flags.walkable)
+					&& tileAABB.contains(triangles[a].center))
+				.array;
+
+			const linkedNtl = linkedTriangles.dup.map!(a => getNtlIndex(a)).array();
+
+			TriList[] nextToExplore = linkedTriangles.dup.map!(a => [a]).array;
+
+
+			if(nextToExplore.length > 0){
+				// Set adjacent destination nodes
+				linkedTriangles
+					.each!((j, ref triGIdx) => *getNode(fromTriIdx, triGIdx) = 0b1000_0000 | linkedNtl[j].to!ubyte);
+
+				while(nextToExplore.map!(a => a.length).sum > 0){
+
+					foreach(j, ref triList ; nextToExplore){
+						if(triList.length == 0)
+							continue;//Everything has been explored here
+
+						triList = triList.map!(a => explore(a, linkedNtl[j])).array.join;// TODO: remove .array if possible
+					}
+				}
+			}
+
+
+		}
+
+		if(walkableTrianglesLen > 0)
+			writeln("Tile ", tileIndex, ": ", walkableTrianglesLen, " walkable triangles in ", islands.length, " islands");
+
+		return islands;
+	}
+}
 
 unittest {
 	auto map = cast(ubyte[])import("eauprofonde-portes.trx");
