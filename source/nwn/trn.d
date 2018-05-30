@@ -786,7 +786,7 @@ struct TrnNWN2WalkmeshPayload{
 		}
 
 		string dump() const {
-			return format!"ISLA header: index: %s, tile: %s, center: %s, exit_triangles_length: %s\n"(header.index, header.tile, header.center.position, header.triangles_count)
+			return format!"ISLA header: index: %s, tile: %s, center: %s, triangles_count: %s\n"(header.index, header.tile, header.center.position, header.triangles_count)
 			     ~ format!"      adjacent_islands: %s\n"(adjacent_islands)
 			     ~ format!"      adjacent_islands_dist: %s\n"(adjacent_islands_dist)
 			     ~ format!"      exit_triangles: %s\n"(exit_triangles);
@@ -801,7 +801,7 @@ struct TrnNWN2WalkmeshPayload{
 		static assert(this.sizeof == 8);
 		uint16_t next; /// Next island index to go to
 		uint16_t _padding;
-		float weight; /// TODO: probably related to the island distance
+		float weight; /// Distance to `next` island.
 	}
 	IslandPathNode[] islands_path_nodes;
 
@@ -1017,14 +1017,161 @@ struct TrnNWN2WalkmeshPayload{
 
 		sw.start();
 
-		// TODO: uncomment this
-		//triangles.each!((ref a) => a.island = 0xffff);
-		//islands.length = 0;
+		//writeln("--------------------------- Previous idlands length: ", islands.length);
+		//foreach(i, island ; islands)
+		//	writeln(i, "/", island.header.index, ": tile:", island.header.tile, " center:", island.header.center.position,
+		//		" triangles_count: ", island.header.triangles_count, " adjacent_islands: ", island.adjacent_islands);
+
+
+		// Reset island associations
+		triangles.each!((ref a) => a.island = 0xffff);
 
 		IslandMeta[] islandsMeta;
+		islandsMeta.reserve(tiles.length * 2);
 
+		// Bake tiles
 		foreach(i ; 0 .. tiles.length){
 			islandsMeta ~= bakeTile(i.to!uint32_t);
+		}
+
+		import std.random: uniform;
+		auto islandTileID = uniform!uint32_t;
+
+		islands.length = islandsMeta.length;
+		foreach(i, ref island ; islands){
+			// Set island index
+			island.header.index = i.to!uint32_t;
+
+			// Set island associated tile
+			//island.header.tile = islandsMeta[i].tile;
+			island.header.tile = islandTileID;
+
+			auto tile = &tiles[islandsMeta[i].tile];
+			auto tileTriangleOffset = tile.header.triangles_offset;
+			auto firstLTri = islandsMeta[i].islandTriangle - tileTriangleOffset;
+			auto tileNTLLen = tile.path_table.header.node_to_local_length;
+			auto nodeIndex = tile.path_table.local_to_node[firstLTri];
+
+
+			auto nodes = tile.path_table.nodes[tileNTLLen * nodeIndex .. tileNTLLen * (nodeIndex + 1)];
+
+			// Retrieve island triangle list
+			uint32_t[] islandTriangles;
+			islandTriangles.reserve(nodes.length);
+
+			islandTriangles ~= islandsMeta[i].islandTriangle;
+			foreach(j, node ; nodes){
+				// TODO: o(n^^2)
+				if(node != 0xff)
+					islandTriangles ~= (tile.path_table.local_to_node.countUntil(j) + tileTriangleOffset).to!uint32_t;
+			}
+
+			// Set island triangle count
+			island.header.triangles_count = islandTriangles.length.to!uint32_t;
+
+			// Set island center (calculated by avg all triangle centers)
+			island.header.center.position = [0,0,0];
+			foreach(t ; islandTriangles)
+				island.header.center.position[0 .. 2] += triangles[t].center[];
+			island.header.center.position[] /= cast(double)islandTriangles.length;
+
+			// Set triangle associated island index
+			foreach(t ; islandTriangles)
+				triangles[t].island = i.to!uint16_t;
+		}
+
+		// Set island connections
+		foreach(i, ref island ; islands){
+
+			foreach(junc ; islandsMeta[i].junctions){
+
+				uint32_t exitTriangle = uint32_t.max;
+				uint32_t exitIsland;
+
+				foreach(t ; junctions[junc].triangles){
+					immutable islandIdx = triangles[t].island;
+					if(islandIdx == i)
+						exitTriangle = t;
+					else
+						exitIsland = islandIdx;
+				}
+
+				if(exitTriangle != uint32_t.max && island.adjacent_islands.find(exitIsland).empty){
+					island.adjacent_islands ~= exitIsland;
+					island.exit_triangles ~= exitTriangle;
+
+					// Calculate island distance
+					import std.math: sqrt;
+					auto dist = islands[exitIsland].header.center.position.dup;
+					dist[] -= island.header.center.position[];
+					island.adjacent_islands_dist ~= sqrt(dist[0] ^^ 2 + dist[1] ^^ 2);
+				}
+
+			}
+		}
+
+		// Rebuild island path tables
+		islands_path_nodes.length = islands.length ^^ 2;
+		islands_path_nodes.each!((ref i) => { i.next = uint16_t.max; i.weight = 0.0; });
+
+		foreach(uint32_t fromIslandIdx, ref fromIsland ; islands){
+
+			bool[] visitedIslands;
+			visitedIslands.length = islands.length;
+			visitedIslands[] = false;
+
+
+			static struct NextToExplore{
+				uint16_t[] list;
+				uint16_t target = uint16_t.max;
+				float distance = 0.0;
+			}
+			auto getIslandPathNode(uint32_t from, uint32_t to){
+				return &islands_path_nodes[from * islands.length + to];
+			}
+
+			NextToExplore[] explore(uint16_t islandIdx, uint16_t targetIsland = uint16_t.max, float distance = 0.0){
+				NextToExplore[] ret;
+				if(targetIsland != uint16_t.max)
+					ret ~= NextToExplore([], targetIsland, distance);
+
+
+				foreach(j, linkedIslIdx ; islands[islandIdx].adjacent_islands){
+
+					if(fromIslandIdx == linkedIslIdx)
+						continue;// We must not visit initial island (node value must stay as 0xff)
+
+					auto linkedIsl = &islands[linkedIslIdx];
+
+					auto node = getIslandPathNode(fromIslandIdx, linkedIslIdx);
+					if(node.next == uint16_t.max){
+						// This is the first time we visit the island from this fromTriIdx
+
+						if(targetIsland == uint16_t.max){
+							ret ~= NextToExplore([], linkedIslIdx.to!uint16_t, islands[islandIdx].adjacent_islands_dist[j]);
+						}
+
+						ret[$-1].list ~= linkedIslIdx.to!uint16_t;
+
+						node.next = ret[$-1].target;
+						node.weight = ret[$-1].distance;
+					}
+				}
+				return ret;
+			}
+
+			NextToExplore[] nextToExplore = [ NextToExplore([fromIslandIdx.to!uint16_t]) ];
+			NextToExplore[] newNextToExplore;
+			while(nextToExplore.length > 0 && nextToExplore.map!(a => a.list.length).sum > 0){
+				foreach(ref nte ; nextToExplore){
+					foreach(t ; nte.list){
+						newNextToExplore ~= explore(t, nte.target, nte.distance);
+					}
+				}
+				nextToExplore = newNextToExplore;
+				newNextToExplore.length = 0;
+			}
+
 		}
 
 		sw.stop();
@@ -1111,11 +1258,12 @@ struct TrnNWN2WalkmeshPayload{
 
 		// Visited triangles. Not used for pathfinding, but for island detection.
 		bool[] visitedTriangles;
-		visitedTriangles.length = walkableTriangles.length;
+		visitedTriangles.length = tile.path_table.local_to_node.length;
 		visitedTriangles[] = false;
 
 
-		IslandMeta[] islands;
+		IslandMeta[] islandsMeta;
+		bool islandRegistration = false;
 
 
 		// Calculate pathfinding
@@ -1124,14 +1272,22 @@ struct TrnNWN2WalkmeshPayload{
 			// If the triangle has not been visited before, we add a new
 			// island All triangles accessible from this one will be marked as
 			// visited, so we don't add more than once the same island
-			if(visitedTriangles[i] == false){
-				islands ~= IslandMeta(tileIndex, fromTriIdx, []);
+			if(visitedTriangles[fromTriIdx - trianglesOffset] == false){
+				islandsMeta ~= IslandMeta(tileIndex, fromTriIdx, []);
+				islandRegistration = true;
+			}
+			else
+				islandRegistration = false;
+
+			static struct NextToExplore{
+				uint32_t[] list;
+				ubyte ntlTarget = ubyte.max;
 			}
 
-			alias TriList = uint32_t[];
-
-			TriList explore(uint32_t currTriIdx, ubyte ntlTarget){
-				TriList nextTriangles;
+			NextToExplore[] explore(uint32_t currTriIdx, ubyte ntlTarget = ubyte.max){
+				NextToExplore[] ret;
+				if(ntlTarget != ubyte.max)
+					ret ~= NextToExplore([], ntlTarget);
 
 				foreach(j, linkedTriIdx ; triangles[currTriIdx].linked_triangles){
 					if(linkedTriIdx == uint32_t.max)
@@ -1149,62 +1305,48 @@ struct TrnNWN2WalkmeshPayload{
 						// linkedTri is inside the tile
 
 						// Mark the triangle as visited (only for island detection)
-						visitedTriangles[getNtlIndex(linkedTriIdx)] = true;
+						visitedTriangles[linkedTriIdx - trianglesOffset] = true;
 
 						auto node = getNode(fromTriIdx, linkedTriIdx);
 						if(*node == 0xff){
 							// This is the first time we visit the triangle from this fromTriIdx
 
-							assert(ntlTarget < 0b0111_1111);
-							*node = ntlTarget;// TODO: do VISIBLE / LOS calculation
+							if(ntlTarget == ubyte.max){
+								ret ~= NextToExplore([], getNtlIndex(linkedTriIdx));
+							}
 
-							nextTriangles ~= linkedTriIdx;
+							ret[$-1].list ~= linkedTriIdx;
+
+							assert(ret[$-1].ntlTarget < 0b0111_1111);
+							*node = ret[$-1].ntlTarget;// TODO: do VISIBLE / LOS calculation
 						}
 					}
 					else{
 						// linkedTri is outside the tile
-						islands[$-1].junctions ~= linkedTri.linked_junctions[j];
+						if(islandRegistration)
+							islandsMeta[$-1].junctions ~= linkedTri.linked_junctions[j];
 					}
 				}
-				return nextTriangles;
+				return ret;
 			}
 
-			const linkedTriangles = triangles[fromTriIdx].linked_triangles
-				.dup
-				.filter!(a =>
-					a != uint32_t.max
-					&& (triangles[a].flags & Triangle.Flags.walkable)
-					&& tileAABB.contains(triangles[a].center))
-				.array;
-
-			const linkedNtl = linkedTriangles.dup.map!(a => getNtlIndex(a)).array();
-
-			TriList[] nextToExplore = linkedTriangles.dup.map!(a => [a]).array;
-
-
-			if(nextToExplore.length > 0){
-				// Set adjacent destination nodes
-				linkedTriangles
-					.each!((j, ref triGIdx) => *getNode(fromTriIdx, triGIdx) = 0b1000_0000 | linkedNtl[j].to!ubyte);
-
-				while(nextToExplore.map!(a => a.length).sum > 0){
-
-					foreach(j, ref triList ; nextToExplore){
-						if(triList.length == 0)
-							continue;//Everything has been explored here
-
-						triList = triList.map!(a => explore(a, linkedNtl[j])).array.join;// TODO: remove .array if possible
+			NextToExplore[] nextToExplore = [ NextToExplore([fromTriIdx]) ];
+			NextToExplore[] newNextToExplore;
+			while(nextToExplore.length > 0 && nextToExplore.map!(a => a.list.length).sum > 0){
+				foreach(ref nte ; nextToExplore){
+					foreach(t ; nte.list){
+						newNextToExplore ~= explore(t, nte.ntlTarget);
 					}
 				}
+				nextToExplore = newNextToExplore;
+				newNextToExplore.length = 0;
 			}
-
-
 		}
 
 		if(walkableTrianglesLen > 0)
-			writeln("Tile ", tileIndex, ": ", walkableTrianglesLen, " walkable triangles in ", islands.length, " islands");
+			writeln("Tile ", tileIndex, ": ", walkableTrianglesLen, " walkable triangles in ", islandsMeta.length, " islands");
 
-		return islands;
+		return islandsMeta;
 	}
 }
 
