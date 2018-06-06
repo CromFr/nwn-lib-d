@@ -244,6 +244,103 @@ int _main(string[] args){
 			std.file.write(targetPath, trn.serialize());
 		}
 		break;
+
+
+		case "bake":{
+			import std.parallelism;
+			// import nwn.gff;
+
+			string targetPath = null;
+			bool inPlace = false;
+			bool reuseTrx = false;
+			string trnPath = null;
+			string gitPath = null;
+			uint threads = 0;
+
+			auto res = getopt(args,
+				"output|o", "Output trx file or directory. Default: './'", &targetPath,
+				"in-place|i", "Provide this flag to write TRX files next to the TRN files", &inPlace,
+				"trn", "TRN file path. Default to $map_name_without_extension.trn", &trnPath,
+				"reuse-trx|r", "Reuse walkmesh from an already existing TRX file", &reuseTrx,
+				// "git", "GIT file path. Default to $map_name_without_extension.git", &gitPath,
+				"j", "Parallel threads for baking multiple maps at the same time", &threads,
+				);
+			if(res.helpWanted || (args.length == 1 && trnPath is null)){
+				defaultGetoptPrinter(
+					"Generate baked TRX file.\n"
+					~"Usage: "~args[0]~" "~command~" map_name -o baked.trx\n"
+					~"       "~args[0]~" "~command~" map_name map_name_2 ...\n"
+					~" `map_name` can be any map file with or without its extension (.are, .git, .gic, .trn, .trx)\n",
+					res.options);
+				return 0;
+			}
+
+			if(inPlace)
+				enforce(targetPath is null, "You cannot use --in-place with --output");
+			if(targetPath is null)
+				targetPath = ".";
+
+			enforce(args.length >= 2 || trnPath !is null, "No input map name given");
+			if(args.length > 2)
+				enforce(trnPath is null && gitPath is null && targetPath.exists && targetPath.isDir,
+					"Cannot use --trn, --git or --output=file with multiple input files");
+
+
+			if(threads > 0)
+				defaultPoolThreads = threads;
+
+			if(trnPath !is null)
+				args ~= trnPath;
+
+			foreach(resname ; args[1 .. $].parallel){
+				if(trnPath !is null){
+					switch(resname.extension.toLower){
+						case null:
+							break;
+						case ".are", ".git", ".gic", ".trn", ".trx":
+							resname = resname.stripExtension;
+							break;
+						default: enforce(0, "Unknown file extension "~resname.extension.toLower);
+					}
+				}
+				else
+					resname = resname.stripExtension;
+
+				immutable dir = resname.dirName;
+				string trnFilePath = trnPath is null? buildPathCI(dir, resname.baseName~(reuseTrx? ".trx" : ".trn")) : trnPath;
+				string gitFilePath = gitPath is null? buildPathCI(dir, resname.baseName~".git") : gitPath;
+				string trxFilePath;
+				if(inPlace)
+					trxFilePath = resname ~ ".trx";
+				else{
+					if(targetPath.exists && targetPath.isDir)
+						trxFilePath = buildPathCI(targetPath, resname.baseName~".trx");
+					else
+						trxFilePath = targetPath;
+				}
+
+
+				auto trn = new Trn(trnFilePath);
+				// auto git = new Gff(gitFilePath);
+
+				import std.datetime.stopwatch: StopWatch;
+				auto sw = new StopWatch;
+				sw.start();
+
+				foreach(i, ref packet ; trn.packets){
+					if(packet.type == TrnPacketType.NWN2_ASWM){
+						packet.as!(TrnPacketType.NWN2_ASWM).bake();
+					}
+				}
+				sw.stop();
+				writeln(resname.baseName.leftJustify(32), " ", sw.peek.total!"msecs"/1000.0, " seconds");
+
+				std.file.write(trxFilePath, trn.serialize());
+
+			}
+
+		}
+		break;
 	}
 	return 0;
 }
@@ -621,7 +718,7 @@ void writeWalkmeshObj(ref TrnNWN2WalkmeshPayload aswm, in string name, ref File 
 						if(toNodeIdx == 0xff) continue;
 
 
-						const node = tile.path_table.nodes[fromNodeIdx * tile.path_table.header.node_to_local_length + toNodeIdx];
+						const node = tile.path_table.nodes[fromNodeIdx * tile.path_table.node_to_local.length + toNodeIdx];
 						if(node != 0xff && ((node & 0b1000_0000) > 0) == losStatus){
 
 							auto a = getTriangleCenter(aswm.triangles[fromLocIdx + offset]).position;
@@ -651,14 +748,14 @@ void writeWalkmeshObj(ref TrnNWN2WalkmeshPayload aswm, in string name, ref File 
 
 		foreach(tileid, ref tile ; aswm.tiles) with(tile) {
 			immutable offset = tile.header.triangles_offset;
-			immutable len = tile.path_table.header.node_to_local_length;
+			immutable len = tile.path_table.node_to_local.length;
 
 			if(len == 0)
 				continue;
 
 			foreach(_ ; 0 .. 2){
-				auto from = uniform(0, len) + offset;
-				auto to = uniform(0, len) + offset;
+				auto from = (uniform(0, len) + offset).to!uint32_t;
+				auto to = (uniform(0, len) + offset).to!uint32_t;
 
 
 				auto path = findPath(from, to);
