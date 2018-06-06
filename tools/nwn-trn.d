@@ -2,11 +2,10 @@
 /// License: GPL-3.0
 /// Copyright: Copyright Thibaut CHARLES 2016
 
-module nwntrn;
+module tools.nwntrn;
 
 import std.stdio;
 import std.conv: to, ConvException;
-import std.getopt;
 import std.traits;
 import std.string;
 import std.file;
@@ -18,6 +17,8 @@ import std.array;
 import std.exception: enforce;
 import std.random: uniform;
 
+import nwnlibd.path;
+import tools.common.getopt;
 import nwn.trn;
 
 version(unittest){}
@@ -67,7 +68,7 @@ int _main(string[] args){
 				"check", "Check all vertex/junction/triangle indices point to valid data. Default to true", &postCheck,
 				);
 			if(res.helpWanted || args.length == 1){
-				defaultGetoptPrinter(
+				improvedGetoptPrinter(
 					"Reduce TRX file size by removing non walkable polygons from calculated walkmesh\n"
 					~"Usage: "~args[0]~" "~command~" map.trx -o stripped_map.trx\n"
 					~"       "~args[0]~" "~command~" -i map.trx",
@@ -119,7 +120,7 @@ int _main(string[] args){
 				);
 
 			if(res.helpWanted || args.length == 1){
-				defaultGetoptPrinter(
+				improvedGetoptPrinter(
 					"Convert NWN2 walkmeshes into TRX / OBJ (only TRX => OBJ supported for now)\n"
 					~"Usage: "~args[0]~" "~command~" map.trx\n"
 					~"\n"
@@ -211,7 +212,7 @@ int _main(string[] args){
 				"output|o", "Output file or directory. Mandatory if --in-place is not provided.", &targetPath,
 				);
 			if(res.helpWanted || args.length == 1){
-				defaultGetoptPrinter(
+				improvedGetoptPrinter(
 					"Re-bake all tile / islands path tables of a baked TRX file.\n"
 					~"Usage: "~args[0]~" "~command~" map.trx -o baked_map.trx\n"
 					~"       "~args[0]~" "~command~" -i map.trx",
@@ -266,11 +267,11 @@ int _main(string[] args){
 				"j", "Parallel threads for baking multiple maps at the same time", &threads,
 				);
 			if(res.helpWanted || (args.length == 1 && trnPath is null)){
-				defaultGetoptPrinter(
+				improvedGetoptPrinter(
 					"Generate baked TRX file.\n"
 					~"Usage: "~args[0]~" "~command~" map_name -o baked.trx\n"
 					~"       "~args[0]~" "~command~" map_name map_name_2 ...\n"
-					~" `map_name` can be any map file with or without its extension (.are, .git, .gic, .trn, .trx)\n",
+					~" `map_name` can be any map file with or without its extension (.are, .git, .gic, .trn, .trx)",
 					res.options);
 				return 0;
 			}
@@ -963,36 +964,3 @@ illum 2
 
 
 
-string buildPathCI(T...)(in string basePath, T subFiles){
-	import std.file;
-	import std.path;
-	import std.string: toUpper;
-
-	assert(basePath.exists, "basePath does not exist");
-	string path = basePath;
-
-	foreach(subFile ; subFiles){
-		//Case is correct, cool !
-		if(buildPath(path, subFile).exists){
-			path = buildPath(path, subFile);
-		}
-		//Most likely only the extension is fucked up
-		else if(buildPath(path, subFile.stripExtension ~ subFile.extension.toUpper).exists){
-			path = buildPath(path, subFile.stripExtension ~ subFile.extension.toUpper);
-		}
-		//Perform full scan of the directory
-		else{
-			bool bFound = false;
-			foreach(file ; path.dirEntries(SpanMode.shallow)){
-				if(filenameCmp!(CaseSensitive.no)(file.baseName, subFile) == 0){
-					bFound = true;
-					path = file.name;
-					break;
-				}
-			}
-			if(!bFound)
-				path = buildPath(path, subFile);
-		}
-	}
-	return path;
-}

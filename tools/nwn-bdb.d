@@ -2,17 +2,17 @@
 /// License: GPL-3.0
 /// Copyright: Copyright Thibaut CHARLES 2016
 
-module nwnbdb;
+module tools.nwnbdb;
 
 import std.stdio;
 import std.conv: to, ConvException;
-import std.getopt;
 import std.traits;
 import std.string;
 import std.math: log10;
 import std.typecons: Tuple, Nullable;
 version(unittest) import std.exception: assertThrown, assertNotThrown;
 
+import tools.common.getopt;
 import nwn.biowaredb;
 
 version(unittest){}
@@ -59,7 +59,7 @@ int _main(string[] args){
 					"deleted", "Search for either deleted variables or not. Valid values are: any (default), yes, no", &deleted,
 					"colors", "Enable/disable ANSI colors (default to 0 on Windows)", &colors);
 				if(res.helpWanted || args.length != 2){
-					defaultGetoptPrinter(
+					improvedGetoptPrinter(
 						"Search specific variables inside a database file\n"
 						~"Example: " ~ args[0] ~ " search foxpro-file-basename --name='^VAR_NAME_.*'",
 						res.options);

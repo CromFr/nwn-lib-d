@@ -2,7 +2,7 @@
 /// License: GPL-3.0
 /// Copyright: Copyright Thibaut CHARLES 2016
 
-module nwngff;
+module tools.nwntlk;
 
 import std.stdio;
 import std.conv: to, ConvException;
@@ -11,6 +11,7 @@ import std.string;
 import std.typecons: Tuple, Nullable;
 version(unittest) import std.exception: assertThrown, assertNotThrown;
 
+import tools.common.getopt;
 import nwn.tlk;
 
 version(unittest){}
@@ -25,7 +26,6 @@ class ArgException : Exception{
 }
 
 int _main(string[] args){
-	import std.getopt : getopt, defaultGetoptPrinter;
 	alias required = std.getopt.config.required;
 
 	string inputPath, outputPath;
@@ -37,7 +37,7 @@ int _main(string[] args){
 		"k|output-format", "Output file format ("~EnumMembers!Format.stringof[6..$-1]~")", &outputFormat,
 		);
 	if(res.helpWanted){
-		defaultGetoptPrinter(
+		improvedGetoptPrinter(
 			"Parsing and serialization tool for TLK files",
 			res.options);
 		return 0;

@@ -2,7 +2,7 @@
 /// License: GPL-3.0
 /// Copyright: Copyright Thibaut CHARLES 2016
 
-module nwnerf;
+module tools.nwnerf;
 
 import std.stdio;
 import std.conv: to, ConvException;
@@ -30,7 +30,7 @@ class ArgException : Exception{
 
 
 int _main(string[] args){
-	import std.getopt;
+	import tools.common.getopt;
 
 	if(args.length > 1){
 		if(args[1] == "--help" || args[1] == "-h"){
@@ -51,7 +51,7 @@ int _main(string[] args){
 					config.required, "o|output", "Output file name", &outputPath,
 					"date", "Set erf build date field. Format 'YYYY-MM-DD', or just 'now'. Defaults to 1900-01-01", &buildDateStr);
 				if(res.helpWanted){
-					defaultGetoptPrinter(
+					improvedGetoptPrinter(
 						"Pack multiple files into a single NWN2 ERF/HAK/MOD file\n"
 						~"Example: "~args[0]~" create -o out_file.erf file1 file2 ...",
 						res.options);
@@ -99,7 +99,7 @@ int _main(string[] args){
 				auto res = getopt(args,
 					config.required, "o|output", "Output folder path", &outputPath);
 				if(res.helpWanted){
-					defaultGetoptPrinter(
+					improvedGetoptPrinter(
 						"Extract an ERF file content"
 						~"Example: "~args[0]~" extract -o dir/ yourfile.erf",
 						res.options);

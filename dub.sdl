@@ -13,8 +13,8 @@ x:ddoxFilterArgs "--min-protection=Protected"
 
 subPackage {
 	name "nwn-gff"
-	sourcePaths "source/"
-	importPaths "source/"
+	sourcePaths "source/" "tools/common/"
+	importPaths "source/" "tools/common/"
 
 	configuration "application" {
 		targetType "executable"
@@ -27,8 +27,8 @@ subPackage {
 }
 subPackage {
 	name "nwn-erf"
-	sourcePaths "source/"
-	importPaths "source/"
+	sourcePaths "source/" "tools/common/"
+	importPaths "source/" "tools/common/"
 
 	configuration "application" {
 		targetType "executable"
@@ -41,8 +41,8 @@ subPackage {
 }
 subPackage {
 	name "nwn-tlk"
-	sourcePaths "source/"
-	importPaths "source/"
+	sourcePaths "source/" "tools/common/"
+	importPaths "source/" "tools/common/"
 
 	configuration "application" {
 		targetType "executable"
@@ -55,8 +55,8 @@ subPackage {
 }
 subPackage {
 	name "nwn-bdb"
-	sourcePaths "source/"
-	importPaths "source/"
+	sourcePaths "source/" "tools/common/"
+	importPaths "source/" "tools/common/"
 
 	configuration "application" {
 		targetType "executable"
@@ -69,8 +69,8 @@ subPackage {
 }
 subPackage {
 	name "nwn-trn"
-	sourcePaths "source/"
-	importPaths "source/"
+	sourcePaths "source/" "tools/common/"
+	importPaths "source/" "tools/common/"
 
 	configuration "application" {
 		targetType "executable"

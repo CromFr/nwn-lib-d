@@ -2,7 +2,7 @@
 /// License: GPL-3.0
 /// Copyright: Copyright Thibaut CHARLES 2016
 
-module nwngff;
+module tools.nwngff;
 
 import std.stdio;
 import std.conv: to, ConvException;
@@ -11,6 +11,7 @@ import std.string;
 import std.typecons: Tuple, Nullable;
 version(unittest) import std.exception: assertThrown, assertNotThrown;
 
+import tools.common.getopt;
 import nwn.gff;
 
 version(unittest){}
@@ -25,7 +26,6 @@ class ArgException : Exception{
 }
 
 int _main(string[] args){
-	import std.getopt : getopt, defaultGetoptPrinter;
 	alias required = std.getopt.config.required;
 
 	string inputPath, outputPath;
@@ -39,7 +39,7 @@ int _main(string[] args){
 		"s|set", "Set values in the GFF file. Ex: 'DayNight.7.SkyDomeModel=my_sky_dome.tga'", &setValuesList,
 		);
 	if(res.helpWanted){
-		defaultGetoptPrinter(
+		improvedGetoptPrinter(
 			 "Parsing and serialization tool for GFF files like ifo, are, bic, uti, ...",
 			res.options);
 		return 0;
