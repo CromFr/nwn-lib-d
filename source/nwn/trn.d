@@ -101,6 +101,9 @@ package:
 
 /// UNTESTED WITH NWN1
 class Trn{
+	/// Empty TRN file
+	this(){}
+
 	this(in string path){
 		import std.file: read;
 		this(cast(ubyte[])path.read());
@@ -570,8 +573,8 @@ struct TrnNWN2WalkmeshPayload{
 					zcompress = 0x02,
 				}
 				uint32_t flags; /// Always 0. Used to set path table compression
-				uint32_t local_to_node_length; /// Length of `local_to_node`
-				ubyte node_to_local_length; /// Length of `node_to_local`
+				private uint32_t _local_to_node_length; /// Length of `local_to_node`
+				private ubyte _node_to_local_length; /// Length of `node_to_local`
 				uint32_t rle_table_size; /// Always 0 ? probably related to Run-Length Encoding
 
 			}
@@ -641,25 +644,31 @@ struct TrnNWN2WalkmeshPayload{
 
 				enforce!TrnParseException((header.flags & (Header.Flags.rle | Header.Flags.zcompress)) == 0, "Compressed path tables not supported");
 
-				local_to_node = wmdata.readArray!ubyte(header.local_to_node_length).dup;
-				node_to_local = wmdata.readArray!uint32_t(header.node_to_local_length).dup;
-				nodes = wmdata.readArray!ubyte(header.node_to_local_length ^^ 2).dup;
+				local_to_node = wmdata.readArray!ubyte(header._local_to_node_length).dup;
+				node_to_local = wmdata.readArray!uint32_t(header._node_to_local_length).dup;
+				nodes = wmdata.readArray!ubyte(header._node_to_local_length ^^ 2).dup;
 
 				flags = wmdata.read!(typeof(flags));
 			}
 		}
 		private void serialize(ref ChunkWriter uncompData){
+
 			uncompData.put(
 				header,
 				vertices,
 				junctions);
 
+			immutable tcount = header.triangles_count;
+
 			with(path_table){
 				// Update header
-				header.local_to_node_length = cast(uint32_t)local_to_node.length;
+				header._local_to_node_length = cast(uint32_t)local_to_node.length;
 
 				assert(node_to_local.length <= ubyte.max, "node_to_local is too long");
-				header.node_to_local_length = cast(ubyte)node_to_local.length;
+				header._node_to_local_length = cast(ubyte)node_to_local.length;
+
+				assert(nodes.length == node_to_local.length ^^ 2, "Bad number of path table nodes");
+				assert(local_to_node.length == tcount, "local_to_node length should match header.triangles_count");
 
 				// serialize
 				uncompData.put(
@@ -680,12 +689,12 @@ struct TrnNWN2WalkmeshPayload{
 			     ~ format!"     vertices: %s\n"(vertices)
 			     ~ format!"     junctions: %s\n"(junctions)
 			     ~        "     path_table: \n"
-			     ~ format!"       header: flags: %s, ltn_len: %d, ntl_len: %s, rle_len: %s\n"(path_table.header.flags, path_table.header.local_to_node_length, path_table.header.node_to_local_length, path_table.header.rle_table_size)
+			     ~ format!"       header: flags: %s, ltn_len: %d, ntl_len: %s, rle_len: %s\n"(path_table.header.flags, path_table.header._local_to_node_length, path_table.header._node_to_local_length, path_table.header.rle_table_size)
 			     ~ format!"       ltn:   %(%3d %)\n"(path_table.local_to_node)
 			     ~ format!"       ntl:   %(%3d %)\n"(path_table.node_to_local)
 			     ~ format!"       nodes: %(%-(%s%)\n              %)\n"(
-			     	path_table.header.node_to_local_length == 0 ?
-			     	[] : path_table.nodes.map!(a => (((a & 128)? "*" : " ") ~ (a & 127).to!string).rightJustify(4)).chunks(path_table.header.node_to_local_length).array)
+			     	path_table.node_to_local.length == 0 ?
+			     	[] : path_table.nodes.map!(a => (((a & 128)? "*" : " ") ~ (a & 127).to!string).rightJustify(4)).chunks(path_table.node_to_local.length).array)
 			     ~ format!"       flags: %s\n"(path_table.flags);
 		}
 
@@ -705,23 +714,26 @@ struct TrnNWN2WalkmeshPayload{
 			return path_table.nodes[nodeFrom * path_table.node_to_local.length + nodeTo];
 		}
 
-		uint32_t[] findPath(uint32_t fromGTriIndex, uint32_t toGTriIndex){
+		uint32_t[] findPath(in uint32_t fromGTriIndex, in uint32_t toGTriIndex) const {
 			assert(header.triangles_offset <= fromGTriIndex && fromGTriIndex < path_table.local_to_node.length + header.triangles_offset,
 				"From triangle index "~fromGTriIndex.to!string~" is not in tile path table");
 			assert(header.triangles_offset <= toGTriIndex && toGTriIndex < path_table.local_to_node.length + header.triangles_offset,
 				"To triangle index "~toGTriIndex.to!string~" is not in tile path table");
 
+			uint32_t from = fromGTriIndex;
+
 			int iSec = 0;
 			uint32_t[] ret;
-			while(fromGTriIndex != toGTriIndex && iSec++ < 30){
-				auto node = getPathNode(fromGTriIndex, toGTriIndex);
+			while(from != toGTriIndex && iSec++ < 1000){
+				auto node = getPathNode(from, toGTriIndex);
 				if(node == 0xff)
 					return ret;
 
-				fromGTriIndex = path_table.node_to_local[node & 0b0111_1111] + header.triangles_offset;
-				ret ~= fromGTriIndex;
+				from = path_table.node_to_local[node & 0b0111_1111] + header.triangles_offset;
+				ret ~= from;
 
 			}
+			assert(iSec < 1000, "Tile precalculated paths lead to a loop (from="~fromGTriIndex.to!string~", to="~toGTriIndex.to!string~")");
 			return ret;
 		}
 	}
@@ -919,14 +931,9 @@ struct TrnNWN2WalkmeshPayload{
 			immutable node_to_local_len = tile.path_table.node_to_local.length;
 			immutable local_to_node_len = tile.path_table.local_to_node.length;
 
-			if(node_to_local_len != tile.path_table.header.node_to_local_length)
-				return "In tile "~i.to!string~": Wrong number of node_to_local";
-			if(local_to_node_len != tile.path_table.header.local_to_node_length)
-				return "In tile "~i.to!string~": Wrong number of local_to_node";
-
-			if(nodes_len != tile.path_table.header.node_to_local_length ^^ 2)
+			if(nodes_len != node_to_local_len ^^ 2)
 				return "In tile "~i.to!string~": Wrong number of nodes";
-			if(nodes_len < 0x7F){
+			if(nodes_len < 0x7f){
 				foreach(j, node ; tile.path_table.nodes){
 					if(node == 0xff)
 						continue;
@@ -1012,16 +1019,6 @@ struct TrnNWN2WalkmeshPayload{
 	}
 
 	void bake(){
-		import std.datetime.stopwatch: StopWatch;
-		auto sw = new StopWatch;
-
-		sw.start();
-
-		//writeln("--------------------------- Previous idlands length: ", islands.length);
-		//foreach(i, island ; islands)
-		//	writeln(i, "/", island.header.index, ": tile:", island.header.tile, " center:", island.header.center.position,
-		//		" triangles_count: ", island.header.triangles_count, " adjacent_islands: ", island.adjacent_islands);
-
 
 		// Reset island associations
 		triangles.each!((ref a) => a.island = 0xffff);
@@ -1034,8 +1031,11 @@ struct TrnNWN2WalkmeshPayload{
 			islandsMeta ~= bakeTile(i.to!uint32_t);
 		}
 
-		import std.random: uniform;
-		auto islandTileID = uniform!uint32_t;
+		// islandTileID looks random-ish in TRX files. Here we generate by
+		// calculating a 32bit CRC with islandsMeta data, so bake() result is
+		// reproducible
+		import std.digest.crc: crc32Of;
+		auto islandTileID = *cast(uint32_t*)crc32Of(islandsMeta).ptr;
 
 		islands.length = islandsMeta.length;
 		foreach(i, ref island ; islands){
@@ -1049,10 +1049,12 @@ struct TrnNWN2WalkmeshPayload{
 			auto tile = &tiles[islandsMeta[i].tile];
 			auto tileTriangleOffset = tile.header.triangles_offset;
 			auto firstLTri = islandsMeta[i].islandTriangle - tileTriangleOffset;
-			auto tileNTLLen = tile.path_table.header.node_to_local_length;
+			auto tileNTLLen = tile.path_table.node_to_local.length;
 			auto nodeIndex = tile.path_table.local_to_node[firstLTri];
 
+			assert(nodeIndex != 0xff, "BakeTile returned a non walkable islandTriangle");
 
+			//writeln("len=", tile.path_table.nodes.length, " [", tileNTLLen * nodeIndex, " .. ", tileNTLLen * (nodeIndex + 1), "], ntllen=", tileNTLLen);
 			auto nodes = tile.path_table.nodes[tileNTLLen * nodeIndex .. tileNTLLen * (nodeIndex + 1)];
 
 			// Retrieve island triangle list
@@ -1083,10 +1085,14 @@ struct TrnNWN2WalkmeshPayload{
 		// Set island connections
 		foreach(i, ref island ; islands){
 
+			island.adjacent_islands.length = 0;
+			island.adjacent_islands_dist.length = 0;
+			island.exit_triangles.length = 0;
+
 			foreach(junc ; islandsMeta[i].junctions){
 
 				uint32_t exitTriangle = uint32_t.max;
-				uint32_t exitIsland;
+				uint32_t exitIsland = uint32_t.max;
 
 				foreach(t ; junctions[junc].triangles){
 					immutable islandIdx = triangles[t].island;
@@ -1096,7 +1102,8 @@ struct TrnNWN2WalkmeshPayload{
 						exitIsland = islandIdx;
 				}
 
-				if(exitTriangle != uint32_t.max && island.adjacent_islands.find(exitIsland).empty){
+				if(exitTriangle != uint32_t.max && exitIsland != uint32_t.max
+				&& island.adjacent_islands.find(exitIsland).empty){
 					island.adjacent_islands ~= exitIsland;
 					island.exit_triangles ~= exitTriangle;
 
@@ -1110,9 +1117,11 @@ struct TrnNWN2WalkmeshPayload{
 			}
 		}
 
+		writeln("islands_path_nodes length = ", islands.length ^^ 2);
 		// Rebuild island path tables
 		islands_path_nodes.length = islands.length ^^ 2;
-		islands_path_nodes.each!((ref i) => { i.next = uint16_t.max; i.weight = 0.0; });
+		islands_path_nodes[] = IslandPathNode(uint16_t.max, 0, 0.0);
+
 
 		foreach(uint32_t fromIslandIdx, ref fromIsland ; islands){
 
@@ -1138,7 +1147,7 @@ struct TrnNWN2WalkmeshPayload{
 
 				foreach(j, linkedIslIdx ; islands[islandIdx].adjacent_islands){
 
-					if(fromIslandIdx == linkedIslIdx)
+					if(linkedIslIdx == fromIslandIdx)
 						continue;// We must not visit initial island (node value must stay as 0xff)
 
 					auto linkedIsl = &islands[linkedIslIdx];
@@ -1174,8 +1183,6 @@ struct TrnNWN2WalkmeshPayload{
 
 		}
 
-		sw.stop();
-		writeln("ASWM bake: ", sw.peek.total!"msecs"/1000.0, " seconds");
 	}
 
 	IslandMeta[] bakeTile(uint32_t tileIndex){
@@ -1213,13 +1220,14 @@ struct TrnNWN2WalkmeshPayload{
 			(tileIndex == 0 ? 0 : (tiles[tileIndex-1].header.triangles_offset + tiles[tileIndex-1].header.triangles_count))
 			: tileTriangles[0];
 		tile.header.triangles_offset = trianglesOffset;
+		tile.header.triangles_count = tileTriangles.length > 0 ? 1 + tileTriangles[$-1] - tileTriangles[0] : 0;
 
 		// Find walkable triangles to deduce NTL length & LTN content
 		const walkableTriangles = tileTriangles.filter!(a => triangles[a].flags & Triangle.Flags.walkable).array;
 		immutable walkableTrianglesLen = walkableTriangles.length.to!uint32_t;
 
 		// node_to_local indices are stored on 7 bits
-		enforce(walkableTrianglesLen < 0b0111_1111, "Too many walkable triangles");
+		enforce(walkableTrianglesLen < 0b0111_1111, "Too many walkable triangles on a single tile");
 
 		// Fill NTL with walkable triangles local indices
 		tile.path_table.node_to_local = walkableTriangles.dup;
@@ -1234,10 +1242,9 @@ struct TrnNWN2WalkmeshPayload{
 			assert(0, "Triangle local idx="~destTriangle.to!string~" not found in NTL array "~tile.path_table.node_to_local.to!string);
 		}
 
-		// Set LTN content: 0xff is the triangle is unwalkable, otherwise an
+		// Set LTN content: 0xff if the triangle is unwalkable, otherwise an
 		// index in walkableTriangles
-		tile.path_table.header.local_to_node_length = tileTriangles.length > 0 ? 1 + tileTriangles[$-1] - tileTriangles[0] : 0;
-		tile.path_table.local_to_node.length = tile.path_table.header.local_to_node_length;
+		tile.path_table.local_to_node.length = tile.header.triangles_count;
 
 		tile.path_table.local_to_node[] = 0xff;
 		foreach(i, triIdx ; walkableTriangles)
@@ -1323,8 +1330,13 @@ struct TrnNWN2WalkmeshPayload{
 					}
 					else{
 						// linkedTri is outside the tile
-						if(islandRegistration)
-							islandsMeta[$-1].junctions ~= linkedTri.linked_junctions[j];
+						if(islandRegistration){
+							immutable juncIdx = triangles[currTriIdx].linked_junctions[j];
+							assert(junctions[juncIdx].triangles[0] == currTriIdx && junctions[juncIdx].triangles[1] == linkedTriIdx
+								|| junctions[juncIdx].triangles[1] == currTriIdx && junctions[juncIdx].triangles[0] == linkedTriIdx,
+								"Incoherent junctions");
+							islandsMeta[$-1].junctions ~= juncIdx;
+						}
 					}
 				}
 				return ret;
@@ -1343,10 +1355,26 @@ struct TrnNWN2WalkmeshPayload{
 			}
 		}
 
-		if(walkableTrianglesLen > 0)
-			writeln("Tile ", tileIndex, ": ", walkableTrianglesLen, " walkable triangles in ", islandsMeta.length, " islands");
+		//if(walkableTrianglesLen > 0)
+		//	writeln("Tile ", tileIndex, ": ", walkableTrianglesLen, " walkable triangles in ", islandsMeta.length, " islands");
 
 		return islandsMeta;
+	}
+
+	uint16_t[] findIslandsPath(in uint16_t fromIslandIndex, in uint16_t toIslandIndex) const {
+		uint16_t from = fromIslandIndex;
+		int iSec = 0;
+		uint16_t[] ret;
+		while(fromIslandIndex != toIslandIndex && iSec++ < 1000){
+			auto node = &islands_path_nodes[from * islands.length + toIslandIndex];
+			if(node.next == uint16_t.max)
+				return ret;
+
+			from = node.next;
+			ret ~= from;
+		}
+		assert(iSec < 1000, "Islands precalculated paths lead to a loop (from="~fromIslandIndex.to!string~", to="~toIslandIndex.to!string~")");
+		return ret;
 	}
 }
 
