@@ -36,6 +36,7 @@ void usage(in string cmd){
 	writeln("TRN / TRX tool");
 	writeln("Usage: ", cmd, " command [args]");
 	writeln("Commands");
+	writeln("  aswm-check: Checks if a TRX file contains valid data");
 	writeln("  aswm-strip: optimize TRX files");
 	writeln("  aswm-convert: convert walkmesh into wavefront obj");
 	writeln("Advanced commands:");
@@ -243,6 +244,31 @@ int _main(string[] args){
 			enforce(found, "No ASWM packet found. Make sure you are targeting a TRX file.");
 
 			std.file.write(targetPath, trn.serialize());
+		}
+		break;
+
+
+		case "aswm-check":{
+			bool strict = false;
+			auto res = getopt(args,
+				"strict", "Check some inconsistencies that does not cause issues with nwn2\nDefault: false", &strict);
+			if(res.helpWanted || args.length == 1){
+				improvedGetoptPrinter(
+					"Check if ASWM packets are valid.\n"
+					~"Usage: "~args[0]~" "~command~" file1.trx file2.trx ...",
+					res.options);
+				return 0;
+			}
+
+			foreach(file ; args[1 .. $]){
+				auto trn = new Trn(file);
+				foreach(i, ref packet ; trn.packets){
+					if(packet.type == TrnPacketType.NWN2_ASWM){
+						auto err = packet.as!(TrnPacketType.NWN2_ASWM).validate(strict);
+						enforce(err is null, file~": "~err);
+					}
+				}
+			}
 		}
 		break;
 

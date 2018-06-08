@@ -515,7 +515,7 @@ struct TrnNWN2WalkmeshPayload{
 	}
 	Triangle[] triangles;
 
-	/// Always 31?
+	/// Always 31 in TRX files, 15 in TRN files
 	uint32_t tiles_flags;
 	/// Width in meters of a terrain tile (most likely to be 10.0)
 	float tiles_width;
@@ -573,8 +573,8 @@ struct TrnNWN2WalkmeshPayload{
 					zcompress = 0x02,
 				}
 				uint32_t flags; /// Always 0. Used to set path table compression
-				private uint32_t _local_to_node_length; /// Length of `local_to_node`
-				private ubyte _node_to_local_length; /// Length of `node_to_local`
+				private uint32_t _local_to_node_length; /// use `local_to_node.length` instead
+				private ubyte _node_to_local_length; /// use `node_to_local.length` instead
 				uint32_t rle_table_size; /// Always 0 ? probably related to Run-Length Encoding
 
 			}
@@ -630,7 +630,6 @@ struct TrnNWN2WalkmeshPayload{
 		}
 		PathTable path_table;
 
-
 		private void parse(ref ChunkReader wmdata){
 			header = wmdata.read!(typeof(header));
 
@@ -662,10 +661,8 @@ struct TrnNWN2WalkmeshPayload{
 
 			with(path_table){
 				// Update header
-				header._local_to_node_length = cast(uint32_t)local_to_node.length;
-
-				assert(node_to_local.length <= ubyte.max, "node_to_local is too long");
-				header._node_to_local_length = cast(ubyte)node_to_local.length;
+				header._local_to_node_length = local_to_node.length.to!uint32_t;
+				header._node_to_local_length = node_to_local.length.to!ubyte;
 
 				assert(nodes.length == node_to_local.length ^^ 2, "Bad number of path table nodes");
 				assert(local_to_node.length == tcount, "local_to_node length should match header.triangles_count");
@@ -735,6 +732,87 @@ struct TrnNWN2WalkmeshPayload{
 			}
 			assert(iSec < 1000, "Tile precalculated paths lead to a loop (from="~fromGTriIndex.to!string~", to="~toGTriIndex.to!string~")");
 			return ret;
+		}
+
+		string validate(in TrnNWN2WalkmeshPayload aswm, uint32_t tileIndex, bool strict = false) const {
+			import std.typecons: Tuple;
+			alias Ret = Tuple!(bool,"valid", string,"error");
+			immutable nodesLen = path_table.nodes.length;
+			immutable ntlLen = path_table.node_to_local.length;
+			immutable ltnLen = path_table.local_to_node.length;
+			immutable offset = header.triangles_offset;
+
+
+			if(header.triangles_count != ltnLen)
+				return "local_to_node: length does not match triangles_count";
+			if(offset > aswm.triangles.length)
+				return "header.triangles_offset: offset points to invalid triangles";
+			if(offset + ltnLen > aswm.triangles.length)
+				return "local_to_node: contains data for invalid triangles";
+
+			if(strict){
+				immutable juncCnt = aswm.triangles[offset .. offset + header.triangles_count]
+					.map!((ref a) => a.linked_junctions[])
+					.join
+					.filter!(a => a != a.max)
+					.array.dup
+					.sort
+					.uniq
+					.array.length.to!uint32_t;
+				immutable vertCnt = aswm.triangles[offset .. offset + header.triangles_count]
+					.map!((ref a) => a.vertices[])
+					.join
+					.filter!(a => a != a.max)
+					.array.dup
+					.sort
+					.uniq
+					.array.length.to!uint32_t;
+
+				if(juncCnt != header.junctions_count)
+					return "header.junctions_count: Wrong number of junctions: got "~header.junctions_count.to!string~", counted "~juncCnt.to!string;
+				if(vertCnt != header.vertices_count)
+					return "header.vertices_count: Wrong number of vertices: got "~header.vertices_count.to!string~", counted "~vertCnt.to!string;
+			}
+
+			if(strict){
+				uint32_t tileX = tileIndex % aswm.tiles_grid_width;
+				uint32_t tileY = tileIndex / aswm.tiles_grid_width;
+				auto tileAABB = AABB(
+					[tileX * aswm.tiles_width, (tileX + 1) * aswm.tiles_width],
+					[tileY * aswm.tiles_width, (tileY + 1) * aswm.tiles_width]);
+
+				foreach(i ; offset .. offset + header.triangles_count){
+					if(!tileAABB.contains(aswm.triangles[i].center))
+						return "Triangle "~i.to!string~" is outside of the tile AABB";
+				}
+			}
+
+			// Path table
+			if(nodesLen != ntlLen ^^ 2)
+				return "Wrong number of nodes";
+			if(nodesLen < 0x7f){
+				foreach(j, node ; path_table.nodes){
+					if(node == 0xff)
+						continue;
+					if((node & 0b0111_1111) >= ntlLen)
+						return "nodes["~j.to!string~"]: Illegal value "~node.to!string;
+				}
+			}
+			if(nodesLen < 0xff){
+				foreach(j, node ; path_table.local_to_node){
+					if(node == 0xff)
+						continue;
+					if(node >= nodesLen)
+						return "local_to_node["~j.to!string~"]: Illegal value"~node.to!string;
+				}
+			}
+
+			foreach(j, ntl ; path_table.node_to_local){
+				if(ntl + offset >= aswm.triangles.length)
+					return "node_to_local["~j.to!string~"]: triangle index "~ntl.to!string~" out of bounds";
+			}
+
+			return null;
 		}
 	}
 	/// Map tile list
@@ -923,42 +1001,122 @@ struct TrnNWN2WalkmeshPayload{
 		return uncompData.data;
 	}
 
-	string validate() const {
+	/**
+	Check if the ASWM contains legit data
 
-		foreach(i, ref tile ; tiles){
+	Args:
+	strict = false to allow some data inconsistencies that does not cause issues with nwn2
+	Returns: Error string. `null` if there is no errors.
+	*/
+	string validate(bool strict = false) const {
 
-			immutable nodes_len = tile.path_table.nodes.length;
-			immutable node_to_local_len = tile.path_table.node_to_local.length;
-			immutable local_to_node_len = tile.path_table.local_to_node.length;
+		immutable vertLen = vertices.length;
+		immutable juncLen = junctions.length;
+		immutable triLen = triangles.length;
+		immutable islLen = islands.length;
 
-			if(nodes_len != node_to_local_len ^^ 2)
-				return "In tile "~i.to!string~": Wrong number of nodes";
-			if(nodes_len < 0x7f){
-				foreach(j, node ; tile.path_table.nodes){
-					if(node == 0xff)
-						continue;
-					if((node & 0b0111_1111) >= node_to_local_len)
-						return "In tile "~i.to!string~", node "~j.to!string~": Illegal value "~node.to!string;
-				}
+		// Junctions
+		foreach(ijunc, ref junc ; junctions){
+			foreach(v ; junc.vertices){
+				if(v >= vertLen)
+					return "junctions["~ijunc.to!string~"]: Invalid vertex index "~v.to!string;
 			}
-			if(nodes_len < 0xff){
-				foreach(j, node ; tile.path_table.local_to_node){
-					if(node == 0xff)
-						continue;
-					if(node >= nodes_len)
-						return "In tile "~i.to!string~", local_to_node "~j.to!string~": Illegal value"~node.to!string;
-				}
+			foreach(t ; junc.triangles){
+				if(t != uint32_t.max && t >= triLen)
+					return "junctions["~ijunc.to!string~"]: Invalid triangle index "~t.to!string;
 			}
-
-			foreach(j, ntl ; tile.path_table.node_to_local){
-				if(ntl >= triangles.length)
-					return "In tile "~i.to!string~", node_to_local "~j.to!string~": triangle index "~ntl.to!string~" out of bounds";
-			}
-
 		}
 
+		// Triangles
+		foreach(itri, ref tri ; triangles){
+			foreach(v ; tri.vertices){
+				if(v >= vertLen)
+					return "triangles["~itri.to!string~"]: Invalid vertex index "~v.to!string;
+			}
+
+			foreach(i ; 0 .. 3){
+				immutable lj = tri.linked_junctions[i];
+				immutable lt = tri.linked_triangles[i];
+				if(lj >= juncLen)
+					return "triangles["~itri.to!string~"].linked_junctions["~i.to!string~"]: invalid junction index "~lj.to!string;
+				if(lt != uint32_t.max && lt >= triLen)
+					return "triangles["~itri.to!string~"].linked_triangles["~i.to!string~"]: invalid triangle index "~lt.to!string;
+
+				if((junctions[lj].triangles[0] != itri || junctions[lj].triangles[1] != lt)
+					&& (junctions[lj].triangles[1] != itri || junctions[lj].triangles[0] != lt))
+					return "triangles["~itri.to!string~"].linked_xxx["~i.to!string~"]: linked junction does not match linked triangle";
+			}
+
+			if(tri.island != uint16_t.max && tri.island >= islLen)
+				return "triangles["~itri.to!string~"].island: Invalid island index "~tri.island.to!string;
+		}
+
+		// Tiles
+		if(tiles.length != tiles_grid_width * tiles_grid_height)
+			return "Wrong number of tiles (should be tiles_grid_width * tiles_grid_height)";
+
+		if(tiles_width <= 0.0)
+			return "tiles_width: must be > 0";
+
+		foreach(i, ref tile ; tiles){
+			auto err = tile.validate(this, cast(uint32_t)i, strict);
+			if(err !is null)
+				return "tiles["~i.to!string~"]: "~err;
+		}
+
+		bool[] overlapingTri;
+		overlapingTri.length = triangles.length;
+		overlapingTri[] = false;
+		foreach(i, ref tile ; tiles){
+			foreach(t ; tile.header.triangles_offset .. tile.header.triangles_offset + tile.header.triangles_count){
+				if(overlapingTri[t] == true)
+					return "tiles["~i.to!string~"]: triangle "~t.to!string~" is already owned by another tile";
+				overlapingTri[t] = true;
+			}
+		}
+
+		// Islands
+		foreach(isli, ref island ; islands){
+			if(island.header.index != isli)
+				return "islands["~isli.to!string~"].header.index: does not match island index in islands array";
+
+
+			if(island.adjacent_islands.length != island.adjacent_islands_dist.length
+			|| island.adjacent_islands.length != island.exit_triangles.length)
+				return "islands["~isli.to!string~"]: adjacent_islands/adjacent_islands_dist/exit_triangles length mismatch";
+
+			foreach(i ; 0 .. island.adjacent_islands.length){
+				if(island.adjacent_islands[i] >= islLen)// Note: Skywing allows uint16_t.max value
+					return "islands["~isli.to!string~"].adjacent_islands["~i.to!string~"]: Invalid island index";
+				if(island.exit_triangles[i] >= triLen)
+					return "islands["~isli.to!string~"].exit_triangles["~i.to!string~"]: Invalid triangle index";
+
+				foreach(exitIdx, t ; island.exit_triangles){
+					if(triangles[t].island != isli)
+						return "islands["~isli.to!string~"].exit_triangles["~exitIdx.to!string~"]: triangle is outside of the island";
+
+					bool found = false;
+					foreach(lt ; triangles[t].linked_triangles){
+						if(lt != uint32_t.max
+						&& triangles[lt].island == island.adjacent_islands[exitIdx]){
+							found = true;
+							break;
+						}
+					}
+					if(!found)
+						return "islands["~isli.to!string~"].linked_triangles["~exitIdx.to!string~"]: triangle is not linked to island "~island.adjacent_islands[exitIdx].to!string;
+				}
+
+			}
+		}
+
+		// Island path nodes
 		if(islands_path_nodes.length != islands.length ^^ 2)
 			return "Wrong number of islands / islands_path_nodes";
+		foreach(i, ipn ; islands_path_nodes){
+			if(ipn.next != uint16_t.max && ipn.next >= islLen)
+				return "islands_path_nodes["~i.to!string~"]: Invalid next island index "~ipn.next.to!string;
+		}
 
 		return null;
 	}
@@ -1018,7 +1176,137 @@ struct TrnNWN2WalkmeshPayload{
 		uint32_t[] junctions;
 	}
 
-	void bake(){
+	/**
+	Removes triangles from the mesh, and removes unused vertices and junctions accordingly.
+
+	Also updates vertex / junction / triangle indices to match new indices.
+
+	Does not updates path tables. You need to run `bake()` to re-generate path tables.
+
+	Params:
+	removeFunc = Delegate to check is triangle must be removed.
+	*/
+	void removeTriangles(bool delegate(in Triangle) removeFunc){
+		uint32_t[] vertTransTable, juncTransTable, triTransTable;
+		bool[] usedJunctions, usedVertices;
+		vertTransTable.length = vertices.length;
+		juncTransTable.length = junctions.length;
+		triTransTable.length = triangles.length;
+		usedVertices.length = vertices.length;
+		usedJunctions.length = junctions.length;
+		vertTransTable[] = uint32_t.max;
+		juncTransTable[] = uint32_t.max;
+		triTransTable[] = uint32_t.max;
+		usedVertices[] = false;
+		usedJunctions[] = false;
+
+		// Reduce triangle list & flag used junctions
+		uint32_t newIndex = 0;
+		foreach(i, ref triangle ; triangles){
+			if(removeFunc(triangle)){
+
+				// Flag used / unused vertices & junctions
+				foreach(vert ; triangle.vertices){
+					usedVertices[vert] = true;
+				}
+				foreach(junc ; triangle.linked_junctions){
+					if(junc != uint32_t.max)
+						usedJunctions[junc] = true;
+				}
+
+				// Reduce triangle list in place
+				triangles[newIndex] = triangle;
+				triTransTable[i] = newIndex++;
+			}
+			else
+				triTransTable[i] = uint32_t.max;
+		}
+		triangles.length = newIndex;
+
+		// Reduce vertices list
+		newIndex = 0;
+		foreach(i, used ; usedVertices){
+			if(used){
+				vertices[newIndex] = vertices[i];
+				vertTransTable[i] = newIndex++;
+			}
+			else
+				vertTransTable[i] = uint32_t.max;
+		}
+		vertices.length = newIndex;
+
+		// Reduce junctions list
+		newIndex = 0;
+		foreach(i, used ; usedJunctions){
+			if(used){
+				junctions[newIndex] = junctions[i];
+				juncTransTable[i] = newIndex++;
+			}
+			else
+				juncTransTable[i] = uint32_t.max;
+		}
+		junctions.length = newIndex;
+
+		// Adjust indices in junctions data
+		foreach(ref junction ; junctions){
+			foreach(ref vert ; junction.vertices){
+				vert = vertTransTable[vert];
+				assert(vert != uint32_t.max && vert < vertices.length, "Invalid vertex index");
+			}
+			foreach(ref tri ; junction.triangles){
+				if(tri != uint32_t.max){
+					tri = triTransTable[tri];
+					assert(tri == uint32_t.max || tri < triangles.length, "Invalid triangle index");
+				}
+			}
+			// Pack triangle indices (may be overkill)
+			if(junction.triangles[0] == uint32_t.max && junction.triangles[1] != uint32_t.max){
+				junction.triangles[0] = junction.triangles[1];
+				junction.triangles[1] = uint32_t.max;
+			}
+		}
+
+		// Adjust indices in triangles data
+		foreach(ref triangle ; triangles){
+			foreach(ref vert ; triangle.vertices){
+				vert = vertTransTable[vert];
+				assert(vert != uint32_t.max && vert < vertices.length, "Invalid vertex index");
+			}
+			foreach(ref junc ; triangle.linked_junctions){
+				junc = juncTransTable[junc];//All triangles should have 3 junctions
+				assert(junc < junctions.length, "Invalid junction index");
+			}
+
+			foreach(ref tri ; triangle.linked_triangles){
+				if(tri != uint32_t.max){
+					tri = triTransTable[tri];
+				}
+			}
+		}
+	}
+
+	/**
+	Bake the existing walkmesh by re-creating tiles, islands, path tables, ...
+
+	Does not modify the current walkmesh like what you would expect with
+	placeable walkmesh / walkmesh cutters.
+
+	Params:
+	removeBorders = true to remove unwalkable map borders from the walkmesh.
+	*/
+	void bake(bool removeBorders = true){
+		// Remove border triangles
+		if(removeBorders){
+			auto terrainAABB = AABB([
+					tiles_border_size * tiles_width,
+					(tiles_grid_width - tiles_border_size) * tiles_width
+				],[
+					tiles_border_size * tiles_width,
+					(tiles_grid_height - tiles_border_size) * tiles_width
+				]);
+
+			removeTriangles(a => terrainAABB.contains(a.center));
+		}
 
 		// Reset island associations
 		triangles.each!((ref a) => a.island = 0xffff);
@@ -1028,6 +1316,7 @@ struct TrnNWN2WalkmeshPayload{
 
 		// Bake tiles
 		foreach(i ; 0 .. tiles.length){
+			//removeBorders
 			islandsMeta ~= bakeTile(i.to!uint32_t);
 		}
 
@@ -1117,7 +1406,6 @@ struct TrnNWN2WalkmeshPayload{
 			}
 		}
 
-		writeln("islands_path_nodes length = ", islands.length ^^ 2);
 		// Rebuild island path tables
 		islands_path_nodes.length = islands.length ^^ 2;
 		islands_path_nodes[] = IslandPathNode(uint16_t.max, 0, 0.0);
@@ -1191,15 +1479,6 @@ struct TrnNWN2WalkmeshPayload{
 		auto tile = &tiles[tileIndex];
 
 		// Get tile bounding box
-		static struct AABB{
-			float[2] x, y;
-			bool contains(float x, float y){
-				return this.x[0] <= x && x < this.x[1] && this.y[0] <= y && y < this.y[1];
-			}
-			bool contains(float[2] coord){
-				return contains(coord[0], coord[1]);
-			}
-		}
 		uint32_t tileX = tileIndex % tiles_grid_width;
 		uint32_t tileY = tileIndex / tiles_grid_width;
 		auto tileAABB = AABB(
@@ -1220,7 +1499,25 @@ struct TrnNWN2WalkmeshPayload{
 			(tileIndex == 0 ? 0 : (tiles[tileIndex-1].header.triangles_offset + tiles[tileIndex-1].header.triangles_count))
 			: tileTriangles[0];
 		tile.header.triangles_offset = trianglesOffset;
-		tile.header.triangles_count = tileTriangles.length > 0 ? 1 + tileTriangles[$-1] - tileTriangles[0] : 0;
+		tile.header.triangles_count =  tileTriangles.length > 0 ? 1 + tileTriangles[$-1] - tileTriangles[0] : 0;
+
+		tile.header.junctions_count = triangles[trianglesOffset .. trianglesOffset + tile.header.triangles_count]
+			.map!((ref a) => a.linked_junctions[])
+			.join
+			.filter!(a => a != a.max)
+			.array
+			.sort
+			.uniq
+			.array.length.to!uint32_t;
+		tile.header.vertices_count = triangles[trianglesOffset .. trianglesOffset + tile.header.triangles_count]
+			.map!((ref a) => a.vertices[])
+			.join
+			.filter!(a => a != a.max)
+			.array
+			.sort
+			.uniq
+			.array.length.to!uint32_t;
+
 
 		// Find walkable triangles to deduce NTL length & LTN content
 		const walkableTriangles = tileTriangles.filter!(a => triangles[a].flags & Triangle.Flags.walkable).array;
@@ -1376,12 +1673,65 @@ struct TrnNWN2WalkmeshPayload{
 		assert(iSec < 1000, "Islands precalculated paths lead to a loop (from="~fromIslandIndex.to!string~", to="~toIslandIndex.to!string~")");
 		return ret;
 	}
+
+}
+
+private struct AABB{
+	float[2] x, y;
+	bool contains(float x, float y){
+		return this.x[0] <= x && x < this.x[1] && this.y[0] <= y && y < this.y[1];
+	}
+	bool contains(float[2] coord){
+		return contains(coord[0], coord[1]);
+	}
 }
 
 unittest {
 	auto map = cast(ubyte[])import("eauprofonde-portes.trx");
+	//import std.file: read; auto map = cast(ubyte[])read("../LcdaDev/citadelle-village.trx");
+	//import std.file: read; auto map = cast(ubyte[])read("../LcdaDev/ombreterre-taniere_driders.trx");
+	//import std.file: read; auto map = cast(ubyte[])read("../LcdaDev/maison_grande.trx");
 
 	auto trn = new Trn(map);
 	auto serialized = trn.serialize();
 	assert(map.length == serialized.length && map == serialized);
+
+
+	import std.algorithm;
+	import std.array;
+
+	foreach(ref packet ; trn.packets){
+		//if(packet.type == TrnPacketType.NWN2_TRWH){
+		//	auto trwh = &packet.as!(TrnPacketType.NWN2_TRWH)();
+		//	writeln("TRWH megatile width: ", trwh.width, " height: ", trwh.height);
+		//}
+
+		if(packet.type == TrnPacketType.NWN2_ASWM){
+			auto aswm = packet.as!(TrnPacketType.NWN2_ASWM);
+
+			//writeln("tiles: ", aswm.tiles.length);
+			//writeln("islands: ", aswm.islands.length);
+			//writeln("tiles_width: ", aswm.tiles_width);
+			//writeln("tiles_grid_height: ", aswm.tiles_grid_height);
+			//writeln("tiles_grid_width: ", aswm.tiles_grid_width);
+			//writeln("tiles_border_size: ", aswm.tiles_border_size);
+
+
+			//foreach(tid, ref t ; aswm.triangles){
+			//	foreach(i, ltid ; t.linked_triangles){
+			//		auto junc = aswm.junctions[t.linked_junctions[i]];
+			//		assert(junc.triangles[0] == tid && junc.triangles[1] == ltid
+			//			|| junc.triangles[0] == ltid && junc.triangles[1] == tid);
+			//	}
+			//}
+
+			aswm.bake();
+			//aswm.dump().writeln;
+		}
+	}
+
+
+	std.file.write("/home/crom/Documents/Neverwinter Nights 2/modules/trx/eauprofonde-portes.trx", trn.serialize());
+
+
 }
