@@ -734,6 +734,7 @@ struct TrnNWN2WalkmeshPayload{
 			return ret;
 		}
 
+		/// Check a single tile. You should use `TrnNWN2WalkmeshPayload.validate()` instead
 		string validate(in TrnNWN2WalkmeshPayload aswm, uint32_t tileIndex, bool strict = false) const {
 			import std.typecons: Tuple;
 			alias Ret = Tuple!(bool,"valid", string,"error");
@@ -744,9 +745,9 @@ struct TrnNWN2WalkmeshPayload{
 
 
 			if(header.triangles_count != ltnLen)
-				return "local_to_node: length does not match triangles_count";
+				return "local_to_node: length ("~ltnLen.to!string~") does not match triangles_count ("~header.triangles_count.to!string~")";
 			if(offset > aswm.triangles.length)
-				return "header.triangles_offset: offset points to invalid triangles";
+				return "header.triangles_offset: offset ("~offset.to!string~") points to invalid triangles";
 			if(offset + ltnLen > aswm.triangles.length)
 				return "local_to_node: contains data for invalid triangles";
 
@@ -1064,14 +1065,14 @@ struct TrnNWN2WalkmeshPayload{
 				return "tiles["~i.to!string~"]: "~err;
 		}
 
-		bool[] overlapingTri;
+		uint32_t[] overlapingTri;
 		overlapingTri.length = triangles.length;
-		overlapingTri[] = false;
+		overlapingTri[] = uint32_t.max;
 		foreach(i, ref tile ; tiles){
 			foreach(t ; tile.header.triangles_offset .. tile.header.triangles_offset + tile.header.triangles_count){
-				if(overlapingTri[t] == true)
-					return "tiles["~i.to!string~"]: triangle "~t.to!string~" is already owned by another tile";
-				overlapingTri[t] = true;
+				if(overlapingTri[t] != uint32_t.max)
+					return "tiles["~i.to!string~"]: triangle "~t.to!string~" (center="~triangles[t].center.to!string~") is already owned by tile "~overlapingTri[t].to!string;
+				overlapingTri[t] = cast(uint32_t)i;
 			}
 		}
 
@@ -1188,15 +1189,16 @@ struct TrnNWN2WalkmeshPayload{
 	*/
 	void removeTriangles(bool delegate(in Triangle) removeFunc){
 		uint32_t[] vertTransTable, juncTransTable, triTransTable;
-		bool[] usedJunctions, usedVertices;
 		vertTransTable.length = vertices.length;
 		juncTransTable.length = junctions.length;
 		triTransTable.length = triangles.length;
-		usedVertices.length = vertices.length;
-		usedJunctions.length = junctions.length;
 		vertTransTable[] = uint32_t.max;
 		juncTransTable[] = uint32_t.max;
 		triTransTable[] = uint32_t.max;
+
+		bool[] usedJunctions, usedVertices;
+		usedVertices.length = vertices.length;
+		usedJunctions.length = junctions.length;
 		usedVertices[] = false;
 		usedJunctions[] = false;
 
@@ -1286,6 +1288,57 @@ struct TrnNWN2WalkmeshPayload{
 	}
 
 	/**
+	Reorder triangle list so triangles of a same tile are consecutive. ASWM needs to be re-baked after this.
+
+	Args:
+	strict = set to true to raise an exception if there are some triangles outside of the tiles
+	*/
+	private
+	void reorderTriangles(bool strict = false){
+		uint32_t[] triTransTable;
+		triTransTable.length = triangles.length;
+		triTransTable[] = uint32_t.max;
+
+
+		Triangle[] newTriangles;
+		newTriangles.length = triangles.length;
+		uint32_t newTrianglesPtr = 0;
+
+		foreach(y ; 0 .. tiles_grid_height){
+			foreach(x ; 0 .. tiles_grid_width){
+				auto tileAABB = AABB(
+					[x * tiles_width, (x + 1) * tiles_width],
+					[y * tiles_width, (y + 1) * tiles_width]);
+
+				foreach(i, ref tri ; triangles){
+					if(tileAABB.contains(tri.center)){
+						newTriangles[newTrianglesPtr] = tri;
+						triTransTable[i] = newTrianglesPtr;
+						newTrianglesPtr++;
+					}
+				}
+			}
+		}
+
+		if(strict)
+			enforce(newTrianglesPtr == newTriangles.length, "Some triangles have their center outside of terrain tiles");
+		else
+			newTriangles.length = newTrianglesPtr;
+
+		// Update indices (no brackets, yolo)
+		foreach(i, ref j ; junctions)
+			foreach(ref t ; j.triangles)
+				if(t != t.max)
+					t = triTransTable[t];
+		foreach(ref t ; newTriangles)
+			foreach(ref lt ; t.linked_triangles)
+				if(lt != lt.max)
+					lt = triTransTable[lt];
+
+		triangles = newTriangles;
+	}
+
+	/**
 	Bake the existing walkmesh by re-creating tiles, islands, path tables, ...
 
 	Does not modify the current walkmesh like what you would expect with
@@ -1295,6 +1348,9 @@ struct TrnNWN2WalkmeshPayload{
 	removeBorders = true to remove unwalkable map borders from the walkmesh.
 	*/
 	void bake(bool removeBorders = true){
+		// Reset island associations
+		triangles.each!((ref a) => a.island = 0xffff);
+
 		// Remove border triangles
 		if(removeBorders){
 			auto terrainAABB = AABB([
@@ -1308,8 +1364,8 @@ struct TrnNWN2WalkmeshPayload{
 			removeTriangles(a => terrainAABB.contains(a.center));
 		}
 
-		// Reset island associations
-		triangles.each!((ref a) => a.island = 0xffff);
+		// Reorder triangles to have consecutive triangles for each tile
+		reorderTriangles();
 
 		IslandMeta[] islandsMeta;
 		islandsMeta.reserve(tiles.length * 2);
@@ -1471,6 +1527,11 @@ struct TrnNWN2WalkmeshPayload{
 
 		}
 
+		debug{
+			auto err = validate();
+			assert(err is null, err);
+		}
+
 	}
 
 	IslandMeta[] bakeTile(uint32_t tileIndex){
@@ -1492,14 +1553,15 @@ struct TrnNWN2WalkmeshPayload{
 			if(tileAABB.contains(t.center))
 				tileTriangles ~= i.to!uint32_t;
 		}
-		tileTriangles.sort;
+		assert(tileTriangles.length == 0 || tileTriangles.length == tileTriangles[$-1] - tileTriangles[0] + 1,
+			"Tile triangles are not correctly ordered. Use reorderTriangles()");
 
 		// Calc local offset for triangle indices
 		immutable trianglesOffset = tileTriangles.length == 0 ?
 			(tileIndex == 0 ? 0 : (tiles[tileIndex-1].header.triangles_offset + tiles[tileIndex-1].header.triangles_count))
 			: tileTriangles[0];
 		tile.header.triangles_offset = trianglesOffset;
-		tile.header.triangles_count =  tileTriangles.length > 0 ? 1 + tileTriangles[$-1] - tileTriangles[0] : 0;
+		tile.header.triangles_count = tileTriangles.length.to!uint32_t;
 
 		tile.header.junctions_count = triangles[trianglesOffset .. trianglesOffset + tile.header.triangles_count]
 			.map!((ref a) => a.linked_junctions[])
@@ -1631,7 +1693,7 @@ struct TrnNWN2WalkmeshPayload{
 							immutable juncIdx = triangles[currTriIdx].linked_junctions[j];
 							assert(junctions[juncIdx].triangles[0] == currTriIdx && junctions[juncIdx].triangles[1] == linkedTriIdx
 								|| junctions[juncIdx].triangles[1] == currTriIdx && junctions[juncIdx].triangles[0] == linkedTriIdx,
-								"Incoherent junctions");
+								"Incoherent junction "~juncIdx.to!string~": "~junctions[juncIdx].to!string);
 							islandsMeta[$-1].junctions ~= juncIdx;
 						}
 					}
@@ -1688,50 +1750,17 @@ private struct AABB{
 
 unittest {
 	auto map = cast(ubyte[])import("eauprofonde-portes.trx");
-	//import std.file: read; auto map = cast(ubyte[])read("../LcdaDev/citadelle-village.trx");
-	//import std.file: read; auto map = cast(ubyte[])read("../LcdaDev/ombreterre-taniere_driders.trx");
-	//import std.file: read; auto map = cast(ubyte[])read("../LcdaDev/maison_grande.trx");
 
 	auto trn = new Trn(map);
 	auto serialized = trn.serialize();
 	assert(map.length == serialized.length && map == serialized);
 
-
-	import std.algorithm;
-	import std.array;
-
 	foreach(ref packet ; trn.packets){
-		//if(packet.type == TrnPacketType.NWN2_TRWH){
-		//	auto trwh = &packet.as!(TrnPacketType.NWN2_TRWH)();
-		//	writeln("TRWH megatile width: ", trwh.width, " height: ", trwh.height);
-		//}
 
 		if(packet.type == TrnPacketType.NWN2_ASWM){
 			auto aswm = packet.as!(TrnPacketType.NWN2_ASWM);
-
-			//writeln("tiles: ", aswm.tiles.length);
-			//writeln("islands: ", aswm.islands.length);
-			//writeln("tiles_width: ", aswm.tiles_width);
-			//writeln("tiles_grid_height: ", aswm.tiles_grid_height);
-			//writeln("tiles_grid_width: ", aswm.tiles_grid_width);
-			//writeln("tiles_border_size: ", aswm.tiles_border_size);
-
-
-			//foreach(tid, ref t ; aswm.triangles){
-			//	foreach(i, ltid ; t.linked_triangles){
-			//		auto junc = aswm.junctions[t.linked_junctions[i]];
-			//		assert(junc.triangles[0] == tid && junc.triangles[1] == ltid
-			//			|| junc.triangles[0] == ltid && junc.triangles[1] == tid);
-			//	}
-			//}
-
 			aswm.bake();
-			//aswm.dump().writeln;
+			assert(aswm.validate() is null);
 		}
 	}
-
-
-	std.file.write("/home/crom/Documents/Neverwinter Nights 2/modules/trx/eauprofonde-portes.trx", trn.serialize());
-
-
 }
