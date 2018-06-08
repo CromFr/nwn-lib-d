@@ -36,6 +36,7 @@ void usage(in string cmd){
 	writeln("TRN / TRX tool");
 	writeln("Usage: ", cmd, " command [args]");
 	writeln("Commands");
+	writeln("  bake: Bake an area (replacement for builtin nwn2toolset bake tool)");
 	writeln("  aswm-check: Checks if a TRX file contains valid data");
 	writeln("  aswm-strip: optimize TRX files");
 	writeln("  aswm-convert: convert walkmesh into wavefront obj");
@@ -280,6 +281,9 @@ int _main(string[] args){
 			string targetPath = null;
 			bool inPlace = false;
 			bool reuseTrx = false;
+			bool forceWalkable = false;
+			bool keepBorders = false;
+			bool unsafe = false;
 			string trnPath = null;
 			string gitPath = null;
 			uint threads = 0;
@@ -289,8 +293,11 @@ int _main(string[] args){
 				"in-place|i", "Provide this flag to write TRX files next to the TRN files", &inPlace,
 				"trn", "TRN file path. Default to $map_name_without_extension.trn", &trnPath,
 				"reuse-trx|r", "Reuse walkmesh from an already existing TRX file", &reuseTrx,
+				"force-walkable", "Make all triangles walkable. Triangles removed with walkmesh cutters won't be walkable.\nDefault: false", &forceWalkable,
+				"keep-borders", "Do not remove exterior area borders from baked mesh. (can be used with --force-walkable to make borders walkable).\nDefault: false", &keepBorders,
 				// "git", "GIT file path. Default to $map_name_without_extension.git", &gitPath,
 				"j", "Parallel threads for baking multiple maps at the same time", &threads,
+				"unsafe", "Skip TRX validation checks, ie for dumping content & debugging", &unsafe,
 				);
 			if(res.helpWanted || (args.length == 1 && trnPath is null)){
 				improvedGetoptPrinter(
@@ -356,7 +363,19 @@ int _main(string[] args){
 
 				foreach(i, ref packet ; trn.packets){
 					if(packet.type == TrnPacketType.NWN2_ASWM){
-						packet.as!(TrnPacketType.NWN2_ASWM).bake();
+						with(packet.as!(TrnPacketType.NWN2_ASWM)){
+							tiles_flags = 31;
+							if(forceWalkable){
+								foreach(ref t ; triangles)
+									t.flags |= t.Flags.walkable;
+							}
+							bake(!keepBorders);
+
+							if(!unsafe){
+								auto err = validate();
+								enforce(err is null, err);
+							}
+						}
 					}
 				}
 				sw.stop();
