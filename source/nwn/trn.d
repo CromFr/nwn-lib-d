@@ -1249,17 +1249,40 @@ struct TrnNWN2WalkmeshPayload{
 		}
 		junctions.length = newIndex;
 
+		translateIndices(triTransTable, juncTransTable, vertTransTable);
+	}
+
+	/**
+	Translate triangle / junction / vertex indices stored in mesh data.
+
+	Each argument is a table of the length of the existing list where:
+	<ul>
+	<li>The index is the index of the current triangle</li>
+	<li>The value is the index of the translated triangle</li>
+	</ul>
+	If the argument is an empty array, no translation is done. Does NOT update path tables & islands data.
+	*/
+	void translateIndices(uint32_t[] triTransTable, uint32_t[] juncTransTable, uint32_t[] vertTransTable){
+		immutable ttrans = triTransTable.length > 0;
+		immutable jtrans = juncTransTable.length > 0;
+		immutable vtrans = vertTransTable.length > 0;
+
 		// Adjust indices in junctions data
 		foreach(ref junction ; junctions){
-			foreach(ref vert ; junction.vertices){
-				vert = vertTransTable[vert];
-				assert(vert != uint32_t.max && vert < vertices.length, "Invalid vertex index");
-			}
-			foreach(ref tri ; junction.triangles){
-				if(tri != uint32_t.max){
-					tri = triTransTable[tri];
-					assert(tri == uint32_t.max || tri < triangles.length, "Invalid triangle index");
+			if(vtrans){
+				foreach(ref vert ; junction.vertices){
+					vert = vertTransTable[vert];
+					assert(vert != uint32_t.max && vert < vertices.length, "Invalid vertex index");
 				}
+			}
+			if(ttrans){
+				foreach(ref tri ; junction.triangles){
+					if(tri != uint32_t.max){
+						tri = triTransTable[tri];
+						assert(tri == uint32_t.max || tri < triangles.length, "Invalid triangle index");
+					}
+				}
+
 			}
 			// Pack triangle indices (may be overkill)
 			if(junction.triangles[0] == uint32_t.max && junction.triangles[1] != uint32_t.max){
@@ -1270,21 +1293,27 @@ struct TrnNWN2WalkmeshPayload{
 
 		// Adjust indices in triangles data
 		foreach(ref triangle ; triangles){
-			foreach(ref vert ; triangle.vertices){
-				vert = vertTransTable[vert];
-				assert(vert != uint32_t.max && vert < vertices.length, "Invalid vertex index");
+			if(vtrans){
+				foreach(ref vert ; triangle.vertices){
+					vert = vertTransTable[vert];
+					assert(vert != uint32_t.max && vert < vertices.length, "Invalid vertex index");
+				}
 			}
-			foreach(ref junc ; triangle.linked_junctions){
-				junc = juncTransTable[junc];//All triangles should have 3 junctions
-				assert(junc < junctions.length, "Invalid junction index");
+			if(jtrans){
+				foreach(ref junc ; triangle.linked_junctions){
+					junc = juncTransTable[junc];//All triangles should have 3 junctions
+					assert(junc < junctions.length, "Invalid junction index");
+				}
 			}
-
-			foreach(ref tri ; triangle.linked_triangles){
-				if(tri != uint32_t.max){
-					tri = triTransTable[tri];
+			if(ttrans){
+				foreach(ref tri ; triangle.linked_triangles){
+					if(tri != uint32_t.max){
+						tri = triTransTable[tri];
+					}
 				}
 			}
 		}
+
 	}
 
 	/// Reorder triangles and prepare tile triangles associations
@@ -1319,19 +1348,9 @@ struct TrnNWN2WalkmeshPayload{
 			}
 		}
 
-		newTriangles.length = newTrianglesPtr;
+		triangles = newTriangles[0 .. newTrianglesPtr];
 
-		// Update indices (no brackets, yolo)
-		foreach(i, ref j ; junctions)
-			foreach(ref t ; j.triangles)
-				if(t != t.max)
-					t = triTransTable[t];
-		foreach(ref t ; newTriangles)
-			foreach(ref lt ; t.linked_triangles)
-				if(lt != lt.max)
-					lt = triTransTable[lt];
-
-		triangles = newTriangles;
+		translateIndices(triTransTable, [], []);
 	}
 
 	/**

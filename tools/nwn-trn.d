@@ -61,13 +61,13 @@ int _main(string[] args){
 			return 1;
 		case "aswm-strip":{
 			bool inPlace = false;
-			bool postCheck = true;
+			bool silent = false;
 			string targetPath = null;
 
 			auto res = getopt(args,
 				"in-place|i", "Provide this flag to overwrite the provided TRX file", &inPlace,
 				"output|o", "Output file or directory. Mandatory if --in-place is not provided.", &targetPath,
-				"check", "Check all vertex/junction/triangle indices point to valid data. Default to true", &postCheck,
+				"silent|s", "Do not display statistics", &silent,
 				);
 			if(res.helpWanted || args.length == 1){
 				improvedGetoptPrinter(
@@ -80,36 +80,54 @@ int _main(string[] args){
 
 			if(inPlace){
 				enforce(targetPath is null, "You cannot use --in-place with --output");
-				enforce(args.length == 2, "You can only provide one TRX file with --in-place");
-				targetPath = args[1];
+				enforce(args.length >= 2, "No input file");
 			}
 			else{
-				enforce(targetPath !is null, "No output file / directory. See --help");
-				if(targetPath.exists && targetPath.isDir)
-					targetPath = buildPath(targetPath, args[1].baseName);
+				if(targetPath is null)
+					targetPath = ".";
 			}
 
+			foreach(file ; args[1 .. $]){
 
+				auto data = cast(ubyte[])file.read();
+				auto trn = new Trn(data);
+				size_t initLen = data.length;
 
-			immutable data = cast(immutable ubyte[])args[1].read();
-			auto trn = new Trn(data);
-			size_t initLen = data.length;
+				bool found = false;
+				foreach(ref packet ; trn.packets){
+					if(packet.type == TrnPacketType.NWN2_ASWM){
+						found = true;
 
-			bool found = false;
-			foreach(ref packet ; trn.packets){
-				if(packet.type == TrnPacketType.NWN2_ASWM){
-					found = true;
+						auto aswm = &packet.as!(TrnPacketType.NWN2_ASWM)();
 
-					stripASWM(packet.as!(TrnPacketType.NWN2_ASWM), postCheck);
+						stripASWM(*aswm, silent);
+
+						auto err = aswm.validate();
+						enforce(err is null, err);
+					}
 				}
+
+				enforce(found, "No ASWM packet found. Make sure you are targeting a TRX file.");
+
+				auto finalData = trn.serialize();
+				if(!silent)
+					writeln("File size: ", initLen, "B => ", finalData.length, "B (stripped ", 100 - finalData.length * 100.0 / initLen, "%)");
+
+				string outPath;
+				if(inPlace)
+					outPath = file;
+				else{
+					if(targetPath.exists && targetPath.isDir)
+						outPath = buildPath(targetPath, file.baseName);
+					else
+						outPath = targetPath;
+				}
+
+				std.file.write(outPath, finalData);
 			}
 
-			enforce(found, "No ASWM packet found. Make sure you are targeting a TRX file.");
 
-			immutable finalData = cast(immutable ubyte[])trn.serialize();
-			writeln("File size: ", initLen, "B => ", finalData.length, "B (stripped ", 100 - finalData.length * 100.0 / initLen, "%)");
 
-			std.file.write(targetPath, finalData);
 		}
 		break;
 
@@ -393,7 +411,7 @@ int _main(string[] args){
 
 
 
-void stripASWM(ref TrnNWN2WalkmeshPayload aswm, bool postCheck){
+void stripASWM(ref TrnNWN2WalkmeshPayload aswm, bool silent){
 
 
 	auto initVertices = aswm.vertices.length;
@@ -462,52 +480,8 @@ void stripASWM(ref TrnNWN2WalkmeshPayload aswm, bool postCheck){
 	}
 	aswm.junctions.length = newIndex;
 
-
-	// Adjust indices in junctions data
-	foreach(ref junction ; aswm.junctions){
-		foreach(ref vert ; junction.vertices){
-			vert = vertTransTable[vert];
-			assert(vert != uint32_t.max && vert < aswm.vertices.length, "Invalid vertex index");
-		}
-		foreach(ref tri ; junction.triangles){
-			if(tri != uint32_t.max){
-				tri = triTransTable[tri];
-				assert(tri == uint32_t.max || tri < aswm.triangles.length, "Invalid triangle index");
-			}
-		}
-		// Pack triangle indices
-		if(junction.triangles[0] == uint32_t.max && junction.triangles[1] != uint32_t.max){
-			junction.triangles[0] = junction.triangles[1];
-			junction.triangles[1] = uint32_t.max;
-		}
-	}
-
-	// Adjust indices in triangles data
-	foreach(ref triangle ; aswm.triangles){
-		foreach(ref vert ; triangle.vertices){
-			vert = vertTransTable[vert];
-			assert(vert != uint32_t.max && vert < aswm.vertices.length, "Invalid vertex index");
-		}
-		foreach(ref junc ; triangle.linked_junctions){
-			junc = juncTransTable[junc];
-			assert(junc < aswm.junctions.length, "Invalid junction index");
-		}
-
-		foreach(ref tri ; triangle.linked_triangles){
-			if(tri != uint32_t.max){
-				tri = triTransTable[tri];
-			}
-		}
-		//Pack triangles indices TODO quick & dirty
-		foreach(i, tri ; triangle.linked_triangles){
-			if(tri == uint32_t.max && i + 1 < triangle.linked_triangles.length){
-				triangle.linked_triangles[i] = triangle.linked_triangles[i + 1];
-				triangle.linked_triangles[i + 1] = uint32_t.max;
-			}
-
-			assert(tri == uint32_t.max || tri < aswm.triangles.length, "Invalid triangle index");
-		}
-	}
+	// Adjust indices in mesh data
+	aswm.translateIndices(triTransTable, juncTransTable, vertTransTable);
 
 
 	// Adjust indices inside tiles pathtable
@@ -580,27 +554,10 @@ void stripASWM(ref TrnNWN2WalkmeshPayload aswm, bool postCheck){
 		}
 	}
 
-	writeln("Vertices: ", initVertices, " => ", aswm.vertices.length, " (stripped ", 100 - aswm.vertices.length * 100.0 / initVertices, "%)");
-	writeln("Junctions: ", initJunctions, " => ", aswm.junctions.length, " (stripped ", 100 - aswm.junctions.length * 100.0 / initJunctions, "%)");
-	writeln("Triangles: ", initTriangles, " => ", aswm.triangles.length, " (stripped ", 100 - aswm.triangles.length * 100.0 / initTriangles, "%)");
-
-	if(postCheck){
-		immutable vertLen = aswm.vertices.length;
-		immutable juncLen = aswm.junctions.length;
-		immutable triLen = aswm.triangles.length;
-
-		foreach(i, ref junc ; aswm.junctions){
-			foreach(vert ; junc.vertices) assert(vert < vertLen, "Wrong vertex index "~vert.to!string~" in junction "~i.to!string);
-			foreach(tri ; junc.triangles) assert(tri < triLen || tri == uint32_t.max, "Wrong triangle index "~tri.to!string~" in junction "~i.to!string);
-
-			assert(junc.vertices[0] != uint32_t.max && junc.vertices[1] != uint32_t.max, "Junction "~i.to!string~" has bad nb of vertices");
-			assert(junc.triangles[0] != uint32_t.max || junc.triangles[1] != uint32_t.max, "Junction "~i.to!string~" has no triangles");
-		}
-		foreach(i, ref tri ; aswm.triangles){
-			foreach(vert ; tri.vertices) assert(vert < vertLen, "Wrong vertex index "~vert.to!string~" in triangle "~i.to!string);
-			foreach(junc ; tri.linked_junctions) assert(junc < juncLen || junc == uint32_t.max, "Wrong vertex index "~junc.to!string~" in triangle "~i.to!string);
-			foreach(ltri ; tri.linked_triangles) assert(ltri < triLen || ltri == uint32_t.max, "Wrong triangle index "~ltri.to!string~" in triangle "~i.to!string);
-		}
+	if(!silent){
+		writeln("Vertices: ", initVertices, " => ", aswm.vertices.length, " (stripped ", 100 - aswm.vertices.length * 100.0 / initVertices, "%)");
+		writeln("Junctions: ", initJunctions, " => ", aswm.junctions.length, " (stripped ", 100 - aswm.junctions.length * 100.0 / initJunctions, "%)");
+		writeln("Triangles: ", initTriangles, " => ", aswm.triangles.length, " (stripped ", 100 - aswm.triangles.length * 100.0 / initTriangles, "%)");
 	}
 }
 
