@@ -1287,14 +1287,9 @@ struct TrnNWN2WalkmeshPayload{
 		}
 	}
 
-	/**
-	Reorder triangle list so triangles of a same tile are consecutive. ASWM needs to be re-baked after this.
-
-	Args:
-	strict = set to true to raise an exception if there are some triangles outside of the tiles
-	*/
+	/// Reorder triangles and prepare tile triangles associations
 	private
-	void reorderTriangles(bool strict = false){
+	void splitTiles(){
 		uint32_t[] triTransTable;
 		triTransTable.length = triangles.length;
 		triTransTable[] = uint32_t.max;
@@ -1310,6 +1305,9 @@ struct TrnNWN2WalkmeshPayload{
 					[x * tiles_width, (x + 1) * tiles_width],
 					[y * tiles_width, (y + 1) * tiles_width]);
 
+				auto tile = &tiles[y * tiles_grid_width + x];
+				tile.header.triangles_offset = newTrianglesPtr;
+
 				foreach(i, ref tri ; triangles){
 					if(tileAABB.contains(tri.center)){
 						newTriangles[newTrianglesPtr] = tri;
@@ -1317,13 +1315,11 @@ struct TrnNWN2WalkmeshPayload{
 						newTrianglesPtr++;
 					}
 				}
+				tile.header.triangles_count = newTrianglesPtr - tile.header.triangles_offset;
 			}
 		}
 
-		if(strict)
-			enforce(newTrianglesPtr == newTriangles.length, "Some triangles have their center outside of terrain tiles");
-		else
-			newTriangles.length = newTrianglesPtr;
+		newTriangles.length = newTrianglesPtr;
 
 		// Update indices (no brackets, yolo)
 		foreach(i, ref j ; junctions)
@@ -1365,7 +1361,7 @@ struct TrnNWN2WalkmeshPayload{
 		}
 
 		// Reorder triangles to have consecutive triangles for each tile
-		reorderTriangles();
+		splitTiles();
 
 		IslandMeta[] islandsMeta;
 		islandsMeta.reserve(tiles.length * 2);
@@ -1538,31 +1534,22 @@ struct TrnNWN2WalkmeshPayload{
 		//writeln("bakeTile: ", tileIndex);
 
 		auto tile = &tiles[tileIndex];
-
-		// Get tile bounding box
 		uint32_t tileX = tileIndex % tiles_grid_width;
 		uint32_t tileY = tileIndex / tiles_grid_width;
+
+		// Get tile bounding box
 		auto tileAABB = AABB(
 			[tileX * tiles_width, (tileX + 1) * tiles_width],
 			[tileY * tiles_width, (tileY + 1) * tiles_width]);
 
-
-		// Find all triangles in AABB
+		// Build tile triangle list
+		immutable trianglesOffset = tile.header.triangles_offset;
 		uint32_t[] tileTriangles;
-		foreach(i, ref t ; triangles){
-			if(tileAABB.contains(t.center))
-				tileTriangles ~= i.to!uint32_t;
-		}
-		assert(tileTriangles.length == 0 || tileTriangles.length == tileTriangles[$-1] - tileTriangles[0] + 1,
-			"Tile triangles are not correctly ordered. Use reorderTriangles()");
+		tileTriangles.length = tile.header.triangles_count;
+		foreach(i, ref t ; tileTriangles)
+			t = (i + trianglesOffset).to!uint32_t;
 
-		// Calc local offset for triangle indices
-		immutable trianglesOffset = tileTriangles.length == 0 ?
-			(tileIndex == 0 ? 0 : (tiles[tileIndex-1].header.triangles_offset + tiles[tileIndex-1].header.triangles_count))
-			: tileTriangles[0];
-		tile.header.triangles_offset = trianglesOffset;
-		tile.header.triangles_count = tileTriangles.length.to!uint32_t;
-
+		// Recalculate junc & vert count
 		tile.header.junctions_count = triangles[trianglesOffset .. trianglesOffset + tile.header.triangles_count]
 			.map!((ref a) => a.linked_junctions[])
 			.join
