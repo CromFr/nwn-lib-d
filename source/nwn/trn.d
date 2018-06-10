@@ -735,6 +735,9 @@ struct TrnNWN2WalkmeshPayload{
 			return path_table.nodes[nodeFrom * path_table.node_to_local.length + nodeTo];
 		}
 
+		/**
+		Calculate the fastest route between two triangles of a tile. The tile need to be baked, as it uses existing path tables.
+		*/
 		uint32_t[] findPath(in uint32_t fromGTriIndex, in uint32_t toGTriIndex) const {
 			assert(header.triangles_offset <= fromGTriIndex && fromGTriIndex < path_table.local_to_node.length + header.triangles_offset,
 				"From triangle index "~fromGTriIndex.to!string~" is not in tile path table");
@@ -976,6 +979,9 @@ struct TrnNWN2WalkmeshPayload{
 	}
 
 
+	/**
+	Serialize TRN packet data
+	*/
 	ubyte[] serialize(){
 		auto uncompData = serializeUncompressed();
 
@@ -991,6 +997,9 @@ struct TrnNWN2WalkmeshPayload{
 		return cw.data;
 	}
 
+	/**
+	Serialize the aswm data without compressing it. Useful for debugging raw data.
+	*/
 	ubyte[] serializeUncompressed(){
 		//update header values
 		header.vertices_count  = vertices.length.to!uint32_t;
@@ -1146,6 +1155,9 @@ struct TrnNWN2WalkmeshPayload{
 		return null;
 	}
 
+	/**
+	Dump trn data as text
+	*/
 	string dump() const {
 		import std.algorithm;
 		import std.array: array;
@@ -1573,7 +1585,7 @@ struct TrnNWN2WalkmeshPayload{
 
 	}
 
-	IslandMeta[] bakeTile(uint32_t tileIndex){
+	private IslandMeta[] bakeTile(uint32_t tileIndex){
 		//writeln("bakeTile: ", tileIndex);
 
 		auto tile = &tiles[tileIndex];
@@ -1750,6 +1762,9 @@ struct TrnNWN2WalkmeshPayload{
 		return islandsMeta;
 	}
 
+	/**
+	Calculate the fastest route between two islands. The area need to be baked, as it uses existing path tables.
+	*/
 	uint16_t[] findIslandsPath(in uint16_t fromIslandIndex, in uint16_t toIslandIndex) const {
 		uint16_t from = fromIslandIndex;
 		int iSec = 0;
@@ -1766,7 +1781,173 @@ struct TrnNWN2WalkmeshPayload{
 		return ret;
 	}
 
+	/**
+	Set 3d mesh geometry
+	*/
+	void setGenericMesh(in GenericASWMMesh mesh){
+		// Copy vertices
+		vertices.length = mesh.vertices.length;
+		foreach(i, ref v ; vertices)
+			v.position = mesh.vertices[i].position;
+
+		// Copy triangles
+		triangles.length = mesh.triangles.length;
+		foreach(i, ref t ; triangles){
+			t.vertices = mesh.triangles[i].vertices.dup[0 .. 3];
+
+			t.linked_junctions[] = uint32_t.max;
+			t.linked_triangles[] = uint32_t.max;
+
+			t.center = vertices[t.vertices[0]].position[0 .. 2];
+			t.center[] += vertices[t.vertices[1]].position[0 .. 2];
+			t.center[] += vertices[t.vertices[2]].position[0 .. 2];
+			t.center[] /= 3.0;
+
+			t.normal = vertices[t.vertices[0]].x * vertices[t.vertices[1]].x
+				+ vertices[t.vertices[0]].y * vertices[t.vertices[1]].y
+				+ vertices[t.vertices[0]].z * vertices[t.vertices[1]].z;
+
+			t.dot_product = vertices[t.vertices[0]].x * vertices[t.vertices[1]].x * vertices[t.vertices[2]].x
+				+ vertices[t.vertices[0]].y * vertices[t.vertices[1]].y * vertices[t.vertices[2]].y
+				+ vertices[t.vertices[0]].z * vertices[t.vertices[1]].z * vertices[t.vertices[2]].z;
+
+			t.island = uint16_t.max;
+
+			t.flags = mesh.triangles[i].flags;
+		}
+
+		// Rebuild junction list
+		buildJunctions();
+	}
+
+	/**
+	Converts terrain mesh data to a more generic format.
+	*/
+	GenericASWMMesh toGenericMesh() const {
+		GenericASWMMesh ret;
+		ret.vertices.length = vertices.length;
+		ret.triangles.length = triangles.length;
+
+		foreach(i, ref v ; vertices){
+			ret.vertices[i] = ret.Vertex(v.position);
+		}
+		foreach(i, ref t ; triangles){
+			ret.triangles[i] = ret.Triangle(t.vertices, t.flags);
+		}
+		return ret;
+	}
+
+	/**
+	Rebuilds junction data by going through every triangle / vertices
+
+	Warning: NWN2 official baking tool often produces duplicated triangles and
+	junctions around placeable walkmeshes.
+	*/
+	void buildJunctions(){
+		uint32_t[uint32_t[2]] junctionMap;
+		uint32_t findJunction(uint32_t[2] vertices){
+			if(auto j = vertices in junctionMap)
+				return *j;
+			return uint32_t.max;
+		}
+
+		junctions.length = 0;
+
+		foreach(i, ref t ; triangles){
+			// Create junctions as needed
+			foreach(j ; 0 .. 3){
+				auto vrt = [t.vertices[j], t.vertices[(j+1) % 3]].sort.array;
+				auto juncIdx = findJunction(vrt[0 .. 2]);
+
+				if(juncIdx == uint32_t.max){
+					// Add new junction
+					junctionMap[vrt[0 .. 2]] = junctions.length.to!uint32_t;
+					junctions ~= Junction(vrt[0 .. 2], [i.to!uint32_t, uint32_t.max]);
+				}
+				else{
+					// Add triangle to existing junction
+					enforce(junctions[juncIdx].triangles[1] == uint32_t.max,
+						"Junction "~juncIdx.to!string~" = "~junctions[juncIdx].to!string~" cannot be linked to more than 2 triangles (cannot add triangle "~i.to!string~")");
+					junctions[juncIdx].triangles[1] = i.to!uint32_t;
+				}
+			}
+		}
+
+		// update triangles[].linked_junction & triangles[].linked_triangles
+		foreach(juncIdx, ref junc ; junctions){
+			assert(junc.triangles[0] != uint32_t.max);
+
+			foreach(j, tIdx ; junc.triangles){
+				if(tIdx == uint32_t.max)
+					continue;
+
+				size_t slot;
+				for(slot = 0 ; slot < 3 ; slot++)
+					if(triangles[tIdx].linked_junctions[slot] == uint32_t.max)
+						break;
+				assert(slot < 3, "Triangle "~tIdx.to!string~" is already linked to 3 triangles");
+
+				triangles[tIdx].linked_junctions[slot] = juncIdx.to!uint32_t;
+				triangles[tIdx].linked_triangles[slot] = junc.triangles[(j + 1) % 2];
+			}
+		}
+
+	}
+
 }
+
+unittest {
+	auto epportesTrx = cast(ubyte[])import("eauprofonde-portes.trx");
+	auto epportesTrn = cast(ubyte[])import("eauprofonde-portes.trn");
+
+	auto trn = new Trn(epportesTrx);
+	auto serialized = trn.serialize();
+	assert(epportesTrx.length == serialized.length && epportesTrx == serialized);
+
+	foreach(ref TrnNWN2WalkmeshPayload aswm ; trn){
+		assert(aswm.validate() is null, aswm.validate());
+
+		aswm.bake();
+		assert(aswm.validate() is null, aswm.validate());
+
+		aswm.removeTriangles((in t) => (t.flags & t.Flags.walkable) == 0);
+		aswm.bake();
+		assert(aswm.validate() is null, aswm.validate());
+	}
+
+
+	trn = new Trn(epportesTrn);
+	foreach(ref TrnNWN2WalkmeshPayload aswm ; trn){
+		assert(aswm.validate() is null, aswm.validate());
+
+		GenericASWMMesh rawMesh;
+		immutable vertLen = aswm.vertices.length.to!uint32_t;
+
+		// Rebuild mesh with different indices
+		foreach_reverse(ref v ; aswm.vertices){
+			rawMesh.vertices ~= rawMesh.Vertex(v.position.dup[0..3]);
+		}
+		foreach_reverse(ref t ; aswm.triangles){
+			auto newVertIdx = t.vertices.dup;
+			foreach(ref v ; newVertIdx)
+				v = (vertLen - 1) - v;
+
+			rawMesh.triangles ~= rawMesh.Triangle(newVertIdx[0..3], t.flags);
+		}
+		rawMesh.validate();
+
+		aswm.setGenericMesh(rawMesh);
+
+		aswm.bake();
+		assert(aswm.validate() is null, aswm.validate());
+	}
+}
+
+
+
+
+
+
 
 private struct AABB{
 	float[2] x, y;
@@ -1778,19 +1959,50 @@ private struct AABB{
 	}
 }
 
-unittest {
-	auto map = cast(ubyte[])import("eauprofonde-portes.trx");
 
-	auto trn = new Trn(map);
-	auto serialized = trn.serialize();
-	assert(map.length == serialized.length && map == serialized);
 
-	foreach(ref packet ; trn.packets){
 
-		if(packet.type == TrnPacketType.NWN2_ASWM){
-			auto aswm = packet.as!(TrnPacketType.NWN2_ASWM);
-			aswm.bake();
-			assert(aswm.validate() is null);
+
+
+
+
+struct GenericASWMMesh {
+	static union Vertex {
+
+		float[3] position;
+
+		private struct Xyz{ float x, y, z; }
+		Xyz _xyz;
+		alias _xyz this;
+	}
+	Vertex[] vertices;
+
+	static struct Triangle{
+		uint32_t[3] vertices; /// Vertex indices composing the triangle
+		uint16_t flags; /// See `Flags`
+		enum Flags {
+			walkable  = 0x01, /// if the triangle can be walked on. Note the triangle needs path tables to be really walkable
+			clockwise = 0x04, /// vertices are wound clockwise and not ccw
+			dirt      = 0x08, /// Floor type (for sound effects)
+			grass     = 0x10, /// ditto
+			stone     = 0x20, /// ditto
+			wood      = 0x40, /// ditto
+			carpet    = 0x80, /// ditto
+			metal     = 0x100, /// ditto
+			swamp     = 0x200, /// ditto
+			mud       = 0x400, /// ditto
+			leaves    = 0x800, /// ditto
+			water     = 0x1000, /// ditto
+			puddles   = 0x2000, /// ditto
 		}
+	}
+	Triangle[] triangles;
+
+	/// Throw an exception if mesh contains invalid indices
+	void validate(){
+		foreach(i, ref t ; triangles)
+			foreach(vi ; t.vertices)
+				enforce(vi < vertices.length,
+					"Triangle "~i.to!string~" contains invalid vertex index ("~vi.to!string~")");
 	}
 }
