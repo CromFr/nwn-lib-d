@@ -37,10 +37,18 @@ enum TrnPacketType{
 	NWN2_ASWM,/// Zipped walkmesh data
 }
 template TrnPacketTypeToPayload(TrnPacketType type){
-	static if(type==TrnPacketType.NWN2_TRWH) alias TrnPacketTypeToPayload = TrnNWN2TerrainDimPayload;
-	static if(type==TrnPacketType.NWN2_TRRN) alias TrnPacketTypeToPayload = TrnNWN2MegatilePayload;
-	static if(type==TrnPacketType.NWN2_WATR) alias TrnPacketTypeToPayload = TrnNWN2WaterPayload;
-	static if(type==TrnPacketType.NWN2_ASWM) alias TrnPacketTypeToPayload = TrnNWN2WalkmeshPayload;
+	static if(type == TrnPacketType.NWN2_TRWH)      alias TrnPacketTypeToPayload = TrnNWN2TerrainDimPayload;
+	else static if(type == TrnPacketType.NWN2_TRRN) alias TrnPacketTypeToPayload = TrnNWN2MegatilePayload;
+	else static if(type == TrnPacketType.NWN2_WATR) alias TrnPacketTypeToPayload = TrnNWN2WaterPayload;
+	else static if(type == TrnPacketType.NWN2_ASWM) alias TrnPacketTypeToPayload = TrnNWN2WalkmeshPayload;
+	else static assert(0, "Type not supported");
+}
+template TrnPacketPayloadToType(T){
+	static if(is(T == TrnNWN2TerrainDimPayload))    alias TrnPacketPayloadToType = TrnPacketType.NWN2_TRWH;
+	else static if(is(T == TrnNWN2MegatilePayload)) alias TrnPacketPayloadToType = TrnPacketType.NWN2_TRRN;
+	else static if(is(T == TrnNWN2WaterPayload))    alias TrnPacketPayloadToType = TrnPacketType.NWN2_WATR;
+	else static if(is(T == TrnNWN2WalkmeshPayload)) alias TrnPacketPayloadToType = TrnPacketType.NWN2_ASWM;
+	else static assert(0, "Type not supported");
 }
 TrnPacketType toTrnPacketType(char[4] str, string nwnVersion){
 	return (nwnVersion~"_"~str.charArrayToString).to!TrnPacketType;
@@ -60,10 +68,13 @@ struct TrnPacket{
 	private TrnPacketType m_type;
 
 	///
+	ref T as(T)() if(is(typeof(TrnPacketPayloadToType!T) == TrnPacketType)) {
+		assert(type == TrnPacketPayloadToType!T, "Type mismatch");
+		return *cast(T*)structData.ptr;
+	}
+
 	ref TrnPacketTypeToPayload!T as(TrnPacketType T)(){
-		if(type != T)
-			throw new TrnTypeException("Type mismatch");
-		return *cast(TrnPacketTypeToPayload!T*)structData.ptr;
+		return as!(TrnPacketTypeToPayload!T);
 	}
 
 	ubyte[] serialize(){
@@ -184,6 +195,19 @@ class Trn{
 
 
 	TrnPacket[] packets;
+
+	/// foreach(i, ref TrnNWN2WalkmeshPayload aswm ; trn){}
+	int opApply(T)(scope int delegate(ref T packet) dlg)
+	if(is(typeof(TrnPacketPayloadToType!T) == TrnPacketType)) {
+		int res = 0;
+		foreach(ref packet ; packets){
+			if(packet.type == TrnPacketPayloadToType!T){
+				if((res = dlg(packet.as!T)) != 0)
+					return res;
+			}
+		}
+		return res;
+	}
 
 private:
 	static align(1) struct Header{
