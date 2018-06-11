@@ -1785,7 +1785,7 @@ struct TrnNWN2WalkmeshPayload{
 		// Copy vertices
 		vertices.length = mesh.vertices.length;
 		foreach(i, ref v ; vertices)
-			v.position = mesh.vertices[i].position;
+			v.position = mesh.vertices[i].pos;
 
 		// Copy triangles
 		triangles.length = mesh.triangles.length;
@@ -1826,7 +1826,7 @@ struct TrnNWN2WalkmeshPayload{
 		ret.triangles.length = triangles.length;
 
 		foreach(i, ref v ; vertices){
-			ret.vertices[i] = ret.Vertex(v.position);
+			ret.vertices[i] = Vec3(v.position);
 		}
 		foreach(i, ref t ; triangles){
 			ret.triangles[i] = ret.Triangle(t.vertices, t.flags);
@@ -1895,7 +1895,6 @@ struct TrnNWN2WalkmeshPayload{
 
 unittest {
 	auto epportesTrx = cast(ubyte[])import("eauprofonde-portes.trx");
-	auto epportesTrn = cast(ubyte[])import("eauprofonde-portes.trn");
 
 	auto trn = new Trn(epportesTrx);
 	auto serialized = trn.serialize();
@@ -1913,30 +1912,48 @@ unittest {
 	}
 
 
-	trn = new Trn(epportesTrn);
+	trn = new Trn(cast(ubyte[])import("IslandsTest.trn"));
 	foreach(ref TrnNWN2WalkmeshPayload aswm ; trn){
 		assert(aswm.validate() is null, aswm.validate());
 
+
+		// Shuffle all triangles & vertices
+		uint32_t[] vertTransTable, triTransTable;
+		vertTransTable.length = aswm.vertices.length;
+		triTransTable.length = aswm.triangles.length;
+		foreach(uint32_t i, ref val ; vertTransTable) val = i;
+		foreach(uint32_t i, ref val ; triTransTable) val = i;
+
+		import std.random: randomShuffle;
+		vertTransTable.randomShuffle();
+		triTransTable.randomShuffle();
+
+
 		GenericASWMMesh rawMesh;
-		immutable vertLen = aswm.vertices.length.to!uint32_t;
+		rawMesh.vertices.length = aswm.vertices.length;
+		rawMesh.triangles.length = aswm.triangles.length;
 
-		// Rebuild mesh with different indices
-		foreach_reverse(ref v ; aswm.vertices){
-			rawMesh.vertices ~= rawMesh.Vertex(v.position.dup[0..3]);
+		foreach(oldVIdx, newVIdx ; vertTransTable)
+			rawMesh.vertices[newVIdx] = Vec3(aswm.vertices[oldVIdx].position);
+
+		foreach(oldTIdx, newTIdx ; triTransTable){
+			auto oldTri = &aswm.triangles[oldTIdx];
+			rawMesh.triangles[newTIdx] = rawMesh.Triangle(oldTri.vertices, oldTri.flags);
+
+			foreach(ref v ; rawMesh.triangles[newTIdx].vertices)
+				v = vertTransTable[v];
 		}
-		foreach_reverse(ref t ; aswm.triangles){
-			auto newVertIdx = t.vertices.dup;
-			foreach(ref v ; newVertIdx)
-				v = (vertLen - 1) - v;
 
-			rawMesh.triangles ~= rawMesh.Triangle(newVertIdx[0..3], t.flags);
-		}
-		rawMesh.validate();
-
+		// Set shuffled mesh
 		aswm.setGenericMesh(rawMesh);
-
 		aswm.bake();
+
 		assert(aswm.validate() is null, aswm.validate());
+
+		// Values taken from trx file baked with the toolset
+		assert(aswm.triangles.length == 1152);
+		assert(aswm.junctions.length == 1776);
+		assert(aswm.islands.length == 25);
 	}
 }
 
@@ -1948,15 +1965,7 @@ unittest {
 
 
 struct GenericASWMMesh {
-	static union Vertex {
-
-		float[3] position;
-
-		private struct Xyz{ float x, y, z; }
-		Xyz _xyz;
-		alias _xyz this;
-	}
-	Vertex[] vertices;
+	Vec3[] vertices;
 
 	static struct Triangle{
 		uint32_t[3] vertices; /// Vertex indices composing the triangle
