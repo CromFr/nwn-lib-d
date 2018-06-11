@@ -9,6 +9,7 @@ import std.exception: enforce;
 import std.algorithm;
 import std.array: array;
 import nwnlibd.parseutils;
+import nwnlibd.geometry;
 
 import std.stdio: stdout, write, writeln, writefln;
 version(unittest) import std.exception: assertThrown, assertNotThrown;
@@ -805,9 +806,9 @@ struct TrnNWN2WalkmeshPayload{
 			if(strict){
 				uint32_t tileX = tileIndex % aswm.tiles_grid_width;
 				uint32_t tileY = tileIndex / aswm.tiles_grid_width;
-				auto tileAABB = AABB(
-					[tileX * aswm.tiles_width, (tileX + 1) * aswm.tiles_width],
-					[tileY * aswm.tiles_width, (tileY + 1) * aswm.tiles_width]);
+				auto tileAABB = AABB2(
+					Vec2(tileX * aswm.tiles_width,       tileY * aswm.tiles_width),
+					Vec2((tileX + 1) * aswm.tiles_width, (tileY + 1) * aswm.tiles_width));
 
 				foreach(i ; offset .. offset + header.triangles_count){
 					if(!tileAABB.contains(aswm.triangles[i].center))
@@ -1366,9 +1367,9 @@ struct TrnNWN2WalkmeshPayload{
 
 		foreach(y ; 0 .. tiles_grid_height){
 			foreach(x ; 0 .. tiles_grid_width){
-				auto tileAABB = AABB(
-					[x * tiles_width, (x + 1) * tiles_width],
-					[y * tiles_width, (y + 1) * tiles_width]);
+				auto tileAABB = AABB2(
+					Vec2(x * tiles_width,       y * tiles_width),
+					Vec2((x + 1) * tiles_width, (y + 1) * tiles_width));
 
 				auto tile = &tiles[y * tiles_grid_width + x];
 				tile.header.triangles_offset = newTrianglesPtr;
@@ -1404,13 +1405,9 @@ struct TrnNWN2WalkmeshPayload{
 
 		// Remove border triangles
 		if(removeBorders){
-			auto terrainAABB = AABB([
-					tiles_border_size * tiles_width,
-					(tiles_grid_width - tiles_border_size) * tiles_width
-				],[
-					tiles_border_size * tiles_width,
-					(tiles_grid_height - tiles_border_size) * tiles_width
-				]);
+			auto terrainAABB = AABB2(
+				Vec2(tiles_border_size * tiles_width, tiles_border_size * tiles_width),
+				Vec2((tiles_grid_width - tiles_border_size) * tiles_width, (tiles_grid_height - tiles_border_size) * tiles_width));
 
 			removeTriangles(a => terrainAABB.contains(a.center));
 		}
@@ -1593,9 +1590,9 @@ struct TrnNWN2WalkmeshPayload{
 		uint32_t tileY = tileIndex / tiles_grid_width;
 
 		// Get tile bounding box
-		auto tileAABB = AABB(
-			[tileX * tiles_width, (tileX + 1) * tiles_width],
-			[tileY * tiles_width, (tileY + 1) * tiles_width]);
+		auto tileAABB = AABB2(
+			Vec2(tileX * tiles_width, tileY * tiles_width),
+			Vec2((tileX + 1) * tiles_width, (tileY + 1) * tiles_width));
 
 		// Build tile triangle list
 		immutable trianglesOffset = tile.header.triangles_offset;
@@ -1940,22 +1937,6 @@ unittest {
 
 		aswm.bake();
 		assert(aswm.validate() is null, aswm.validate());
-	}
-}
-
-
-
-
-
-
-
-private struct AABB{
-	float[2] x, y;
-	bool contains(float x, float y){
-		return this.x[0] <= x && x < this.x[1] && this.y[0] <= y && y < this.y[1];
-	}
-	bool contains(float[2] coord){
-		return contains(coord[0], coord[1]);
 	}
 }
 
