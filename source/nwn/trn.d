@@ -9,6 +9,7 @@ import std.exception: enforce;
 import std.algorithm;
 import std.array: array;
 import nwnlibd.parseutils;
+import nwnlibd.geometry;
 import gfm.math.vector;
 import gfm.math.box;
 
@@ -1812,6 +1813,10 @@ struct TrnNWN2WalkmeshPayload{
 			t.island = uint16_t.max;
 
 			t.flags = mesh.triangles[i].flags;
+			if(isTriangleClockwise(t.vertices[].map!(a => vec2f(vertices[a].position[0 .. 2])).array[0 .. 3]))
+				t.flags |= t.Flags.clockwise;
+			else
+				t.flags &= t.flags.max ^ t.Flags.clockwise;
 		}
 
 		// Rebuild junction list
@@ -1940,7 +1945,7 @@ unittest {
 			auto oldTri = &aswm.triangles[oldTIdx];
 			rawMesh.triangles[newTIdx] = rawMesh.Triangle(oldTri.vertices, oldTri.flags);
 
-			foreach(ref v ; rawMesh.triangles[newTIdx].vertices)
+			foreach(ref v ; rawMesh.triangles[newTIdx].vertices.dup.randomShuffle)
 				v = vertTransTable[v];
 		}
 

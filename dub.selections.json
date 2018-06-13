@@ -1,4 +1,7 @@
 {
 	"fileVersion": 1,
-	"versions": {}
+	"versions": {
+		"gfm": "7.0.0",
+		"gl3n": "1.3.1"
+	}
 }
