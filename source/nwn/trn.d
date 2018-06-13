@@ -9,7 +9,8 @@ import std.exception: enforce;
 import std.algorithm;
 import std.array: array;
 import nwnlibd.parseutils;
-import nwnlibd.geometry;
+import gfm.math.vector;
+import gfm.math.box;
 
 import std.stdio: stdout, write, writeln, writefln;
 version(unittest) import std.exception: assertThrown, assertNotThrown;
@@ -806,12 +807,12 @@ struct TrnNWN2WalkmeshPayload{
 			if(strict){
 				uint32_t tileX = tileIndex % aswm.tiles_grid_width;
 				uint32_t tileY = tileIndex / aswm.tiles_grid_width;
-				auto tileAABB = AABB2(
-					Vec2(tileX * aswm.tiles_width,       tileY * aswm.tiles_width),
-					Vec2((tileX + 1) * aswm.tiles_width, (tileY + 1) * aswm.tiles_width));
+				auto tileAABB = box2f(
+					vec2f(tileX * aswm.tiles_width,       tileY * aswm.tiles_width),
+					vec2f((tileX + 1) * aswm.tiles_width, (tileY + 1) * aswm.tiles_width));
 
 				foreach(i ; offset .. offset + header.triangles_count){
-					if(!tileAABB.contains(aswm.triangles[i].center))
+					if(!tileAABB.contains(vec2f(aswm.triangles[i].center)))
 						return "Triangle "~i.to!string~" is outside of the tile AABB";
 				}
 			}
@@ -1367,15 +1368,15 @@ struct TrnNWN2WalkmeshPayload{
 
 		foreach(y ; 0 .. tiles_grid_height){
 			foreach(x ; 0 .. tiles_grid_width){
-				auto tileAABB = AABB2(
-					Vec2(x * tiles_width,       y * tiles_width),
-					Vec2((x + 1) * tiles_width, (y + 1) * tiles_width));
+				auto tileAABB = box2f(
+					vec2f(x * tiles_width,       y * tiles_width),
+					vec2f((x + 1) * tiles_width, (y + 1) * tiles_width));
 
 				auto tile = &tiles[y * tiles_grid_width + x];
 				tile.header.triangles_offset = newTrianglesPtr;
 
 				foreach(i, ref tri ; triangles){
-					if(tileAABB.contains(tri.center)){
+					if(tileAABB.contains(vec2f(tri.center))){
 						newTriangles[newTrianglesPtr] = tri;
 						triTransTable[i] = newTrianglesPtr;
 						newTrianglesPtr++;
@@ -1405,11 +1406,11 @@ struct TrnNWN2WalkmeshPayload{
 
 		// Remove border triangles
 		if(removeBorders){
-			auto terrainAABB = AABB2(
-				Vec2(tiles_border_size * tiles_width, tiles_border_size * tiles_width),
-				Vec2((tiles_grid_width - tiles_border_size) * tiles_width, (tiles_grid_height - tiles_border_size) * tiles_width));
+			auto terrainAABB = box2f(
+				vec2f(tiles_border_size * tiles_width, tiles_border_size * tiles_width),
+				vec2f((tiles_grid_width - tiles_border_size) * tiles_width, (tiles_grid_height - tiles_border_size) * tiles_width));
 
-			removeTriangles(a => terrainAABB.contains(a.center));
+			removeTriangles(a => terrainAABB.contains(vec2f(a.center)));
 		}
 
 		// Reorder triangles to have consecutive triangles for each tile
@@ -1590,9 +1591,9 @@ struct TrnNWN2WalkmeshPayload{
 		uint32_t tileY = tileIndex / tiles_grid_width;
 
 		// Get tile bounding box
-		auto tileAABB = AABB2(
-			Vec2(tileX * tiles_width, tileY * tiles_width),
-			Vec2((tileX + 1) * tiles_width, (tileY + 1) * tiles_width));
+		auto tileAABB = box2f(
+			vec2f(tileX * tiles_width, tileY * tiles_width),
+			vec2f((tileX + 1) * tiles_width, (tileY + 1) * tiles_width));
 
 		// Build tile triangle list
 		immutable trianglesOffset = tile.header.triangles_offset;
@@ -1706,7 +1707,7 @@ struct TrnNWN2WalkmeshPayload{
 					if(!(linkedTri.flags & linkedTri.Flags.walkable))
 						continue;// non walkable triangle
 
-					if(tileAABB.contains(linkedTri.center)){
+					if(tileAABB.contains(vec2f(linkedTri.center))){
 						// linkedTri is inside the tile
 
 						// Mark the triangle as visited (only for island detection)
@@ -1785,7 +1786,7 @@ struct TrnNWN2WalkmeshPayload{
 		// Copy vertices
 		vertices.length = mesh.vertices.length;
 		foreach(i, ref v ; vertices)
-			v.position = mesh.vertices[i].pos;
+			v.position = mesh.vertices[i].v;
 
 		// Copy triangles
 		triangles.length = mesh.triangles.length;
@@ -1826,7 +1827,7 @@ struct TrnNWN2WalkmeshPayload{
 		ret.triangles.length = triangles.length;
 
 		foreach(i, ref v ; vertices){
-			ret.vertices[i] = Vec3(v.position);
+			ret.vertices[i] = vec3f(v.position);
 		}
 		foreach(i, ref t ; triangles){
 			ret.triangles[i] = ret.Triangle(t.vertices, t.flags);
@@ -1928,13 +1929,12 @@ unittest {
 		vertTransTable.randomShuffle();
 		triTransTable.randomShuffle();
 
-
 		GenericASWMMesh rawMesh;
 		rawMesh.vertices.length = aswm.vertices.length;
 		rawMesh.triangles.length = aswm.triangles.length;
 
 		foreach(oldVIdx, newVIdx ; vertTransTable)
-			rawMesh.vertices[newVIdx] = Vec3(aswm.vertices[oldVIdx].position);
+			rawMesh.vertices[newVIdx] = vec3f(aswm.vertices[oldVIdx].position);
 
 		foreach(oldTIdx, newTIdx ; triTransTable){
 			auto oldTri = &aswm.triangles[oldTIdx];
@@ -1965,7 +1965,7 @@ unittest {
 
 
 struct GenericASWMMesh {
-	Vec3[] vertices;
+	vec3f[] vertices;
 
 	static struct Triangle{
 		uint32_t[3] vertices; /// Vertex indices composing the triangle

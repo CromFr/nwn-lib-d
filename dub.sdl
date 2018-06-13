@@ -7,6 +7,7 @@ authors "Thibaut CHARLES (CromFr)"
 targetType "library"
 targetName "nwn-d"
 stringImportPaths "unittest"
+dependency "gfm:math" version="~>7.0.0"
 
 //x:ddoxTool "scod"
 x:ddoxFilterArgs "--min-protection=Protected"
@@ -15,6 +16,7 @@ subPackage {
 	name "nwn-gff"
 	sourcePaths "source/" "tools/common/"
 	importPaths "source/" "tools/common/"
+	dependency "gfm:math" version="~>7.0.0"
 
 	configuration "application" {
 		targetType "executable"
@@ -29,6 +31,7 @@ subPackage {
 	name "nwn-erf"
 	sourcePaths "source/" "tools/common/"
 	importPaths "source/" "tools/common/"
+	dependency "gfm:math" version="~>7.0.0"
 
 	configuration "application" {
 		targetType "executable"
@@ -43,6 +46,7 @@ subPackage {
 	name "nwn-tlk"
 	sourcePaths "source/" "tools/common/"
 	importPaths "source/" "tools/common/"
+	dependency "gfm:math" version="~>7.0.0"
 
 	configuration "application" {
 		targetType "executable"
@@ -57,6 +61,7 @@ subPackage {
 	name "nwn-bdb"
 	sourcePaths "source/" "tools/common/"
 	importPaths "source/" "tools/common/"
+	dependency "gfm:math" version="~>7.0.0"
 
 	configuration "application" {
 		targetType "executable"
@@ -71,6 +76,7 @@ subPackage {
 	name "nwn-trn"
 	sourcePaths "source/" "tools/common/"
 	importPaths "source/" "tools/common/"
+	dependency "gfm:math" version="~>7.0.0"
 
 	configuration "application" {
 		targetType "executable"
