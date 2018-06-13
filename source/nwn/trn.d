@@ -1945,7 +1945,7 @@ unittest {
 			auto oldTri = &aswm.triangles[oldTIdx];
 			rawMesh.triangles[newTIdx] = rawMesh.Triangle(oldTri.vertices, oldTri.flags);
 
-			foreach(ref v ; rawMesh.triangles[newTIdx].vertices.dup.randomShuffle)
+			foreach(ref v ; rawMesh.triangles[newTIdx].vertices[].randomShuffle)
 				v = vertTransTable[v];
 		}
 
