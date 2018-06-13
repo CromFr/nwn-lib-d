@@ -1922,35 +1922,11 @@ unittest {
 	foreach(ref TrnNWN2WalkmeshPayload aswm ; trn){
 		assert(aswm.validate() is null, aswm.validate());
 
+		auto mesh = aswm.toGenericMesh;
 
-		// Shuffle all triangles & vertices
-		uint32_t[] vertTransTable, triTransTable;
-		vertTransTable.length = aswm.vertices.length;
-		triTransTable.length = aswm.triangles.length;
-		foreach(uint32_t i, ref val ; vertTransTable) val = i;
-		foreach(uint32_t i, ref val ; triTransTable) val = i;
-
-		import std.random: randomShuffle;
-		vertTransTable.randomShuffle();
-		triTransTable.randomShuffle();
-
-		GenericASWMMesh rawMesh;
-		rawMesh.vertices.length = aswm.vertices.length;
-		rawMesh.triangles.length = aswm.triangles.length;
-
-		foreach(oldVIdx, newVIdx ; vertTransTable)
-			rawMesh.vertices[newVIdx] = vec3f(aswm.vertices[oldVIdx].position);
-
-		foreach(oldTIdx, newTIdx ; triTransTable){
-			auto oldTri = &aswm.triangles[oldTIdx];
-			rawMesh.triangles[newTIdx] = rawMesh.Triangle(oldTri.vertices, oldTri.flags);
-
-			foreach(ref v ; rawMesh.triangles[newTIdx].vertices[].randomShuffle)
-				v = vertTransTable[v];
-		}
-
-		// Set shuffled mesh
-		aswm.setGenericMesh(rawMesh);
+		// Shuffle mesh
+		mesh.shuffle();
+		aswm.setGenericMesh(mesh);
 		aswm.bake();
 
 		assert(aswm.validate() is null, aswm.validate());
@@ -1977,7 +1953,6 @@ struct GenericASWMMesh {
 		uint16_t flags; /// See `Flags`
 		enum Flags {
 			walkable  = 0x01, /// if the triangle can be walked on. Note the triangle needs path tables to be really walkable
-			clockwise = 0x04, /// vertices are wound clockwise and not ccw
 			dirt      = 0x08, /// Floor type (for sound effects)
 			grass     = 0x10, /// ditto
 			stone     = 0x20, /// ditto
@@ -2000,4 +1975,33 @@ struct GenericASWMMesh {
 				enforce(vi < vertices.length,
 					"Triangle "~i.to!string~" contains invalid vertex index ("~vi.to!string~")");
 	}
+
+	/// Shuffle all data, while keeping the same 3d model
+	void shuffle(){
+		// Shuffle all triangles & vertices
+		uint32_t[] vertTransTable, triTransTable;
+		vertTransTable.length = vertices.length;
+		triTransTable.length = triangles.length;
+		foreach(uint32_t i, ref val ; vertTransTable) val = i;
+		foreach(uint32_t i, ref val ; triTransTable) val = i;
+
+		import std.random: randomShuffle;
+		vertTransTable.randomShuffle();
+		triTransTable.randomShuffle();
+
+		auto oldVertices = this.vertices.idup;
+		auto oldTriangles = this.triangles.idup;
+
+		foreach(oldVIdx, newVIdx ; vertTransTable)
+			vertices[newVIdx] = vec3f(oldVertices[oldVIdx]);
+
+		foreach(oldTIdx, newTIdx ; triTransTable){
+			auto oldTri = &oldTriangles[oldTIdx];
+			triangles[newTIdx] = Triangle(oldTri.vertices, oldTri.flags);
+
+			foreach(ref v ; triangles[newTIdx].vertices[].randomShuffle)
+				v = vertTransTable[v];
+		}
+	}
+
 }
