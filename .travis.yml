@@ -2,57 +2,65 @@ language: d
 d: dmd
 
 before_install:
-    - sudo apt-get -qq update
-    - sudo apt-get install -y gcc-multilib libevent-dev
-    - ./travis-build-win32.sh before_install
+  - sudo apt-get -qq update
+  - sudo apt-get install -y gcc-multilib libevent-dev
+  - ./travis-build-win32.sh before_install
+  - mkdir bin/
 
-script:
-    - dub test -a x86                    :nwn-gff
-    - dub test -a x86_64 -b unittest-cov :nwn-gff
+stages:
+  - test
+  - bin
+  - doc
+  - name: deploy
+    if: branch = master
 
-    # Release objects
-    - dub build --build=ddox
-    - dub build -b release -a x86    :nwn-gff  &&  mv nwn-gff nwn-gff.linux-x86
-    - dub build -b release -a x86_64 :nwn-gff  &&  mv nwn-gff nwn-gff.linux-x86_64
-    - ./travis-build-win32.sh exec dub build -b release :nwn-gff  &&  mv nwn-gff.exe nwn-gff.win-x86
+jobs:
+  include:
+    - stage: test
+      script:
+        - dub test -a x86                    :nwn-gff
+        - dub test -a x86_64 -b unittest-cov :nwn-gff
 
-    - dub build -b release -a x86    :nwn-erf  &&  mv nwn-erf nwn-erf.linux-x86
-    - dub build -b release -a x86_64 :nwn-erf  &&  mv nwn-erf nwn-erf.linux-x86_64
-    - ./travis-build-win32.sh exec dub build -b release :nwn-erf  &&  mv nwn-erf.exe nwn-erf.win-x86
+    - stage: bin
+      env:
+        - MODULE=nwn-gff
+        - MODULE=nwn-erf
+        - MODULE=nwn-tlk
+        - MODULE=nwn-bdb
+        - MODULE=nwn-trn
+      script:
+        - dub build -b release -a x86    :$MODULE                               &&  mv $MODULE bin/$MODULE.linux-x86
+        - dub build -b release -a x86_64 :$MODULE                               &&  mv $MODULE bin/$MODULE.linux-x86_64
+        - ./travis-build-win32.sh exec dub build -b release -a x86    :$MODULE  &&  mv $MODULE.exe bin/$MODULE.win-x86
+        - ./travis-build-win32.sh exec dub build -b release -a x86_64 :$MODULE  &&  mv $MODULE.exe bin/$MODULE.win-x86_64
 
-    - dub build -b release -a x86    :nwn-tlk  &&  mv nwn-tlk nwn-tlk.linux-x86
-    - dub build -b release -a x86_64 :nwn-tlk  &&  mv nwn-tlk nwn-tlk.linux-x86_64
-    - ./travis-build-win32.sh exec dub build -b release :nwn-tlk  &&  mv nwn-tlk.exe nwn-tlk.win-x86
+    - stage: doc
+      script: dub build --build=ddox
 
-    - dub build -b release -a x86    :nwn-bdb  &&  mv nwn-bdb nwn-bdb.linux-x86
-    - dub build -b release -a x86_64 :nwn-bdb  &&  mv nwn-bdb nwn-bdb.linux-x86_64
-    - ./travis-build-win32.sh exec dub build -b release :nwn-bdb  &&  mv nwn-bdb.exe nwn-bdb.win-x86
+    - stage: deploy
+      script: ./gh-pages/upload.sh
 
-    - dub build -b release -a x86    :nwn-trn  &&  mv nwn-trn nwn-trn.linux-x86
-    - dub build -b release -a x86_64 :nwn-trn  &&  mv nwn-trn nwn-trn.linux-x86_64
-    - ./travis-build-win32.sh exec dub build -b release :nwn-trn  &&  mv nwn-trn.exe nwn-trn.win-x86
 
 after_success:
-    - bash <(curl -s https://codecov.io/bash)
-    - ./gh-pages/upload.sh
+  - bash <(curl -s https://codecov.io/bash)
 
 deploy:
-    provider: releases
-    api_key:
-        secure: oeFpDw76HZBRNhE+q9E/HrRDAXpH0Ov0IHYOXn0jls0q4MBTPF+ogayRua7cLOik6r7DNGmJ3qV+qVW5f3ROIqZ6G9M9pGq8bTmCAeInjTgqG9yOkCeIwJ5QkVgPORibYGj3XMoRv58WzHQa+1oSuhCHUiyPOiJOIxIoKQADJs3c4vyYFJNIpc+Sqjxd35igQh6Zq2iSXanbv9JnX0HkuHo0n4wUUGj6BMhHLoACU7qtxFQCjr/x3vy1WrxR+CwSALuJL8K3QNw+PUew0vJfniJT8PFMJRv4rZH+g/dlS3WVCajNYeSU/TWqK6+DwfcHXb7FgDgKTM6zBLp76RlXHl2TzqBC4+bJbw8nvSP/Td2OtZWV6i7Zrdacx/w5Dr8GfeAmueW0thFoOU2U6qtR1LJWEG50VGKDvDKwpTsJ/si0ggEHsjGt9dfrze0/48YJ3A6saRgYo6EtaKuuqgR9ill0VxwfvPYHgCcFuklkm2uHHC3fmcPqHRLgU7wTb4mg8PpBhOpip5A/erI9/hRpdKNLKJxzJzmWrCvrkk/0U2e8raDLA5IXZ+7c7tCBgGLQIFhIGd9jxgm3PZs7706reZ/fH0ufFso3GcXcniAVwc56EQI9SI2iHtdlRo0/Ry9LKENWPCRKiB8WsmG7WhtJhg/PWN+NnpehPTfqrnm47hk=
-    file:
-        - nwn-gff.win-x86.exe
-        - nwn-gff.linux-x86_64
-        - nwn-gff.linux-x86
-    skip_cleanup: true
-    overwrite: true
-    on:
-        repo: CromFr/nwn-lib-d
-        tags: true
+  provider: releases
+  api_key:
+    secure: oeFpDw76HZBRNhE+q9E/HrRDAXpH0Ov0IHYOXn0jls0q4MBTPF+ogayRua7cLOik6r7DNGmJ3qV+qVW5f3ROIqZ6G9M9pGq8bTmCAeInjTgqG9yOkCeIwJ5QkVgPORibYGj3XMoRv58WzHQa+1oSuhCHUiyPOiJOIxIoKQADJs3c4vyYFJNIpc+Sqjxd35igQh6Zq2iSXanbv9JnX0HkuHo0n4wUUGj6BMhHLoACU7qtxFQCjr/x3vy1WrxR+CwSALuJL8K3QNw+PUew0vJfniJT8PFMJRv4rZH+g/dlS3WVCajNYeSU/TWqK6+DwfcHXb7FgDgKTM6zBLp76RlXHl2TzqBC4+bJbw8nvSP/Td2OtZWV6i7Zrdacx/w5Dr8GfeAmueW0thFoOU2U6qtR1LJWEG50VGKDvDKwpTsJ/si0ggEHsjGt9dfrze0/48YJ3A6saRgYo6EtaKuuqgR9ill0VxwfvPYHgCcFuklkm2uHHC3fmcPqHRLgU7wTb4mg8PpBhOpip5A/erI9/hRpdKNLKJxzJzmWrCvrkk/0U2e8raDLA5IXZ+7c7tCBgGLQIFhIGd9jxgm3PZs7706reZ/fH0ufFso3GcXcniAVwc56EQI9SI2iHtdlRo0/Ry9LKENWPCRKiB8WsmG7WhtJhg/PWN+NnpehPTfqrnm47hk=
+  file:
+    - nwn-gff.win-x86.exe
+    - nwn-gff.linux-x86_64
+    - nwn-gff.linux-x86
+  skip_cleanup: true
+  overwrite: true
+  on:
+    repo: CromFr/nwn-lib-d
+    tags: true
 
 notifications:
-    email:
-        - cromfr@gmail.com
+  email:
+    - cromfr@gmail.com
 branches:
-    only:
-        master
+  only:
+    master

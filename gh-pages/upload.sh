@@ -31,8 +31,7 @@ cp ../gh-pages/index.html .
 # API ref
 cp -R ../docs .
 # binaries
-install -d binaries
-cp ../nwn-{gff,erf,tlk,bdb,trn}.* binaries/
+cp -R ../bin/ .
 
 
 # Commit ==============================
