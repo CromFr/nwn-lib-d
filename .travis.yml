@@ -7,42 +7,46 @@ before_install:
   - ./travis-build-win32.sh before_install
   - mkdir bin/
 
-stages:
-  - test
-  - bin
-  - doc
-  - name: deploy
-    if: branch = master
+script:
+  # Test
+  - dub test -a x86                    :nwn-gff
+  - dub test -a x86_64 -b unittest-cov :nwn-gff
 
-jobs:
-  include:
-    - stage: test
-      script:
-        - dub test -a x86                    :nwn-gff
-        - dub test -a x86_64 -b unittest-cov :nwn-gff
+  # Doc
+  - dub build --build=ddox
 
-    - stage: bin
-      env:
-        - MODULE=nwn-gff
-        - MODULE=nwn-erf
-        - MODULE=nwn-tlk
-        - MODULE=nwn-bdb
-        - MODULE=nwn-trn
-      script:
-        - dub build -b release -a x86    :$MODULE                               &&  mv $MODULE bin/$MODULE.linux-x86
-        - dub build -b release -a x86_64 :$MODULE                               &&  mv $MODULE bin/$MODULE.linux-x86_64
-        - ./travis-build-win32.sh exec dub build -b release -a x86    :$MODULE  &&  mv $MODULE.exe bin/$MODULE.win-x86
-        - ./travis-build-win32.sh exec dub build -b release -a x86_64 :$MODULE  &&  mv $MODULE.exe bin/$MODULE.win-x86_64
+  # Release objects
+  - dub build -b release -a x86    :nwn-gff                               &&  mv nwn-gff     bin/nwn-gff.linux-x86
+  - dub build -b release -a x86_64 :nwn-gff                               &&  mv nwn-gff     bin/nwn-gff.linux-x86_64
+  - ./travis-build-win32.sh exec dub build -b release -a x86    :nwn-gff  &&  mv nwn-gff.exe bin/nwn-gff.win-x86
+  - ./travis-build-win32.sh exec dub build -b release -a x86_64 :nwn-gff  &&  mv nwn-gff.exe bin/nwn-gff.win-x86_64
 
-    - stage: doc
-      script: dub build --build=ddox
+  - dub build -b release -a x86    :nwn-erf                               &&  mv nwn-erf     bin/nwn-erf.linux-x86
+  - dub build -b release -a x86_64 :nwn-erf                               &&  mv nwn-erf     bin/nwn-erf.linux-x86_64
+  - ./travis-build-win32.sh exec dub build -b release -a x86    :nwn-erf  &&  mv nwn-erf.exe bin/nwn-erf.win-x86
+  - ./travis-build-win32.sh exec dub build -b release -a x86_64 :nwn-erf  &&  mv nwn-erf.exe bin/nwn-erf.win-x86_64
 
-    - stage: deploy
-      script: ./gh-pages/upload.sh
+  - dub build -b release -a x86    :nwn-tlk                               &&  mv nwn-tlk     bin/nwn-tlk.linux-x86
+  - dub build -b release -a x86_64 :nwn-tlk                               &&  mv nwn-tlk     bin/nwn-tlk.linux-x86_64
+  - ./travis-build-win32.sh exec dub build -b release -a x86    :nwn-tlk  &&  mv nwn-tlk.exe bin/nwn-tlk.win-x86
+  - ./travis-build-win32.sh exec dub build -b release -a x86_64 :nwn-tlk  &&  mv nwn-tlk.exe bin/nwn-tlk.win-x86_64
 
+  - dub build -b release -a x86    :nwn-bdb                               &&  mv nwn-bdb     bin/nwn-bdb.linux-x86
+  - dub build -b release -a x86_64 :nwn-bdb                               &&  mv nwn-bdb     bin/nwn-bdb.linux-x86_64
+  - ./travis-build-win32.sh exec dub build -b release -a x86    :nwn-bdb  &&  mv nwn-bdb.exe bin/nwn-bdb.win-x86
+  - ./travis-build-win32.sh exec dub build -b release -a x86_64 :nwn-bdb  &&  mv nwn-bdb.exe bin/nwn-bdb.win-x86_64
+
+  - dub build -b release -a x86    :nwn-trn                               &&  mv nwn-trn     bin/nwn-trn.linux-x86
+  - dub build -b release -a x86_64 :nwn-trn                               &&  mv nwn-trn     bin/nwn-trn.linux-x86_64
+  - ./travis-build-win32.sh exec dub build -b release -a x86    :nwn-trn  &&  mv nwn-trn.exe bin/nwn-trn.win-x86
+  - ./travis-build-win32.sh exec dub build -b release -a x86_64 :nwn-trn  &&  mv nwn-trn.exe bin/nwn-trn.win-x86_64
 
 after_success:
-  - bash <(curl -s https://codecov.io/bash)
+    - bash <(curl -s https://codecov.io/bash)
+    - ./gh-pages/upload.sh
+
+
+
 
 deploy:
   provider: releases
