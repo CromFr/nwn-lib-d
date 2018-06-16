@@ -239,17 +239,17 @@ private:
 struct TrnNWN2TerrainDimPayload{
 	uint32_t width;/// Width in megatiles
 	uint32_t height;/// Height in megatiles
-	uint32_t unknown;/// Unknown/unused
+	uint32_t id;/// Unknown
 
 	package this(in ubyte[] payload){
 		width = *(cast(uint32_t*)&payload[0]);
 		height = *(cast(uint32_t*)&payload[4]);
-		unknown = *(cast(uint32_t*)&payload[8]);
+		id = *(cast(uint32_t*)&payload[8]);
 	}
 
 	ubyte[] serialize(){
 		ChunkWriter cw;
-		cw.put(width, height, unknown);
+		cw.put(width, height, id);
 		return cw.data;
 	}
 }
@@ -270,10 +270,10 @@ struct TrnNWN2MegatilePayload{
 		float[3] position;/// x y z
 		float[3] normal;  /// normal vector
 		ubyte[4] tinting; /// argb
-		float[2] xy_0to10;/// ?
-		float[2] xy_0to1; /// ?
+		float[2] uv;/// XY10
+		float[2] weights; /// XY1
 	}
-	align(1) Vertex[] vertices;/// Terrain geometry
+	Vertex[] vertices;/// Terrain geometry
 	///
 	static align(1) struct Triangle{
 		uint16_t[3] vertices;///Triangle vertex indices in $(D TrnNWN2TerrainDimPayload.vertices)
@@ -364,15 +364,15 @@ struct TrnNWN2MegatilePayload{
 
 /// Water information
 struct TrnNWN2WaterPayload{
-
-	ubyte[128] unknown;/// Probably a name
+	char[32] name;/// WATR name
+	ubyte[96] unknown;///
 	float[3] color;/// R,G,B
 	float[2] ripple;/// Ripples
 	float smoothness;/// Smoothness
 	float reflect_bias;/// Reflection bias
 	float reflect_power;/// Reflection power
-	float unknown2;/// Always 180.0
-	float unknown3;/// Always 0.5
+	float specular_power;/// Specular map power
+	float specular_cofficient;/// Specular map coefficient
 	///
 	static align(1) struct Texture{
 		static assert(this.sizeof == 48);
@@ -387,8 +387,8 @@ struct TrnNWN2WaterPayload{
 	static align(1) struct Vertex{
 		static assert(this.sizeof == 28);
 		float[3] position;/// x y z
-		float[2] xy_0to5;/// ?
-		float[2] xy_0to1;/// ?
+		float[2] uv_0;/// XY5
+		float[2] uv_1;/// XY1
 	}
 	Vertex[] vertices;
 	///
@@ -407,17 +407,18 @@ struct TrnNWN2WaterPayload{
 	package this(in ubyte[] payload){
 		auto data = ChunkReader(payload);
 
-		unknown       = data.read!(typeof(unknown));
-		color         = data.read!(typeof(color));
-		ripple         = data.read!(typeof(ripple));
-		smoothness    = data.read!(typeof(smoothness));
-		reflect_bias  = data.read!(typeof(reflect_bias));
-		reflect_power = data.read!(typeof(reflect_power));
-		unknown2      = data.read!(typeof(unknown2));
-		unknown3      = data.read!(typeof(unknown3));
+		name                = data.read!(typeof(name));
+		unknown             = data.read!(typeof(unknown));
+		color               = data.read!(typeof(color));
+		ripple              = data.read!(typeof(ripple));
+		smoothness          = data.read!(typeof(smoothness));
+		reflect_bias        = data.read!(typeof(reflect_bias));
+		reflect_power       = data.read!(typeof(reflect_power));
+		specular_power      = data.read!(typeof(specular_power));
+		specular_cofficient = data.read!(typeof(specular_cofficient));
 
 		foreach(ref texture ; textures){
-			texture.name      = data.read!(char[32]);
+			texture.name      = data.read!(typeof(texture.name));
 			texture.direction = data.read!(typeof(texture.direction));
 			texture.rate      = data.read!(typeof(texture.rate));
 			texture.angle     = data.read!(typeof(texture.angle));
@@ -445,14 +446,15 @@ struct TrnNWN2WaterPayload{
 	ubyte[] serialize(){
 		ChunkWriter cw;
 		cw.put(
+			name,
 			unknown,
 			color,
 			ripple,
 			smoothness,
 			reflect_bias,
 			reflect_power,
-			unknown2,
-			unknown3,
+			specular_power,
+			specular_cofficient,
 			textures,
 			offset,
 			vertices.length.to!uint32_t,
