@@ -19,27 +19,27 @@ script:
   - dub build -b release -a x86    :nwn-gff                               &&  mv nwn-gff     bin/nwn-gff.linux-x86
   - dub build -b release -a x86_64 :nwn-gff                               &&  mv nwn-gff     bin/nwn-gff.linux-x86_64
   - ./travis-build-win32.sh exec dub build -b release -a x86    :nwn-gff  &&  mv nwn-gff.exe bin/nwn-gff.win-x86
-  - ./travis-build-win32.sh exec dub build -b release -a x86_64 :nwn-gff  &&  mv nwn-gff.exe bin/nwn-gff.win-x86_64
+  # - ./travis-build-win32.sh exec dub build -b release -a x86_64 :nwn-gff  &&  mv nwn-gff.exe bin/nwn-gff.win-x86_64
 
   - dub build -b release -a x86    :nwn-erf                               &&  mv nwn-erf     bin/nwn-erf.linux-x86
   - dub build -b release -a x86_64 :nwn-erf                               &&  mv nwn-erf     bin/nwn-erf.linux-x86_64
   - ./travis-build-win32.sh exec dub build -b release -a x86    :nwn-erf  &&  mv nwn-erf.exe bin/nwn-erf.win-x86
-  - ./travis-build-win32.sh exec dub build -b release -a x86_64 :nwn-erf  &&  mv nwn-erf.exe bin/nwn-erf.win-x86_64
+  # - ./travis-build-win32.sh exec dub build -b release -a x86_64 :nwn-erf  &&  mv nwn-erf.exe bin/nwn-erf.win-x86_64
 
   - dub build -b release -a x86    :nwn-tlk                               &&  mv nwn-tlk     bin/nwn-tlk.linux-x86
   - dub build -b release -a x86_64 :nwn-tlk                               &&  mv nwn-tlk     bin/nwn-tlk.linux-x86_64
   - ./travis-build-win32.sh exec dub build -b release -a x86    :nwn-tlk  &&  mv nwn-tlk.exe bin/nwn-tlk.win-x86
-  - ./travis-build-win32.sh exec dub build -b release -a x86_64 :nwn-tlk  &&  mv nwn-tlk.exe bin/nwn-tlk.win-x86_64
+  # - ./travis-build-win32.sh exec dub build -b release -a x86_64 :nwn-tlk  &&  mv nwn-tlk.exe bin/nwn-tlk.win-x86_64
 
   - dub build -b release -a x86    :nwn-bdb                               &&  mv nwn-bdb     bin/nwn-bdb.linux-x86
   - dub build -b release -a x86_64 :nwn-bdb                               &&  mv nwn-bdb     bin/nwn-bdb.linux-x86_64
   - ./travis-build-win32.sh exec dub build -b release -a x86    :nwn-bdb  &&  mv nwn-bdb.exe bin/nwn-bdb.win-x86
-  - ./travis-build-win32.sh exec dub build -b release -a x86_64 :nwn-bdb  &&  mv nwn-bdb.exe bin/nwn-bdb.win-x86_64
+  # - ./travis-build-win32.sh exec dub build -b release -a x86_64 :nwn-bdb  &&  mv nwn-bdb.exe bin/nwn-bdb.win-x86_64
 
   - dub build -b release -a x86    :nwn-trn                               &&  mv nwn-trn     bin/nwn-trn.linux-x86
   - dub build -b release -a x86_64 :nwn-trn                               &&  mv nwn-trn     bin/nwn-trn.linux-x86_64
   - ./travis-build-win32.sh exec dub build -b release -a x86    :nwn-trn  &&  mv nwn-trn.exe bin/nwn-trn.win-x86
-  - ./travis-build-win32.sh exec dub build -b release -a x86_64 :nwn-trn  &&  mv nwn-trn.exe bin/nwn-trn.win-x86_64
+  # - ./travis-build-win32.sh exec dub build -b release -a x86_64 :nwn-trn  &&  mv nwn-trn.exe bin/nwn-trn.win-x86_64
 
 after_success:
     - bash <(curl -s https://codecov.io/bash)
