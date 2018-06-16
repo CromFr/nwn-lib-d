@@ -477,7 +477,7 @@ struct TrnNWN2WalkmeshPayload{
 		align(1):
 		ubyte[37] unknownA;
 		uint32_t vertices_count;
-		uint32_t junctions_count;
+		uint32_t edges_count;
 		uint32_t triangles_count;
 		uint32_t unknownB;
 	}
