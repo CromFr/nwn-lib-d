@@ -496,27 +496,27 @@ struct TrnNWN2WalkmeshPayload{
 	}
 	Vertex[] vertices;
 
-	/// Junction between two triangles
-	static align(1) struct Junction{
+	/// Edge between two triangles
+	static align(1) struct Edge{
 		static assert(this.sizeof == 16);
 		align(1):
-		uint32_t[2] vertices; /// Vertex indices drawing the junction line
+		uint32_t[2] vertices; /// Vertex indices drawing the edge line
 		uint32_t[2] triangles; /// Joined triangles (`uint32_t.max` if none)
 	}
-	Junction[] junctions;
+	Edge[] edges;
 
 	/// Mesh Triangle + pre-calculated data + metadata
 	static align(1) struct Triangle{
 		static assert(this.sizeof == 64);
 		align(1):
 		uint32_t[3] vertices; /// Vertex indices composing the triangle
-		/// Junctions to other triangles (`uint32_t.max` if none, but there should always be 3)
+		/// Edges to other triangles (`uint32_t.max` if none, but there should always be 3)
 		///
-		/// Every `linked_junctions` should have its associated `linked_triangles` at the same index
-		uint32_t[3] linked_junctions;
+		/// Every `linked_edges` should have its associated `linked_triangles` at the same index
+		uint32_t[3] linked_edges;
 		/// Adjacent triangles (`uint32_t.max` if none)
 		///
-		/// Every `linked_triangles` should have its associated `linked_junctions` at the same index
+		/// Every `linked_triangles` should have its associated `linked_edges` at the same index
 		uint32_t[3] linked_triangles;
 		float[2] center; /// X / Y coordinates of the center of the triangle. Calculated by avg the 3 vertices coordinates.
 		float[3] normal; /// Normal vector
@@ -562,9 +562,9 @@ struct TrnNWN2WalkmeshPayload{
 			static assert(this.sizeof == 57);
 			align(1):
 			char[32] name; /// Last time I checked it was complete garbage
-			ubyte owns_data;/// 1 if the tile stores vertices / junctions. Usually 0
+			ubyte owns_data;/// 1 if the tile stores vertices / edges. Usually 0
 			uint32_t vertices_count; /// Number of vertices in this tile
-			uint32_t junctions_count; /// Number of junctions in this tile
+			uint32_t edges_count; /// Number of edges in this tile
 			uint32_t triangles_count; /// Number of triangles in this tile (walkable + unwalkable)
 			float size_x;/// Always 0 ?
 			float size_y;/// Always 0 ?
@@ -578,7 +578,7 @@ struct TrnNWN2WalkmeshPayload{
 		Vertex[] vertices;
 
 		/// Only used if `header.owns_data == true`
-		Junction[] junctions;
+		Edge[] edges;
 
 		/**
 		Tile pathing information
@@ -662,7 +662,7 @@ struct TrnNWN2WalkmeshPayload{
 
 			if(header.owns_data){
 				vertices = wmdata.readArray!Vertex(header.vertices_count).dup;
-				junctions = wmdata.readArray!Junction(header.junctions_count).dup;
+				edges = wmdata.readArray!Edge(header.edges_count).dup;
 			}
 
 			with(path_table){
@@ -682,7 +682,7 @@ struct TrnNWN2WalkmeshPayload{
 			uncompData.put(
 				header,
 				vertices,
-				junctions);
+				edges);
 
 			immutable tcount = header.triangles_count;
 
@@ -707,11 +707,11 @@ struct TrnNWN2WalkmeshPayload{
 		string dump() const {
 			import std.range: chunks;
 			return format!"TILE header: name: %(%s, %)\n"([header.name])
-			     ~ format!"        owns_data: %s, vert_cnt: %s, junc_cnt: %s, tri_cnt: %s\n"(header.owns_data, header.vertices_count, header.junctions_count, header.triangles_count)
+			     ~ format!"        owns_data: %s, vert_cnt: %s, edge_cnt: %s, tri_cnt: %s\n"(header.owns_data, header.vertices_count, header.edges_count, header.triangles_count)
 			     ~ format!"        size_x: %s, size_y: %s\n"(header.size_x, header.size_y)
 			     ~ format!"        triangles_offset: %s\n"(header.triangles_offset)
 			     ~ format!"     vertices: %s\n"(vertices)
-			     ~ format!"     junctions: %s\n"(junctions)
+			     ~ format!"     edges: %s\n"(edges)
 			     ~        "     path_table: \n"
 			     ~ format!"       header: flags: %s, ltn_len: %d, ntl_len: %s, rle_len: %s\n"(path_table.header.flags, path_table.header._local_to_node_length, path_table.header._node_to_local_length, path_table.header.rle_table_size)
 			     ~ format!"       ltn:   %(%3d %)\n"(path_table.local_to_node)
@@ -782,8 +782,8 @@ struct TrnNWN2WalkmeshPayload{
 				return "local_to_node: contains data for invalid triangles";
 
 			if(strict){
-				immutable juncCnt = aswm.triangles[offset .. offset + header.triangles_count]
-					.map!((ref a) => a.linked_junctions[])
+				immutable edgeCnt = aswm.triangles[offset .. offset + header.triangles_count]
+					.map!((ref a) => a.linked_edges[])
 					.join
 					.filter!(a => a != a.max)
 					.array.dup
@@ -799,8 +799,8 @@ struct TrnNWN2WalkmeshPayload{
 					.uniq
 					.array.length.to!uint32_t;
 
-				if(juncCnt != header.junctions_count)
-					return "header.junctions_count: Wrong number of junctions: got "~header.junctions_count.to!string~", counted "~juncCnt.to!string;
+				if(edgeCnt != header.edges_count)
+					return "header.edges_count: Wrong number of edges: got "~header.edges_count.to!string~", counted "~edgeCnt.to!string;
 				if(vertCnt != header.vertices_count)
 					return "header.vertices_count: Wrong number of vertices: got "~header.vertices_count.to!string~", counted "~vertCnt.to!string;
 			}
@@ -847,7 +847,7 @@ struct TrnNWN2WalkmeshPayload{
 		}
 	}
 	/// Map tile list
-	/// Non border tiles have `header.vertices_count > 0 || header.junctions_count > 0 || header.triangles_count > 0`
+	/// Non border tiles have `header.vertices_count > 0 || header.edges_count > 0 || header.triangles_count > 0`
 	Tile[] tiles;
 
 	/**
@@ -873,7 +873,7 @@ struct TrnNWN2WalkmeshPayload{
 		float[] adjacent_islands_dist; /// Distances between adjacent islands (probably measured between header.center)
 
 		/**
-		List of triangles that are on the island borders, and which linked_junctions
+		List of triangles that are on the island borders, and which linked_edges
 		can lead to a triangle that have another triangle.island value.
 
 		<ul>
@@ -945,7 +945,7 @@ struct TrnNWN2WalkmeshPayload{
 		header = wmdata.read!Header;
 		assert(wmdata.read_ptr==0x35);
 		vertices       = wmdata.readArray!Vertex(header.vertices_count).dup;
-		junctions      = wmdata.readArray!Junction(header.junctions_count).dup;
+		edges      = wmdata.readArray!Edge(header.edges_count).dup;
 		triangles      = wmdata.readArray!Triangle(header.triangles_count).dup;
 
 		tiles_flags      = wmdata.read!(typeof(tiles_flags));
@@ -1006,7 +1006,7 @@ struct TrnNWN2WalkmeshPayload{
 	ubyte[] serializeUncompressed(){
 		//update header values
 		header.vertices_count  = vertices.length.to!uint32_t;
-		header.junctions_count = junctions.length.to!uint32_t;
+		header.edges_count = edges.length.to!uint32_t;
 		header.triangles_count = triangles.length.to!uint32_t;
 
 		//build uncompressed data
@@ -1014,7 +1014,7 @@ struct TrnNWN2WalkmeshPayload{
 		uncompData.put(
 			header,
 			vertices,
-			junctions,
+			edges,
 			triangles,
 			tiles_flags,
 			tiles_width,
@@ -1048,19 +1048,19 @@ struct TrnNWN2WalkmeshPayload{
 	string validate(bool strict = false) const {
 
 		immutable vertLen = vertices.length;
-		immutable juncLen = junctions.length;
+		immutable edgeLen = edges.length;
 		immutable triLen = triangles.length;
 		immutable islLen = islands.length;
 
-		// Junctions
-		foreach(ijunc, ref junc ; junctions){
-			foreach(v ; junc.vertices){
+		// Edges
+		foreach(iedge, ref edge ; edges){
+			foreach(v ; edge.vertices){
 				if(v >= vertLen)
-					return "junctions["~ijunc.to!string~"]: Invalid vertex index "~v.to!string;
+					return "edges["~iedge.to!string~"]: Invalid vertex index "~v.to!string;
 			}
-			foreach(t ; junc.triangles){
+			foreach(t ; edge.triangles){
 				if(t != uint32_t.max && t >= triLen)
-					return "junctions["~ijunc.to!string~"]: Invalid triangle index "~t.to!string;
+					return "edges["~iedge.to!string~"]: Invalid triangle index "~t.to!string;
 			}
 		}
 
@@ -1072,16 +1072,16 @@ struct TrnNWN2WalkmeshPayload{
 			}
 
 			foreach(i ; 0 .. 3){
-				immutable lj = tri.linked_junctions[i];
+				immutable lj = tri.linked_edges[i];
 				immutable lt = tri.linked_triangles[i];
-				if(lj >= juncLen)
-					return "triangles["~itri.to!string~"].linked_junctions["~i.to!string~"]: invalid junction index "~lj.to!string;
+				if(lj >= edgeLen)
+					return "triangles["~itri.to!string~"].linked_edges["~i.to!string~"]: invalid edge index "~lj.to!string;
 				if(lt != uint32_t.max && lt >= triLen)
 					return "triangles["~itri.to!string~"].linked_triangles["~i.to!string~"]: invalid triangle index "~lt.to!string;
 
-				if((junctions[lj].triangles[0] != itri || junctions[lj].triangles[1] != lt)
-					&& (junctions[lj].triangles[1] != itri || junctions[lj].triangles[0] != lt))
-					return "triangles["~itri.to!string~"].linked_xxx["~i.to!string~"]: linked junction does not match linked triangle";
+				if((edges[lj].triangles[0] != itri || edges[lj].triangles[1] != lt)
+					&& (edges[lj].triangles[1] != itri || edges[lj].triangles[0] != lt))
+					return "triangles["~itri.to!string~"].linked_xxx["~i.to!string~"]: linked edge does not match linked triangle";
 			}
 
 			if(tri.island != uint16_t.max && tri.island >= islLen)
@@ -1170,19 +1170,19 @@ struct TrnNWN2WalkmeshPayload{
 		ret ~= "==== HEADER ====\n";
 		ret ~= "unknownA: " ~ header.unknownA.to!string ~ "\n";
 		ret ~= "vertices_count: " ~ header.vertices_count.to!string ~ "\n";
-		ret ~= "junctions_count: " ~ header.junctions_count.to!string ~ "\n";
+		ret ~= "edges_count: " ~ header.edges_count.to!string ~ "\n";
 		ret ~= "triangles_count: " ~ header.triangles_count.to!string ~ "\n";
 		ret ~= "unknownB: " ~ header.unknownB.to!string ~ "\n";
 
 		ret ~= "==== VERTICES ====\n";
 		ret ~= vertices.map!(a => format!"VERT %s\n"(a.position)).join;
 
-		ret ~= "==== JUNCTIONS ====\n";
-		ret ~= junctions.map!(a => format!"JUNC line: %s, tri: %s\n"(a.vertices, a.triangles)).join;
+		ret ~= "==== EDGES ====\n";
+		ret ~= edges.map!(a => format!"EDGE line: %s, tri: %s\n"(a.vertices, a.triangles)).join;
 
 		ret ~= "==== TRIANGLES ====\n";
 		ret ~= triangles.map!(a =>
-				  format!"TRI vert: %s, junc: %s, tri: %s\n"(a.vertices, a.linked_junctions, a.linked_triangles)
+				  format!"TRI vert: %s, edge: %s, tri: %s\n"(a.vertices, a.linked_edges, a.linked_triangles)
 				~ format!"    center: %s, normal: %s, dot_product: %s\n"(a.center, a.normal, a.dot_product)
 				~ format!"    island: %s, flags: %s\n"(a.island, a.flags)
 			).join;
@@ -1209,17 +1209,17 @@ struct TrnNWN2WalkmeshPayload{
 
 
 	// Each entry is one triangle index from every separate island on this tile
-	private struct IslandMeta{
+	private static struct IslandMeta{
 		uint32_t tile;
 		uint32_t islandTriangle;
-		// This will store all junctions that can lead to other tiles
-		uint32_t[] junctions;
+		// This will store all edges that can lead to other tiles
+		uint32_t[] edges;
 	}
 
 	/**
-	Removes triangles from the mesh, and removes unused vertices and junctions accordingly.
+	Removes triangles from the mesh, and removes unused vertices and edges accordingly.
 
-	Also updates vertex / junction / triangle indices to match new indices.
+	Also updates vertex / edge / triangle indices to match new indices.
 
 	Does not updates path tables. You need to run `bake()` to re-generate path tables.
 
@@ -1227,32 +1227,32 @@ struct TrnNWN2WalkmeshPayload{
 	removeFunc = Delegate to check is triangle must be removed.
 	*/
 	void removeTriangles(bool delegate(in Triangle) removeFunc){
-		uint32_t[] vertTransTable, juncTransTable, triTransTable;
+		uint32_t[] vertTransTable, edgeTransTable, triTransTable;
 		vertTransTable.length = vertices.length;
-		juncTransTable.length = junctions.length;
+		edgeTransTable.length = edges.length;
 		triTransTable.length = triangles.length;
 		vertTransTable[] = uint32_t.max;
-		juncTransTable[] = uint32_t.max;
+		edgeTransTable[] = uint32_t.max;
 		triTransTable[] = uint32_t.max;
 
-		bool[] usedJunctions, usedVertices;
+		bool[] usedEdges, usedVertices;
 		usedVertices.length = vertices.length;
-		usedJunctions.length = junctions.length;
+		usedEdges.length = edges.length;
 		usedVertices[] = false;
-		usedJunctions[] = false;
+		usedEdges[] = false;
 
-		// Reduce triangle list & flag used junctions
+		// Reduce triangle list & flag used edges
 		uint32_t newIndex = 0;
 		foreach(i, ref triangle ; triangles){
 			if(removeFunc(triangle)){
 
-				// Flag used / unused vertices & junctions
+				// Flag used / unused vertices & edges
 				foreach(vert ; triangle.vertices){
 					usedVertices[vert] = true;
 				}
-				foreach(junc ; triangle.linked_junctions){
-					if(junc != uint32_t.max)
-						usedJunctions[junc] = true;
+				foreach(edge ; triangle.linked_edges){
+					if(edge != uint32_t.max)
+						usedEdges[edge] = true;
 				}
 
 				// Reduce triangle list in place
@@ -1276,23 +1276,23 @@ struct TrnNWN2WalkmeshPayload{
 		}
 		vertices.length = newIndex;
 
-		// Reduce junctions list
+		// Reduce edges list
 		newIndex = 0;
-		foreach(i, used ; usedJunctions){
+		foreach(i, used ; usedEdges){
 			if(used){
-				junctions[newIndex] = junctions[i];
-				juncTransTable[i] = newIndex++;
+				edges[newIndex] = edges[i];
+				edgeTransTable[i] = newIndex++;
 			}
 			else
-				juncTransTable[i] = uint32_t.max;
+				edgeTransTable[i] = uint32_t.max;
 		}
-		junctions.length = newIndex;
+		edges.length = newIndex;
 
-		translateIndices(triTransTable, juncTransTable, vertTransTable);
+		translateIndices(triTransTable, edgeTransTable, vertTransTable);
 	}
 
 	/**
-	Translate triangle / junction / vertex indices stored in mesh data.
+	Translate triangle / edge / vertex indices stored in mesh data.
 
 	Each argument is a table of the length of the existing list where:
 	<ul>
@@ -1301,21 +1301,21 @@ struct TrnNWN2WalkmeshPayload{
 	</ul>
 	If the argument is an empty array, no translation is done. Does NOT update path tables & islands data.
 	*/
-	void translateIndices(uint32_t[] triTransTable, uint32_t[] juncTransTable, uint32_t[] vertTransTable){
+	void translateIndices(uint32_t[] triTransTable, uint32_t[] edgeTransTable, uint32_t[] vertTransTable){
 		immutable ttrans = triTransTable.length > 0;
-		immutable jtrans = juncTransTable.length > 0;
+		immutable jtrans = edgeTransTable.length > 0;
 		immutable vtrans = vertTransTable.length > 0;
 
-		// Adjust indices in junctions data
-		foreach(ref junction ; junctions){
+		// Adjust indices in edges data
+		foreach(ref edge ; edges){
 			if(vtrans){
-				foreach(ref vert ; junction.vertices){
+				foreach(ref vert ; edge.vertices){
 					vert = vertTransTable[vert];
 					assert(vert != uint32_t.max && vert < vertices.length, "Invalid vertex index");
 				}
 			}
 			if(ttrans){
-				foreach(ref tri ; junction.triangles){
+				foreach(ref tri ; edge.triangles){
 					if(tri != uint32_t.max){
 						tri = triTransTable[tri];
 						assert(tri == uint32_t.max || tri < triangles.length, "Invalid triangle index");
@@ -1324,9 +1324,9 @@ struct TrnNWN2WalkmeshPayload{
 
 			}
 			// Pack triangle indices (may be overkill)
-			if(junction.triangles[0] == uint32_t.max && junction.triangles[1] != uint32_t.max){
-				junction.triangles[0] = junction.triangles[1];
-				junction.triangles[1] = uint32_t.max;
+			if(edge.triangles[0] == uint32_t.max && edge.triangles[1] != uint32_t.max){
+				edge.triangles[0] = edge.triangles[1];
+				edge.triangles[1] = uint32_t.max;
 			}
 		}
 
@@ -1339,9 +1339,9 @@ struct TrnNWN2WalkmeshPayload{
 				}
 			}
 			if(jtrans){
-				foreach(ref junc ; triangle.linked_junctions){
-					junc = juncTransTable[junc];//All triangles should have 3 junctions
-					assert(junc < junctions.length, "Invalid junction index");
+				foreach(ref edge ; triangle.linked_edges){
+					edge = edgeTransTable[edge];//All triangles should have 3 edges
+					assert(edge < edges.length, "Invalid edge index");
 				}
 			}
 			if(ttrans){
@@ -1484,12 +1484,12 @@ struct TrnNWN2WalkmeshPayload{
 			island.adjacent_islands_dist.length = 0;
 			island.exit_triangles.length = 0;
 
-			foreach(junc ; islandsMeta[i].junctions){
+			foreach(edge ; islandsMeta[i].edges){
 
 				uint32_t exitTriangle = uint32_t.max;
 				uint32_t exitIsland = uint32_t.max;
 
-				foreach(t ; junctions[junc].triangles){
+				foreach(t ; edges[edge].triangles){
 					immutable islandIdx = triangles[t].island;
 					if(islandIdx == i)
 						exitTriangle = t;
@@ -1603,9 +1603,9 @@ struct TrnNWN2WalkmeshPayload{
 		foreach(i, ref t ; tileTriangles)
 			t = (i + trianglesOffset).to!uint32_t;
 
-		// Recalculate junc & vert count
-		tile.header.junctions_count = triangles[trianglesOffset .. trianglesOffset + tile.header.triangles_count]
-			.map!((ref a) => a.linked_junctions[])
+		// Recalculate edge & vert count
+		tile.header.edges_count = triangles[trianglesOffset .. trianglesOffset + tile.header.triangles_count]
+			.map!((ref a) => a.linked_edges[])
 			.join
 			.filter!(a => a != a.max)
 			.array
@@ -1731,11 +1731,11 @@ struct TrnNWN2WalkmeshPayload{
 					else{
 						// linkedTri is outside the tile
 						if(islandRegistration){
-							immutable juncIdx = triangles[currTriIdx].linked_junctions[j];
-							assert(junctions[juncIdx].triangles[0] == currTriIdx && junctions[juncIdx].triangles[1] == linkedTriIdx
-								|| junctions[juncIdx].triangles[1] == currTriIdx && junctions[juncIdx].triangles[0] == linkedTriIdx,
-								"Incoherent junction "~juncIdx.to!string~": "~junctions[juncIdx].to!string);
-							islandsMeta[$-1].junctions ~= juncIdx;
+							immutable edgeIdx = triangles[currTriIdx].linked_edges[j];
+							assert(edges[edgeIdx].triangles[0] == currTriIdx && edges[edgeIdx].triangles[1] == linkedTriIdx
+								|| edges[edgeIdx].triangles[1] == currTriIdx && edges[edgeIdx].triangles[0] == linkedTriIdx,
+								"Incoherent edge "~edgeIdx.to!string~": "~edges[edgeIdx].to!string);
+							islandsMeta[$-1].edges ~= edgeIdx;
 						}
 					}
 				}
@@ -1794,7 +1794,7 @@ struct TrnNWN2WalkmeshPayload{
 		foreach(i, ref t ; triangles){
 			t.vertices = mesh.triangles[i].vertices.dup[0 .. 3];
 
-			t.linked_junctions[] = uint32_t.max;
+			t.linked_edges[] = uint32_t.max;
 			t.linked_triangles[] = uint32_t.max;
 
 			t.center = vertices[t.vertices[0]].position[0 .. 2];
@@ -1819,8 +1819,8 @@ struct TrnNWN2WalkmeshPayload{
 				t.flags &= t.flags.max ^ t.Flags.clockwise;
 		}
 
-		// Rebuild junction list
-		buildJunctions();
+		// Rebuild edge list
+		buildEdges();
 	}
 
 	/**
@@ -1841,57 +1841,57 @@ struct TrnNWN2WalkmeshPayload{
 	}
 
 	/**
-	Rebuilds junction data by going through every triangle / vertices
+	Rebuilds edge data by going through every triangle / vertices
 
 	Warning: NWN2 official baking tool often produces duplicated triangles and
-	junctions around placeable walkmeshes.
+	edges around placeable walkmeshes.
 	*/
-	void buildJunctions(){
-		uint32_t[uint32_t[2]] junctionMap;
-		uint32_t findJunction(uint32_t[2] vertices){
-			if(auto j = vertices in junctionMap)
+	void buildEdges(){
+		uint32_t[uint32_t[2]] edgeMap;
+		uint32_t findEdge(uint32_t[2] vertices){
+			if(auto j = vertices in edgeMap)
 				return *j;
 			return uint32_t.max;
 		}
 
-		junctions.length = 0;
+		edges.length = 0;
 
 		foreach(i, ref t ; triangles){
-			// Create junctions as needed
+			// Create edges as needed
 			foreach(j ; 0 .. 3){
 				auto vrt = [t.vertices[j], t.vertices[(j+1) % 3]].sort.array;
-				auto juncIdx = findJunction(vrt[0 .. 2]);
+				auto edgeIdx = findEdge(vrt[0 .. 2]);
 
-				if(juncIdx == uint32_t.max){
-					// Add new junction
-					junctionMap[vrt[0 .. 2]] = junctions.length.to!uint32_t;
-					junctions ~= Junction(vrt[0 .. 2], [i.to!uint32_t, uint32_t.max]);
+				if(edgeIdx == uint32_t.max){
+					// Add new edge
+					edgeMap[vrt[0 .. 2]] = edges.length.to!uint32_t;
+					edges ~= Edge(vrt[0 .. 2], [i.to!uint32_t, uint32_t.max]);
 				}
 				else{
-					// Add triangle to existing junction
-					enforce(junctions[juncIdx].triangles[1] == uint32_t.max,
-						"Junction "~juncIdx.to!string~" = "~junctions[juncIdx].to!string~" cannot be linked to more than 2 triangles (cannot add triangle "~i.to!string~")");
-					junctions[juncIdx].triangles[1] = i.to!uint32_t;
+					// Add triangle to existing edge
+					enforce(edges[edgeIdx].triangles[1] == uint32_t.max,
+						"Edge "~edgeIdx.to!string~" = "~edges[edgeIdx].to!string~" cannot be linked to more than 2 triangles (cannot add triangle "~i.to!string~")");
+					edges[edgeIdx].triangles[1] = i.to!uint32_t;
 				}
 			}
 		}
 
-		// update triangles[].linked_junction & triangles[].linked_triangles
-		foreach(juncIdx, ref junc ; junctions){
-			assert(junc.triangles[0] != uint32_t.max);
+		// update triangles[].linked_edge & triangles[].linked_triangles
+		foreach(edgeIdx, ref edge ; edges){
+			assert(edge.triangles[0] != uint32_t.max);
 
-			foreach(j, tIdx ; junc.triangles){
+			foreach(j, tIdx ; edge.triangles){
 				if(tIdx == uint32_t.max)
 					continue;
 
 				size_t slot;
 				for(slot = 0 ; slot < 3 ; slot++)
-					if(triangles[tIdx].linked_junctions[slot] == uint32_t.max)
+					if(triangles[tIdx].linked_edges[slot] == uint32_t.max)
 						break;
 				assert(slot < 3, "Triangle "~tIdx.to!string~" is already linked to 3 triangles");
 
-				triangles[tIdx].linked_junctions[slot] = juncIdx.to!uint32_t;
-				triangles[tIdx].linked_triangles[slot] = junc.triangles[(j + 1) % 2];
+				triangles[tIdx].linked_edges[slot] = edgeIdx.to!uint32_t;
+				triangles[tIdx].linked_triangles[slot] = edge.triangles[(j + 1) % 2];
 			}
 		}
 
@@ -1933,7 +1933,7 @@ unittest {
 
 		// Values taken from trx file baked with the toolset
 		assert(aswm.triangles.length == 1152);
-		assert(aswm.junctions.length == 1776);
+		assert(aswm.edges.length == 1776);
 		assert(aswm.islands.length == 25);
 	}
 }

@@ -146,7 +146,7 @@ int _main(string[] args){
 					~"\n"
 					~"Available features to render:\n"
 					~"- walkmesh: All triangles including non-walkable.\n"
-					~"- junctions: Junctions between two triangles.\n"
+					~"- edges: Edges between two triangles.\n"
 					~"- tiles: Each tile using random colors.\n"
 					~"- pathtables-los: Line of sight pathtable property between two triangles.\n"
 					~"- islands: Each island using random colors.\n",
@@ -415,35 +415,35 @@ void stripASWM(ref TrnNWN2WalkmeshPayload aswm, bool silent){
 
 
 	auto initVertices = aswm.vertices.length;
-	auto initJunctions = aswm.junctions.length;
+	auto initEdges = aswm.edges.length;
 	auto initTriangles = aswm.triangles.length;
 
 
 
-	uint32_t[] vertTransTable, juncTransTable, triTransTable;//table[oldIndex] = newIndex
+	uint32_t[] vertTransTable, edgeTransTable, triTransTable;//table[oldIndex] = newIndex
 	vertTransTable.length = aswm.vertices.length;
-	juncTransTable.length = aswm.junctions.length;
+	edgeTransTable.length = aswm.edges.length;
 	triTransTable.length = aswm.triangles.length;
 	uint32_t newIndex;
 
-	bool[] usedVertices, usedJunctions;
+	bool[] usedVertices, usedEdges;
 	usedVertices.length = aswm.vertices.length;
-	usedJunctions.length = aswm.junctions.length;
+	usedEdges.length = aswm.edges.length;
 	usedVertices[] = false;
-	usedJunctions[] = false;
+	usedEdges[] = false;
 
-	// Reduce triangle list & flag used vertices & junctions
+	// Reduce triangle list & flag used vertices & edges
 	newIndex = 0;
 	foreach(i, ref triangle ; aswm.triangles){
 		if(triangle.island != uint16_t.max){
 
-			// Flag used / unused vertices & junctions
+			// Flag used / unused vertices & edges
 			foreach(vert ; triangle.vertices){
 				usedVertices[vert] = true;
 			}
-			foreach(junc ; triangle.linked_junctions){
-				if(junc != uint32_t.max)
-					usedJunctions[junc] = true;
+			foreach(edge ; triangle.linked_edges){
+				if(edge != uint32_t.max)
+					usedEdges[edge] = true;
 			}
 
 			// Reduce triangle list in place
@@ -468,20 +468,20 @@ void stripASWM(ref TrnNWN2WalkmeshPayload aswm, bool silent){
 	}
 	aswm.vertices.length = newIndex;
 
-	// Reduce junctions list
+	// Reduce edges list
 	newIndex = 0;
-	foreach(i, used ; usedJunctions){
+	foreach(i, used ; usedEdges){
 		if(used){
-			aswm.junctions[newIndex] = aswm.junctions[i];
-			juncTransTable[i] = newIndex++;
+			aswm.edges[newIndex] = aswm.edges[i];
+			edgeTransTable[i] = newIndex++;
 		}
 		else
-			juncTransTable[i] = uint32_t.max;
+			edgeTransTable[i] = uint32_t.max;
 	}
-	aswm.junctions.length = newIndex;
+	aswm.edges.length = newIndex;
 
 	// Adjust indices in mesh data
-	aswm.translateIndices(triTransTable, juncTransTable, vertTransTable);
+	aswm.translateIndices(triTransTable, edgeTransTable, vertTransTable);
 
 
 	// Adjust indices inside tiles pathtable
@@ -538,12 +538,12 @@ void stripASWM(ref TrnNWN2WalkmeshPayload aswm, bool silent){
 
 		currentOffset = tile.header.triangles_offset + tile.header.triangles_count;
 
-		// Re-count linked vertices / junctions
+		// Re-count linked vertices / edges
 		tile.header.vertices_count = tile.path_table.node_to_local
 			.map!(a => a != a.max? aswm.triangles[a].vertices[] : [])
 			.join.sort.uniq.array.length.to!uint32_t;
-		tile.header.junctions_count = tile.path_table.node_to_local
-			.map!(a => a != a.max?  aswm.triangles[a].linked_junctions[] : [])
+		tile.header.edges_count = tile.path_table.node_to_local
+			.map!(a => a != a.max?  aswm.triangles[a].linked_edges[] : [])
 			.join.sort.uniq.array.length.to!uint32_t;
 	}
 	// Adjust indices in islands
@@ -556,7 +556,7 @@ void stripASWM(ref TrnNWN2WalkmeshPayload aswm, bool silent){
 
 	if(!silent){
 		writeln("Vertices: ", initVertices, " => ", aswm.vertices.length, " (stripped ", 100 - aswm.vertices.length * 100.0 / initVertices, "%)");
-		writeln("Junctions: ", initJunctions, " => ", aswm.junctions.length, " (stripped ", 100 - aswm.junctions.length * 100.0 / initJunctions, "%)");
+		writeln("Edges: ", initEdges, " => ", aswm.edges.length, " (stripped ", 100 - aswm.edges.length * 100.0 / initEdges, "%)");
 		writeln("Triangles: ", initTriangles, " => ", aswm.triangles.length, " (stripped ", 100 - aswm.triangles.length * 100.0 / initTriangles, "%)");
 	}
 }
@@ -646,17 +646,17 @@ void writeWalkmeshObj(ref TrnNWN2WalkmeshPayload aswm, in string name, ref File 
 		}
 	}
 
-	if(!features.find("junctions").empty){
-		writeln("junctions");
+	if(!features.find("edges").empty){
+		writeln("edges");
 
-		obj.writeln("g junctions");
+		obj.writeln("g edges");
 
-		foreach(ref junc ; aswm.junctions){
+		foreach(ref edge ; aswm.edges){
 
 			randomColor();
 
-			auto vertA = aswm.vertices[junc.vertices[0]];
-			auto vertB = aswm.vertices[junc.vertices[1]];
+			auto vertA = aswm.vertices[edge.vertices[0]];
+			auto vertB = aswm.vertices[edge.vertices[1]];
 
 			auto vertCenterHigh = vertA.position;
 			vertCenterHigh[] += vertB.position[];
@@ -665,12 +665,12 @@ void writeWalkmeshObj(ref TrnNWN2WalkmeshPayload aswm, in string name, ref File 
 
 			obj.writefln("v %(%s %)", vertCenterHigh);
 			vertexOffset++;
-			obj.writefln("f %s %s %s", junc.vertices[0] + 1, junc.vertices[1] + 1, vertexOffset);//Start index is 1
+			obj.writefln("f %s %s %s", edge.vertices[0] + 1, edge.vertices[1] + 1, vertexOffset);//Start index is 1
 
-			if(junc.triangles[0] != uint32_t.max && junc.triangles[1] != uint32_t.max){
+			if(edge.triangles[0] != uint32_t.max && edge.triangles[1] != uint32_t.max){
 
-				auto triA = aswm.triangles[junc.triangles[0]];
-				auto triB = aswm.triangles[junc.triangles[1]];
+				auto triA = aswm.triangles[edge.triangles[0]];
+				auto triB = aswm.triangles[edge.triangles[1]];
 
 				double zAvg(ref aswm.Triangle triangle){
 					double res = 0.0;
