@@ -2,14 +2,14 @@
 
 set -e
 export WINEPREFIX=$HOME/.wine-dmd
-export WINEARCH=win32
+export WINEARCH=win64
 export WINEDEBUG=-all
 
 if [[ "$1" == "before_install" ]]; then
 	sudo apt-get install -y wine p7zip
 	wineboot
 
-	INSTALL_DIR=$WINEPREFIX/drive_c/dmd-win32
+	INSTALL_DIR=$WINEPREFIX/drive_c/dmd-win64
 
 	DMD_VERSION=`dmd --version | grep -P -o "2\.\d{3}\.\d"`
 
@@ -24,7 +24,7 @@ if [[ "$1" == "before_install" ]]; then
 
 
 	echo "[HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment]
-\"PATH\"=\"c:\\\\windows;c:\\\\windows\\\\system;c:\\\\dmd-win32\\\\dmd2\\\\windows\\\\bin\"" | wine regedit -
+\"PATH\"=\"c:\\\\windows;c:\\\\windows\\\\system;c:\\\\dmd-win64\\\\dmd2\\\\windows\\\\bin\"" | wine regedit -
 
 elif [[ "$1" == "exec" ]]; then
 	wine ${@:2}
