@@ -64,6 +64,3 @@ deploy:
 notifications:
   email:
     - cromfr@gmail.com
-branches:
-  only:
-    master
