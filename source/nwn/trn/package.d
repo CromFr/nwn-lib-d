@@ -1817,7 +1817,7 @@ struct TrnNWN2WalkmeshPayload{
 
 			t.island = uint16_t.max;
 
-			t.flags = mesh.triangles[i].flags;
+			t.flags |= t.Flags.walkable;
 			if(isTriangleClockwise(t.vertices[].map!(a => vec2f(vertices[a].position[0 .. 2])).array[0 .. 3]))
 				t.flags |= t.Flags.clockwise;
 			else
@@ -1830,8 +1830,11 @@ struct TrnNWN2WalkmeshPayload{
 
 	/**
 	Converts terrain mesh data to a more generic format.
+
+	Params:
+	onlyWalkable = true to create a generic mesh containing only the walkable triangles
 	*/
-	GenericASWMMesh toGenericMesh() const {
+	GenericASWMMesh toGenericMesh(bool onlyWalkable = true) const {
 		GenericASWMMesh ret;
 		ret.vertices.length = vertices.length;
 		ret.triangles.length = triangles.length;
@@ -1839,9 +1842,13 @@ struct TrnNWN2WalkmeshPayload{
 		foreach(i, ref v ; vertices){
 			ret.vertices[i] = vec3f(v.position);
 		}
+
+		size_t ptr = 0;
 		foreach(i, ref t ; triangles){
-			ret.triangles[i] = ret.Triangle(t.vertices, t.flags);
+			if(onlyWalkable == false || t.flags & t.Flags.walkable)
+				ret.triangles[ptr++] = ret.Triangle(t.vertices);
 		}
+		ret.triangles.length = ptr;
 		return ret;
 	}
 
