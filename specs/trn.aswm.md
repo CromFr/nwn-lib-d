@@ -45,6 +45,7 @@ walkmesh/walkmesh cutter alterations).
       mesh)
     + Placeable walkmesh modifications appears
     + Path tables & island list are populated
+    + Every triangle has footstep flags set according to the painted texture
 
 # Data blocks
 
