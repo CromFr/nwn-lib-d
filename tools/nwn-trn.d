@@ -39,7 +39,9 @@ void usage(in string cmd){
 	writeln("  bake: Bake an area (replacement for builtin nwn2toolset bake tool)");
 	writeln("  aswm-check: Checks if a TRX file contains valid data");
 	writeln("  aswm-strip: optimize TRX files");
-	writeln("  aswm-convert: convert walkmesh into wavefront obj");
+	writeln("  aswm-export-fancy: exports walkmesh data into a colored wavefront obj");
+	writeln("  aswm-export: exports walkmesh walkable triangles into a wavefront obj");
+	writeln("  aswm-import: import a wavefront obj model and use it as walkmesh");
 	writeln("Advanced commands:");
 	writeln("  aswm-extract: unzip walkmesh data");
 	writeln("  aswm-dump: print walkmesh data using a (barely) human-readable format");
@@ -94,17 +96,10 @@ int _main(string[] args){
 				size_t initLen = data.length;
 
 				bool found = false;
-				foreach(ref packet ; trn.packets){
-					if(packet.type == TrnPacketType.NWN2_ASWM){
-						found = true;
-
-						auto aswm = &packet.as!(TrnPacketType.NWN2_ASWM)();
-
-						stripASWM(*aswm, silent);
-
-						auto err = aswm.validate();
-						enforce(err is null, err);
-					}
+				foreach(ref TrnNWN2WalkmeshPayload aswm ; trn){
+					found = true;
+					stripASWM(aswm, silent);
+					aswm.validate();
 				}
 
 				enforce(found, "No ASWM packet found. Make sure you are targeting a TRX file.");
@@ -131,7 +126,7 @@ int _main(string[] args){
 		}
 		break;
 
-		case "aswm-convert":{
+		case "aswm-export-fancy":{
 			string targetDir = null;
 			string[] features = [];
 			auto res = getopt(args,
@@ -149,6 +144,8 @@ int _main(string[] args){
 					~"- edges: Edges between two triangles.\n"
 					~"- tiles: Each tile using random colors.\n"
 					~"- pathtables-los: Line of sight pathtable property between two triangles.\n"
+					~"- randomtilepaths: Calculate random paths between tile triangles.\n"
+					~"- randomislandspaths: Calculate random paths between islands.\n"
 					~"- islands: Each island using random colors.\n",
 					res.options);
 				return 0;
@@ -168,15 +165,13 @@ int _main(string[] args){
 			auto trn = new Trn(args[1]);
 
 			bool found = false;
-			foreach(ref packet ; trn.packets){
-				if(packet.type == TrnPacketType.NWN2_ASWM){
-					found = true;
-					writeWalkmeshObj(
-						packet.as!(TrnPacketType.NWN2_ASWM),
-						args[1].baseName.stripExtension,
-						outfile,
-						features);
-				}
+			foreach(ref TrnNWN2WalkmeshPayload aswm ; trn){
+				found = true;
+				writeWalkmeshObj(
+					aswm,
+					args[1].baseName.stripExtension,
+					outfile,
+					features);
 			}
 			enforce(found, "No ASWM packet found. Make sure you are targeting a TRX file.");
 
@@ -185,7 +180,72 @@ int _main(string[] args){
 				if(!colPath.exists)
 					std.file.write(colPath, colors);
 			}
+		}
+		break;
 
+		case "aswm-export": {
+			string outFile = ".";
+			auto res = getopt(args,
+				"output|o", "Output file or directory where to write the obj file. Default: '.'", &outFile,
+				);
+
+			if(res.helpWanted || args.length == 1){
+				improvedGetoptPrinter(
+					"Export all walkable triangles into a Wavefront OBJ file.\n"
+					~"Usage: "~args[0]~" "~command~" map.trx\n"
+					~"       "~args[0]~" "~command~" map.trx -o outputFile.obj\n",
+					res.options);
+				return 0;
+			}
+			enforce(args.length == 2, "You can only provide one TRN file");
+
+			auto inputFile = args[1];
+
+			if(outFile.exists && outFile.isDir)
+				outFile = buildPath(outFile, inputFile.baseName ~ ".aswm.obj");
+
+			foreach(ref TrnNWN2WalkmeshPayload aswm ; new Trn(inputFile)){
+				aswm.toGenericMesh.toObj(File(outFile, "w"));
+			}
+		}
+		break;
+
+		case "aswm-import": {
+			string trnFile;
+			string objFile;
+			string objName;
+			string outFile;
+			auto res = getopt(args,
+				config.required, "trn", "TRN file to set the walkmesh of", &trnFile,
+				config.required, "obj", "Wavefront OBJ file to import", &objFile,
+				"obj-name", "Object name to import. Default: the first object declared.", &objName,
+				"output|o", "Output file or directory where to write the obj file. Default: the file provided by --trn", &outFile,
+				);
+
+			if(res.helpWanted){
+				improvedGetoptPrinter(
+					"Import a Wavefront OBJ file and use it as the area walkmesh. All triangles will be walkable.\n"
+					~"Usage: "~args[0]~" "~command~" --trn map.trx --obj walkmesh.obj -o newmap.trx\n"
+					~"       "~args[0]~" "~command~" --trn map.trx --obj walkmesh.obj\n",
+					res.options);
+				return 0;
+			}
+			enforce(args.length == 1, "Too many arguments. See --help");
+
+			if(outFile is null)
+				outFile = trnFile;
+			else if(outFile.exists && outFile.isDir)
+				outFile = buildPath(outFile, trnFile.baseName);
+
+			auto mesh = GenericMesh.fromObj(File(objFile), objName);
+
+			auto trn = new Trn(trnFile);
+			foreach(ref TrnNWN2WalkmeshPayload aswm ; trn){
+				aswm.setGenericMesh(mesh);
+				aswm.bake();
+				aswm.validate();
+			}
+			std.file.write(outFile, trn.serialize);
 		}
 		break;
 
@@ -195,13 +255,11 @@ int _main(string[] args){
 			auto trn = new Trn(args[1]);
 
 			bool found = false;
-			foreach(i, ref packet ; trn.packets){
-				if(packet.type == TrnPacketType.NWN2_ASWM){
-					found = true;
-					std.file.write(
-						args[1].baseName~"."~i.to!string~".aswm",
-						packet.as!(TrnPacketType.NWN2_ASWM).serializeUncompressed());
-				}
+			foreach(ref TrnNWN2WalkmeshPayload aswm ; trn){
+				found = true;
+				std.file.write(
+					args[1].baseName~".aswm",
+					aswm.serializeUncompressed());
 			}
 			enforce(found, "No ASWM packet found. Make sure you are targeting a TRX file.");
 		}
@@ -213,11 +271,9 @@ int _main(string[] args){
 			auto trn = new Trn(args[1]);
 
 			bool found = false;
-			foreach(i, ref packet ; trn.packets){
-				if(packet.type == TrnPacketType.NWN2_ASWM){
-					found = true;
-					writeln(packet.as!(TrnPacketType.NWN2_ASWM).dump);
-				}
+			foreach(ref TrnNWN2WalkmeshPayload aswm ; trn){
+				found = true;
+				writeln(aswm.dump);
 			}
 			enforce(found, "No ASWM packet found. Make sure you are targeting a TRX file.");
 		}
@@ -254,11 +310,9 @@ int _main(string[] args){
 			auto trn = new Trn(args[1]);
 
 			bool found = false;
-			foreach(i, ref packet ; trn.packets){
-				if(packet.type == TrnPacketType.NWN2_ASWM){
-					found = true;
-					packet.as!(TrnPacketType.NWN2_ASWM).bake();
-				}
+			foreach(ref TrnNWN2WalkmeshPayload aswm ; trn){
+				found = true;
+				aswm.bake();
 			}
 			enforce(found, "No ASWM packet found. Make sure you are targeting a TRX file.");
 
@@ -281,11 +335,8 @@ int _main(string[] args){
 
 			foreach(file ; args[1 .. $]){
 				auto trn = new Trn(file);
-				foreach(i, ref packet ; trn.packets){
-					if(packet.type == TrnPacketType.NWN2_ASWM){
-						auto err = packet.as!(TrnPacketType.NWN2_ASWM).validate(strict);
-						enforce(err is null, file~": "~err);
-					}
+				foreach(ref TrnNWN2WalkmeshPayload aswm ; trn){
+					aswm.validate(strict);
 				}
 			}
 		}
@@ -379,20 +430,18 @@ int _main(string[] args){
 				auto sw = new StopWatch;
 				sw.start();
 
-				foreach(i, ref packet ; trn.packets){
-					if(packet.type == TrnPacketType.NWN2_ASWM){
-						with(packet.as!(TrnPacketType.NWN2_ASWM)){
-							tiles_flags = 31;
-							if(forceWalkable){
-								foreach(ref t ; triangles)
-									t.flags |= t.Flags.walkable;
-							}
-							bake(!keepBorders);
+				foreach(ref TrnNWN2WalkmeshPayload aswm ; trn){
+					with(aswm){
 
-							if(!unsafe){
-								auto err = validate();
-								enforce(err is null, err);
-							}
+						tiles_flags = 31;
+						if(forceWalkable){
+							foreach(ref t ; triangles)
+								t.flags |= t.Flags.walkable;
+						}
+						bake(!keepBorders);
+
+						if(!unsafe){
+							validate();
 						}
 					}
 				}
@@ -744,10 +793,10 @@ void writeWalkmeshObj(ref TrnNWN2WalkmeshPayload aswm, in string name, ref File 
 		writeLOS(false);
 	}
 
-	if(!features.find("randompaths").empty){
-		writeln("randompaths");
+	if(!features.find("randomtilepaths").empty){
+		writeln("randomtilepaths");
 
-		obj.writeln("g randompaths");
+		obj.writeln("g randomtilepaths");
 
 		foreach(tileid, ref tile ; aswm.tiles) with(tile) {
 			immutable offset = tile.header.triangles_offset;
@@ -784,6 +833,37 @@ void writeWalkmeshObj(ref TrnNWN2WalkmeshPayload aswm, in string name, ref File 
 
 			}
 
+		}
+	}
+
+	if(!features.find("randomislandspaths").empty){
+		writeln("randomislandspaths");
+
+		obj.writeln("g randomislandspaths");
+		foreach(_ ; 0 .. 8){
+			immutable len = aswm.islands.length;
+			auto from = uniform(0, len).to!uint16_t;
+			auto to = uniform(0, len).to!uint16_t;
+
+
+			auto path = aswm.findIslandsPath(from, to);
+			if(path.length > 1){
+				auto firstCenter = aswm.islands[from].header.center.position;
+				firstCenter[2] += 1.0;
+				obj.writefln("v %(%s %)", firstCenter);
+
+				foreach(i ; path)
+					obj.writefln("v %(%s %)", aswm.islands[i].header.center.position);
+
+				obj.write("l ");
+				foreach(i ; 0 .. path.length + 1){
+					obj.write(vertexOffset + i + 1, " ");
+				}
+				obj.write(vertexOffset + 1); // loop on first point
+				obj.writeln();
+
+				vertexOffset += path.length + 1;
+			}
 		}
 
 	}
