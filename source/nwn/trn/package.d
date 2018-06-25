@@ -1924,20 +1924,28 @@ unittest {
 	assert(epportesTrx.length == serialized.length && epportesTrx == serialized);
 
 	foreach(ref TrnNWN2WalkmeshPayload aswm ; trn){
-		assert(aswm.validate() is null, aswm.validate());
+		aswm.validate();
 
 		aswm.bake();
-		assert(aswm.validate() is null, aswm.validate());
+		aswm.validate();
 
 		aswm.removeTriangles((in t) => (t.flags & t.Flags.walkable) == 0);
 		aswm.bake();
-		assert(aswm.validate() is null, aswm.validate());
+		aswm.validate();
 	}
 
 
 	trn = new Trn(cast(ubyte[])import("IslandsTest.trn"));
 	foreach(ref TrnNWN2WalkmeshPayload aswm ; trn){
-		assert(aswm.validate() is null, aswm.validate());
+		aswm.validate();
+
+		aswm.bake();
+		aswm.validate();
+
+		assert(aswm.triangles.length == 1152);
+		assert(aswm.edges.length == 1776);
+
+		auto walkableTrianglesLength = aswm.triangles.count!(a => (a.flags & a.Flags.walkable) > 0);
 
 		auto mesh = aswm.toGenericMesh;
 
@@ -1946,11 +1954,10 @@ unittest {
 		aswm.setGenericMesh(mesh);
 		aswm.bake();
 
-		assert(aswm.validate() is null, aswm.validate());
+		aswm.validate();
 
 		// Values taken from trx file baked with the toolset
-		assert(aswm.triangles.length == 1152);
-		assert(aswm.edges.length == 1776);
+		assert(aswm.triangles.length == walkableTrianglesLength);
 		assert(aswm.islands.length == 25);
 	}
 }
