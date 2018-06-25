@@ -15,7 +15,7 @@ import nwnlibd.geometry;
 import gfm.math.vector;
 
 
-struct GenericASWMMesh {
+struct GenericMesh {
 	vec3f[] vertices;
 
 	static struct Triangle{
@@ -297,8 +297,8 @@ struct GenericASWMMesh {
 	obj = OBJ file to read
 	objectName = If null, the first object will be used, if a string, will import the mesh from the given object name
 	*/
-	static GenericASWMMesh fromObj(File obj, string objectName = null){
-		GenericASWMMesh mesh;
+	static GenericMesh fromObj(File obj, string objectName = null){
+		GenericMesh mesh;
 		bool registerData = false;
 		foreach(line ; obj.byLine.map!strip.filter!(a => a[0] != '#')){
 			import std.format;
@@ -350,7 +350,7 @@ struct GenericASWMMesh {
 	}
 
 
-	void toObj(File obj, in string name = "genericmesh", bool removeNonWalkable = true) const {
+	void toObj(File obj, in string name = "genericmesh") const {
 		obj.writeln("o ",name);
 		foreach(ref v ; vertices){
 			obj.writefln("v %(%f %)", v.v);

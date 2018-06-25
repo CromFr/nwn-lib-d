@@ -495,7 +495,7 @@ struct TrnNWN2WalkmeshPayload{
 
 		float[3] position;
 
-		private struct Xyz{ float x, y, z; }
+		private static struct Xyz{ float x, y, z; }
 		Xyz _xyz;
 		alias _xyz this;
 	}
@@ -1788,7 +1788,7 @@ struct TrnNWN2WalkmeshPayload{
 	/**
 	Set 3d mesh geometry
 	*/
-	void setGenericMesh(in GenericASWMMesh mesh){
+	void setGenericMesh(in GenericMesh mesh){
 		// Copy vertices
 		vertices.length = mesh.vertices.length;
 		foreach(i, ref v ; vertices)
@@ -1807,13 +1807,10 @@ struct TrnNWN2WalkmeshPayload{
 			t.center[] += vertices[t.vertices[2]].position[0 .. 2];
 			t.center[] /= 3.0;
 
-			t.normal = vertices[t.vertices[0]].x * vertices[t.vertices[1]].x
-				+ vertices[t.vertices[0]].y * vertices[t.vertices[1]].y
-				+ vertices[t.vertices[0]].z * vertices[t.vertices[1]].z;
+			t.normal = (mesh.vertices[t.vertices[1]] - mesh.vertices[t.vertices[0]])
+				.cross(mesh.vertices[t.vertices[2]] - mesh.vertices[t.vertices[0]]).normalized[0..3];
 
-			t.dot_product = vertices[t.vertices[0]].x * vertices[t.vertices[1]].x * vertices[t.vertices[2]].x
-				+ vertices[t.vertices[0]].y * vertices[t.vertices[1]].y * vertices[t.vertices[2]].y
-				+ vertices[t.vertices[0]].z * vertices[t.vertices[1]].z * vertices[t.vertices[2]].z;
+			t.dot_product = -dot(vec3f(t.normal), mesh.vertices[t.vertices[0]]);
 
 			t.island = uint16_t.max;
 
@@ -1832,10 +1829,11 @@ struct TrnNWN2WalkmeshPayload{
 	Converts terrain mesh data to a more generic format.
 
 	Params:
-	onlyWalkable = true to create a generic mesh containing only the walkable triangles
+	triangleFlags = Triangle flags to include in the generic mesh.
+	Set to `uint16_t.max` to include all triangles.
 	*/
-	GenericASWMMesh toGenericMesh(bool onlyWalkable = true) const {
-		GenericASWMMesh ret;
+	GenericMesh toGenericMesh(uint16_t triangleFlags = Triangle.Flags.walkable) const {
+		GenericMesh ret;
 		ret.vertices.length = vertices.length;
 		ret.triangles.length = triangles.length;
 
@@ -1845,7 +1843,7 @@ struct TrnNWN2WalkmeshPayload{
 
 		size_t ptr = 0;
 		foreach(i, ref t ; triangles){
-			if(onlyWalkable == false || t.flags & t.Flags.walkable)
+			if(triangleFlags == uint16_t.max || t.flags & triangleFlags)
 				ret.triangles[ptr++] = ret.Triangle(t.vertices);
 		}
 		ret.triangles.length = ptr;
