@@ -366,3 +366,34 @@ struct GenericMesh {
 	}
 }
 
+
+
+unittest{
+	import nwn.trn;
+	import std.algorithm;
+	import std.math;
+	auto trn = new Trn(cast(ubyte[])import("eauprofonde-portes.trx"));
+
+	foreach(ref TrnNWN2WalkmeshPayload aswm ; trn){
+		auto mesh = aswm.toGenericMesh();
+		mesh.validate;
+
+		auto file = File.tmpfile();
+		mesh.toObj(file);
+
+		file.rewind;
+		auto mesh2 = GenericMesh.fromObj(file);
+
+		assert(mesh.vertices.length == mesh2.vertices.length);
+		foreach(i ; 0 .. mesh.vertices.length){
+			if(!equal!approxEqual(mesh.vertices[i][], mesh2.vertices[i][]))
+				writeln(mesh.vertices[i], "!=", mesh2.vertices[i]);
+		}
+
+		assert(equal!((a,b)=>equal!approxEqual(a[], b[]))(mesh.vertices, mesh2.vertices));
+		assert(equal!((a,b)=>isPermutation(a.vertices[], b.vertices[]))(mesh.triangles, mesh2.triangles));
+	}
+
+}
+
+

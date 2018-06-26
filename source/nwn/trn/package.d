@@ -91,7 +91,7 @@ struct TrnPacket{
 
 	ubyte[] serialize(){
 		final switch(type) with(TrnPacketType){
-			foreach(TYPE ; EnumMembers!TrnPacketType){
+			static foreach(TYPE ; EnumMembers!TrnPacketType){
 				case TYPE:
 					return as!TYPE.serialize();
 			}
@@ -106,7 +106,7 @@ package:
 
 		typeswitch:
 		final switch(type) with(TrnPacketType){
-			foreach(TYPE ; EnumMembers!TrnPacketType){
+			static foreach(TYPE ; EnumMembers!TrnPacketType){
 				case TYPE:
 					alias PAYLOAD = TrnPacketTypeToPayload!TYPE;
 					structData = cast(ubyte[])([PAYLOAD(payloadData)][0..1]);
@@ -1788,7 +1788,6 @@ struct TrnNWN2WalkmeshPayload{
 
 		//if(walkableTrianglesLen > 0)
 		//	writeln("Tile ", tileIndex, ": ", walkableTrianglesLen, " walkable triangles in ", islandsMeta.length, " islands");
-
 		return islandsMeta;
 	}
 
@@ -2043,13 +2042,19 @@ unittest {
 
 	foreach(ref TrnNWN2WalkmeshPayload aswm ; trn){
 		aswm.validate();
+		aswm.bake();
+
+		assertThrown!Error(aswm.tiles[666].findPath(0, 1));// Triangles outside of the tile
+		assert(aswm.tiles[666].findPath(15421, 15417).length == 4);// on the same island
+		assert(aswm.tiles[666].findPath(15452, 15470).length == 7);// on the same island
+		assert(aswm.tiles[778].findPath(20263, 20278).length == 0);// across two islands
+
+		assert(aswm.findIslandsPath(10, 12).length == 2);
+		assert(aswm.findIslandsPath(0, (aswm.islands.length - 1).to!uint16_t).length == 49);
 
 		aswm.setFootstepSounds(trn.packets, terrainmaterials);
-
-		aswm.bake();
-		aswm.validate();
-
 		aswm.removeTriangles((in t) => (t.flags & t.Flags.walkable) == 0);
+
 		aswm.bake();
 		aswm.validate();
 	}
