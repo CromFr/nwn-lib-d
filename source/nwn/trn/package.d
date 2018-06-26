@@ -368,6 +368,20 @@ struct TrnNWN2MegatilePayload{
 
 		return cw.data;
 	}
+
+	GenericMesh toGenericMesh() const {
+		GenericMesh ret;
+
+		ret.vertices.length = vertices.length;
+		foreach(i, ref v ; vertices)
+			ret.vertices[i] = vec3f(v.position);
+
+		ret.triangles.length = triangles.length;
+		foreach(i, ref t ; triangles)
+			ret.triangles[i] = GenericMesh.Triangle(t.vertices.to!(uint32_t[3]));
+
+		return ret;
+	}
 }
 
 /// Water information
