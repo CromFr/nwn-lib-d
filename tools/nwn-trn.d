@@ -215,9 +215,11 @@ int _main(string[] args){
 			string objFile;
 			string objName;
 			string outFile;
+			string terrain2daPath;
 			auto res = getopt(args,
 				config.required, "trn", "TRN file to set the walkmesh of", &trnFile,
 				config.required, "obj", "Wavefront OBJ file to import", &objFile,
+				"terrain2da", "Path to terrainmaterials.2da, to generate footstep sounds", &terrain2daPath,
 				"obj-name", "Object name to import. Default: the first object declared.", &objName,
 				"output|o", "Output file or directory where to write the obj file. Default: the file provided by --trn", &outFile,
 				);
@@ -225,8 +227,8 @@ int _main(string[] args){
 			if(res.helpWanted){
 				improvedGetoptPrinter(
 					"Import a Wavefront OBJ file and use it as the area walkmesh. All triangles will be walkable.\n"
-					~"Usage: "~args[0]~" "~command~" --trn map.trx --obj walkmesh.obj -o newmap.trx\n"
-					~"       "~args[0]~" "~command~" --trn map.trx --obj walkmesh.obj\n",
+					~"Usage: "~args[0]~" "~command~" --trn map.trx --obj walkmesh.obj --terrain2da ./terrainmaterials.2da -o newmap.trx\n"
+					~"       "~args[0]~" "~command~" --trn map.trx --obj walkmesh.obj --terrain2da ./terrainmaterials.2da\n",
 					res.options);
 				return 0;
 			}
@@ -239,10 +241,22 @@ int _main(string[] args){
 
 			auto mesh = GenericMesh.fromObj(File(objFile), objName);
 
+			TwoDA terrainmaterials;
+			if(terrain2daPath !is null)
+				terrainmaterials = new TwoDA(terrain2daPath);
+			else
+				writeln("Warning: No triangle soundstep flags will be set. Please provide --terrain2da");
+
+
 			auto trn = new Trn(trnFile);
 			foreach(ref TrnNWN2WalkmeshPayload aswm ; trn){
 				aswm.setGenericMesh(mesh);
+
 				aswm.bake();
+
+				if(terrainmaterials !is null)
+					aswm.setFootstepSounds(trn.packets, terrainmaterials);
+
 				aswm.validate();
 			}
 			std.file.write(outFile, trn.serialize);
@@ -353,6 +367,7 @@ int _main(string[] args){
 			bool forceWalkable = false;
 			bool keepBorders = false;
 			bool unsafe = false;
+			string terrain2daPath = null;
 			string trnPath = null;
 			string gitPath = null;
 			uint threads = 0;
@@ -360,10 +375,11 @@ int _main(string[] args){
 			auto res = getopt(args,
 				"output|o", "Output trx file or directory. Default: './'", &targetPath,
 				"in-place|i", "Provide this flag to write TRX files next to the TRN files", &inPlace,
+				"terrain2da", "Path to terrainmaterials.2da, to generate footstep sounds", &terrain2daPath,
 				"trn", "TRN file path. Default to $map_name_without_extension.trn", &trnPath,
 				"reuse-trx|r", "Reuse walkmesh from an already existing TRX file", &reuseTrx,
-				"force-walkable", "Make all triangles walkable. Triangles removed with walkmesh cutters won't be walkable.\nDefault: false", &forceWalkable,
-				"keep-borders", "Do not remove exterior area borders from baked mesh. (can be used with --force-walkable to make borders walkable).\nDefault: false", &keepBorders,
+				"force-walkable", "Make all triangles walkable. Triangles removed with walkmesh cutters won't be walkable.", &forceWalkable,
+				"keep-borders", "Do not remove exterior area borders from baked mesh. (can be used with --force-walkable to make borders walkable).", &keepBorders,
 				// "git", "GIT file path. Default to $map_name_without_extension.git", &gitPath,
 				"j", "Parallel threads for baking multiple maps at the same time", &threads,
 				"unsafe", "Skip TRX validation checks, ie for dumping content & debugging", &unsafe,
@@ -372,7 +388,7 @@ int _main(string[] args){
 				improvedGetoptPrinter(
 					"Generate baked TRX file.\n"
 					~"Usage: "~args[0]~" "~command~" map_name -o baked.trx\n"
-					~"       "~args[0]~" "~command~" map_name map_name_2 ...\n"
+					~"       "~args[0]~" "~command~" --terrain2da ./terrainmaterials.2da map_name map_name_2 ...\n"
 					~" `map_name` can be any map file with or without its extension (.are, .git, .gic, .trn, .trx)",
 					res.options);
 				return 0;
@@ -394,6 +410,12 @@ int _main(string[] args){
 
 			if(trnPath !is null)
 				args ~= trnPath;
+
+			TwoDA terrainmaterials;
+			if(terrain2daPath !is null)
+				terrainmaterials = new TwoDA(terrain2daPath);
+			else
+				writeln("Warning: No triangle soundstep flags will be set. Please provide --terrain2da");
 
 			foreach(resname ; args[1 .. $].parallel){
 				if(trnPath !is null){
@@ -431,18 +453,19 @@ int _main(string[] args){
 				sw.start();
 
 				foreach(ref TrnNWN2WalkmeshPayload aswm ; trn){
-					with(aswm){
 
-						tiles_flags = 31;
-						if(forceWalkable){
-							foreach(ref t ; triangles)
-								t.flags |= t.Flags.walkable;
-						}
-						bake(!keepBorders);
+					aswm.tiles_flags = 31;
+					if(forceWalkable){
+						foreach(ref t ; aswm.triangles)
+							t.flags |= t.Flags.walkable;
+					}
+					aswm.bake(!keepBorders);
 
-						if(!unsafe){
-							validate();
-						}
+					if(terrainmaterials !is null)
+						aswm.setFootstepSounds(trn.packets, terrainmaterials);
+
+					if(!unsafe){
+						aswm.validate();
 					}
 				}
 				sw.stop();

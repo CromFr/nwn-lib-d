@@ -15,6 +15,7 @@ import gfm.math.vector;
 import gfm.math.box;
 
 public import nwn.trn.genericmesh;
+public import nwn.twoda;
 
 import std.stdio: stdout, write, writeln, writefln;
 version(unittest) import std.exception: assertThrown, assertNotThrown;
@@ -79,12 +80,12 @@ struct TrnPacket{
 	private TrnPacketType m_type;
 
 	///
-	ref T as(T)() if(is(typeof(TrnPacketPayloadToType!T) == TrnPacketType)) {
+	ref inout(T) as(T)() inout if(is(typeof(TrnPacketPayloadToType!T) == TrnPacketType)) {
 		assert(type == TrnPacketPayloadToType!T, "Type mismatch");
-		return *cast(T*)structData.ptr;
+		return *cast(inout(T)*)structData.ptr;
 	}
 
-	ref TrnPacketTypeToPayload!T as(TrnPacketType T)(){
+	ref inout(TrnPacketTypeToPayload!T) as(TrnPacketType T)() inout{
 		return as!(TrnPacketTypeToPayload!T);
 	}
 
@@ -219,6 +220,7 @@ class Trn{
 		}
 		return res;
 	}
+
 
 private:
 	static align(1) struct Header{
@@ -562,6 +564,8 @@ struct TrnNWN2WalkmeshPayload{
 			leaves    = 0x800, /// ditto
 			water     = 0x1000, /// ditto
 			puddles   = 0x2000, /// ditto
+
+			soundstepFlags = dirt | grass | stone | wood | carpet | metal | swamp | mud | leaves | water | puddles,
 		}
 	}
 	Triangle[] triangles;
@@ -1431,6 +1435,7 @@ struct TrnNWN2WalkmeshPayload{
 
 	Params:
 	removeBorders = true to remove unwalkable map borders from the walkmesh.
+	trrnPackets = TRN packet list containing TRRN packets needed for setting footstep sounds. Can contain non-trrn packets.
 	*/
 	void bake(bool removeBorders = true){
 		// Reset island associations
@@ -1788,6 +1793,104 @@ struct TrnNWN2WalkmeshPayload{
 		return islandsMeta;
 	}
 
+	/// Set the footstep sound flags for each triangle of the walkmesh
+	/// Params:
+	/// trrnPackets = TRN packet list containing the needed `TrnNWN2MegatilePayload` packets
+	/// textureFlags = Associative array listing all textures and their respective footstep sounds
+	void setFootstepSounds(in TrnPacket[] trrnPackets, in Triangle.Flags[string] textureFlags){
+		import nwn.dds;
+
+		// Prepare megatile info for quick access
+		static struct Megatile {
+			box2f aabb;
+			string[6] textures;
+			Dds[2] dds;
+		}
+		Megatile[] megatiles;
+		foreach(ref packet ; trrnPackets){
+			if(packet.type == TrnPacketType.NWN2_TRRN){
+				with(packet.as!(TrnPacketType.NWN2_TRRN)){
+					Megatile megatile;
+
+					auto min = vec2f(float.infinity, float.infinity);
+					auto max = vec2f(-float.infinity, -float.infinity);
+					foreach(ref v ; vertices){
+						if(v.position[0] < min.x || v.position[1] < min.y) min = vec2f(v.position[0..2]);
+						if(v.position[0] > max.x || v.position[1] > max.y) max = vec2f(v.position[0..2]);
+					}
+					megatile.aabb = box2f(min, max);
+
+					foreach(i ; 0 .. 6)
+						megatile.textures[i] = textures[i].name.ptr.fromStringz.idup;
+
+					megatile.dds[0] = Dds(dds_a);
+					megatile.dds[1] = Dds(dds_b);
+
+					megatiles ~= megatile;
+				}
+			}
+		}
+
+		foreach(i, ref t ; triangles){
+			bool found = false;
+			// TODO: sort these megatiles by row so we can find the megatile for any triangle with o(1)
+			foreach(ref mt ; megatiles){
+				if(mt.aabb.contains(cast(vec2f)t.center)){
+					found = true;
+
+					auto pos = vec2i(((t.center - mt.aabb.min) * mt.dds[0].header.width / mt.aabb.size.magnitude)[].to!(int[]));
+					auto p0 = mt.dds[0].getPixel(pos.x, pos.y);
+					auto p1 = mt.dds[1].getPixel(pos.x, pos.y);
+
+					auto maxTextureIdx = (p0[0 .. 4] ~ p1[0 .. 2]).maxIndex;
+
+					if(auto flag = mt.textures[maxTextureIdx] in textureFlags){
+						t.flags &= t.flags.max ^ Triangle.Flags.soundstepFlags;
+						t.flags |= *flag;
+					}
+					else
+						assert(0, "Texture '"~mt.textures[maxTextureIdx]~"' not in texture/flag list");
+
+					break;
+				}
+			}
+			enforce(found, "No megatile found for triangle "~i.to!string);
+		}
+	}
+
+	/// ditto
+	/// Params:
+	/// trrnPackets = TRN packet list containing the needed `TrnNWN2MegatilePayload` packets
+	/// terrainmaterials = terrainmaterials.2da that lists all textures and their respective footstep sounds
+	void setFootstepSounds(in TrnPacket[] trrnPackets, in TwoDA terrainmaterials){
+		// Find soundstep flags for each
+		Triangle.Flags[string] textureFlags;
+		immutable materialColIdx = terrainmaterials.columnIndex("Material");
+		foreach(i ; 0 .. terrainmaterials.rows){
+
+			Triangle.Flags flag;
+			switch(terrainmaterials.get("Material", i)){
+				case "Dirt":    flag = Triangle.Flags.dirt; break;
+				case "Grass":   flag = Triangle.Flags.grass; break;
+				case "Rock",
+				     "Stone":   flag = Triangle.Flags.stone; break;
+				case "Wood":    flag = Triangle.Flags.wood; break;
+				case "Carpet":  flag = Triangle.Flags.carpet; break;
+				case "Metal":   flag = Triangle.Flags.metal; break;
+				case "Swamp":   flag = Triangle.Flags.swamp; break;
+				case "Mud":     flag = Triangle.Flags.mud; break;
+				case "Leaves":  flag = Triangle.Flags.leaves; break;
+				case "Water":   flag = Triangle.Flags.water; break;
+				case "Puddles": flag = Triangle.Flags.puddles; break;
+				case null:      continue;
+				default: assert(0, "Unknown terrain material type '"~terrainmaterials.get("Material", i)~"' in "~terrainmaterials.fileName);
+			}
+			textureFlags[terrainmaterials.get("Terrain", i)] = flag;
+		}
+
+		setFootstepSounds(trrnPackets, textureFlags);
+	}
+
 	/**
 	Calculate the fastest route between two islands. The area need to be baked, as it uses existing path tables.
 	*/
@@ -1937,8 +2040,12 @@ unittest {
 	auto serialized = trn.serialize();
 	assert(epportesTrx.length == serialized.length && epportesTrx == serialized);
 
+	auto terrainmaterials = new TwoDA(cast(ubyte[])import("terrainmaterials.2da"));
+
 	foreach(ref TrnNWN2WalkmeshPayload aswm ; trn){
 		aswm.validate();
+
+		aswm.setFootstepSounds(trn.packets, terrainmaterials);
 
 		aswm.bake();
 		aswm.validate();

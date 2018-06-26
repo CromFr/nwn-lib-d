@@ -247,7 +247,7 @@ class TwoDA{
 		return cast(ubyte[])ret;
 	}
 
-	///
+	/// 2DA file name set during construction
 	immutable string fileName = null;
 private:
 	size_t[string] header;
