@@ -108,7 +108,7 @@ walkmesh/walkmesh cutter alterations).
 | `uint32_t[3]` | `linked_triangles` | Triangle indices that have an edge in common with this triangle. -1 is there is no triangle on one. |
 | `float[2]`    | `center`           | Triangle center x/y coordinates                                                                     |
 | `float[3]`    | `normal`           | Normal vector                                                                                       |
-| `float`       | `dot`              | Dot product at plane                                                                                |
+| `float`       | `dot`              | Dot product at plane, ie the distance between the plane and the origin                              |
 | `uint16_t`    | `island`           | -1 if the triangle is non walkable, else it is an island index                                      |
 | `uint16_t`    | `flags`            | Walkmesh flags                                                                                      |
 
@@ -140,11 +140,10 @@ walkmesh/walkmesh cutter alterations).
     + Non walkable triangles have `island=-1` and walkable flag set to 0
     + Triangles cut by a "walkmesh cutter" are not stored
 
-##### Notes
-- For the raw map:
-    + `unknownA` is always 0 (or -0)
-- For the icy peak map
-    + -498.294 ==> 475.229
+This is rather logical, because Islands are only used for pathfinding.
+
+You may be able to walk to a triangle with `flag&walkable>0` and `island=-1`
+using the arrow keys, but you won't be able to reach it using mouse actions.
 
 
 ## TilesHeader struct (20 bytes)
