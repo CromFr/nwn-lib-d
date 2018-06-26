@@ -46,21 +46,6 @@ script:
 after_success:
     - bash <(curl -s https://codecov.io/bash)
 
-
-deploy:
-  provider: releases
-  api_key:
-    secure: oeFpDw76HZBRNhE+q9E/HrRDAXpH0Ov0IHYOXn0jls0q4MBTPF+ogayRua7cLOik6r7DNGmJ3qV+qVW5f3ROIqZ6G9M9pGq8bTmCAeInjTgqG9yOkCeIwJ5QkVgPORibYGj3XMoRv58WzHQa+1oSuhCHUiyPOiJOIxIoKQADJs3c4vyYFJNIpc+Sqjxd35igQh6Zq2iSXanbv9JnX0HkuHo0n4wUUGj6BMhHLoACU7qtxFQCjr/x3vy1WrxR+CwSALuJL8K3QNw+PUew0vJfniJT8PFMJRv4rZH+g/dlS3WVCajNYeSU/TWqK6+DwfcHXb7FgDgKTM6zBLp76RlXHl2TzqBC4+bJbw8nvSP/Td2OtZWV6i7Zrdacx/w5Dr8GfeAmueW0thFoOU2U6qtR1LJWEG50VGKDvDKwpTsJ/si0ggEHsjGt9dfrze0/48YJ3A6saRgYo6EtaKuuqgR9ill0VxwfvPYHgCcFuklkm2uHHC3fmcPqHRLgU7wTb4mg8PpBhOpip5A/erI9/hRpdKNLKJxzJzmWrCvrkk/0U2e8raDLA5IXZ+7c7tCBgGLQIFhIGd9jxgm3PZs7706reZ/fH0ufFso3GcXcniAVwc56EQI9SI2iHtdlRo0/Ry9LKENWPCRKiB8WsmG7WhtJhg/PWN+NnpehPTfqrnm47hk=
-  file:
-    - nwn-gff.win-x86.exe
-    - nwn-gff.linux-x86_64
-    - nwn-gff.linux-x86
-  skip_cleanup: true
-  overwrite: true
-  on:
-    repo: CromFr/nwn-lib-d
-    tags: true
-
 notifications:
   email:
     - cromfr@gmail.com
