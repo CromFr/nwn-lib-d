@@ -1435,7 +1435,6 @@ struct TrnNWN2WalkmeshPayload{
 
 	Params:
 	removeBorders = true to remove unwalkable map borders from the walkmesh.
-	trrnPackets = TRN packet list containing TRRN packets needed for setting footstep sounds. Can contain non-trrn packets.
 	*/
 	void bake(bool removeBorders = true){
 		// Reset island associations
