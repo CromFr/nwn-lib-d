@@ -396,4 +396,47 @@ unittest{
 
 }
 
+unittest{
+	import nwn.trn;
+	import nwn.fastgff;
+
+	auto git = new FastGff("unittest/WalkmeshObjects.git");
+	auto trn = new Trn("unittest/WalkmeshObjects.trn");
+
+	alias WMCutter = vec2f[];
+	WMCutter[] wmCutters;
+	foreach(_, GffStruct trigger ; git["TriggerList"].get!GffList){
+
+		if(trigger["Type"].get!GffInt == 3){
+			// Walkmesh cutter
+			WMCutter cutter;
+
+			auto pos = [trigger["XPosition"].get!GffFloat, trigger["YPosition"].get!GffFloat];
+
+			// what about: XOrientation YOrientation ZOrientation ?
+			foreach(_, GffStruct point ; trigger["Geometry"].get!GffList){
+				cutter ~= vec2f(
+					point["PointX"].get!GffFloat + pos[0],
+					point["PointY"].get!GffFloat + pos[1],
+				);
+			}
+
+			wmCutters ~= cutter;
+		}
+	}
+
+	foreach(ref TrnNWN2WalkmeshPayload aswm ; trn){
+		auto mesh = aswm.toGenericMesh();
+
+		// Cut mesh
+		foreach(ref wmCutter ; wmCutters)
+			mesh.polygonCut(wmCutter);
+
+		aswm.setGenericMesh(mesh);
+		aswm.bake();
+		aswm.validate();
+	}
+
+}
+
 
