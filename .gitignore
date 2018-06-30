@@ -10,11 +10,11 @@ __test__*__
 
 *.sublime-workspace
 
-nwn-bdb
-nwn-erf
-nwn-gff
-nwn-tlk
-nwn-trn
+/nwn-bdb*
+/nwn-erf*
+/nwn-gff*
+/nwn-tlk*
+/nwn-trn*
 *.exe
 *.lib
 libnwn-d.*

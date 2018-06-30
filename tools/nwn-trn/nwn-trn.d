@@ -21,11 +21,6 @@ import nwnlibd.path;
 import tools.common.getopt;
 import nwn.trn;
 
-version(unittest){}
-else{
-	int main(string[] args){return _main(args);}
-}
-
 class ArgException : Exception{
 	@safe pure nothrow this(string msg, string f=__FILE__, size_t l=__LINE__, Throwable t=null){
 		super(msg, f, l, t);
@@ -48,7 +43,9 @@ void usage(in string cmd){
 	writeln("  aswm-bake: Re-bake all tiles of an already baked walkmesh");
 }
 
-int _main(string[] args){
+int main(string[] args){
+	version(unittest) if(args.length <= 1) return 0;
+
 	if(args.length <= 1 || (args.length > 1 && (args[1] == "--help" || args[1] == "-h"))){
 		usage(args[0]);
 		return 1;
@@ -367,6 +364,7 @@ int _main(string[] args){
 			bool forceWalkable = false;
 			bool keepBorders = false;
 			bool unsafe = false;
+			bool noWmCutters = false;
 			string terrain2daPath = null;
 			string trnPath = null;
 			string gitPath = null;
@@ -379,6 +377,7 @@ int _main(string[] args){
 				"trn", "TRN file path. Default to $map_name_without_extension.trn", &trnPath,
 				"reuse-trx|r", "Reuse walkmesh from an already existing TRX file", &reuseTrx,
 				"force-walkable", "Make all triangles walkable. Triangles removed with walkmesh cutters won't be walkable.", &forceWalkable,
+				"no-wmcutter", "Do not remove triangles inside walkmesh cutters", &noWmCutters,
 				"keep-borders", "Do not remove exterior area borders from baked mesh. (can be used with --force-walkable to make borders walkable).", &keepBorders,
 				// "git", "GIT file path. Default to $map_name_without_extension.git", &gitPath,
 				"j", "Parallel threads for baking multiple maps at the same time", &threads,
@@ -446,7 +445,8 @@ int _main(string[] args){
 
 
 				auto trn = new Trn(trnFilePath);
-				// auto git = new Gff(gitFilePath);
+				import nwn.fastgff;
+				auto git = new FastGff(gitFilePath);
 
 				import std.datetime.stopwatch: StopWatch;
 				auto sw = new StopWatch;

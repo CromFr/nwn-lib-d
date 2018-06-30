@@ -5,11 +5,20 @@ public import std.getopt: getopt, config;
 import std.getopt;
 import std.stdio;
 import std.string;
+import std.algorithm;
 
 
-void improvedGetoptPrinter(string text, Option[] opt, int width=80){
-	import std.stdio: writef, writeln;
-	import std.algorithm: map, reduce, find;
+void improvedGetoptPrinter(string text, Option[] opt, string footer = null, int width=80){
+
+	version(Posix){
+		import core.sys.posix.sys.ioctl;
+		static if(__traits(compiles, winsize, winsize.ws_row, TIOCGWINSZ)){
+			//pragma(msg, "Terminal width detection");
+			winsize w;
+			ioctl(stdout.fileno, TIOCGWINSZ, &w);
+			width = w.ws_col;
+		}
+	}
 
 	size_t widthOptLong;
 	bool hasRequiredOpt = false;
@@ -23,27 +32,48 @@ void improvedGetoptPrinter(string text, Option[] opt, int width=80){
 	widthHelpIndentation = widthOptLong + (hasRequiredOpt? 8 : 6);
 	auto helpIndent = "".leftJustify(widthHelpIndentation);
 
-	writeln(text);
+
+	// Print text
+	text
+		.splitLines
+		.map!(a => a.wrap(width, null, " ").splitLines)
+		.join
+		.each!((a){
+			writeln(a);
+		});
 	writeln();
 
 	if(hasRequiredOpt)
 		writeln("Options with * are required");
 
+	// Print options
 	foreach(ref o ; opt){
 		writef(" %s%s %*s  ",
 			hasRequiredOpt ? (o.required? "* " : "  ") : "",
 			o.optShort !is null? o.optShort : "  ",
 			widthOptLong, o.optLong );
 
-		auto wrappedText = o.help
-			.splitLines
-			.map!(a=>a.wrap(width-widthHelpIndentation).splitLines)
-			.reduce!(delegate(a, b){return a~b;});
-
 		bool first = true;
-		foreach(l ; wrappedText){
-			writeln(first? "" : helpIndent, l);
-			first = false;
-		}
+		o.help
+			.splitLines
+			.map!(a => a.wrap(width - widthHelpIndentation).splitLines)
+			.join
+			.each!((a){
+				writeln(first ? "" : helpIndent, a);
+				first = false;
+			});
+	}
+
+	// Print footer
+	if(footer !is null){
+		writeln();
+
+		footer
+			.splitLines
+			.map!(a => a.wrap(width, null, " ").splitLines)
+			.join
+			.each!((a){
+				writeln(a);
+			});
 	}
 }

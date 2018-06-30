@@ -14,75 +14,60 @@ x:ddoxFilterArgs "--min-protection=Protected"
 
 subPackage {
 	name "nwn-gff"
-	sourcePaths "source/" "tools/common/"
-	importPaths "source/" "tools/common/"
+	targetType "executable"
+	targetName "nwn-gff"
+	sourcePaths "source/" "tools/common/" "tools/nwn-gff/"
 	dependency "gfm:math" version="~>7.0.0"
 
-	configuration "application" {
-		targetType "executable"
-		targetName "nwn-gff"
-		mainSourceFile "tools/nwn-gff.d"
-	}
+	configuration "application"
 	configuration "unittest" {
 		stringImportPaths "unittest"
 	}
 }
 subPackage {
 	name "nwn-erf"
-	sourcePaths "source/" "tools/common/"
-	importPaths "source/" "tools/common/"
+	targetType "executable"
+	targetName "nwn-erf"
+	sourcePaths "source/" "tools/common/" "tools/nwn-erf/"
 	dependency "gfm:math" version="~>7.0.0"
 
-	configuration "application" {
-		targetType "executable"
-		targetName "nwn-erf"
-		mainSourceFile "tools/nwn-erf.d"
-	}
+	configuration "application"
 	configuration "unittest" {
 		stringImportPaths "unittest"
 	}
 }
 subPackage {
 	name "nwn-tlk"
-	sourcePaths "source/" "tools/common/"
-	importPaths "source/" "tools/common/"
+	targetType "executable"
+	targetName "nwn-tlk"
+	sourcePaths "source/" "tools/common/" "tools/nwn-tlk/"
 	dependency "gfm:math" version="~>7.0.0"
 
-	configuration "application" {
-		targetType "executable"
-		targetName "nwn-tlk"
-		mainSourceFile "tools/nwn-tlk.d"
-	}
+	configuration "application"
 	configuration "unittest" {
 		stringImportPaths "unittest"
 	}
 }
 subPackage {
 	name "nwn-bdb"
-	sourcePaths "source/" "tools/common/"
-	importPaths "source/" "tools/common/"
+	targetType "executable"
+	targetName "nwn-bdb"
+	sourcePaths "source/" "tools/common/" "tools/nwn-bdb/"
 	dependency "gfm:math" version="~>7.0.0"
 
-	configuration "application" {
-		targetType "executable"
-		targetName "nwn-bdb"
-		mainSourceFile "tools/nwn-bdb.d"
-	}
+	configuration "application"
 	configuration "unittest" {
 		stringImportPaths "unittest"
 	}
 }
 subPackage {
 	name "nwn-trn"
-	sourcePaths "source/" "tools/common/"
-	importPaths "source/" "tools/common/"
+	targetType "executable"
+	targetName "nwn-trn"
+	sourcePaths "source/" "tools/common/" "tools/nwn-trn/"
 	dependency "gfm:math" version="~>7.0.0"
 
-	configuration "application" {
-		targetType "executable"
-		targetName "nwn-trn"
-		mainSourceFile "tools/nwn-trn.d"
-	}
+	configuration "application"
 	configuration "unittest" {
 		stringImportPaths "unittest"
 	}

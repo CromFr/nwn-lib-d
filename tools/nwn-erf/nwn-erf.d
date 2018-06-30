@@ -17,11 +17,6 @@ version(unittest) import std.exception: assertThrown, assertNotThrown;
 import nwn.constants;
 import nwn.erf;
 
-version(unittest){}
-else{
-	int main(string[] args){return _main(args);}
-}
-
 class ArgException : Exception{
 	@safe pure nothrow this(string msg, string f=__FILE__, size_t l=__LINE__, Throwable t=null){
 		super(msg, f, l, t);
@@ -29,7 +24,9 @@ class ArgException : Exception{
 }
 
 
-int _main(string[] args){
+int main(string[] args){
+	version(unittest) if(args.length <= 1) return 0;
+
 	import tools.common.getopt;
 
 	if(args.length > 1){

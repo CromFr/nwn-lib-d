@@ -14,19 +14,14 @@ version(unittest) import std.exception: assertThrown, assertNotThrown;
 import tools.common.getopt;
 import nwn.tlk;
 
-version(unittest){}
-else{
-	int main(string[] args){return _main(args);}
-}
-
 class ArgException : Exception{
 	@safe pure nothrow this(string msg, string f=__FILE__, size_t l=__LINE__, Throwable t=null){
 		super(msg, f, l, t);
 	}
 }
 
-int _main(string[] args){
-	alias required = std.getopt.config.required;
+int main(string[] args){
+	version(unittest) if(args.length <= 1) return 0;
 
 	string inputPath, outputPath;
 	Format inputFormat = Format.detect, outputFormat = Format.detect;
