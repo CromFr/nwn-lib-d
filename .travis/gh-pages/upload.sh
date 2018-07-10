@@ -27,7 +27,7 @@ git config user.email "cromfr@gmail.com"
 # Reinstall content ===================
 rm -rf *
 # Home
-cp ../gh-pages/index.html .
+cp ../.travis/gh-pages/index.html .
 # API ref
 cp -R ../docs .
 # binaries
