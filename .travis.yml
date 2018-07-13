@@ -4,19 +4,21 @@ d: dmd
 before_install:
   - sudo apt-get -qq update
   - sudo apt-get install -y gcc-multilib libevent-dev
-  - ./.travis/build-win.sh before_install
+  - .travis/build-win.sh before_install
   - mkdir bin/
 
 script:
   # Test
   - dub test -a x86                    :nwn-gff
   - dub test -a x86_64 -b unittest-cov :nwn-gff
+  - dub test -a x86                    :nwn-trn
+  - dub test -a x86_64 -b unittest-cov :nwn-trn
 
   # Doc
   - dub build --build=ddox
 
   # Source wine env
-  - . ./.travis/build-win.sh
+  - . .travis/build-win.sh
 
   # Release objects
   - dub build      -b release -a x86    :nwn-gff  &&  mv nwn-gff     bin/nwn-gff.linux-x86

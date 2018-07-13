@@ -20,22 +20,37 @@ public import nwn.twoda;
 import std.stdio: stdout, write, writeln, writefln;
 version(unittest) import std.exception: assertThrown, assertNotThrown;
 
+///
 class TrnParseException : Exception{
+	///
 	@safe pure nothrow this(string msg, string f=__FILE__, size_t l=__LINE__, Throwable t=null){
 		super(msg, f, l, t);
 	}
 }
+///
 class TrnTypeException : Exception{
+	///
 	@safe pure nothrow this(string msg, string f=__FILE__, size_t l=__LINE__, Throwable t=null){
 		super(msg, f, l, t);
 	}
 }
+///
 class TrnValueSetException : Exception{
+	///
 	@safe pure nothrow this(string msg, string f=__FILE__, size_t l=__LINE__, Throwable t=null){
 		super(msg, f, l, t);
 	}
 }
+///
 class ASWMInvalidValueException : Exception{
+	///
+	@safe pure nothrow this(string msg, string f=__FILE__, size_t l=__LINE__, Throwable t=null){
+		super(msg, f, l, t);
+	}
+}
+///
+class TRRNInvalidValueException : Exception{
+	///
 	@safe pure nothrow this(string msg, string f=__FILE__, size_t l=__LINE__, Throwable t=null){
 		super(msg, f, l, t);
 	}
@@ -48,6 +63,7 @@ enum TrnPacketType{
 	NWN2_WATR,/// Water
 	NWN2_ASWM,/// Zipped walkmesh data
 }
+///
 template TrnPacketTypeToPayload(TrnPacketType type){
 	static if(type == TrnPacketType.NWN2_TRWH)      alias TrnPacketTypeToPayload = TrnNWN2TerrainDimPayload;
 	else static if(type == TrnPacketType.NWN2_TRRN) alias TrnPacketTypeToPayload = TrnNWN2MegatilePayload;
@@ -55,6 +71,7 @@ template TrnPacketTypeToPayload(TrnPacketType type){
 	else static if(type == TrnPacketType.NWN2_ASWM) alias TrnPacketTypeToPayload = TrnNWN2WalkmeshPayload;
 	else static assert(0, "Type not supported");
 }
+///
 template TrnPacketPayloadToType(T){
 	static if(is(T == TrnNWN2TerrainDimPayload))    alias TrnPacketPayloadToType = TrnPacketType.NWN2_TRWH;
 	else static if(is(T == TrnNWN2MegatilePayload)) alias TrnPacketPayloadToType = TrnPacketType.NWN2_TRRN;
@@ -62,9 +79,11 @@ template TrnPacketPayloadToType(T){
 	else static if(is(T == TrnNWN2WalkmeshPayload)) alias TrnPacketPayloadToType = TrnPacketType.NWN2_ASWM;
 	else static assert(0, "Type not supported");
 }
+///
 TrnPacketType toTrnPacketType(char[4] str, string nwnVersion){
 	return (nwnVersion~"_"~str.charArrayToString).to!TrnPacketType;
 }
+///
 char[4] toTrnPacketStr(TrnPacketType type){
 	return type.to!(char[])[5..9];
 }
@@ -79,16 +98,18 @@ struct TrnPacket{
 	}
 	private TrnPacketType m_type;
 
-	///
+	/// as!TrnNWN2WalkmeshPayload
 	ref inout(T) as(T)() inout if(is(typeof(TrnPacketPayloadToType!T) == TrnPacketType)) {
 		assert(type == TrnPacketPayloadToType!T, "Type mismatch");
 		return *cast(inout(T)*)structData.ptr;
 	}
 
+	/// as!(TrnPacketType.NWN2_ASWM)
 	ref inout(TrnPacketTypeToPayload!T) as(TrnPacketType T)() inout{
 		return as!(TrnPacketTypeToPayload!T);
 	}
 
+	/// Serialize a single TRN packet
 	ubyte[] serialize(){
 		final switch(type) with(TrnPacketType){
 			static foreach(TYPE ; EnumMembers!TrnPacketType){
@@ -127,20 +148,13 @@ class Trn{
 	/// Empty TRN file
 	this(){}
 
+	/// Parse a TRN file
 	this(in string path){
 		import std.file: read;
 		this(cast(ubyte[])path.read());
 	}
 
-	@property string nwnVersion()const{return m_nwnVersion;}
-	package string m_nwnVersion;
-
-	@property uint versionMajor()const{return m_versionMajor;}
-	package uint m_versionMajor;
-
-	@property uint versionMinor()const{return m_versionMinor;}
-	package uint m_versionMinor;
-
+	/// Parse TRN raw data
 	this(in ubyte[] rawData){
 		enforce!TrnParseException(rawData.length>Header.sizeof, "Data is too small to contain the header");
 
@@ -170,6 +184,7 @@ class Trn{
 		}
 	}
 
+	///
 	ubyte[] serialize(){
 
 		auto header = Header(
@@ -206,6 +221,22 @@ class Trn{
 	}
 
 
+	///
+	@property string nwnVersion()const{return m_nwnVersion;}
+	///
+	package string m_nwnVersion;
+
+	///
+	@property uint versionMajor()const{return m_versionMajor;}
+	///
+	package uint m_versionMajor;
+
+	///
+	@property uint versionMinor()const{return m_versionMinor;}
+	///
+	package uint m_versionMinor;
+
+	/// TRN packet list
 	TrnPacket[] packets;
 
 	/// foreach(ref TrnNWN2WalkmeshPayload aswm ; trn){}
@@ -257,6 +288,7 @@ struct TrnNWN2TerrainDimPayload{
 		id = *(cast(uint32_t*)&payload[8]);
 	}
 
+	///
 	ubyte[] serialize(){
 		ChunkWriter cw;
 		cw.put(width, height, id);
@@ -280,7 +312,7 @@ struct TrnNWN2MegatilePayload{
 		float[3] position;/// x y z
 		float[3] normal;  /// normal vector
 		ubyte[4] tinting; /// BGRA format. A is unused.
-		float[2] uv;/// XY10
+		float[2] uv;/// Texture coordinates
 		float[2] weights; /// XY1
 	}
 	Vertex[] vertices;/// Terrain geometry
@@ -293,19 +325,20 @@ struct TrnNWN2MegatilePayload{
 	Triangle[] triangles;
 	ubyte[] dds_a;/// 32 bit DDS bitmap. r,g,b,a defines the intensity of textures 0,1,2,3
 	ubyte[] dds_b;/// 32 bit DDS bitmap. r,g defines the intensity of textures 4,5
+	///
 	static struct Grass{
-		char[32] name;
-		char[32] texture;
+		char[32] name;///
+		char[32] texture;///
+		///
 		static align(1) struct Blade{
 			static assert(this.sizeof == 36);
-			float[3] position;
-			float[3] direction;
-			float[3] dimension;
+			float[3] position;///
+			float[3] direction;///
+			float[3] dimension;///
 		}
-		Blade[] blades;
+		Blade[] blades;///
 	}
 	Grass[] grass;/// Grass "objects"
-
 
 	package this(in ubyte[] payload){
 		auto data = ChunkReader(payload);
@@ -343,7 +376,7 @@ struct TrnNWN2MegatilePayload{
 		assert(data.read_ptr == payload.length, "some bytes were not read");
 	}
 
-
+	///
 	ubyte[] serialize(){
 		ChunkWriter cw;
 		cw.put(name);
@@ -371,6 +404,7 @@ struct TrnNWN2MegatilePayload{
 		return cw.data;
 	}
 
+	/// Export terrain mesh to a `GenericMesh` struct
 	GenericMesh toGenericMesh() const {
 		GenericMesh ret;
 
@@ -383,6 +417,25 @@ struct TrnNWN2MegatilePayload{
 			ret.triangles[i] = GenericMesh.Triangle(t.vertices.to!(uint32_t[3]));
 
 		return ret;
+	}
+
+	/// Check if the TRRN contains valid data
+	void validate() const {
+		import nwn.dds;
+
+		try new Dds(dds_a);
+		catch(Exception e)
+			throw new TRRNInvalidValueException("dds_a is invalid or format is not supported", __FILE__, __LINE__, e);
+		try new Dds(dds_b);
+		catch(Exception e)
+			throw new TRRNInvalidValueException("dds_b is invalid or format is not supported", __FILE__, __LINE__, e);
+
+		immutable vtxLen = vertices.length;
+		foreach(ti, ref t ; triangles){
+			foreach(vi, v ; t.vertices)
+				enforce!TRRNInvalidValueException(v < vtxLen,
+					format!"triangles[%d].vertices[%d] = %d is out of bounds"(ti, vi, v));
+		}
 	}
 }
 
@@ -1723,6 +1776,10 @@ struct TrnNWN2WalkmeshPayload{
 			}
 
 			NextToExplore[] explore(uint32_t currTriIdx, ubyte ntlTarget = ubyte.max){
+				//TODO: currently the fastest route is the route that cross
+				//the minimum number of triangles, which isn't always true. We
+				//need to take the distance between triangles into account
+
 				NextToExplore[] ret;
 				if(ntlTarget != ubyte.max)
 					ret ~= NextToExplore([], ntlTarget);
@@ -1840,7 +1897,15 @@ struct TrnNWN2WalkmeshPayload{
 					auto p0 = mt.dds[0].getPixel(pos.x, pos.y);
 					auto p1 = mt.dds[1].getPixel(pos.x, pos.y);
 
-					auto maxTextureIdx = (p0[0 .. 4] ~ p1[0 .. 2]).maxIndex;
+					ubyte maxTextureIdx = ubyte.max;
+					int maxTextureIntensity = -1;
+					foreach(ubyte textureIdx, intensity ; p0[0 .. 4] ~ p1[0 .. 2]){
+						if(mt.textures[textureIdx].length > 0 && intensity > maxTextureIntensity){
+							maxTextureIdx = textureIdx;
+							maxTextureIntensity = intensity;
+						}
+					}
+					assert(maxTextureIdx != ubyte.max, "No texture found");
 
 					if(auto flag = mt.textures[maxTextureIdx] in textureFlags){
 						t.flags &= t.flags.max ^ Triangle.Flags.soundstepFlags;

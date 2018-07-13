@@ -56,7 +56,7 @@ int main(string[] args){
 
 	if(args.length <= 1 || (args.length > 1 && (args[1] == "--help" || args[1] == "-h"))){
 		usage(args[0]);
-		return 1;
+		return 0;
 	}
 
 	immutable command = args[1];
@@ -68,13 +68,13 @@ int main(string[] args){
 			return 1;
 		case "aswm-strip":{
 			bool inPlace = false;
-			bool silent = false;
+			bool quiet = false;
 			string targetPath = null;
 
 			auto res = getopt(args,
 				"in-place|i", "Provide this flag to overwrite the provided TRX file", &inPlace,
 				"output|o", "Output file or directory. Mandatory if --in-place is not provided.", &targetPath,
-				"silent|s", "Do not display statistics", &silent,
+				"quiet|q", "Do not display statistics", &quiet,
 				);
 			if(res.helpWanted || args.length == 1){
 				improvedGetoptPrinter(
@@ -103,14 +103,16 @@ int main(string[] args){
 				bool found = false;
 				foreach(ref TrnNWN2WalkmeshPayload aswm ; trn){
 					found = true;
-					stripASWM(aswm, silent);
+
+					import aswmstrip: stripASWM;
+					stripASWM(aswm, quiet);
 					aswm.validate();
 				}
 
 				enforce(found, "No ASWM packet found. Make sure you are targeting a TRX file.");
 
 				auto finalData = trn.serialize();
-				if(!silent)
+				if(!quiet)
 					writeln("File size: ", initLen, "B => ", finalData.length, "B (stripped ", 100 - finalData.length * 100.0 / initLen, "%)");
 
 				string outPath;
@@ -172,6 +174,8 @@ int main(string[] args){
 			bool found = false;
 			foreach(ref TrnNWN2WalkmeshPayload aswm ; trn){
 				found = true;
+
+				import aswmtoobj: writeWalkmeshObj;
 				writeWalkmeshObj(
 					aswm,
 					args[1].baseName.stripExtension,
@@ -181,6 +185,8 @@ int main(string[] args){
 			enforce(found, "No ASWM packet found. Make sure you are targeting a TRX file.");
 
 			if(targetDir != "-"){
+				import aswmtoobj: colors;
+
 				auto colPath = buildPath(targetDir, "nwnlibd-colors.mtl");
 				if(!colPath.exists)
 					std.file.write(colPath, colors);
@@ -590,10 +596,12 @@ int main(string[] args){
 			string trnFile;
 			string ddsPath = null;
 			bool noDds = false;
+			string outputFile = null;
 			auto res = getopt(args,
 				config.required, "trn", "Existing TRN or TRX file to store the terrain mesh", &trnFile,
-				"dds-path", "Folder containing DDS files to import as texture alpha maps", &ddsPath,
+				"dds-path", "Folder containing DDS files to import as texture alpha maps.\nDefault: search in --trn file's directory", &ddsPath,
 				"no-dds", "Do not import texture alpha maps", &noDds,
+				"output|o", "TRN/TRX file to write.\nDefault: the file provided by --trn", &outputFile,
 				);
 
 			if(res.helpWanted || args.length == 1){
@@ -616,6 +624,8 @@ int main(string[] args){
 
 			if(ddsPath is null)
 				ddsPath = objFilePath.dirName;
+			if(outputFile is null)
+				outputFile = trnFile;
 
 			auto trn = new Trn(trnFile);
 
@@ -638,7 +648,7 @@ int main(string[] args){
 				size_t y = trrnCounter / trwh.width;
 
 				if(!noDds){
-					auto megatileName = format!"megatile-%s_x%d_y%d"(
+					auto megatileName = format!"%s_x%d_y%d"(
 						trnFile.baseName.stripExtension, x, y);
 
 					trrn.dds_a = cast(ubyte[])buildPath(ddsPath, megatileName~".a.dds").readFile();
@@ -706,7 +716,7 @@ int main(string[] args){
 			}
 
 
-			trnFile.writeFile(trn.serialize());
+			outputFile.writeFile(trn.serialize());
 		}
 		break;
 	}
@@ -715,589 +725,87 @@ int main(string[] args){
 
 
 
-void stripASWM(ref TrnNWN2WalkmeshPayload aswm, bool silent){
 
+unittest{
+	import std.file: tempDir, read, writeFile=write, exists;
+	import std.path: buildPath;
 
-	auto initVertices = aswm.vertices.length;
-	auto initEdges = aswm.edges.length;
-	auto initTriangles = aswm.triangles.length;
+	version(Windows)
+		auto nullFile = "nul";
+	else
+		auto nullFile = "/dev/null";
 
+	auto stdout_ = stdout;
+	stdout = File(nullFile, "w");
 
+	assert(main(["nwn-trn", "--help"])==0);
 
-	uint32_t[] vertTransTable, edgeTransTable, triTransTable;//table[oldIndex] = newIndex
-	vertTransTable.length = aswm.vertices.length;
-	edgeTransTable.length = aswm.edges.length;
-	triTransTable.length = aswm.triangles.length;
-	uint32_t newIndex;
+	stdout = stdout_;
 
-	bool[] usedVertices, usedEdges;
-	usedVertices.length = aswm.vertices.length;
-	usedEdges.length = aswm.edges.length;
-	usedVertices[] = false;
-	usedEdges[] = false;
+	assert(main([
+			"nwn-trn", "bake",
+			"--terrain2da=unittest/terrainmaterials.2da",
+			"unittest/WalkmeshObjects",
+			"-o", nullFile,
+		]) == 0);
 
-	// Reduce triangle list & flag used vertices & edges
-	newIndex = 0;
-	foreach(i, ref triangle ; aswm.triangles){
-		if(triangle.island != uint16_t.max){
+	assert(main([
+			"nwn-trn", "aswm-check",
+			"unittest/WalkmeshObjects.trn", "unittest/WalkmeshObjects.trx", "unittest/eauprofonde-portes.trx",
+		]) == 0);
 
-			// Flag used / unused vertices & edges
-			foreach(vert ; triangle.vertices){
-				usedVertices[vert] = true;
-			}
-			foreach(edge ; triangle.linked_edges){
-				if(edge != uint32_t.max)
-					usedEdges[edge] = true;
-			}
-
-			// Reduce triangle list in place
-			aswm.triangles[newIndex] = triangle;
-			triTransTable[i] = newIndex++;
-		}
-		else
-			triTransTable[i] = uint32_t.max;
-	}
-	aswm.triangles.length = newIndex;
-
-
-	// Reduce vertices list
-	newIndex = 0;
-	foreach(i, used ; usedVertices){
-		if(used){
-			aswm.vertices[newIndex] = aswm.vertices[i];
-			vertTransTable[i] = newIndex++;
-		}
-		else
-			vertTransTable[i] = uint32_t.max;
-	}
-	aswm.vertices.length = newIndex;
-
-	// Reduce edges list
-	newIndex = 0;
-	foreach(i, used ; usedEdges){
-		if(used){
-			aswm.edges[newIndex] = aswm.edges[i];
-			edgeTransTable[i] = newIndex++;
-		}
-		else
-			edgeTransTable[i] = uint32_t.max;
-	}
-	aswm.edges.length = newIndex;
-
-	// Adjust indices in mesh data
-	aswm.translateIndices(triTransTable, edgeTransTable, vertTransTable);
-
-
-	// Adjust indices inside tiles pathtable
-	uint32_t currentOffset = 0;
-	foreach(i, ref tile ; aswm.tiles){
-
-		struct Tri {
-			uint32_t id;
-			ubyte node;
-		}
-		Tri[] newLtn;
-		foreach(j, ltn ; tile.path_table.local_to_node){
-			// Ignore non unused/unwalkable triangles
-			if(ltn == 0xff)
-				continue;
-
-			const newTriIndex = triTransTable[j + tile.header.triangles_offset];
-
-			// Ignore removed triangles
-			if(newTriIndex == uint32_t.max)
-				continue;
-
-			newLtn ~= Tri(newTriIndex, ltn);
-		}
-
-		foreach(ref ntl ; tile.path_table.node_to_local){
-			assert(triTransTable[ntl + tile.header.triangles_offset] != uint32_t.max, "todo");
-			ntl = triTransTable[ntl + tile.header.triangles_offset];
-		}
-
-		// Find new offset
-		tile.header.triangles_offset = newLtn.length == 0? currentOffset : min(
-			newLtn.minElement!"a.id".id,
-			tile.path_table.node_to_local.minElement);
-
-		// Adjust node_to_local indices with new offset
-		tile.path_table.node_to_local[] -= tile.header.triangles_offset;
-
-		// Adjust newLtn indices with new offset
-		foreach(ref ltn ; newLtn)
-			ltn.id -= tile.header.triangles_offset;
-
-		// Resize & erase ltn data
-		tile.path_table.local_to_node.length = newLtn.length == 0? 0 : newLtn.maxElement!"a.id".id + 1;
-		tile.path_table.local_to_node[] = 0xff;
-
-		// Set ltn data
-		foreach(ltn ; newLtn){
-			tile.path_table.local_to_node[ltn.id] = ltn.node;
-		}
-
-
-		tile.header.triangles_count = tile.path_table.local_to_node.length.to!uint32_t;
-
-		currentOffset = tile.header.triangles_offset + tile.header.triangles_count;
-
-		// Re-count linked vertices / edges
-		tile.header.vertices_count = tile.path_table.node_to_local
-			.map!(a => a != a.max? aswm.triangles[a].vertices[] : [])
-			.join.sort.uniq.array.length.to!uint32_t;
-		tile.header.edges_count = tile.path_table.node_to_local
-			.map!(a => a != a.max?  aswm.triangles[a].linked_edges[] : [])
-			.join.sort.uniq.array.length.to!uint32_t;
-	}
-	// Adjust indices in islands
-	foreach(ref island ; aswm.islands){
-		foreach(ref t ; island.exit_triangles){
-			t = triTransTable[t];
-			assert(t != uint32_t.max && t < aswm.triangles.length, "Invalid triangle index");
-		}
+	auto filePath = buildPath(tempDir, "unittest-nwn-lib-d-"~__MODULE__);
+	assert(main([
+			"nwn-trn", "aswm-strip",
+			"unittest/eauprofonde-portes.trx",
+			"-q",
+			"-o", filePath,
+		]) == 0);
+	auto trn = new Trn(filePath);
+	foreach(ref TrnNWN2WalkmeshPayload aswm ; trn){
+		assert(aswm.vertices.length == 15706);
+		assert(aswm.edges.length == 42578);
+		assert(aswm.triangles.length == 26814);
 	}
 
-	if(!silent){
-		writeln("Vertices: ", initVertices, " => ", aswm.vertices.length, " (stripped ", 100 - aswm.vertices.length * 100.0 / initVertices, "%)");
-		writeln("Edges: ", initEdges, " => ", aswm.edges.length, " (stripped ", 100 - aswm.edges.length * 100.0 / initEdges, "%)");
-		writeln("Triangles: ", initTriangles, " => ", aswm.triangles.length, " (stripped ", 100 - aswm.triangles.length * 100.0 / initTriangles, "%)");
-	}
+	assert(main([
+			"nwn-trn", "aswm-export-fancy",
+			"-f", "walkmesh",
+			"-f", "edges",
+			"-f", "tiles",
+			"-f", "pathtables-los",
+			"-f", "randomtilepaths",
+			"-f", "randomislandspaths",
+			"-f", "islands",
+			"unittest/eauprofonde-portes.trx",
+			"-o", tempDir,
+		]) == 0);
+
+	assert(main([
+			"nwn-trn", "aswm-export",
+			"unittest/eauprofonde-portes.trn",
+			"-o", filePath,
+		]) == 0);
+
+	assert(main([
+			"nwn-trn", "aswm-import",
+			"--obj", filePath,
+			"--trn", "unittest/eauprofonde-portes.trx",
+			"--terrain2da=unittest/terrainmaterials.2da",
+			"-o", nullFile,
+		]) == 0);
+
+	assert(main([
+			"nwn-trn", "trrn-export",
+			"unittest/eauprofonde-portes.trx",
+			"-o", tempDir,
+		]) == 0);
+
+	assert(main([
+			"nwn-trn", "trrn-import",
+			filePath,
+			"--trn", "unittest/eauprofonde-portes.trx",
+			"--dds-path", tempDir,
+			"-o", nullFile,
+		]) == 0);
 }
-
-
-void writeWalkmeshObj(ref TrnNWN2WalkmeshPayload aswm, in string name, ref File obj, string[] features){
-	obj.writeln("mtllib nwnlibd-colors.mtl");
-	obj.writeln("o ",name);
-
-	foreach(ref v ; aswm.vertices){
-		obj.writefln("v %(%s %)", v.position);
-	}
-
-	string currColor = null;
-	void setColor(string clr){
-		if(clr!=currColor){
-			obj.writeln("usemtl ", clr);
-			currColor = clr;
-		}
-	}
-	void randomColor(){
-		switch(uniform(0, 12)){
-			case 0:  setColor("default");    break;
-			case 1:  setColor("dirt");       break;
-			case 2:  setColor("grass");      break;
-			case 3:  setColor("stone");      break;
-			case 4:  setColor("wood");       break;
-			case 5:  setColor("carpet");     break;
-			case 6:  setColor("metal");      break;
-			case 7:  setColor("swamp");      break;
-			case 8:  setColor("mud");        break;
-			case 9:  setColor("leaves");     break;
-			case 10: setColor("water");      break;
-			case 11: setColor("unwalkable"); break;
-			default: assert(0);
-		}
-	}
-	aswm.Vertex getTriangleCenter(in aswm.Triangle t){
-		auto ret = aswm.vertices[t.vertices[0]];
-		ret.position[] += aswm.vertices[t.vertices[1]].position[];
-		ret.position[] += aswm.vertices[t.vertices[2]].position[];
-		ret.position[] /= 3.0;
-		return ret;
-	}
-
-	setColor("default");
-	obj.writeln("s off");
-	auto vertexOffset = aswm.vertices.length;
-
-	if(!features.find("walkmesh").empty){
-		writeln("walkmesh");
-
-		obj.writeln("g walkmesh");
-
-		foreach(i, ref t ; aswm.triangles) with(t) {
-			if(flags & Flags.walkable && island != island.max){
-				if(flags & Flags.dirt)
-					setColor("dirt");
-				else if(flags & Flags.grass)
-					setColor("grass");
-				else if(flags & Flags.stone)
-					setColor("stone");
-				else if(flags & Flags.wood)
-					setColor("wood");
-				else if(flags & Flags.carpet)
-					setColor("carpet");
-				else if(flags & Flags.metal)
-					setColor("metal");
-				else if(flags & Flags.swamp)
-					setColor("swamp");
-				else if(flags & Flags.mud)
-					setColor("mud");
-				else if(flags & Flags.leaves)
-					setColor("leaves");
-				else if(flags & (Flags.water | Flags.puddles))
-					setColor("water");
-				else
-					setColor("default");
-			}
-			else
-				setColor("unwalkable");
-
-			if(flags & Flags.clockwise)
-				obj.writefln("f %s %s %s", vertices[2]+1, vertices[1]+1, vertices[0]+1);
-			else
-				obj.writefln("f %s %s %s", vertices[0]+1, vertices[1]+1, vertices[2]+1);
-		}
-	}
-
-	if(!features.find("edges").empty){
-		writeln("edges");
-
-		obj.writeln("g edges");
-
-		foreach(ref edge ; aswm.edges){
-
-			randomColor();
-
-			auto vertA = aswm.vertices[edge.vertices[0]];
-			auto vertB = aswm.vertices[edge.vertices[1]];
-
-			auto vertCenterHigh = vertA.position;
-			vertCenterHigh[] += vertB.position[];
-			vertCenterHigh[] /= 2.0;
-			vertCenterHigh[2] += 0.5;
-
-			obj.writefln("v %(%s %)", vertCenterHigh);
-			vertexOffset++;
-			obj.writefln("f %s %s %s", edge.vertices[0] + 1, edge.vertices[1] + 1, vertexOffset);//Start index is 1
-
-			if(edge.triangles[0] != uint32_t.max && edge.triangles[1] != uint32_t.max){
-
-				auto triA = aswm.triangles[edge.triangles[0]];
-				auto triB = aswm.triangles[edge.triangles[1]];
-
-				double zAvg(ref aswm.Triangle triangle){
-					double res = 0.0;
-					foreach(v ; triangle.vertices)
-						res += aswm.vertices[v].position[2];
-					return res / 3.0;
-				}
-
-				auto centerA = [triA.center[0], triA.center[1], zAvg(triA)];
-				auto centerB = [triB.center[0], triB.center[1], zAvg(triB)];
-
-				obj.writefln("v %(%s %)", centerA);
-				obj.writefln("v %(%s %)", centerB);
-				vertexOffset += 2;
-
-				obj.writefln("f %s %s %s", vertexOffset - 2, vertexOffset - 1, vertexOffset);//Start index is 1
-			}
-
-		}
-	}
-
-	if(!features.find("tiles").empty){
-		writeln("tiles");
-
-		obj.writeln("g tiles");
-
-		foreach(ref tile ; aswm.tiles) with(tile) {
-			randomColor();
-
-			auto tileTriangles = path_table.node_to_local.dup.sort.uniq.array;
-			tileTriangles[] += header.triangles_offset;
-
-			foreach(t ; tileTriangles) with(aswm.triangles[t]) {
-				obj.writefln("f %s %s %s", vertices[2]+1, vertices[1]+1, vertices[0]+1);
-			}
-		}
-	}
-	if(!features.find("pathtables-los").empty){
-		writeln("pathtables-los");
-
-		void writeLOS(bool losStatus){
-			foreach(ref tile ; aswm.tiles) with(tile) {
-				immutable offset = tile.header.triangles_offset;
-
-				foreach(fromLocIdx, fromNodeIdx ; tile.path_table.local_to_node){
-					if(fromNodeIdx == 0xff) continue;
-					foreach(toLocIdx, toNodeIdx ; tile.path_table.local_to_node){
-						if(toNodeIdx == 0xff) continue;
-
-
-						const node = tile.path_table.nodes[fromNodeIdx * tile.path_table.node_to_local.length + toNodeIdx];
-						if(node != 0xff && ((node & 0b1000_0000) > 0) == losStatus){
-
-							auto a = getTriangleCenter(aswm.triangles[fromLocIdx + offset]).position;
-							auto b = getTriangleCenter(aswm.triangles[toLocIdx + offset]).position;
-
-							obj.writefln("v %(%s %)", a);
-							obj.writefln("v %(%s %)", b);
-							vertexOffset += 2;
-
-							obj.writefln("l %s %s", vertexOffset - 1, vertexOffset);
-						}
-					}
-				}
-			}
-		}
-
-		obj.writeln("g pathtables-los");
-		writeLOS(true);
-		obj.writeln("g pathtables-nolos");
-		writeLOS(false);
-	}
-
-	if(!features.find("randomtilepaths").empty){
-		writeln("randomtilepaths");
-
-		obj.writeln("g randomtilepaths");
-
-		foreach(tileid, ref tile ; aswm.tiles) with(tile) {
-			immutable offset = tile.header.triangles_offset;
-			immutable len = tile.path_table.node_to_local.length;
-
-			if(len == 0)
-				continue;
-
-			foreach(_ ; 0 .. 2){
-				auto from = (uniform(0, len) + offset).to!uint32_t;
-				auto to = (uniform(0, len) + offset).to!uint32_t;
-
-
-				auto path = findPath(from, to);
-				if(path.length > 1){
-					auto firstCenter = getTriangleCenter(aswm.triangles[from]).position;
-					firstCenter[2] += 1.0;
-					obj.writefln("v %(%s %)", firstCenter);
-
-					foreach(t ; path){
-						auto center = getTriangleCenter(aswm.triangles[t]).position;
-						obj.writefln("v %(%s %)", getTriangleCenter(aswm.triangles[t]).position);
-					}
-
-					obj.write("l ");
-					foreach(i ; 0 .. path.length + 1){
-						obj.write(vertexOffset + i + 1, " ");
-					}
-					obj.write(vertexOffset + 1); // loop on first point
-					obj.writeln();
-
-					vertexOffset += path.length + 1;
-				}
-
-			}
-
-		}
-	}
-
-	if(!features.find("randomislandspaths").empty){
-		writeln("randomislandspaths");
-
-		obj.writeln("g randomislandspaths");
-		foreach(_ ; 0 .. 8){
-			immutable len = aswm.islands.length;
-			auto from = uniform(0, len).to!uint16_t;
-			auto to = uniform(0, len).to!uint16_t;
-
-
-			auto path = aswm.findIslandsPath(from, to);
-			if(path.length > 1){
-				auto firstCenter = aswm.islands[from].header.center.position;
-				firstCenter[2] += 1.0;
-				obj.writefln("v %(%s %)", firstCenter);
-
-				foreach(i ; path)
-					obj.writefln("v %(%s %)", aswm.islands[i].header.center.position);
-
-				obj.write("l ");
-				foreach(i ; 0 .. path.length + 1){
-					obj.write(vertexOffset + i + 1, " ");
-				}
-				obj.write(vertexOffset + 1); // loop on first point
-				obj.writeln();
-
-				vertexOffset += path.length + 1;
-			}
-		}
-
-	}
-
-
-	if(!features.find("islands").empty){
-		writeln("islands");
-
-		obj.writeln("g islands");
-
-		foreach(ref island ; aswm.islands){
-			randomColor();
-
-			auto islandCenterIndex = vertexOffset;
-
-			auto islandCenter = aswm.Vertex(island.header.center.position.dup[0..3]);
-			float z = 0.0;
-			island.exit_triangles
-				.map!(t => aswm.triangles[t].vertices[])
-				.join
-				.each!(v => z += aswm.vertices[v].z);
-			z /= island.exit_triangles.length * 3.0;
-
-			islandCenter.z = z;
-			obj.writefln("v %(%s %)", islandCenter.position);
-			islandCenter.z += 1.0;
-			obj.writefln("v %(%s %)", islandCenter.position);
-			vertexOffset += 2;
-
-			foreach(t ; island.exit_triangles) with(aswm.triangles[t]) {
-				if(flags & Flags.clockwise)
-					obj.writefln("f %s %s %s", vertices[0]+1, vertices[1]+1, vertices[2]+1);
-				else
-					obj.writefln("f %s %s %s", vertices[2]+1, vertices[1]+1, vertices[0]+1);
-
-				float triCenterZ = 0.0;
-				vertices[].map!(v => aswm.vertices[v].z).each!(a => triCenterZ += a);
-				triCenterZ /= 3;
-
-				obj.writefln("v %(%s %)", center[0 .. 2] ~ triCenterZ);
-				vertexOffset++;
-
-				obj.writefln("f %s %s %s", islandCenterIndex + 1, islandCenterIndex + 2, vertexOffset);
-			}
-		}
-	}
-}
-
-enum colors = `
-newmtl default
-Ns 96.078431
-Ka 1.0 1.0 1.0
-Kd 0.80 0.80 0.80
-Ks 0.5 0.5 0.5
-Ke 0.0 0.0 0.0
-Ni 1.0
-d 1.0
-illum 2
-
-newmtl dirt
-Ns 96.078431
-Ka 1.0 1.0 1.0
-Kd 0.76 0.61 0.48
-Ks 0.5 0.5 0.5
-Ke 0.0 0.0 0.0
-Ni 1.0
-d 1.0
-illum 2
-
-newmtl grass
-Ns 96.078431
-Ka 1.0 1.0 1.0
-Kd 0.39 0.74 0.42
-Ks 0.5 0.5 0.5
-Ke 0.0 0.0 0.0
-Ni 1.0
-d 1.0
-illum 2
-
-newmtl stone
-Ns 96.078431
-Ka 1.0 1.0 1.0
-Kd 0.60 0.60 0.60
-Ks 0.5 0.5 0.5
-Ke 0.0 0.0 0.0
-Ni 1.0
-d 1.0
-illum 2
-
-newmtl wood
-Ns 96.078431
-Ka 1.0 1.0 1.0
-Kd 0.45 0.32 0.12
-Ks 0.5 0.5 0.5
-Ke 0.0 0.0 0.0
-Ni 1.0
-d 1.0
-illum 2
-
-newmtl carpet
-Ns 96.078431
-Ka 1.0 1.0 1.0
-Kd 0.51 0.20 0.35
-Ks 0.5 0.5 0.5
-Ke 0.0 0.0 0.0
-Ni 1.0
-d 1.0
-illum 2
-
-newmtl metal
-Ns 96.078431
-Ka 1.0 1.0 1.0
-Kd 0.75 0.75 0.75
-Ks 0.5 0.5 0.5
-Ke 0.0 0.0 0.0
-Ni 1.0
-d 1.0
-illum 2
-
-newmtl swamp
-Ns 96.078431
-Ka 1.0 1.0 1.0
-Kd 0.53 0.63 0.30
-Ks 0.5 0.5 0.5
-Ke 0.0 0.0 0.0
-Ni 1.0
-d 1.0
-illum 2
-
-newmtl mud
-Ns 96.078431
-Ka 1.0 1.0 1.0
-Kd 0.63 0.56 0.30
-Ks 0.5 0.5 0.5
-Ke 0.0 0.0 0.0
-Ni 1.0
-d 1.0
-illum 2
-
-newmtl leaves
-Ns 96.078431
-Ka 1.0 1.0 1.0
-Kd 0.64 0.71 0.39
-Ks 0.5 0.5 0.5
-Ke 0.0 0.0 0.0
-Ni 1.0
-d 1.0
-illum 2
-
-newmtl leaves
-Ns 96.078431
-Ka 1.0 1.0 1.0
-Kd 0.64 0.71 0.39
-Ks 0.5 0.5 0.5
-Ke 0.0 0.0 0.0
-Ni 1.0
-d 1.0
-illum 2
-
-newmtl water
-Ns 92.156863
-Ka 1.0 1.0 1.0
-Kd 0.07 0.44 0.74
-Ks 0.5 0.5 0.5
-Ke 0.0 0.0 0.0
-Ni 1.0
-d 0.5
-illum 2
-
-newmtl unwalkable
-Ns 96.078431
-Ka 1.0 1.0 1.0
-Kd 0.03 0.01 0.01
-Ks 0.5 0.5 0.5
-Ke 0.0 0.0 0.0
-Ni 1.0
-d 1.0
-illum 2
-`;
-
-
-
