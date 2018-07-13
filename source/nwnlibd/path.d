@@ -1,13 +1,15 @@
+/// Case insensitive path functions
 module nwnlibd.path;
 
+import std.exception;
 
-
+///
 string buildPathCI(T...)(in string basePath, T subFiles){
 	import std.file;
 	import std.path;
 	import std.string: toUpper;
 
-	assert(basePath.exists, "basePath does not exist");
+	enforce(basePath.exists, "basePath '"~basePath~"' does not exist");
 	string path = basePath;
 
 	foreach(subFile ; subFiles){
@@ -35,3 +37,19 @@ string buildPathCI(T...)(in string basePath, T subFiles){
 	}
 	return path;
 }
+
+///
+unittest{
+	// First directory must exist and case must be correct
+	assertThrown(buildPathCI("UNITTEST", "PLC_MC_BALCONY3.MDB"));
+
+	// Fix case in file paths
+	assert(buildPathCI(".", "unittest", "PLC_MC_BALCONY3.MDB") == "./unittest/PLC_MC_BALCONY3.MDB");
+	assert(buildPathCI(".", "UNITTEST", "PLC_MC_BALCONY3.mdb") == "./unittest/PLC_MC_BALCONY3.MDB");
+	assert(buildPathCI(".", "unittest", "plc_mc_balcony3.mdb") == "./unittest/PLC_MC_BALCONY3.MDB");
+	assert(buildPathCI(".", "UNITTEST", "pLc_mc_balConY3.mdB") == "./unittest/PLC_MC_BALCONY3.MDB");
+
+	// Non existing files keep the provided case
+	assert(buildPathCI(".", "Unittest", "YoLo.pNg") == "./unittest/YoLo.pNg");
+}
+

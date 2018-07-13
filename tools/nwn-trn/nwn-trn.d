@@ -46,7 +46,6 @@ void usage(in string cmd){
 	writeln("  trrn-import: Import a terrain mesh and textures into an existing TRN/TRX file");
 	writeln();
 	writeln("Advanced commands:");
-	writeln("  aswm-extract: Unzip walkmesh data");
 	writeln("  aswm-dump: Print walkmesh data using a (barely) human-readable format");
 	writeln("  aswm-bake: Re-bake all tiles of an already baked walkmesh");
 }
@@ -271,22 +270,6 @@ int main(string[] args){
 				aswm.validate();
 			}
 			std.file.write(outFile, trn.serialize);
-		}
-		break;
-
-		case "aswm-extract":{
-			enforce(args.length == 2, "Bad argument number. Usage: "~args[0]~" "~command~" file.trx");
-
-			auto trn = new Trn(args[1]);
-
-			bool found = false;
-			foreach(ref TrnNWN2WalkmeshPayload aswm ; trn){
-				found = true;
-				std.file.write(
-					args[1].baseName~".aswm",
-					aswm.serializeUncompressed());
-			}
-			enforce(found, "No ASWM packet found. Make sure you are targeting a TRX file.");
 		}
 		break;
 
@@ -712,7 +695,10 @@ int main(string[] args){
 						}
 						megatile.triangles ~= trrnTri;
 					}
+
+					megatile.validate();
 				}
+
 			}
 
 
@@ -738,10 +724,11 @@ unittest{
 	auto stdout_ = stdout;
 	stdout = File(nullFile, "w");
 
-	assert(main(["nwn-trn", "--help"])==0);
+	auto filePath = buildPath(tempDir, "unittest-nwn-lib-d-"~__MODULE__);
 
-	stdout = stdout_;
+	assert(main(["nwn-trn", "--help"]) == 0);
 
+	assert(main(["nwn-trn", "bake", "--help"]) == 0);
 	assert(main([
 			"nwn-trn", "bake",
 			"--terrain2da=unittest/terrainmaterials.2da",
@@ -749,16 +736,16 @@ unittest{
 			"-o", nullFile,
 		]) == 0);
 
+	assert(main(["nwn-trn", "aswm-check", "--help"]) == 0);
 	assert(main([
 			"nwn-trn", "aswm-check",
 			"unittest/WalkmeshObjects.trn", "unittest/WalkmeshObjects.trx", "unittest/eauprofonde-portes.trx",
 		]) == 0);
 
-	auto filePath = buildPath(tempDir, "unittest-nwn-lib-d-"~__MODULE__);
+	assert(main(["nwn-trn", "aswm-strip", "--help"]) == 0);
 	assert(main([
 			"nwn-trn", "aswm-strip",
 			"unittest/eauprofonde-portes.trx",
-			"-q",
 			"-o", filePath,
 		]) == 0);
 	auto trn = new Trn(filePath);
@@ -768,6 +755,7 @@ unittest{
 		assert(aswm.triangles.length == 26814);
 	}
 
+	assert(main(["nwn-trn", "aswm-export-fancy", "--help"]) == 0);
 	assert(main([
 			"nwn-trn", "aswm-export-fancy",
 			"-f", "walkmesh",
@@ -781,12 +769,14 @@ unittest{
 			"-o", tempDir,
 		]) == 0);
 
+	assert(main(["nwn-trn", "aswm-export", "--help"]) == 0);
 	assert(main([
 			"nwn-trn", "aswm-export",
 			"unittest/eauprofonde-portes.trn",
 			"-o", filePath,
 		]) == 0);
 
+	assert(main(["nwn-trn", "aswm-import", "--help"]) == 0);
 	assert(main([
 			"nwn-trn", "aswm-import",
 			"--obj", filePath,
@@ -795,12 +785,14 @@ unittest{
 			"-o", nullFile,
 		]) == 0);
 
+	assert(main(["nwn-trn", "trrn-export", "--help"]) == 0);
 	assert(main([
 			"nwn-trn", "trrn-export",
 			"unittest/eauprofonde-portes.trx",
 			"-o", tempDir,
 		]) == 0);
 
+	assert(main(["nwn-trn", "trrn-import", "--help"]) == 0);
 	assert(main([
 			"nwn-trn", "trrn-import",
 			filePath,
@@ -808,4 +800,16 @@ unittest{
 			"--dds-path", tempDir,
 			"-o", nullFile,
 		]) == 0);
+
+	assert(main(["nwn-trn", "aswm-dump", "unittest/WalkmeshObjects.trx"]) == 0);
+
+	assert(main(["nwn-trn", "aswm-bake", "--help"]) == 0);
+	assert(main([
+			"nwn-trn", "aswm-bake",
+			"unittest/WalkmeshObjects.trx",
+			"-o", nullFile,
+		]) == 0);
+
+
+	stdout = stdout_;
 }
