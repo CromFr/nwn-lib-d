@@ -77,8 +77,8 @@ struct Dds {
 		assert(T.sizeof == bpp / 8, "Pixel destination structure does not match bit per pixel");
 		assert(mipmap < mipmaps.length, "Mip map out of bounds");
 
-		immutable w = header.mip_map_count / (2 ^^ mipmap);
-		immutable h = header.mip_map_count / (2 ^^ mipmap);
+		//immutable w = header.mip_map_count / (2 ^^ mipmap);
+		//immutable h = header.mip_map_count / (2 ^^ mipmap);
 		immutable rowLength = ((header.width * (bpp / 8) + blockSize - 1) / blockSize) * blockSize;
 
 		return *cast(T*)&mipmaps[mipmap][rowLength * y + x * bpp / 8];

@@ -208,7 +208,7 @@ class Trn{
 
 	TrnPacket[] packets;
 
-	/// foreach(i, ref TrnNWN2WalkmeshPayload aswm ; trn){}
+	/// foreach(ref TrnNWN2WalkmeshPayload aswm ; trn){}
 	int opApply(T)(scope int delegate(ref T packet) dlg)
 	if(is(typeof(TrnPacketPayloadToType!T) == TrnPacketType)) {
 		int res = 0;
@@ -279,7 +279,7 @@ struct TrnNWN2MegatilePayload{
 		static assert(this.sizeof == 44);
 		float[3] position;/// x y z
 		float[3] normal;  /// normal vector
-		ubyte[4] tinting; /// argb
+		ubyte[4] tinting; /// BGRA format. A is unused.
 		float[2] uv;/// XY10
 		float[2] weights; /// XY1
 	}

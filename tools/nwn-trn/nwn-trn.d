@@ -9,6 +9,7 @@ import std.conv: to, ConvException;
 import std.traits;
 import std.string;
 import std.file;
+import std.file: readFile = read, writeFile = write;
 import std.path;
 import std.stdint;
 import std.typecons: Tuple, Nullable;
@@ -16,8 +17,11 @@ import std.algorithm;
 import std.array;
 import std.exception: enforce;
 import std.random: uniform;
+import std.format;
+import std.math;
 
 import nwnlibd.path;
+import nwnlibd.parseutils;
 import tools.common.getopt;
 import nwn.trn;
 
@@ -30,16 +34,20 @@ class ArgException : Exception{
 void usage(in string cmd){
 	writeln("TRN / TRX tool");
 	writeln("Usage: ", cmd, " command [args]");
+	writeln();
 	writeln("Commands");
 	writeln("  bake: Bake an area (replacement for builtin nwn2toolset bake tool)");
 	writeln("  aswm-check: Checks if a TRX file contains valid data");
-	writeln("  aswm-strip: optimize TRX files");
-	writeln("  aswm-export-fancy: exports walkmesh data into a colored wavefront obj");
-	writeln("  aswm-export: exports walkmesh walkable triangles into a wavefront obj");
-	writeln("  aswm-import: import a wavefront obj model and use it as walkmesh");
+	writeln("  aswm-strip: Optimize TRX file size");
+	writeln("  aswm-export-fancy: Export walkmesh into a colored wavefront obj");
+	writeln("  aswm-export: Export walkable walkmesh into a wavefront obj");
+	writeln("  aswm-import: Import a wavefront obj as the walkmesh of an existing TRX file");
+	writeln("  trrn-export: Export the terrain mesh and textures into a wavefront obj and DDS files");
+	writeln("  trrn-import: Import a terrain mesh and textures into an existing TRN/TRX file");
+	writeln();
 	writeln("Advanced commands:");
-	writeln("  aswm-extract: unzip walkmesh data");
-	writeln("  aswm-dump: print walkmesh data using a (barely) human-readable format");
+	writeln("  aswm-extract: Unzip walkmesh data");
+	writeln("  aswm-dump: Print walkmesh data using a (barely) human-readable format");
 	writeln("  aswm-bake: Re-bake all tiles of an already baked walkmesh");
 }
 
@@ -475,6 +483,230 @@ int main(string[] args){
 
 			}
 
+		}
+		break;
+
+
+		case "trrn-export":{
+			string outFolder = ".";
+			bool noDds = false;
+			auto res = getopt(args,
+				"output|o", "Output directory where to write the OBJ and DDS file. Default: '.'", &outFolder,
+				"no-dds", "Do not output texture alpha maps", &noDds,
+				);
+
+			if(res.helpWanted || args.length == 1){
+				improvedGetoptPrinter(
+					"Export terrain mesh and textures into wavefront obj and DDS files.\n"
+					~"Note: works on both TRN and TRX files, though TRN files are only used by the toolset.\n"
+					~"Usage: "~args[0]~" "~command~" map.trx\n"
+					~"       "~args[0]~" "~command~" map.trx -o converted/\n"
+					~"\n"
+					~"Wavefront format notes:\n"
+					~"- Each megatile is stored in a different object named with its megatile coordinates: 'x6y9'. This naming scheme is mandatory.\n"
+					~"- Vertex colors are exported, but many 3d tools don't handle it.\n"
+					~"- Grass is not exported.\n",
+					res.options);
+				return 0;
+			}
+			enforce(args.length == 2, "You can only provide one TRN file");
+
+
+			auto trnFile = args[1];
+			auto trnFileName = trnFile.baseName.stripExtension;
+			auto trn = new Trn(trnFile);
+
+			TrnNWN2TerrainDimPayload* trwh = null;
+			foreach(ref TrnNWN2TerrainDimPayload _trwh ; trn){
+				trwh = &_trwh;
+			}
+			enforce(trwh !is null, "No TRWH packet found");
+
+
+			string objData;
+			//string textureData;
+			size_t vertexOffset = 1;
+
+			size_t trrnCounter = 0;
+			foreach(ref TrnNWN2MegatilePayload trrn ; trn){
+				size_t x = trrnCounter % trwh.width;
+				size_t y = trrnCounter / trwh.width;
+
+
+				objData ~= format!"o megatile-x%dy%d\n"(x, y);
+
+				//foreach(j, ref texture ; trrn.textures){
+				//	textureData ~= format("%d %s", j, texture.name.charArrayToString);
+				//}
+				//auto ddsA = new Dds(trrn.dds_a);
+				//auto ddsB = new Dds(trrn.dds_b);
+
+				if(!noDds){
+					auto megatileName = format!"%s_x%d_y%d"(trnFileName, x, y);
+					std.file.write(buildPath(outFolder, megatileName~".a.dds"), trrn.dds_a);
+					std.file.write(buildPath(outFolder, megatileName~".b.dds"), trrn.dds_b);
+				}
+
+				// Vertices
+				foreach(ref v ; trrn.vertices){
+					auto tint = v.tinting[0 .. 3].to!(float[]);
+					tint[] /= 255.0;
+
+					objData ~= format!"v %(%f %) 1.0 %(%f %)\n"(v.position, tint);
+					objData ~= format!"vt %(%f %)\n"(v.uv);
+					objData ~= format!"vn %(%f %)\n"(v.normal);
+				}
+
+				// Triangles
+				foreach(ref t ; trrn.triangles){
+					import std.range : repeat;
+					objData ~= format("f %(%d/%) %(%d/%) %(%d/%)\n",
+						(vertexOffset + t.vertices[0]).repeat(3),
+						(vertexOffset + t.vertices[1]).repeat(3),
+						(vertexOffset + t.vertices[2]).repeat(3)
+					);
+				}
+
+				vertexOffset += trrn.vertices.length;
+
+				// TODO: handle grass data
+
+				//objData ~= "g grass\n";
+				//trrn.grass.blades
+				//	.each!((ref t){
+				//		objData ~= format("l %(%d %)\n", [v.vertices[0] + 1, v.vertices[1] + 1, v.vertices[2] + 1]);
+				//	});
+
+				trrnCounter++;
+			}
+
+			buildPath(outFolder, trnFile.baseName.stripExtension ~ ".trrn.obj")
+				.writeFile(objData);
+		}
+		break;
+
+
+		case "trrn-import":{
+			string trnFile;
+			string ddsPath = null;
+			bool noDds = false;
+			auto res = getopt(args,
+				config.required, "trn", "Existing TRN or TRX file to store the terrain mesh", &trnFile,
+				"dds-path", "Folder containing DDS files to import as texture alpha maps", &ddsPath,
+				"no-dds", "Do not import texture alpha maps", &noDds,
+				);
+
+			if(res.helpWanted || args.length == 1){
+				improvedGetoptPrinter(
+					"Import terrain mesh and textures into an existing TRN or TRX file\n"
+					~"Usage: "~args[0]~" "~command~" map.obj --trn map.trx\n"
+					~"\n"
+					~"Wavefront format notes:\n"
+					~"- Each megatile must be stored in a different object named with its megatile coordinates: 'megatile-x6y9'.\n"
+					~"- If a megatile is not in the obj file, the TRN/TRX megatile won't be modified\n"
+					~"- Grass is not imported.\n",
+					res.options);
+				return 0;
+			}
+
+			enforce(args.length == 2, "You can only provide one OBJ file");
+
+			auto objFilePath = args[1];
+			//auto objFile = File(objFilePath);
+
+			if(ddsPath is null)
+				ddsPath = objFilePath.dirName;
+
+			auto trn = new Trn(trnFile);
+
+			import nwnlibd.wavefrontobj;
+			auto wfobj = new WavefrontObj(objFilePath.readText);
+			wfobj.validate();
+
+			TrnNWN2TerrainDimPayload* trwh = null;
+			foreach(ref TrnNWN2TerrainDimPayload _trwh ; trn){
+				trwh = &_trwh;
+			}
+			enforce(trwh !is null, "No TRWH packet found");
+
+			TrnNWN2MegatilePayload*[] megatiles;
+			megatiles.length = trwh.width * trwh.height;
+
+			size_t trrnCounter = 0;
+			foreach(ref TrnNWN2MegatilePayload trrn ; trn){
+				size_t x = trrnCounter % trwh.width;
+				size_t y = trrnCounter / trwh.width;
+
+				if(!noDds){
+					auto megatileName = format!"megatile-%s_x%d_y%d"(
+						trnFile.baseName.stripExtension, x, y);
+
+					trrn.dds_a = cast(ubyte[])buildPath(ddsPath, megatileName~".a.dds").readFile();
+					trrn.dds_b = cast(ubyte[])buildPath(ddsPath, megatileName~".b.dds").readFile();
+				}
+
+				megatiles[trrnCounter] = &trrn;
+				trrnCounter++;
+			}
+
+			foreach(name, ref obj ; wfobj.objects){
+				TrnNWN2MegatilePayload* megatile = null;
+
+				if(name.length >= 9 && name[0 .. 9] == "megatile-"){
+					try{
+						size_t x, y;
+						name.dup.formattedRead!"megatile-x%dy%d"(x, y);
+						megatile = megatiles[y * trwh.width + x];
+					}
+					catch(FormatException){}
+				}
+
+				if(megatile is null)
+					stderr.writeln("Warning: object '", name, "' skipped");
+				else{
+					megatile.vertices.length = 0;
+					megatile.triangles.length = 0;
+
+
+					uint16_t vtxIdx = 0;
+					uint16_t[size_t] vtxTransTable;
+					auto triangles = obj
+						.values
+						.map!(g => g.faces)
+						.join
+						.filter!(t => t.vertices.length == 3);// Ignore non triangles
+					foreach(ref t ; triangles){
+						TrnNWN2MegatilePayload.Triangle trrnTri;
+						foreach(i, v ; t.vertices){
+							if(v !in vtxTransTable){
+								vtxTransTable[v] = megatile.vertices.length.to!uint16_t;
+
+								ubyte[4] color;
+								if(wfobj.vertices[v - 1].color.isNull)
+									color = [255, 255, 255, 255];
+								else
+									color = (wfobj.vertices[v - 1].color[] ~ 1.0)
+										.map!(a => (a * 255).to!ubyte)
+										.array[0 .. 4];
+
+								megatile.vertices ~= TrnNWN2MegatilePayload.Vertex(
+									wfobj.vertices[v - 1].position.v[0 .. 3],
+									wfobj.normals[t.normals[i] - 1].v[0 .. 3],
+									color,
+									wfobj.textCoords[t.textCoords[i] - 1].v[0 .. 2],
+									wfobj.textCoords[t.textCoords[i] - 1][].map!(a => cast(float)(fabs(a) / 10.0)).array[0 .. 2],
+									);
+							}
+
+							trrnTri.vertices[i] = vtxTransTable[v];
+						}
+						megatile.triangles ~= trrnTri;
+					}
+				}
+			}
+
+
+			trnFile.writeFile(trn.serialize());
 		}
 		break;
 	}
