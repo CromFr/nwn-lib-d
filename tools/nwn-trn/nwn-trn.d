@@ -580,10 +580,12 @@ int main(string[] args){
 			string ddsPath = null;
 			bool noDds = false;
 			string outputFile = null;
+			bool emptyMegatiles = false;
 			auto res = getopt(args,
 				config.required, "trn", "Existing TRN or TRX file to store the terrain mesh", &trnFile,
 				"dds-path", "Folder containing DDS files to import as texture alpha maps.\nDefault: search in --trn file's directory", &ddsPath,
 				"no-dds", "Do not import texture alpha maps", &noDds,
+				"rm", "Empty all megatiles before importing new mesh. Default: false", &emptyMegatiles,
 				"output|o", "TRN/TRX file to write.\nDefault: the file provided by --trn", &outputFile,
 				);
 
@@ -603,7 +605,6 @@ int main(string[] args){
 			enforce(args.length == 2, "You can only provide one OBJ file");
 
 			auto objFilePath = args[1];
-			//auto objFile = File(objFilePath);
 
 			if(ddsPath is null)
 				ddsPath = objFilePath.dirName;
@@ -636,6 +637,11 @@ int main(string[] args){
 
 					trrn.dds_a = cast(ubyte[])buildPath(ddsPath, megatileName~".a.dds").readFile();
 					trrn.dds_b = cast(ubyte[])buildPath(ddsPath, megatileName~".b.dds").readFile();
+				}
+
+				if(emptyMegatiles){
+					trrn.vertices.length = 0;
+					trrn.triangles.length = 0;
 				}
 
 				megatiles[trrnCounter] = &trrn;
