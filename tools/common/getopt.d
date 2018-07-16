@@ -36,7 +36,7 @@ void improvedGetoptPrinter(string text, Option[] opt, string footer = null, int 
 	// Print text
 	text
 		.splitLines
-		.map!(a => a.wrap(width, null, " ").splitLines)
+		.map!(a => a.smartWrap(width, null, " ").splitLines)
 		.join
 		.each!((a){
 			writeln(a);
@@ -56,7 +56,7 @@ void improvedGetoptPrinter(string text, Option[] opt, string footer = null, int 
 		bool first = true;
 		o.help
 			.splitLines
-			.map!(a => a.wrap(width - widthHelpIndentation).splitLines)
+			.map!(a => a.smartWrap(width - widthHelpIndentation).splitLines)
 			.join
 			.each!((a){
 				writeln(first ? "" : helpIndent, a);
@@ -70,10 +70,33 @@ void improvedGetoptPrinter(string text, Option[] opt, string footer = null, int 
 
 		footer
 			.splitLines
-			.map!(a => a.wrap(width, null, " ").splitLines)
+			.map!(a => a.smartWrap(width, null, " ").splitLines)
 			.join
 			.each!((a){
 				writeln(a);
 			});
 	}
+}
+
+
+private string smartWrap(in string text, size_t width = 80, in string firstindent = null, in string secondindent = null, in size_t tabsize = 8){
+	import std.uni : isWhite;
+
+	return text.splitLines
+		.map!((ref l){
+			string indent;
+			auto indentLen = l.countUntil!(a => !a.isWhite);
+			if(indentLen > 0)
+				indent = l[0 .. indentLen];
+
+			return l.wrap(width - indent.length, firstindent, secondindent, tabsize)
+				.splitLines
+				.map!(a => indent ~ a)
+				.join("\n");
+		})
+		.join("\n");
+}
+unittest{
+	assert("   hello".smartWrap() == "   hello");
+	assert("   hello world".smartWrap(8) == "   hello\n   world");
 }
