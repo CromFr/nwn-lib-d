@@ -899,9 +899,8 @@ unittest{
 	assert(main(["nwn-trn", "trrn-import", "--help"]) == 0);
 	assert(main([
 			"nwn-trn", "trrn-import",
-			filePath,
+			buildPath(tempDir, "eauprofonde-portes.trx.trrn.obj"),
 			"--trn", "unittest/eauprofonde-portes.trx",
-			"--dds-path", tempDir,
 			"-o", nullFile,
 		]) == 0);
 
