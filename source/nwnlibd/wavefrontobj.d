@@ -13,8 +13,16 @@ import gfm.math.vector;
 
 ///
 class WavefrontObj {
+
+	string[] mtllibs;
+
 	///
 	static struct WFVertex{
+		this(in vec3f position, Nullable!vec3f color = Nullable!vec3f()){
+			this.position.xyz = position;
+			this.position.w = 1.0;
+			this.color = color;
+		}
 		///
 		vec4f position;
 		///
@@ -23,9 +31,9 @@ class WavefrontObj {
 	///
 	WFVertex[] vertices;
 	///
-	vec3f[] normals;
-	///
 	vec2f[] textCoords;
+	///
+	vec3f[] normals;
 
 	///
 	static struct WFFace {
@@ -35,11 +43,13 @@ class WavefrontObj {
 		Nullable!(size_t[]) textCoords;
 		///
 		Nullable!(size_t[]) normals;
+		///
+		string material;
 	}
 	///
 	static struct WFLine {
 		///
-		size_t[] points;
+		size_t[] vertices;
 	}
 	///
 	static struct WFGroup {
@@ -65,6 +75,8 @@ class WavefrontObj {
 	this(in string data){
 		import std.uni : isWhite;
 
+		string currentMtl;
+
 		string object, group;
 		foreach(ref line ; data.lineSplitter.map!strip.filter!(a => a[0] != '#')){
 			auto ws = line.countUntil!isWhite;
@@ -72,6 +84,9 @@ class WavefrontObj {
 			line = line[ws .. $].strip;
 
 			switch(type){
+				case "mtllib":
+					mtllibs ~= line;
+					break;
 				case "o":
 					object = line;
 					group = null;
@@ -131,6 +146,7 @@ class WavefrontObj {
 						face.textCoords = indices.map!(a => a[1].to!size_t).array;
 					if(indices[0].length >= 3 && indices[0][2].length > 0)
 						face.normals = indices.map!(a => a[2].to!size_t).array;
+					face.material = currentMtl;
 
 					objects[object][group].faces ~= face;
 					break;
@@ -148,6 +164,10 @@ class WavefrontObj {
 					);
 					break;
 
+				case "usemtl":
+					currentMtl = line;
+					break;
+
 				default: break;
 			}
 		}
@@ -156,29 +176,55 @@ class WavefrontObj {
 	string serialize() const {
 		string objData;
 
+		foreach(ref lib ; mtllibs){
+			objData ~= format!"mtllib %s\n"(lib);
+		}
+
 		foreach(ref v ; vertices){
 			if(v.color.isNull)
-				objData ~= format("v %(%f %)\n", v.position);
+				objData ~= format!"v %(%f %)\n"(v.position.v);
 			else
-				objData ~= format("v %(%f %) 1.0 %(%f %)\n", v.position, v.color);
+				objData ~= format!"v %(%f %) %(%f %)\n"(v.position.v, v.color.v);
 		}
 
 		foreach(ref vt ; textCoords)
-			objData ~= format("vt %(%f %)\n", vt);
+			objData ~= format!"vt %(%f %)\n"(vt.v);
 
 		foreach(ref vn ; normals)
-			objData ~= format("vn %(%f %)\n", vn);
+			objData ~= format!"vn %(%f %)\n"(vn.v);
 
+		string currentMtl;
 		foreach(ref objName ; objects.keys().sort()){
+			objData ~= format!"o %s\n"(objName);
 			foreach(ref groupName ; objects[objName].groups.keys().sort()){
+				if(groupName != null)
+					objData ~= format!"g %s\n"(objName);
 
-				foreach(ref t ; objects[objName].groups[groupName].faces){
-					import std.range : repeat;
-					objData ~= format!"f %(%d/%) %(%d/%) %(%d/%)\n"(
-						[t.vertices[0], t.textCoords[0], t.normals[0]],
-						[t.vertices[1], t.textCoords[1], t.normals[1]],
-						[t.vertices[2], t.textCoords[2], t.normals[2]],
-					);
+				foreach(ref f ; objects[objName].groups[groupName].faces){
+
+					if(f.material != currentMtl){
+						objData ~= format!"usemtl %s\n"(f.material);
+						currentMtl = f.material;
+					}
+
+					string[] values;
+					values.length = f.vertices.length;
+
+					foreach(i ; 0 .. f.vertices.length){
+						values[i] ~= f.vertices[i].to!string;
+						if(!f.textCoords.isNull || !f.normals.isNull)
+							values[i] ~= "/";
+						values[i] ~= f.textCoords.isNull? null : f.textCoords.get[i].to!string;
+						if(!f.normals.isNull)
+							values[i] ~= "/";
+						values[i] ~= f.normals.isNull? null : f.normals.get[i].to!string;
+					}
+
+					objData ~= format!"f %-(%s %)\n"(values);
+				}
+
+				foreach(ref l ; objects[objName].groups[groupName].lines){
+					objData ~= format!"l %(%d %)\n"(l.vertices);
 				}
 			}
 		}
@@ -209,6 +255,11 @@ class WavefrontObj {
 						foreach(vi, ref v ; f.normals)
 							enforce(0 < v && v <= normals.length,
 								format!"objects[%s][%s].faces[%d].normals[%d] %d is out of bounds"(oname, gname, fi, vi, v));
+				}
+				foreach(li, ref l ; g.lines){
+					foreach(vi, ref v ; l.vertices)
+						enforce(0 < v && v <= vertices.length,
+							format!"objects[%s][%s].lines[%d].vertices[%d] %d is out of bounds"(oname, gname, li, vi, v));
 				}
 			}
 		}

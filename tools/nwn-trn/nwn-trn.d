@@ -24,6 +24,7 @@ import nwnlibd.path;
 import nwnlibd.parseutils;
 import tools.common.getopt;
 import nwn.trn;
+import gfm.math.vector;
 
 class ArgException : Exception{
 	@safe pure nothrow this(string msg, string f=__FILE__, size_t l=__LINE__, Throwable t=null){
@@ -478,23 +479,30 @@ int main(string[] args){
 
 		case "trrn-export":{
 			string outFolder = ".";
-			bool noDds = false;
+			bool noTextures = false;
+			bool noGrass = false;
 			auto res = getopt(args,
 				"output|o", "Output directory where to write the OBJ and DDS file. Default: '.'", &outFolder,
-				"no-dds", "Do not output texture alpha maps", &noDds,
+				"no-textures", "Do not output texture data (DDS alpha maps & config)", &noTextures,
+				"no-grass", "Do not output grass data (3D lines & config)", &noGrass,
 				);
 
 			if(res.helpWanted || args.length == 1){
 				improvedGetoptPrinter(
-					"Export terrain mesh and textures into wavefront obj and DDS files.\n"
-					~"Note: works on both TRN and TRX files, though TRN files are only used by the toolset.\n"
+					"Export terrain mesh, textures and grass into wavefront obj, json and DDS files.\n"
+					~"Note: works for both TRN and TRX files, though TRN files are only used by the toolset.\n"
 					~"Usage: "~args[0]~" "~command~" map.trx\n"
 					~"       "~args[0]~" "~command~" map.trx -o converted/\n"
 					~"\n"
 					~"Wavefront format notes:\n"
-					~"- Each megatile is stored in a different object named with its megatile coordinates: 'x6y9'. This naming scheme is mandatory.\n"
+					~"- Each megatile is stored in a different object named with its megatile coordinates: 'megatile-x6y9' or 'megatile-x6y9-MTName' if the megatile has a name.\n"
+					~"  This naming scheme is mandatory.\n"
+					~"- There can be only one megatile at a given megatile coordinate.\n"
 					~"- Vertex colors are exported, but many 3d tools don't handle it.\n"
-					~"- Grass is not exported.\n",
+					~"- Grass is exported as lines using an arbitrary format:\n"
+					~"    + first point: grass blade position\n"
+					~"    + second point: grass blade normal + position\n"
+					~"    + third point: grass blade dimension + normal + position\n",
 					res.options);
 				return 0;
 			}
@@ -502,7 +510,7 @@ int main(string[] args){
 
 
 			auto trnFile = args[1];
-			auto trnFileName = trnFile.baseName.stripExtension;
+			auto trnFileName = trnFile.baseName;
 			auto trn = new Trn(trnFile);
 
 			TrnNWN2TerrainDimPayload* trwh = null;
@@ -512,92 +520,140 @@ int main(string[] args){
 			enforce(trwh !is null, "No TRWH packet found");
 
 
-			string objData;
-			//string textureData;
-			size_t vertexOffset = 1;
+			import nwnlibd.wavefrontobj: WavefrontObj;
+			auto wfobj = new WavefrontObj();
+			import std.json: JSONValue;
+			JSONValue trrnConfig;
+
 
 			size_t trrnCounter = 0;
 			foreach(ref TrnNWN2MegatilePayload trrn ; trn){
 				size_t x = trrnCounter % trwh.width;
 				size_t y = trrnCounter / trwh.width;
+				auto id = format!"x%dy%d"(x, y);
 
+				// Json
+				trrnConfig[id] = JSONValue([
+						"name": JSONValue(trrn.name[0] == 0? null : trrn.name.ptr.fromStringz)
+					]);
+				if(!noTextures){
+					trrnConfig[id]["textures"] = JSONValue(trrn.textures[].map!(a => JSONValue([
+							"name":  JSONValue(a.name.ptr.fromStringz),
+							"color": JSONValue(a.color),
+						])).array);
+				}
+				if(!noGrass){
+					trrnConfig[id]["grass"] = JSONValue(trrn.grass[].map!(a => JSONValue([
+							"name":  JSONValue(a.name.ptr.fromStringz),
+							"texture": JSONValue(a.texture.ptr.fromStringz),
+						])).array);
+				}
 
-				objData ~= format!"o megatile-x%dy%d\n"(x, y);
+				// DDS
+				if(!noTextures){
 
-				//foreach(j, ref texture ; trrn.textures){
-				//	textureData ~= format("%d %s", j, texture.name.charArrayToString);
-				//}
-				//auto ddsA = new Dds(trrn.dds_a);
-				//auto ddsB = new Dds(trrn.dds_b);
-
-				if(!noDds){
-					auto megatileName = format!"%s_x%d_y%d"(trnFileName, x, y);
-					std.file.write(buildPath(outFolder, megatileName~".a.dds"), trrn.dds_a);
-					std.file.write(buildPath(outFolder, megatileName~".b.dds"), trrn.dds_b);
+					buildPath(outFolder, trnFileName ~ ".trrn." ~ id ~ ".a.dds")
+						.writeFile(trrn.dds_a);
+					buildPath(outFolder, trnFileName ~ ".trrn." ~ id ~ ".b.dds")
+						.writeFile(trrn.dds_b);
 				}
 
 				// Vertices
-				foreach(ref v ; trrn.vertices){
-					auto tint = v.tinting[0 .. 3].to!(float[]);
-					tint[] /= 255.0;
+				size_t vi = wfobj.vertices.length + 1;
+				size_t vti = wfobj.textCoords.length + 1;
+				size_t vni = wfobj.normals.length + 1;
 
-					objData ~= format!"v %(%f %) 1.0 %(%f %)\n"(v.position, tint);
-					objData ~= format!"vt %(%f %)\n"(v.uv);
-					objData ~= format!"vn %(%f %)\n"(v.normal);
+				foreach(ref v ; trrn.vertices){
+					auto tint = vec3f(v.tinting[0 .. 3].to!(float[])) / 255.0;
+
+					wfobj.vertices ~= WavefrontObj.WFVertex(vec3f(v.position), Nullable!vec3f(tint));
+					wfobj.textCoords ~= vec2f(v.uv);
+					wfobj.normals ~= vec3f(v.normal);
 				}
 
 				// Triangles
-				foreach(ref t ; trrn.triangles){
-					import std.range : repeat;
-					objData ~= format("f %(%d/%) %(%d/%) %(%d/%)\n",
-						(vertexOffset + t.vertices[0]).repeat(3),
-						(vertexOffset + t.vertices[1]).repeat(3),
-						(vertexOffset + t.vertices[2]).repeat(3)
-					);
+				auto grp = WavefrontObj.WFGroup();
+				foreach(ref triangle ; trrn.triangles){
+					auto v = triangle.vertices.to!(size_t[]);
+					v[] += vi;
+					auto vt = triangle.vertices.to!(size_t[]);
+					vt[] += vti;
+					auto vn = triangle.vertices.to!(size_t[]);
+					vn[] += vni;
+
+					grp.faces ~= WavefrontObj.WFFace(
+						v,
+						Nullable!(size_t[])(vt),
+						Nullable!(size_t[])(vn));
 				}
+				wfobj.objects[format!"megatile-%s"(id)] = WavefrontObj.WFObject([
+					null: grp,
+				]);
 
-				vertexOffset += trrn.vertices.length;
+				// Grass
+				if(!noGrass && trrn.grass.length > 0){
+					// TODO: need to understand how grass works in order to
+					// display relevant data
+					foreach(gi, ref g ; trrn.grass){
+						auto grassGrp = WavefrontObj.WFGroup();
+						foreach(ref b ; g.blades){
+							vi = wfobj.vertices.length + 1;
 
-				// TODO: handle grass data
+							auto pos = vec3f(b.position);
+							auto dir = vec3f(b.direction);
+							auto dim = vec3f(b.dimension);
 
-				//objData ~= "g grass\n";
-				//trrn.grass.blades
-				//	.each!((ref t){
-				//		objData ~= format("l %(%d %)\n", [v.vertices[0] + 1, v.vertices[1] + 1, v.vertices[2] + 1]);
-				//	});
+							wfobj.vertices ~= WavefrontObj.WFVertex(pos);
+							wfobj.vertices ~= WavefrontObj.WFVertex(pos + dir);
+							wfobj.vertices ~= WavefrontObj.WFVertex(pos + dir + dim);
+
+							grassGrp.lines ~= WavefrontObj.WFLine([
+								vi,
+								vi + 1,
+								vi + 2,
+								vi]);
+						}
+						wfobj.objects[format!"grass-%s-%d"(id, gi)] = WavefrontObj.WFObject([
+							null: grassGrp,
+						]);
+					}
+				}
 
 				trrnCounter++;
 			}
 
-			buildPath(outFolder, trnFile.baseName.stripExtension ~ ".trrn.obj")
-				.writeFile(objData);
+			enforce(trrnCounter > 0, "No TRRN data found. Note: interior areas have no TRRN data.");
+
+			wfobj.validate();
+			buildPath(outFolder, trnFileName ~ ".trrn.obj").writeFile(wfobj.serialize());
+			buildPath(outFolder, trnFileName ~ ".trrn.json").writeFile(trrnConfig.toPrettyString);
 		}
 		break;
 
 
 		case "trrn-import":{
 			string trnFile;
-			string ddsPath = null;
-			bool noDds = false;
+			bool noTextures = false;
+			bool noGrass = false;
 			string outputFile = null;
 			bool emptyMegatiles = false;
 			auto res = getopt(args,
 				config.required, "trn", "Existing TRN or TRX file to store the terrain mesh", &trnFile,
-				"dds-path", "Folder containing DDS files to import as texture alpha maps.\nDefault: search in --trn file's directory", &ddsPath,
-				"no-dds", "Do not import texture alpha maps", &noDds,
-				"rm", "Empty all megatiles before importing new mesh. Default: false", &emptyMegatiles,
-				"output|o", "TRN/TRX file to write.\nDefault: the file provided by --trn", &outputFile,
+				"no-textures", "Do not import texture data (DDS alpha maps & config)", &noTextures,
+				"no-grass", "Do not import grass data (3D lines & config)", &noGrass,
+				"rm", "Empty all megatiles before importing new mesh.\nUse with --no-textures to obtain harmless but glitchy textures.", &emptyMegatiles,
+				"output|o", "TRN/TRX file to write.\nDefault: overwrite the file provided by --trn", &outputFile,
 				);
 
 			if(res.helpWanted || args.length == 1){
 				improvedGetoptPrinter(
-					"Import terrain mesh and textures into an existing TRN or TRX file\n"
+					"Import terrain mesh, textures and grass into an existing TRN or TRX file\n"
+					~"All needed files (json, dds) must be located in the same directory as the obj file.\n"
 					~"Usage: "~args[0]~" "~command~" map.obj --trn map.trx\n"
 					~"\n"
 					~"Wavefront format notes:\n"
 					~"- Each megatile must be stored in a different object named with its megatile coordinates: 'megatile-x6y9'.\n"
-					~"- If a megatile is not in the obj file, the TRN/TRX megatile won't be modified\n"
-					~"- Grass is not imported.\n",
+					~"- If a megatile is not in the obj file, the TRN/TRX megatile won't be modified\n",
 					res.options);
 				return 0;
 			}
@@ -605,9 +661,9 @@ int main(string[] args){
 			enforce(args.length == 2, "You can only provide one OBJ file");
 
 			auto objFilePath = args[1];
+			auto objFileDir = objFilePath.dirName;
+			auto objFileBaseName = objFilePath.baseName(".trrn.obj");
 
-			if(ddsPath is null)
-				ddsPath = objFilePath.dirName;
 			if(outputFile is null)
 				outputFile = trnFile;
 
@@ -617,59 +673,45 @@ int main(string[] args){
 			auto wfobj = new WavefrontObj(objFilePath.readText);
 			wfobj.validate();
 
+			import std.json;
+			auto trrnConfig = buildPath(objFileDir, objFileBaseName ~ ".trrn.json").readText.parseJSON;
+
+
 			TrnNWN2TerrainDimPayload* trwh = null;
 			foreach(ref TrnNWN2TerrainDimPayload _trwh ; trn){
 				trwh = &_trwh;
 			}
 			enforce(trwh !is null, "No TRWH packet found");
 
-			TrnNWN2MegatilePayload*[] megatiles;
-			megatiles.length = trwh.width * trwh.height;
 
-			size_t trrnCounter = 0;
+			size_t trrnCounter;
 			foreach(ref TrnNWN2MegatilePayload trrn ; trn){
 				size_t x = trrnCounter % trwh.width;
 				size_t y = trrnCounter / trwh.width;
-
-				if(!noDds){
-					auto megatileName = format!"%s_x%d_y%d"(
-						trnFile.baseName.stripExtension, x, y);
-
-					trrn.dds_a = cast(ubyte[])buildPath(ddsPath, megatileName~".a.dds").readFile();
-					trrn.dds_b = cast(ubyte[])buildPath(ddsPath, megatileName~".b.dds").readFile();
-				}
+				string id = format!"x%dy%d"(x, y);
 
 				if(emptyMegatiles){
+					trrn.name[] = 0;
+					foreach(ref t ; trrn.textures){
+						t.name[] = 0;
+						t.color[] = 1.0;
+					}
 					trrn.vertices.length = 0;
 					trrn.triangles.length = 0;
+					// TODO: empty DDS
+					trrn.grass.length = 0;
 				}
 
-				megatiles[trrnCounter] = &trrn;
-				trrnCounter++;
-			}
+				// Megatile name
+				trrn.name = trrnConfig[id]["name"].str.stringToChararray!(char[128]);
 
-			foreach(name, ref obj ; wfobj.objects){
-				TrnNWN2MegatilePayload* megatile = null;
+				// Mesh
+				if(auto o = ("megatile-"~id) in wfobj.objects){
+					trrn.vertices.length = 0;
+					trrn.triangles.length = 0;
 
-				if(name.length >= 9 && name[0 .. 9] == "megatile-"){
-					try{
-						size_t x, y;
-						name.dup.formattedRead!"megatile-x%dy%d"(x, y);
-						megatile = megatiles[y * trwh.width + x];
-					}
-					catch(FormatException){}
-				}
-
-				if(megatile is null)
-					stderr.writeln("Warning: object '", name, "' skipped");
-				else{
-					megatile.vertices.length = 0;
-					megatile.triangles.length = 0;
-
-
-					uint16_t vtxIdx = 0;
 					uint16_t[size_t] vtxTransTable;
-					auto triangles = obj
+					auto triangles = o.groups
 						.values
 						.map!(g => g.faces)
 						.join
@@ -678,7 +720,8 @@ int main(string[] args){
 						TrnNWN2MegatilePayload.Triangle trrnTri;
 						foreach(i, v ; t.vertices){
 							if(v !in vtxTransTable){
-								vtxTransTable[v] = megatile.vertices.length.to!uint16_t;
+								// Add vertices as needed
+								vtxTransTable[v] = trrn.vertices.length.to!uint16_t;
 
 								ubyte[4] color;
 								if(wfobj.vertices[v - 1].color.isNull)
@@ -688,26 +731,81 @@ int main(string[] args){
 										.map!(a => (a * 255).to!ubyte)
 										.array[0 .. 4];
 
-								megatile.vertices ~= TrnNWN2MegatilePayload.Vertex(
+								trrn.vertices ~= TrnNWN2MegatilePayload.Vertex(
 									wfobj.vertices[v - 1].position.v[0 .. 3],
 									wfobj.normals[t.normals[i] - 1].v[0 .. 3],
 									color,
 									wfobj.textCoords[t.textCoords[i] - 1].v[0 .. 2],
 									wfobj.textCoords[t.textCoords[i] - 1][].map!(a => cast(float)(fabs(a) / 10.0)).array[0 .. 2],
-									);
+								);
 							}
 
 							trrnTri.vertices[i] = vtxTransTable[v];
 						}
-						megatile.triangles ~= trrnTri;
+						trrn.triangles ~= trrnTri;
 					}
 
-					megatile.validate();
 				}
 
+				// DDS & textures
+				if(!noTextures && id in trrnConfig){
+					// Textures
+					foreach(i, ref t ; trrn.textures){
+						t.name = trrnConfig[id]["textures"][i]["name"]
+							.str
+							.stringToChararray!(char[32]);
+						t.color = trrnConfig[id]["textures"][i]["color"]
+							.array
+							.map!(a => a.toString.to!float)
+								.array;
+					}
+
+					// DDS
+					trrn.dds_a = cast(ubyte[])buildPath(objFileDir, objFileBaseName ~ ".trrn." ~ id ~ ".a.dds").readFile();
+					trrn.dds_b = cast(ubyte[])buildPath(objFileDir, objFileBaseName ~ ".trrn." ~ id ~ ".b.dds").readFile();
+				}
+
+				// Grass
+				if(!noGrass && id in trrnConfig){
+					trrn.grass.length = 0;
+
+					size_t i;
+					WavefrontObj.WFObject* o;
+					for(i = 0, o = format!"grass-%s-%d"(id, i) in wfobj.objects
+						; o !is null
+						; i++, o = format!"grass-%s-%d"(id, i) in wfobj.objects){
+
+						TrnNWN2MegatilePayload.Grass grass;
+
+						// Textures
+						grass.name = trrnConfig[id]["grass"][i]["name"].str.stringToChararray!(char[32]);
+						grass.texture = trrnConfig[id]["grass"][i]["texture"].str.stringToChararray!(char[32]);
+
+						// Data
+						auto lines = o.groups
+							.values
+							.map!(g => g.lines)
+							.join
+							.filter!(t => t.vertices.length == 4);
+						foreach(ref l ; lines){
+							auto position  = wfobj.vertices[l.vertices[0] - 1].position;
+							auto direction = wfobj.vertices[l.vertices[1] - 1].position - position;
+							auto dimension = wfobj.vertices[l.vertices[2] - 1].position - direction - position;
+
+							grass.blades ~= TrnNWN2MegatilePayload.Grass.Blade(
+								position.v[0..3],
+								direction.v[0..3],
+								dimension.v[0..3]);
+						}
+
+						trrn.grass ~= grass;
+					}
+				}
+
+				trrnCounter++;
 			}
 
-
+			enforce(trrnCounter > 0, "No TRRN data found. Note: interior areas have no TRRN data.");
 			outputFile.writeFile(trn.serialize());
 		}
 		break;
