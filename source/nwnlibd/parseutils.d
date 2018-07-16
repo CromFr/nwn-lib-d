@@ -24,10 +24,10 @@ T stringToChararray(T)(in string str) if(isStaticArray!T && isSomeChar!(ForeachT
 
 	import std.algorithm: min;
 	auto e = min(str.length, T.length);
-	ret[0..e] = str[0..e];
+	ret[0 .. e] = str[0 .. e];
 
-	if(e+1<T.length)
-		ret[e+1..$] = 0;
+	if(e < T.length)
+		ret[e .. $] = 0;
 
 	return ret;
 }
