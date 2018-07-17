@@ -19,7 +19,7 @@ auto ref string charArrayToString(T)(in T str, size_t length) if(isDynamicArray!
 	else
 		return str.idup;
 }
-T stringToChararray(T)(in string str) if(isStaticArray!T && isSomeChar!(ForeachType!T)){
+T stringToCharArray(T)(in string str) if(isStaticArray!T && isSomeChar!(ForeachType!T)){
 	T ret;
 
 	import std.algorithm: min;

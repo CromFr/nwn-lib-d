@@ -42,14 +42,28 @@ class TrnValueSetException : Exception{
 	}
 }
 ///
-class ASWMInvalidValueException : Exception{
+class TrnInvalidValueException : Exception{
 	///
 	@safe pure nothrow this(string msg, string f=__FILE__, size_t l=__LINE__, Throwable t=null){
 		super(msg, f, l, t);
 	}
 }
 ///
-class TRRNInvalidValueException : Exception{
+class ASWMInvalidValueException : TrnInvalidValueException{
+	///
+	@safe pure nothrow this(string msg, string f=__FILE__, size_t l=__LINE__, Throwable t=null){
+		super(msg, f, l, t);
+	}
+}
+///
+class TRRNInvalidValueException : TrnInvalidValueException{
+	///
+	@safe pure nothrow this(string msg, string f=__FILE__, size_t l=__LINE__, Throwable t=null){
+		super(msg, f, l, t);
+	}
+}
+///
+class WATRInvalidValueException : TrnInvalidValueException{
 	///
 	@safe pure nothrow this(string msg, string f=__FILE__, size_t l=__LINE__, Throwable t=null){
 		super(msg, f, l, t);
@@ -373,7 +387,9 @@ struct TrnNWN2MegatilePayload{
 				blade = data.readPackedStruct!(Grass.Blade);
 			}
 		}
-		assert(data.read_ptr == payload.length, "some bytes were not read");
+
+		enforce!TrnParseException(data.read_ptr == payload.length,
+			(payload.length - data.read_ptr).to!string ~ " bytes were not read at the end of TRRN");
 	}
 
 	///
@@ -516,7 +532,8 @@ struct TrnNWN2WaterPayload{
 
 		megatile_position = data.read!(typeof(megatile_position));
 
-		assert(data.read_ptr == payload.length, "some bytes were not read");
+		enforce!TrnParseException(data.read_ptr == payload.length,
+			(payload.length - data.read_ptr).to!string ~ " bytes were not read at the end of WATR");
 	}
 
 
@@ -542,6 +559,22 @@ struct TrnNWN2WaterPayload{
 			dds.length.to!uint32_t, dds,
 			megatile_position);
 		return cw.data;
+	}
+
+	///
+	void validate() const {
+		import nwn.dds;
+
+		try new Dds(dds);
+		catch(Exception e)
+			throw new WATRInvalidValueException("dds is invalid or format is not supported", __FILE__, __LINE__, e);
+
+		immutable vtxLen = vertices.length;
+		foreach(ti, ref t ; triangles){
+			foreach(vi, v ; t.vertices)
+				enforce!WATRInvalidValueException(v < vtxLen,
+					format!"triangles[%d].vertices[%d] = %d is out of bounds"(ti, vi, v));
+		}
 	}
 }
 
@@ -1052,7 +1085,9 @@ struct TrnNWN2WalkmeshPayload{
 
 		islands_path_nodes = wmdata.readArray!IslandPathNode(islands.length ^^ 2).dup;
 
-		assert(wmdata.bytesLeft == 0, "Remaining " ~ wmdata.bytesLeft.to!string ~ " bytes");
+		enforce!TrnParseException(data.read_ptr == payload.length,
+			(payload.length - data.read_ptr).to!string ~ " bytes were not read at the end of ASWM");
+
 
 		version(unittest){
 

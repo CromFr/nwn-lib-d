@@ -98,7 +98,7 @@ alias GffString = string;
 
 /// GFF Resref value type (32 character string)
 struct GffResRef{
-	import nwnlibd.parseutils: stringToChararray, charArrayToString;
+	import nwnlibd.parseutils: stringToCharArray, charArrayToString;
 
 	///
 	this(in char[] value){
@@ -114,7 +114,7 @@ struct GffResRef{
 	version(FastGffWrite)
 	void opAssign(in string str){
 		assert(str.length <= 32, "Value is too long");
-		data = str.stringToChararray!(char[32]);
+		data = str.stringToCharArray!(char[32]);
 	}
 
 	/// Converts `this.data` into a usable string (trim trailing NULL chars)

@@ -38,7 +38,7 @@ void usage(in string cmd){
 	writeln();
 	writeln("Commands");
 	writeln("  bake: Bake an area (replacement for builtin nwn2toolset bake tool)");
-	writeln("  aswm-check: Checks if a TRX file contains valid data");
+	writeln("  check: Performs several checks on the TRN packets data");
 	writeln("  aswm-strip: Optimize TRX file size");
 	writeln("  aswm-export-fancy: Export walkmesh into a colored wavefront obj");
 	writeln("  aswm-export: Export walkable walkmesh into a wavefront obj");
@@ -47,6 +47,7 @@ void usage(in string cmd){
 	writeln("  trrn-import: Import a terrain mesh and textures into an existing TRN/TRX file");
 	writeln();
 	writeln("Advanced commands:");
+	writeln("  aswm-check: Checks if a TRX file contains valid data");
 	writeln("  aswm-dump: Print walkmesh data using a (barely) human-readable format");
 	writeln("  aswm-bake: Re-bake all tiles of an already baked walkmesh");
 }
@@ -66,6 +67,52 @@ int main(string[] args){
 		default:
 			usage(args[0]);
 			return 1;
+
+		case "check":
+			bool strict = false;
+			auto res = getopt(args,
+				"strict", "Check some inconsistencies that does not cause issues with nwn2\nDefault: false", &strict);
+			if(res.helpWanted || args.length == 1){
+				improvedGetoptPrinter(
+					"Check if TRN packets contains valid data\n"
+					~"Usage: "~args[0]~" "~command~" file1.trx file2.trn ...",
+					res.options);
+				return 0;
+			}
+
+			foreach(file ; args[1 .. $]){
+				Trn trn;
+				try trn = new Trn(file);
+				catch(Exception e){
+					writeln("Error while parsing ", file, ": ", e);
+				}
+
+				if(trn !is null){
+					foreach(i, ref packet ; trn.packets){
+						try{
+							final switch(packet.type){
+								case TrnPacketType.NWN2_TRWH:
+									break;
+								case TrnPacketType.NWN2_TRRN:
+									packet.as!(TrnPacketType.NWN2_TRRN).validate();
+									break;
+								case TrnPacketType.NWN2_WATR:
+									packet.as!(TrnPacketType.NWN2_WATR).validate();
+									break;
+								case TrnPacketType.NWN2_ASWM:
+									packet.as!(TrnPacketType.NWN2_ASWM).validate(strict);
+									break;
+							}
+						}
+						catch(Exception e){
+							writefln!"Error in %s on packet[%d] of type %s: %s"(file, i, packet.type, e);
+							break;
+						}
+					}
+				}
+			}
+			break;
+
 		case "aswm-strip":{
 			bool inPlace = false;
 			bool quiet = false;
@@ -703,7 +750,7 @@ int main(string[] args){
 				}
 
 				// Megatile name
-				trrn.name = trrnConfig[id]["name"].str.stringToChararray!(char[128]);
+				trrn.name = trrnConfig[id]["name"].str.stringToCharArray!(char[128]);
 
 				// Mesh
 				if(auto o = ("megatile-"~id) in wfobj.objects){
@@ -753,7 +800,7 @@ int main(string[] args){
 					foreach(i, ref t ; trrn.textures){
 						t.name = trrnConfig[id]["textures"][i]["name"]
 							.str
-							.stringToChararray!(char[32]);
+							.stringToCharArray!(char[32]);
 						t.color = trrnConfig[id]["textures"][i]["color"]
 							.array
 							.map!(a => a.toString.to!float)
@@ -778,8 +825,8 @@ int main(string[] args){
 						TrnNWN2MegatilePayload.Grass grass;
 
 						// Textures
-						grass.name = trrnConfig[id]["grass"][i]["name"].str.stringToChararray!(char[32]);
-						grass.texture = trrnConfig[id]["grass"][i]["texture"].str.stringToChararray!(char[32]);
+						grass.name = trrnConfig[id]["grass"][i]["name"].str.stringToCharArray!(char[32]);
+						grass.texture = trrnConfig[id]["grass"][i]["texture"].str.stringToCharArray!(char[32]);
 
 						// Data
 						auto lines = o.groups
