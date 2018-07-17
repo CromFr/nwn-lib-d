@@ -39,12 +39,14 @@ void usage(in string cmd){
 	writeln("Commands");
 	writeln("  bake: Bake an area (replacement for builtin nwn2toolset bake tool)");
 	writeln("  check: Performs several checks on the TRN packets data");
+	writeln("  trrn-export: Export the terrain mesh, textures and grass");
+	writeln("  trrn-import: Import a terrain mesh, textures and grass into an existing TRN/TRX file");
+	writeln("  watr-import: Export water mesh");
+	writeln("  watr-import: Import a water mesh into an existing TRN/TRX file");
 	writeln("  aswm-strip: Optimize TRX file size");
-	writeln("  aswm-export-fancy: Export walkmesh into a colored wavefront obj");
+	writeln("  aswm-export-fancy: Export custom walkmesh data into a colored wavefront obj");
 	writeln("  aswm-export: Export walkable walkmesh into a wavefront obj");
 	writeln("  aswm-import: Import a wavefront obj as the walkmesh of an existing TRX file");
-	writeln("  trrn-export: Export the terrain mesh and textures into a wavefront obj and DDS files");
-	writeln("  trrn-import: Import a terrain mesh and textures into an existing TRN/TRX file");
 	writeln();
 	writeln("Advanced commands:");
 	writeln("  aswm-check: Checks if a TRX file contains valid data");
@@ -125,7 +127,7 @@ int main(string[] args){
 				);
 			if(res.helpWanted || args.length == 1){
 				improvedGetoptPrinter(
-					"Reduce TRX file size by removing non walkable polygons from calculated walkmesh\n"
+					"Reduce TRX file size by removing non walkable triangles from walkmesh and path tables\n"
 					~"Usage: "~args[0]~" "~command~" map.trx -o stripped_map.trx\n"
 					~"       "~args[0]~" "~command~" -i map.trx",
 					res.options);
@@ -856,6 +858,230 @@ int main(string[] args){
 			outputFile.writeFile(trn.serialize());
 		}
 		break;
+
+		case "watr-export":{
+
+			string outFolder = ".";
+			bool noTextures = false;
+			auto res = getopt(args,
+				"output|o", "Output directory where to write the OBJ, JSON and DDS files. Default: '.'", &outFolder,
+				"no-textures", "Do not output texture data (DDS alpha maps & config)", &noTextures,
+				);
+
+			if(res.helpWanted || args.length == 1){
+				improvedGetoptPrinter(
+					"Export water mesh and properties into a wavefront obj, json and dds files.\n"
+					~"Note: works on both TRN and TRX files, though TRN files are only used by the toolset.\n"
+					~"Usage: "~args[0]~" "~command~" map.trx\n"
+					~"       "~args[0]~" "~command~" map.trx -o converted/\n",
+					res.options);
+				return 0;
+			}
+			enforce(args.length == 2, "You can only provide one TRN file");
+
+
+			auto trnFile = args[1];
+			auto trnFileName = trnFile.baseName;
+			auto trn = new Trn(trnFile);
+
+			import nwnlibd.wavefrontobj: WavefrontObj;
+			auto wfobj = new WavefrontObj();
+			wfobj.mtllibs ~= trnFileName ~ ".watr.mtl";
+			string wfmtl = "# This file is not used during WATR importation\n";
+			import std.json: JSONValue;
+			JSONValue watrConfig;
+
+			size_t watrIdx;
+			foreach(ref TrnNWN2WaterPayload watr ; trn){
+				immutable name = format!"water-%d"(watrIdx);
+
+				// Config
+				watrConfig[watrIdx.to!string] = JSONValue([
+					"name":                JSONValue(watr.name.ptr.fromStringz),
+					"megatile_position":   JSONValue(watr.megatile_position),
+					"color":               JSONValue(watr.color),
+					"ripple":              JSONValue(watr.ripple),
+					"smoothness":          JSONValue(watr.smoothness),
+					"reflect_bias":        JSONValue(watr.reflect_bias),
+					"reflect_power":       JSONValue(watr.reflect_power),
+					"specular_power":      JSONValue(watr.specular_power),
+					"specular_cofficient": JSONValue(watr.specular_cofficient),
+					"textures":            JSONValue(watr.textures[].map!(a => JSONValue([
+							"name":        JSONValue(a.name.ptr.fromStringz),
+							"direction":   JSONValue(a.direction),
+							"rate":        JSONValue(a.rate),
+							"angle":       JSONValue(a.angle),
+						])).array),
+					"uv_offset":           JSONValue(watr.uv_offset),
+				]);
+				// TODO: unknown not handled
+
+				// Vertices & faces
+				size_t vi = wfobj.vertices.length + 1;
+				size_t vti = wfobj.textCoords.length + 1;
+
+				foreach(ref v ; watr.vertices){
+					wfobj.vertices ~= WavefrontObj.WFVertex(vec3f(v.position));
+					wfobj.textCoords ~= vec2f(v.uv_1);
+				}
+
+				auto grp = WavefrontObj.WFGroup();
+				foreach(ti, ref triangle ; watr.triangles){
+					if(watr.triangles_flags[ti] == 1)
+						continue;// don't export triangles without water
+
+					auto v = triangle.vertices.to!(size_t[]);
+					v[] += vi;
+					auto vt = triangle.vertices.to!(size_t[]);
+					vt[] += vti;
+
+					grp.faces ~= WavefrontObj.WFFace(
+						v,
+						Nullable!(size_t[])(vt));
+				}
+				wfobj.objects[name] = WavefrontObj.WFObject([null: grp]);
+
+
+				// Alpha bitmap
+				immutable ddsName = format!"%s.watr.%d.dds"(trnFileName, watrIdx);
+				buildPath(outFolder, ddsName).writeFile(watr.dds);
+
+				// Material
+				wfmtl ~= format!"newmtl %s\n"(name);
+				wfmtl ~= format!"map_d %s\n"(ddsName);
+				wfmtl ~= "\n";
+
+				watrIdx++;
+			}
+
+			writeFile(buildPath(outFolder, trnFileName ~ ".watr.obj"), wfobj.serialize());
+			writeFile(buildPath(outFolder, trnFileName ~ ".watr.mtl"), wfmtl);
+			writeFile(buildPath(outFolder, trnFileName ~ ".watr.json"), watrConfig.toPrettyString());
+		}
+		break;
+
+		case "watr-import":{
+			string trnFile;
+			string outputFile = null;
+			bool emptyWatr = false;
+			auto res = getopt(args,
+				config.required, "trn", "Existing TRN or TRX file to store the water mesh", &trnFile,
+				"output|o", "TRN/TRX file to write.\nDefault: the file provided by --trn", &outputFile,
+				);
+
+			if(res.helpWanted || args.length == 1){
+				improvedGetoptPrinter(
+					"Import mater mesh properties into an existing TRN or TRX file\n"
+					~"Usage: "~args[0]~" "~command~" map.watr.obj --trn map.trx\n"
+					~"\n"
+					~"Wavefront format notes:\n"
+					~"- Water data is always cleared before importing\n",
+					res.options);
+				return 0;
+			}
+
+			enforce(args.length == 2, "You can only provide one OBJ file");
+
+			auto objFilePath = args[1];
+			auto objFileDir = objFilePath.dirName;
+			auto objFileBaseName = objFilePath.baseName(".watr.obj");
+
+			if(outputFile is null)
+				outputFile = trnFile;
+
+			auto trn = new Trn(trnFile);
+
+
+			import nwnlibd.wavefrontobj: WavefrontObj;
+			auto wfobj = new WavefrontObj(buildPath(objFileDir, objFileBaseName ~ ".watr.obj").readText);
+			import std.json;
+			auto watrConfig = buildPath(objFileDir, objFileBaseName ~ ".watr.json").readText.parseJSON;
+
+			writeln("trn packets: ", trn.packets.length);
+
+			// Remove previous packets
+			trn.packets = trn.packets
+				.filter!(a => a.type != TrnPacketType.NWN2_WATR)
+				.array;
+			writeln("trn packets after remove: ", trn.packets.length);
+
+			foreach(oName, ref o ; wfobj.objects){
+				if(oName.length < 6 || oName[0 .. 6] != "water-")
+					continue;
+
+				trn.packets ~= TrnPacket(TrnPacketType.NWN2_WATR);
+				auto watr = &trn.packets[$ - 1].as!TrnNWN2WaterPayload();
+
+				size_t id;
+				oName.dup.formattedRead!"water-%d"(id);
+				auto watrIdx = id.to!string;
+
+				// Set properties
+				watr.name                = watrConfig[watrIdx]["name"].str.stringToCharArray!(char[32]);
+				watr.unknown[]           = 0;//TODO: reverse & save unknown block
+				watr.megatile_position   = watrConfig[watrIdx]["megatile_position"].array.map!(a => a.toString.to!uint32_t).array[0 .. 2];
+				watr.color               = watrConfig[watrIdx]["color"].array.map!(a => a.toString.to!float).array[0 .. 3];
+				watr.ripple              = watrConfig[watrIdx]["ripple"].array.map!(a => a.toString.to!float).array[0 .. 2];
+				watr.smoothness          = watrConfig[watrIdx]["smoothness"].toString.to!float;
+				watr.reflect_bias        = watrConfig[watrIdx]["reflect_bias"].toString.to!float;
+				watr.reflect_power       = watrConfig[watrIdx]["reflect_power"].toString.to!float;
+				watr.specular_power      = watrConfig[watrIdx]["specular_power"].toString.to!float;
+				watr.specular_cofficient = watrConfig[watrIdx]["specular_cofficient"].toString.to!float;
+				foreach(i, ref t ; watr.textures){
+					t.name      = watrConfig[watrIdx]["textures"][i]["name"].str.stringToCharArray!(char[32]);
+					t.direction = watrConfig[watrIdx]["textures"][i]["direction"].array.map!(a => a.toString.to!float).array[0 .. 2];
+					t.rate      = watrConfig[watrIdx]["textures"][i]["rate"].toString.to!float;
+					t.angle     = watrConfig[watrIdx]["textures"][i]["angle"].toString.to!float;
+				}
+				watr.uv_offset = watrConfig[watrIdx]["uv_offset"].array.map!(a => a.toString.to!float).array[0 .. 2];
+
+
+				// Vertices & triangles
+				watr.vertices.length = 0;
+				watr.triangles.length = 0;
+
+				uint16_t[size_t] vtxTransTable;
+				auto triangles = o.groups
+					.values
+					.map!(g => g.faces)
+					.join
+					.filter!(t => t.vertices.length == 3);// Ignore non triangles
+				foreach(ref t ; triangles){
+
+					foreach(i, v ; t.vertices){
+						if(v !in vtxTransTable){
+							// Add vertices as needed
+							vtxTransTable[v] = watr.vertices.length.to!uint16_t;
+
+							auto uv_1 = wfobj.textCoords[t.textCoords[i] - 1];
+							auto uv_0 = uv_1 * 5.0;
+
+							watr.vertices ~= TrnNWN2WaterPayload.Vertex(
+								wfobj.vertices[v - 1].position.v[0 .. 3],
+								uv_0.v,
+								uv_1.v,
+							);
+						}
+					}
+
+					watr.triangles ~= TrnNWN2WaterPayload.Triangle(
+						t.vertices
+							.map!(a => vtxTransTable[a])
+							.array[0 .. 3]
+					);
+					watr.triangles_flags ~= 0;
+				}
+
+				// DDS
+				watr.dds = cast(ubyte[])buildPath(objFileDir, format!"%s.watr.%d.dds"(objFileBaseName, id)).readFile();
+
+				// check
+				watr.validate();
+			}
+
+			outputFile.writeFile(trn.serialize());
+		}
+		break;
 	}
 	return 0;
 }
@@ -878,6 +1104,8 @@ unittest{
 	auto filePath = buildPath(tempDir, "unittest-nwn-lib-d-"~__MODULE__);
 
 	assert(main(["nwn-trn", "--help"]) == 0);
+
+	assert(main(["nwn-trn", "check", "--help"]) == 0);
 
 	assert(main(["nwn-trn", "bake", "--help"]) == 0);
 	assert(main([
@@ -920,6 +1148,10 @@ unittest{
 			"-o", tempDir,
 		]) == 0);
 
+
+	// Import/export functions
+
+	// ASWM
 	assert(main(["nwn-trn", "aswm-export", "--help"]) == 0);
 	assert(main([
 			"nwn-trn", "aswm-export",
@@ -933,9 +1165,12 @@ unittest{
 			"--obj", filePath,
 			"--trn", "unittest/eauprofonde-portes.trx",
 			"--terrain2da=unittest/terrainmaterials.2da",
-			"-o", nullFile,
+			"-o", buildPath(tempDir, "eauprofonde-portes.new.trx"),
 		]) == 0);
 
+	assert(main(["nwn-trn", "check", buildPath(tempDir, "eauprofonde-portes.new.trx")]) == 0);
+
+	// TRRN
 	assert(main(["nwn-trn", "trrn-export", "--help"]) == 0);
 	assert(main([
 			"nwn-trn", "trrn-export",
@@ -948,9 +1183,31 @@ unittest{
 			"nwn-trn", "trrn-import",
 			buildPath(tempDir, "eauprofonde-portes.trx.trrn.obj"),
 			"--trn", "unittest/eauprofonde-portes.trx",
-			"-o", nullFile,
+			"-o", buildPath(tempDir, "eauprofonde-portes.new.trx"),
 		]) == 0);
 
+	assert(main(["nwn-trn", "check", buildPath(tempDir, "eauprofonde-portes.new.trx")]) == 0);
+
+	// WATR
+	assert(main(["nwn-trn", "watr-export", "--help"]) == 0);
+	assert(main([
+			"nwn-trn", "watr-export",
+			"unittest/eauprofonde-portes.trx",
+			"-o", tempDir,
+		]) == 0);
+
+	assert(main(["nwn-trn", "watr-import", "--help"]) == 0);
+	assert(main([
+			"nwn-trn", "watr-import",
+			buildPath(tempDir, "eauprofonde-portes.trx.watr.obj"),
+			"--trn", "unittest/eauprofonde-portes.trx",
+			"-o", buildPath(tempDir, "eauprofonde-portes.new.trx"),
+		]) == 0);
+
+	assert(main(["nwn-trn", "check", buildPath(tempDir, "eauprofonde-portes.new.trx")]) == 0);
+
+
+	// Advanced commands
 	assert(main(["nwn-trn", "aswm-dump", "unittest/WalkmeshObjects.trx"]) == 0);
 
 	assert(main(["nwn-trn", "aswm-bake", "--help"]) == 0);

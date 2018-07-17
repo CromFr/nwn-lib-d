@@ -90,23 +90,11 @@ struct ChunkWriter{
 	ubyte[] data;
 
 	void put(T...)(in T chunks){
-		foreach(chunk ; chunks){
+		static foreach(chunk ; chunks){
 			static if(isArray!(typeof(chunk)))
 				data ~= cast(ubyte[])chunk;
 			else
 				data ~= (cast(ubyte*)&chunk)[0..chunk.sizeof];
-		}
-	}
-
-
-private:
-	template sizeofStruct(T) if(is(T==struct)){
-		auto sizeofStruct(){
-			size_t ret = 0;
-			foreach(MEMBER ; FieldNameTuple!T){
-				ret += mixin("sizeof(T."~MEMBER~")");
-			}
-			return ret;
 		}
 	}
 }

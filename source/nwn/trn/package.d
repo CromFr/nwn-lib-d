@@ -99,12 +99,27 @@ TrnPacketType toTrnPacketType(char[4] str, string nwnVersion){
 }
 ///
 char[4] toTrnPacketStr(TrnPacketType type){
-	return type.to!(char[])[5..9];
+	return type.to!(char[])[5 .. 9];
 }
 
 
 
 struct TrnPacket{
+
+	this(TrnPacketType type){
+		m_type = type;
+
+		typeswitch:
+		final switch(m_type){
+			static foreach(T ; EnumMembers!TrnPacketType){
+				case T:
+					alias PT = TrnPacketTypeToPayload!T;
+					structData.length = PT.sizeof;
+					*cast(PT*)structData.ptr = PT();
+					break typeswitch;
+			}
+		}
+	}
 
 	@property{
 		///
@@ -212,7 +227,7 @@ class Trn{
 		PacketIndices[] indices;
 		indices.length = packets.length;
 
-		uint32_t offset = (header.sizeof + PacketIndices.sizeof*indices.length).to!uint32_t;
+		uint32_t offset = (header.sizeof + PacketIndices.sizeof * indices.length).to!uint32_t;
 		ubyte[] packetsData;
 		foreach(i, ref packet ; packets){
 			auto typeStr = packet.type.toTrnPacketStr();
@@ -298,7 +313,8 @@ struct TrnNWN2TerrainDimPayload{
 	uint32_t height;/// Height in megatiles
 	uint32_t id;/// Unknown
 
-	package this(in ubyte[] payload){
+	/// Build packet with raw data
+	this(in ubyte[] payload){
 		width = *(cast(uint32_t*)&payload[0]);
 		height = *(cast(uint32_t*)&payload[4]);
 		id = *(cast(uint32_t*)&payload[8]);
@@ -356,7 +372,8 @@ struct TrnNWN2MegatilePayload{
 	}
 	Grass[] grass;/// Grass "objects"
 
-	package this(in ubyte[] payload){
+	/// Build packet with raw data
+	this(in ubyte[] payload){
 		auto data = ChunkReader(payload);
 
 		name = data.read!(char[128]);
@@ -452,14 +469,17 @@ struct TrnNWN2MegatilePayload{
 		foreach(ti, ref t ; triangles){
 			foreach(vi, v ; t.vertices)
 				enforce!TRRNInvalidValueException(v < vtxLen,
-					format!"triangles[%d].vertices[%d] = %d is out of bounds"(ti, vi, v));
+					format!"triangles[%d].vertices[%d] = %d is out of bounds [0;%d["(ti, vi, v, vtxLen));
 		}
 	}
 }
 
 /// Water information
 struct TrnNWN2WaterPayload{
-	char[32] name;/// WATR name
+	/// WATR name.
+	///
+	/// NWN2 seems to set it to `""` and fill the remaining bytes with garbage.
+	char[32] name;
 	ubyte[96] unknown;///
 	float[3] color;/// R,G,B
 	float[2] ripple;/// Ripples
@@ -477,7 +497,7 @@ struct TrnNWN2WaterPayload{
 		float angle;/// Scrolling angle in radiant
 	}
 	Texture[3] textures;/// Water textures
-	float[2] offset;/// x,y offset in water-space <=> megatile_coordinates/8
+	float[2] uv_offset;/// x,y offset in water-space <=> megatile_coordinates/8
 	///
 	static align(1) struct Vertex{
 		static assert(this.sizeof == 28);
@@ -485,6 +505,7 @@ struct TrnNWN2WaterPayload{
 		float[2] uv_0;/// XY5
 		float[2] uv_1;/// XY1
 	}
+	///
 	Vertex[] vertices;
 	///
 	static align(1) struct Triangle{
@@ -499,7 +520,8 @@ struct TrnNWN2WaterPayload{
 	uint32_t[2] megatile_position;/// Position of the associated megatile in the terrain
 
 
-	package this(in ubyte[] payload){
+	/// Build packet with raw data
+	this(in ubyte[] payload){
 		auto data = ChunkReader(payload);
 
 		name                = data.read!(typeof(name));
@@ -511,18 +533,12 @@ struct TrnNWN2WaterPayload{
 		reflect_power       = data.read!(typeof(reflect_power));
 		specular_power      = data.read!(typeof(specular_power));
 		specular_cofficient = data.read!(typeof(specular_cofficient));
+		textures            = data.read!(typeof(textures));
+		uv_offset           = data.read!(typeof(uv_offset));
 
-		foreach(ref texture ; textures){
-			texture.name      = data.read!(typeof(texture.name));
-			texture.direction = data.read!(typeof(texture.direction));
-			texture.rate      = data.read!(typeof(texture.rate));
-			texture.angle     = data.read!(typeof(texture.angle));
-		}
-
-
-		offset = data.read!(typeof(offset));
 		immutable vertices_length  = data.read!uint32_t;
 		immutable triangles_length = data.read!uint32_t;
+
 
 		vertices = data.readArray!Vertex(vertices_length).dup;
 		triangles = data.readArray!Triangle(triangles_length).dup;
@@ -536,10 +552,13 @@ struct TrnNWN2WaterPayload{
 
 		enforce!TrnParseException(data.read_ptr == payload.length,
 			(payload.length - data.read_ptr).to!string ~ " bytes were not read at the end of WATR");
+
+
+		validate();
 	}
 
-
-	ubyte[] serialize(){
+	///
+	ubyte[] serialize() const {
 		ChunkWriter cw;
 		cw.put(
 			name,
@@ -552,7 +571,7 @@ struct TrnNWN2WaterPayload{
 			specular_power,
 			specular_cofficient,
 			textures,
-			offset,
+			uv_offset,
 			vertices.length.to!uint32_t,
 			triangles.length.to!uint32_t,
 			vertices,
@@ -567,15 +586,19 @@ struct TrnNWN2WaterPayload{
 	void validate() const {
 		import nwn.dds;
 
-		try new Dds(dds);
-		catch(Exception e)
-			throw new WATRInvalidValueException("dds is invalid or format is not supported", __FILE__, __LINE__, e);
+		// TODO: can't parse this kind of DDS atm
+		//try new Dds(dds);
+		//catch(Exception e)
+		//	throw new WATRInvalidValueException("dds is invalid or format is not supported", __FILE__, __LINE__, e);
+
+		enforce!WATRInvalidValueException(triangles.length == triangles_flags.length,
+			format!"triangles.length (=%d) must match triangles_flags.length (=%d)"(triangles.length, triangles_flags.length));
 
 		immutable vtxLen = vertices.length;
 		foreach(ti, ref t ; triangles){
 			foreach(vi, v ; t.vertices)
 				enforce!WATRInvalidValueException(v < vtxLen,
-					format!"triangles[%d].vertices[%d] = %d is out of bounds"(ti, vi, v));
+					format!"triangles[%d].vertices[%d] = %d is out of bounds [0;%d["(ti, vi, v, vtxLen));
 		}
 	}
 }
@@ -1043,7 +1066,8 @@ struct TrnNWN2WalkmeshPayload{
 	IslandPathNode[] islands_path_nodes;
 
 
-	package this(in ubyte[] payload){
+	/// Build packet with raw data
+	this(in ubyte[] payload){
 		auto data = ChunkReader(payload);
 
 		data_type               = data.read!(char[4]).charArrayToString;
