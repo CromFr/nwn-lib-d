@@ -144,12 +144,14 @@ package:
 			static foreach(TYPE ; EnumMembers!TrnPacketType){
 				case TYPE:
 					alias PAYLOAD = TrnPacketTypeToPayload!TYPE;
-					structData = cast(ubyte[])([PAYLOAD(payloadData)][0..1]);
+					structData = [PAYLOAD(payloadData)];
 					break typeswitch;
 			}
 		}
 	}
-	ubyte[] structData;
+
+	// Using a void[] since the struct contains pointers to other data
+	void[] structData;
 }
 
 
