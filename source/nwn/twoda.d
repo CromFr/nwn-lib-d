@@ -332,8 +332,6 @@ unittest{
 
 	twoda = new TwoDA(polymorphTwoDA);
 	auto twodaSerialized = twoda.serialize();
-	import std.file;
-	std.file.write("test.2da", twodaSerialized);
 	auto twodaReparsed = new TwoDA(twodaSerialized);
 
 	assert(twoda.header == twodaReparsed.header);

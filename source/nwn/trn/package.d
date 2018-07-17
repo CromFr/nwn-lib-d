@@ -2158,7 +2158,7 @@ struct TrnNWN2WalkmeshPayload{
 }
 
 unittest {
-	auto epportesTrx = cast(ubyte[])import("TestImportExportTRN.trx");
+	auto epportesTrx = cast(ubyte[])import("eauprofonde-portes.trx");
 
 	auto trn = new Trn(epportesTrx);
 	auto serialized = trn.serialize();
