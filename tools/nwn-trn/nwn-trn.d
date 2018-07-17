@@ -1118,20 +1118,20 @@ unittest{
 	assert(main(["nwn-trn", "aswm-check", "--help"]) == 0);
 	assert(main([
 			"nwn-trn", "aswm-check",
-			"unittest/WalkmeshObjects.trn", "unittest/WalkmeshObjects.trx", "unittest/eauprofonde-portes.trx",
+			"unittest/WalkmeshObjects.trn", "unittest/WalkmeshObjects.trx", "unittest/TestImportExportTRN.trx",
 		]) == 0);
 
 	assert(main(["nwn-trn", "aswm-strip", "--help"]) == 0);
 	assert(main([
 			"nwn-trn", "aswm-strip",
-			"unittest/eauprofonde-portes.trx",
+			"unittest/TestImportExportTRN.trx",
 			"-o", filePath,
 		]) == 0);
 	auto trn = new Trn(filePath);
 	foreach(ref TrnNWN2WalkmeshPayload aswm ; trn){
-		assert(aswm.vertices.length == 15706);
-		assert(aswm.edges.length == 42578);
-		assert(aswm.triangles.length == 26814);
+		assert(aswm.vertices.length == 2141);
+		assert(aswm.edges.length == 5864);
+		assert(aswm.triangles.length == 3703);
 	}
 
 	assert(main(["nwn-trn", "aswm-export-fancy", "--help"]) == 0);
@@ -1144,7 +1144,7 @@ unittest{
 			"-f", "randomtilepaths",
 			"-f", "randomislandspaths",
 			"-f", "islands",
-			"unittest/eauprofonde-portes.trx",
+			"unittest/TestImportExportTRN.trx",
 			"-o", tempDir,
 		]) == 0);
 
@@ -1155,7 +1155,7 @@ unittest{
 	assert(main(["nwn-trn", "aswm-export", "--help"]) == 0);
 	assert(main([
 			"nwn-trn", "aswm-export",
-			"unittest/eauprofonde-portes.trn",
+			"unittest/TestImportExportTRN.trn",
 			"-o", filePath,
 		]) == 0);
 
@@ -1163,48 +1163,48 @@ unittest{
 	assert(main([
 			"nwn-trn", "aswm-import",
 			"--obj", filePath,
-			"--trn", "unittest/eauprofonde-portes.trx",
+			"--trn", "unittest/TestImportExportTRN.trx",
 			"--terrain2da=unittest/terrainmaterials.2da",
-			"-o", buildPath(tempDir, "eauprofonde-portes.new.trx"),
+			"-o", buildPath(tempDir, "TestImportExportTRN.new.trx"),
 		]) == 0);
 
-	assert(main(["nwn-trn", "check", buildPath(tempDir, "eauprofonde-portes.new.trx")]) == 0);
+	assert(main(["nwn-trn", "check", buildPath(tempDir, "TestImportExportTRN.new.trx")]) == 0);
 
 	// TRRN
 	assert(main(["nwn-trn", "trrn-export", "--help"]) == 0);
 	assert(main([
 			"nwn-trn", "trrn-export",
-			"unittest/eauprofonde-portes.trx",
+			"unittest/TestImportExportTRN.trx",
 			"-o", tempDir,
 		]) == 0);
 
 	assert(main(["nwn-trn", "trrn-import", "--help"]) == 0);
 	assert(main([
 			"nwn-trn", "trrn-import",
-			buildPath(tempDir, "eauprofonde-portes.trx.trrn.obj"),
-			"--trn", "unittest/eauprofonde-portes.trx",
-			"-o", buildPath(tempDir, "eauprofonde-portes.new.trx"),
+			buildPath(tempDir, "TestImportExportTRN.trx.trrn.obj"),
+			"--trn", "unittest/TestImportExportTRN.trx",
+			"-o", buildPath(tempDir, "TestImportExportTRN.new.trx"),
 		]) == 0);
 
-	assert(main(["nwn-trn", "check", buildPath(tempDir, "eauprofonde-portes.new.trx")]) == 0);
+	assert(main(["nwn-trn", "check", buildPath(tempDir, "TestImportExportTRN.new.trx")]) == 0);
 
 	// WATR
 	assert(main(["nwn-trn", "watr-export", "--help"]) == 0);
 	assert(main([
 			"nwn-trn", "watr-export",
-			"unittest/eauprofonde-portes.trx",
+			"unittest/TestImportExportTRN.trx",
 			"-o", tempDir,
 		]) == 0);
 
 	assert(main(["nwn-trn", "watr-import", "--help"]) == 0);
 	assert(main([
 			"nwn-trn", "watr-import",
-			buildPath(tempDir, "eauprofonde-portes.trx.watr.obj"),
-			"--trn", "unittest/eauprofonde-portes.trx",
-			"-o", buildPath(tempDir, "eauprofonde-portes.new.trx"),
+			buildPath(tempDir, "TestImportExportTRN.trx.watr.obj"),
+			"--trn", "unittest/TestImportExportTRN.trx",
+			"-o", buildPath(tempDir, "TestImportExportTRN.new.trx"),
 		]) == 0);
 
-	assert(main(["nwn-trn", "check", buildPath(tempDir, "eauprofonde-portes.new.trx")]) == 0);
+	assert(main(["nwn-trn", "check", buildPath(tempDir, "TestImportExportTRN.new.trx")]) == 0);
 
 
 	// Advanced commands

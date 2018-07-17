@@ -372,7 +372,7 @@ unittest{
 	import nwn.trn;
 	import std.algorithm;
 	import std.math;
-	auto trn = new Trn(cast(ubyte[])import("eauprofonde-portes.trx"));
+	auto trn = new Trn(cast(ubyte[])import("TestImportExportTRN.trx"));
 
 	foreach(ref TrnNWN2WalkmeshPayload aswm ; trn){
 		auto mesh = aswm.toGenericMesh();
