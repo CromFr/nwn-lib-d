@@ -9,6 +9,7 @@ import std.exception: enforce;
 import std.algorithm;
 import std.math;
 import std.array: array;
+import std.typecons: Tuple, tuple;
 import nwnlibd.parseutils;
 import nwnlibd.geometry;
 import gfm.math.vector;
@@ -1830,12 +1831,16 @@ struct TrnNWN2WalkmeshPayload{
 			else
 				islandRegistration = false;
 
+			float[] costTable;
+			costTable.length = tile.path_table.local_to_node.length;
+			costTable[] = float.infinity;
+
 			static struct NextToExplore{
-				uint32_t[] list;
+				Tuple!(uint32_t, float)[] list;
 				ubyte ntlTarget = ubyte.max;
 			}
 
-			NextToExplore[] explore(uint32_t currTriIdx, ubyte ntlTarget = ubyte.max){
+			NextToExplore[] explore(uint32_t currTriIdx, float currCost, ubyte ntlTarget = ubyte.max){
 				//TODO: currently the fastest route is the route that cross
 				//the minimum number of triangles, which isn't always true. We
 				//need to take the distance between triangles into account
@@ -1862,19 +1867,22 @@ struct TrnNWN2WalkmeshPayload{
 						// Mark the triangle as visited (only for island detection)
 						visitedTriangles[linkedTriIdx - trianglesOffset] = true;
 
-						auto node = getNode(fromTriIdx, linkedTriIdx);
-						if(*node == 0xff){
-							// This is the first time we visit the triangle from this fromTriIdx
+						float cost = currCost + vec2f(triangles[currTriIdx].center).distanceTo(vec2f(linkedTri.center));
 
+						if(cost < costTable[linkedTriIdx - trianglesOffset]){
+							costTable[linkedTriIdx - trianglesOffset] = cost;
+
+							auto node = getNode(fromTriIdx, linkedTriIdx);
 							if(ntlTarget == ubyte.max){
 								ret ~= NextToExplore([], getNtlIndex(linkedTriIdx));
 							}
 
-							ret[$-1].list ~= linkedTriIdx;
+							ret[$-1].list ~= Tuple!(uint32_t, float)(linkedTriIdx, cost);
 
 							assert(ret[$-1].ntlTarget < 0b0111_1111);
 							*node = ret[$-1].ntlTarget;// TODO: do VISIBLE / LOS calculation
 						}
+
 					}
 					else{
 						// linkedTri is outside the tile
@@ -1890,12 +1898,12 @@ struct TrnNWN2WalkmeshPayload{
 				return ret;
 			}
 
-			NextToExplore[] nextToExplore = [ NextToExplore([fromTriIdx]) ];
+			NextToExplore[] nextToExplore = [ NextToExplore([Tuple!(uint32_t,float)(fromTriIdx, 0)]) ];
 			NextToExplore[] newNextToExplore;
 			while(nextToExplore.length > 0 && nextToExplore.map!(a => a.list.length).sum > 0){
 				foreach(ref nte ; nextToExplore){
 					foreach(t ; nte.list){
-						newNextToExplore ~= explore(t, nte.ntlTarget);
+						newNextToExplore ~= explore(t[0], t[1], nte.ntlTarget);
 					}
 				}
 				nextToExplore = newNextToExplore;
