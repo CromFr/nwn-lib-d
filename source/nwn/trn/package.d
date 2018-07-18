@@ -106,6 +106,7 @@ char[4] toTrnPacketStr(TrnPacketType type){
 
 struct TrnPacket{
 
+	/// Create an packet with default values
 	this(TrnPacketType type){
 		m_type = type;
 
@@ -114,8 +115,24 @@ struct TrnPacket{
 			static foreach(T ; EnumMembers!TrnPacketType){
 				case T:
 					alias PT = TrnPacketTypeToPayload!T;
-					structData.length = PT.sizeof;
-					*cast(PT*)structData.ptr = PT();
+					structData = new PT();
+					break typeswitch;
+			}
+		}
+	}
+
+	///
+	this(TrnPacketType type, in ubyte[] payloadData){
+		import std.traits: EnumMembers;
+
+		m_type = type;
+
+		typeswitch:
+		final switch(type) with(TrnPacketType){
+			static foreach(TYPE ; EnumMembers!TrnPacketType){
+				case TYPE:
+					alias PAYLOAD = TrnPacketTypeToPayload!TYPE;
+					structData = new PAYLOAD(payloadData);
 					break typeswitch;
 			}
 		}
@@ -130,7 +147,7 @@ struct TrnPacket{
 	/// as!TrnNWN2WalkmeshPayload
 	ref inout(T) as(T)() inout if(is(typeof(TrnPacketPayloadToType!T) == TrnPacketType)) {
 		assert(type == TrnPacketPayloadToType!T, "Type mismatch");
-		return *cast(inout(T)*)structData.ptr;
+		return *cast(inout(T)*)structData;
 	}
 
 	/// as!(TrnPacketType.NWN2_ASWM)
@@ -148,25 +165,8 @@ struct TrnPacket{
 		}
 	}
 
-package:
-	this(TrnPacketType type, in ubyte[] payloadData){
-		import std.traits: EnumMembers;
-
-		m_type = type;
-
-		typeswitch:
-		final switch(type) with(TrnPacketType){
-			static foreach(TYPE ; EnumMembers!TrnPacketType){
-				case TYPE:
-					alias PAYLOAD = TrnPacketTypeToPayload!TYPE;
-					structData = [PAYLOAD(payloadData)];
-					break typeswitch;
-			}
-		}
-	}
-
-	// Using a void[] since the struct contains pointers to other data
-	void[] structData;
+private:
+	void* structData;
 }
 
 
@@ -206,7 +206,6 @@ class Trn{
 
 			enforce!TrnParseException(type==packetType, "Packet type does not match the one referenced in packet indices");
 
-			//writeln(packets.length,": ",type,"   (off=",offset," size=",packetLength,")");
 			packets ~= TrnPacket(type, (&packet.payload_start)[0..packetLength]);
 		}
 
