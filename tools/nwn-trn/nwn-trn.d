@@ -997,13 +997,10 @@ int main(string[] args){
 			import std.json;
 			auto watrConfig = buildPath(objFileDir, objFileBaseName ~ ".watr.json").readText.parseJSON;
 
-			writeln("trn packets: ", trn.packets.length);
-
 			// Remove previous packets
 			trn.packets = trn.packets
 				.filter!(a => a.type != TrnPacketType.NWN2_WATR)
 				.array;
-			writeln("trn packets after remove: ", trn.packets.length);
 
 			foreach(oName, ref o ; wfobj.objects){
 				if(oName.length < 6 || oName[0 .. 6] != "water-")
