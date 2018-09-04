@@ -309,7 +309,7 @@ unittest{
 	auto modData = cast(ubyte[])import("module.mod");
 	auto mod = new NWN2Erf(modData);
 	assert(mod.description[Language.English]=="module description");
-	assert(mod.buildDate == Date(2016, 06, 09));
+	assert(mod.buildDate == Date(2016, 6, 9));
 
 	assert(mod.serialize() == modData);
 }
