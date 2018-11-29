@@ -174,6 +174,7 @@ struct GffStruct{
 
 	/// Get child GffField
 	GffField opIndex(in string label){
+		assert(gff !is null, "GffStruct has no data");
 		auto fieldIndex = index[label];
 		return GffField(gff, gff.getField(fieldIndex));
 	}
@@ -193,6 +194,9 @@ struct GffStruct{
 	/// Allows `"value" in this`
 	Nullable!GffField opBinaryRight(string op : "in")(string label)
 	{
+		if(gff is null)
+			return Nullable!GffField();
+
 		if(auto fieldIndex = label in index)
 			return Nullable!GffField(GffField(gff, gff.getField(*fieldIndex)));
 
@@ -221,6 +225,8 @@ package:
 	FastGff.Struct* internal = null;
 
 	int opApply(scope int delegate(uint32_t fieldIndex) dlg){
+		if(gff is null)
+			return 0;
 
 		if(internal.field_count == 1){
 			auto fieldIndex = internal.data_or_data_offset;
@@ -255,7 +261,7 @@ struct GffList{
 
 	/// Get nth child GffStruct
 	GffStruct opIndex(uint32_t index){
-		assert(index < length, "Out of bound");
+		assert(gff !is null && index < length, "Out of bound");
 		auto gffstruct = gff.getStructList(listOffset)[index + 1];
 		return GffStruct(gff, gff.getStruct(gffstruct));
 	}
@@ -305,10 +311,12 @@ package:
 
 	int opApply(scope int delegate(size_t index, uint32_t structIndex) dlg){
 		int res = 0;
-		auto list = gff.getStructList(listOffset);
-		foreach(i ; 0 .. length){
-			if((res = dlg(i, list[i + 1])) != 0)
-				return res;
+		if(gff !is null){
+			auto list = gff.getStructList(listOffset);
+			foreach(i ; 0 .. length){
+				if((res = dlg(i, list[i + 1])) != 0)
+					return res;
+			}
 		}
 		return res;
 	}
