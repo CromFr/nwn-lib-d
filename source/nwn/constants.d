@@ -58,6 +58,7 @@ enum ResourceType: uint16_t{
 	ltr = 2036,   /// Letter-combo probability info for name generation
 	gff = 2037,   /// Generic File Format. Used when undesirable to create a new file extension for a resource, but the resource is a GFF. (Examples of GFFs include itp, utc, uti, ifo, are, git)
 	fac = 2038,   /// Faction File
+	bte = 2039,   ///
 	ute = 2040,   /// Encounter Blueprint
 	btd = 2041,   ///
 	utd = 2042,   /// Door Blueprint
