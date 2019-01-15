@@ -8,8 +8,8 @@ export WINEDEBUG=-all
 if [[ "$1" == "before_install" ]]; then
 	sudo dpkg --add-architecture i386
 
-	wget -nc https://dl.winehq.org/wine-builds/Release.key
-	sudo apt-key add Release.key
+	wget -nc https://dl.winehq.org/wine-builds/winehq.key
+	sudo apt-key add winehq.key
 	sudo apt-add-repository https://dl.winehq.org/wine-builds/ubuntu/
 
 	sudo apt-get update -qq
