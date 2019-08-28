@@ -10,6 +10,7 @@ import std.exception: enforce;
 import std.typecons: tuple;
 import std.conv;
 import std.bitmanip: littleEndianToNative;
+import std.stdint;
 
 ///
 class NWNServer{
@@ -39,10 +40,9 @@ class NWNServer{
 
 		ubyte[] buff;
 		buff.length = 128;
-		buff.length = sock.receive(buff);
-
-		enforce(buff.length >= 5 && buff[0..5] == "BNERU", "Wrong answer received");
-		auto cr = ChunkReader(buff[5 .. $]);
+		const len = sock.receive(buff);
+		enforce(len > 5 && buff[0..5] == "BNERU", "Wrong answer received");
+		auto cr = ChunkReader(buff[5 .. len]);
 
 		struct BNERU {
 			uint16_t port;
@@ -62,9 +62,9 @@ class NWNServer{
 
 		ubyte[] buff;
 		buff.length = 2^^14;
-		buff.length = sock.receive(buff);
-		enforce(buff.length >=4 && buff[0..4] == "BNDR", "Wrong answer received");
-		auto cr = ChunkReader(buff[4 .. $]);
+		const len = sock.receive(buff);
+		enforce(len > 4 && buff[0..4] == "BNDR", "Wrong answer received");
+		auto cr = ChunkReader(buff[4 .. len]);
 
 		struct BNDR {
 			uint16_t port;
@@ -107,10 +107,10 @@ class NWNServer{
 
 		ubyte[] buff;
 		buff.length = 256;
-		buff.length = sock.receive(buff);
+		const len = sock.receive(buff);
 
-		enforce(buff.length >= 4 && buff[0..4] == "BNXR", "Wrong answer received");
-		auto cr = ChunkReader(buff[4 .. $]);
+		enforce(len > 4 && buff[0..4] == "BNXR", "Wrong answer received");
+		auto cr = ChunkReader(buff[4 .. len]);
 
 		struct BNXR {
 			uint16_t port;
@@ -166,10 +166,10 @@ class NWNServer{
 
 		ubyte[] buff;
 		buff.length = 128;
-		buff.length = sock.receive(buff);
+		const len = sock.receive(buff);
 
-		enforce(buff.length >= 4 && buff[0..4] == "BNLR", "Wrong answer received");
-		auto cr = ChunkReader(buff[4 .. $]);
+		enforce(buff.length > 4 && buff[0..4] == "BNLR", "Wrong answer received");
+		auto cr = ChunkReader(buff[4 .. len]);
 
 		struct BNLR {
 			uint16_t port;
