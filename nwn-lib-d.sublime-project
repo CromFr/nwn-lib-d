@@ -10,50 +10,43 @@
 	"build_systems":
 	[
 		{
-			"name": "Project",
+			"name": "nwn-lib-d",
+			"shell_cmd": "dub build",
 
 			"working_dir": "${project_path}",
 			"syntax": "D-dmd.sublime-syntax",
 			"file_regex": "^(?:.*?@)?(?!\\?\\?:\\?)(.*?)(?:-mixin-\\d+)?[:\\(](\\d+)(?:,(\\d+))?\\)?:?\\s(.*)$",
 			"variants": [
 				{
-					"name": "nwn-gff",
+					"name": "Unittests",
+					"shell_cmd": "dub test",
+				},
+				{
+					"name": "Coverage",
+					"shell_cmd": "dub test :nwn-tlk -b unittest-cov",
+				},
+				{
+					"name": ":nwn-gff",
 					"shell_cmd": "dub build :nwn-gff",
 				},
 				{
-					"name": "nwn-gff run unittests-coverage",
-					"shell_cmd": "dub test -b unittest-cov :nwn-gff",
-				},
-				{
-					"name": "nwn-erf",
+					"name": ":nwn-erf",
 					"shell_cmd": "dub build :nwn-erf",
 				},
 				{
-					"name": "nwn-erf run unittests",
-					"shell_cmd": "dub test :nwn-erf",
-				},
-				{
-					"name": "nwn-tlk",
+					"name": ":nwn-tlk",
 					"shell_cmd": "dub build :nwn-tlk",
 				},
 				{
-					"name": "nwn-tlk run unittests",
-					"shell_cmd": "dub test :nwn-tlk",
-				},
-				{
-					"name": "nwn-bdb",
+					"name": ":nwn-bdb",
 					"shell_cmd": "dub build :nwn-bdb",
 				},
 				{
-					"name": "nwn-trn",
+					"name": ":nwn-trn",
 					"shell_cmd": "dub build :nwn-trn",
 				},
 				{
-					"name": "nwn-trn run unittests",
-					"shell_cmd": "dub test :nwn-trn",
-				},
-				{
-					"name": "nwn-srv",
+					"name": ":nwn-srv",
 					"shell_cmd": "dub build :nwn-srv",
 				},
 				{
@@ -61,7 +54,7 @@
 					"shell_cmd": "./build-doc.sh",
 				},
 				{
-					"name": "Clean",
+					"name": "Clean coverage",
 					"shell_cmd": "rm -- *.lst",
 				}
 			]
