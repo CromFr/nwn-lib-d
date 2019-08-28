@@ -53,6 +53,10 @@
 					"shell_cmd": "dub test :nwn-trn",
 				},
 				{
+					"name": "nwn-srv",
+					"shell_cmd": "dub build :nwn-srv",
+				},
+				{
 					"name": "Documentation",
 					"shell_cmd": "./build-doc.sh",
 				},

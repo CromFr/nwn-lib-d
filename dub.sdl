@@ -72,4 +72,16 @@ subPackage {
 		stringImportPaths "unittest"
 	}
 }
+subPackage {
+	name "nwn-srv"
+	targetType "executable"
+	targetName "nwn-srv"
+	sourcePaths "source/" "tools/common/" "tools/nwn-srv/"
+	dependency "gfm:math" version="~>7.0.0"
+
+	configuration "application"
+	configuration "unittest" {
+		stringImportPaths "unittest"
+	}
+}
 

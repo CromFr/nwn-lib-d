@@ -15,6 +15,7 @@ __test__*__
 /nwn-gff*
 /nwn-tlk*
 /nwn-trn*
+/nwn-srv*
 *.exe
 *.lib
 libnwn-d.*

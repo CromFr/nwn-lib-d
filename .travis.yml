@@ -46,6 +46,11 @@ script:
   - wine dub build -b release -a x86    :nwn-trn  &&  mv nwn-trn.exe bin/nwn-trn.win-x86
   - wine dub build -b release -a x86_64 :nwn-trn  &&  mv nwn-trn.exe bin/nwn-trn.win-x86_64
 
+  - dub build      -b release -a x86    :nwn-srv  &&  mv nwn-srv     bin/nwn-srv.linux-x86
+  - dub build      -b release -a x86_64 :nwn-srv  &&  mv nwn-srv     bin/nwn-srv.linux-x86_64
+  - wine dub build -b release -a x86    :nwn-srv  &&  mv nwn-srv.exe bin/nwn-srv.win-x86
+  - wine dub build -b release -a x86_64 :nwn-srv  &&  mv nwn-srv.exe bin/nwn-srv.win-x86_64
+
   - ./.travis/gh-pages/upload.sh
 
 after_success:
