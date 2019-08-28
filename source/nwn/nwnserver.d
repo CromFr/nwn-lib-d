@@ -61,7 +61,7 @@ class NWNServer{
 		sock.send("BNDS" ~ localPort);
 
 		ubyte[] buff;
-		buff.length = 10^^14;
+		buff.length = 2^^14;
 		buff.length = sock.receive(buff);
 		enforce(buff.length >=4 && buff[0..4] == "BNDR", "Wrong answer received");
 		auto cr = ChunkReader(buff[4 .. $]);
