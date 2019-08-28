@@ -41,6 +41,7 @@ class NWNServer{
 		ubyte[] buff;
 		buff.length = 128;
 		const len = sock.receive(buff);
+		enforce(len > 0, "Server did not answer");
 		enforce(len > 5 && buff[0..5] == "BNERU", "Wrong answer received");
 		auto cr = ChunkReader(buff[5 .. len]);
 
@@ -63,6 +64,7 @@ class NWNServer{
 		ubyte[] buff;
 		buff.length = 2^^14;
 		const len = sock.receive(buff);
+		enforce(len > 0, "Server did not answer");
 		enforce(len > 4 && buff[0..4] == "BNDR", "Wrong answer received");
 		auto cr = ChunkReader(buff[4 .. len]);
 
@@ -108,7 +110,7 @@ class NWNServer{
 		ubyte[] buff;
 		buff.length = 256;
 		const len = sock.receive(buff);
-
+		enforce(len > 0, "Server did not answer");
 		enforce(len > 4 && buff[0..4] == "BNXR", "Wrong answer received");
 		auto cr = ChunkReader(buff[4 .. len]);
 
@@ -167,7 +169,7 @@ class NWNServer{
 		ubyte[] buff;
 		buff.length = 128;
 		const len = sock.receive(buff);
-
+		enforce(len > 0, "Server did not answer");
 		enforce(buff.length > 4 && buff[0..4] == "BNLR", "Wrong answer received");
 		auto cr = ChunkReader(buff[4 .. len]);
 
