@@ -147,28 +147,9 @@ __[API reference](https://cromfr.github.io/nwn-lib-d/docs)__
 # Build library
 dub build
 
-# Build tools
+# Build nwn-gff tools
 dub build :nwn-gff
 
 # Eventually you can append --build=release
 dub build :nwn-gff --build=release
-```
-
-# Command-line usage
-
-```sh
-./nwn-gff --help
-
-```
-
-### Examples
-```sh
-# Print gff file in console
-./nwn-gff -i mycharacter.bic
-
-# Write mycharacter.bic to mycharacter.bic.txt in pretty format
-./nwn-gff -i mycharacter.bic -o mycharacter.bic.txt
-
-# Read gff from stdin, write to stdout in pretty format
-./nwn-gff -j gff -k pretty
 ```
