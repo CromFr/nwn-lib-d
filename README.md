@@ -52,10 +52,20 @@ __[Download nwn-lib-d tools](https://cromfr.github.io/nwn-lib-d/)__
 
 - `nwn-trn`
   + TRN/TRX experimental tool:
+    * `trrn-export`: Export the terrain mesh, textures and grass
+    * `trrn-import`: Import a terrain mesh, textures and grass into an existing TRN/TRX file
+    * `watr-import`: Export water mesh
+    * `watr-import`: Import a water mesh into an existing TRN/TRX file
     * `aswm-strip`: Reduce walkmesh data size by removing non-walkable triangle & related data. Can reduce LZMA-compressed files to 50% of their non-stripped size (depending on the amount of unused triangles of course).
-    * `aswm-dump`: Dump walkmesh data to text
-    * `aswm-convert`: Convert some walkmesh data to wavefront OBJ 3d model
-    * `aswm-extract`: Uncompress & extract walkmesh raw data (useful for reverse engineering)
+    * `aswm-export-fancy`: Export custom walkmesh data into a colored wavefront obj
+    * `aswm-export`: Export walkable walkmesh into a wavefront obj
+    * `aswm-import`: Import a wavefront obj as the walkmesh of an existing TRX file
+    * `bake`: Bake an area (placeables and walkmesh cutters not supported)
+
+- `nwn-srv`
+  + Interact with NWN2 server:
+    * Measure latency (ping)
+    * Query server info and status
 
 
 
