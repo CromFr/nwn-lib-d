@@ -1666,7 +1666,7 @@ struct TrnNWN2WalkmeshPayload{
 		islands_path_nodes[] = IslandPathNode(uint16_t.max, 0, 0.0);
 
 
-		foreach(uint32_t fromIslandIdx, ref fromIsland ; islands){
+		foreach(fromIslandIdx, ref fromIsland ; islands){
 
 			bool[] visitedIslands;
 			visitedIslands.length = islands.length;
@@ -1695,7 +1695,7 @@ struct TrnNWN2WalkmeshPayload{
 
 					auto linkedIsl = &islands[linkedIslIdx];
 
-					auto node = getIslandPathNode(fromIslandIdx, linkedIslIdx);
+					auto node = getIslandPathNode(cast(uint32_t)fromIslandIdx, linkedIslIdx);
 					if(node.next == uint16_t.max){
 						// This is the first time we visit the island from this fromTriIdx
 
@@ -1967,9 +1967,9 @@ struct TrnNWN2WalkmeshPayload{
 
 					ubyte maxTextureIdx = ubyte.max;
 					int maxTextureIntensity = -1;
-					foreach(ubyte textureIdx, intensity ; p0[0 .. 4] ~ p1[0 .. 2]){
+					foreach(textureIdx, intensity ; p0[0 .. 4] ~ p1[0 .. 2]){
 						if(mt.textures[textureIdx].length > 0 && intensity > maxTextureIntensity){
-							maxTextureIdx = textureIdx;
+							maxTextureIdx = cast(ubyte)textureIdx;
 							maxTextureIntensity = intensity;
 						}
 					}

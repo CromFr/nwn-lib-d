@@ -37,8 +37,8 @@ struct GenericMesh {
 		uint32_t[] vertTransTable, triTransTable;
 		vertTransTable.length = vertices.length;
 		triTransTable.length = triangles.length;
-		foreach(uint32_t i, ref val ; vertTransTable) val = i;
-		foreach(uint32_t i, ref val ; triTransTable) val = i;
+		foreach(i, ref val ; vertTransTable) val = cast(uint32_t)i;
+		foreach(i, ref val ; triTransTable) val = cast(uint32_t)i;
 
 		import std.random: randomShuffle;
 		vertTransTable.randomShuffle();
@@ -79,7 +79,7 @@ struct GenericMesh {
 		auto lineVecPer = vec2f(lineVec[1], -lineVec[0]);
 		auto lineDist = line[0].dot(lineVecPer);
 
-		foreach(uint32_t i, ref t ; triangles){
+		foreach(i, ref t ; triangles){
 
 			vec2f[3] triVertices = t.vertices[]
 				.map!(a => vec2f(vertices[a].v[0 .. 2]))
@@ -122,7 +122,7 @@ struct GenericMesh {
 				}
 			}
 
-			auto triCut = TriCut(i, []);
+			auto triCut = TriCut(cast(uint32_t)i, []);
 
 			foreach(j, edge ; cutEdges){
 				// value == cw <=> point is inside of the triangle edge
