@@ -29,14 +29,12 @@ int main(string[] args){
 
 	import tools.common.getopt;
 
-	if(args.length > 1){
-		if(args[1] == "--help" || args[1] == "-h"){
-			writeln("Parsing and serialization tool for ERF archive files (erf, hak, mod, ...)");
-			writeln("Usage: ", args[0], " (create|info|list)");
-		}
+	if(args.length == 1 || args[1] == "--help" || args[1] == "-h"){
+		writeln("Parsing and serialization tool for ERF archive files (erf, hak, mod, ...)");
+		writeln("Usage: ", args[0], " (create|extract|info|list)");
+		return 1;
 	}
-
-	if(args.length > 2){
+	else if(args.length >= 2){
 		immutable command = args[1];
 		args = args[0] ~ args[2..$];
 
@@ -47,12 +45,12 @@ int main(string[] args){
 				auto res = getopt(args,
 					config.required, "o|output", "Output file name", &outputPath,
 					"date", "Set erf build date field. Format 'YYYY-MM-DD', or just 'now'. Defaults to 1900-01-01", &buildDateStr);
-				if(res.helpWanted){
+				if(res.helpWanted || args.length < 2){
 					improvedGetoptPrinter(
 						"Pack multiple files into a single NWN2 ERF/HAK/MOD file\n"
 						~"Example: "~args[0]~" create -o out_file.erf file1 file2 ...",
 						res.options);
-					return 0;
+					return 1;
 				}
 
 				auto erf = new NWN2Erf();
@@ -92,15 +90,15 @@ int main(string[] args){
 			}break;
 
 			case "extract":{
-				string outputPath;
+				string outputPath = ".";
 				auto res = getopt(args,
-					config.required, "o|output", "Output folder path", &outputPath);
-				if(res.helpWanted){
+					"o|output", "Output folder path", &outputPath);
+				if(res.helpWanted || args.length < 2){
 					improvedGetoptPrinter(
-						"Extract an ERF file content"
+						"Extract an ERF file content\n"
 						~"Example: "~args[0]~" extract -o dir/ yourfile.erf",
 						res.options);
-					return 0;
+					return 1;
 				}
 
 				auto erf = new NWN2Erf(cast(ubyte[])args[$-1].read);
@@ -114,7 +112,13 @@ int main(string[] args){
 			}break;
 
 			case "info":{
-				auto erf = new NWN2Erf(cast(ubyte[])args[$-1].read);
+				if(args.length != 2){
+					writeln("Extract an ERF file content");
+					writeln("Example: "~args[0]~" info yourfile.erf");
+					return 1;
+				}
+
+				auto erf = new NWN2Erf(cast(ubyte[])args[1].read);
 				writeln("File type: ", erf.fileType);
 				writeln("File version: ", erf.fileVersion);
 				writeln("Build date: ", erf.buildDate);
@@ -123,7 +127,12 @@ int main(string[] args){
 			}break;
 
 			case "list":{
-				auto erf = new NWN2Erf(cast(ubyte[])args[$-1].read);
+				if(args.length != 2){
+					writeln("List files contained inside a ERF file");
+					writeln("Example: "~args[0]~" list yourfile.erf");
+					return 1;
+				}
+				auto erf = new NWN2Erf(cast(ubyte[])args[1].read);
 
 				import std.math: log10;
 				int idxColWidth = cast(int)(log10(erf.files.length))+1;

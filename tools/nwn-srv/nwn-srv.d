@@ -10,6 +10,7 @@ import std.traits;
 import std.meta;
 import std.string;
 import std.typecons: Tuple, Nullable;
+import std.exception: enforce;
 import core.thread;
 alias writeFile = std.file.write;
 version(unittest) import std.exception: assertThrown, assertNotThrown;
@@ -23,14 +24,12 @@ int main(string[] args){
 
 	import tools.common.getopt;
 
-	if(args.length > 1){
-		if(args[1] == "--help" || args[1] == "-h"){
-			writeln("Send requests to NWN2 servers.");
-			writeln("Usage: ", args[0], " (ping|bnes|bnds|bnxi|bnlm)");
-		}
+	if(args.length == 1 || args[1] == "--help" || args[1] == "-h"){
+		writeln("Send requests to NWN2 servers.");
+		writeln("Usage: ", args[0], " (ping|bnes|bnds|bnxi|bnlm)");
+		return 1;
 	}
-
-	if(args.length > 2){
+	else if(args.length >= 2){
 		immutable command = args[1];
 		args = args[0] ~ args[2..$];
 
@@ -47,7 +46,7 @@ int main(string[] args){
 							~"Usage: "~args[0]~" ping [args] hostname[:port]\n"
 							~"Example: "~args[0]~" ping lcda-nwn2.fr",
 							res.options);
-						return 0;
+						return 1;
 					}
 
 					auto serv = connectServer(args[1]);
@@ -85,7 +84,7 @@ int main(string[] args){
 								~"Usage: "~args[0]~" "~Req~" [args] hostname[:port]\n"
 								~"Example: "~args[0]~" "~Req~" lcda-nwn2.fr",
 								res.options);
-							return 0;
+							return 1;
 						}
 						auto serv = connectServer(args[1]);
 

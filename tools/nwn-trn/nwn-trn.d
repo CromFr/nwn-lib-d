@@ -79,7 +79,7 @@ int main(string[] args){
 					"Check if TRN packets contains valid data\n"
 					~"Usage: "~args[0]~" "~command~" file1.trx file2.trn ...",
 					res.options);
-				return 0;
+				return 1;
 			}
 
 			foreach(file ; args[1 .. $]){
@@ -131,7 +131,7 @@ int main(string[] args){
 					~"Usage: "~args[0]~" "~command~" map.trx -o stripped_map.trx\n"
 					~"       "~args[0]~" "~command~" -i map.trx",
 					res.options);
-				return 0;
+				return 1;
 			}
 
 			if(inPlace){
@@ -204,7 +204,7 @@ int main(string[] args){
 					~"- randomislandspaths: Calculate random paths between islands.\n"
 					~"- islands: Each island using random colors.\n",
 					res.options);
-				return 0;
+				return 1;
 			}
 			enforce(args.length == 2, "You can only provide one TRX file");
 
@@ -255,7 +255,7 @@ int main(string[] args){
 					~"Usage: "~args[0]~" "~command~" map.trx\n"
 					~"       "~args[0]~" "~command~" map.trx -o outputFile.obj\n",
 					res.options);
-				return 0;
+				return 1;
 			}
 			enforce(args.length == 2, "You can only provide one TRN file");
 
@@ -290,7 +290,7 @@ int main(string[] args){
 					~"Usage: "~args[0]~" "~command~" --trn map.trx --obj walkmesh.obj --terrain2da ./terrainmaterials.2da -o newmap.trx\n"
 					~"       "~args[0]~" "~command~" --trn map.trx --obj walkmesh.obj --terrain2da ./terrainmaterials.2da\n",
 					res.options);
-				return 0;
+				return 1;
 			}
 			enforce(args.length == 1, "Too many arguments. See --help");
 
@@ -324,8 +324,11 @@ int main(string[] args){
 		break;
 
 		case "aswm-dump":{
-			enforce(args.length == 2, "Bad argument number. Usage: "~args[0]~" "~command~" file.trx");
-
+			if(args.length != 2){
+				writeln("Bad argument number.");
+				writeln("Usage: "~args[0]~" "~command~" file.trx");
+				return 1;
+			}
 			auto trn = new Trn(args[1]);
 
 			bool found = false;
@@ -351,7 +354,7 @@ int main(string[] args){
 					~"Usage: "~args[0]~" "~command~" map.trx -o baked_map.trx\n"
 					~"       "~args[0]~" "~command~" -i map.trx",
 					res.options);
-				return 0;
+				return 1;
 			}
 
 			if(inPlace){
@@ -388,7 +391,7 @@ int main(string[] args){
 					"Check if ASWM packets are valid.\n"
 					~"Usage: "~args[0]~" "~command~" file1.trx file2.trx ...",
 					res.options);
-				return 0;
+				return 1;
 			}
 
 			foreach(file ; args[1 .. $]){
@@ -437,7 +440,7 @@ int main(string[] args){
 					~"       "~args[0]~" "~command~" --terrain2da ./terrainmaterials.2da map_name map_name_2 ...\n"
 					~" `map_name` can be any map file with or without its extension (.are, .git, .gic, .trn, .trx)",
 					res.options);
-				return 0;
+				return 1;
 			}
 
 			if(inPlace)
@@ -553,7 +556,7 @@ int main(string[] args){
 					~"    + second point: grass blade normal + position\n"
 					~"    + third point: grass blade dimension + normal + position\n",
 					res.options);
-				return 0;
+				return 1;
 			}
 			enforce(args.length == 2, "You can only provide one TRN file");
 
@@ -704,7 +707,7 @@ int main(string[] args){
 					~"- Each megatile must be stored in a different object named with its megatile coordinates: 'megatile-x6y9'.\n"
 					~"- If a megatile is not in the obj file, the TRN/TRX megatile won't be modified\n",
 					res.options);
-				return 0;
+				return 1;
 			}
 
 			enforce(args.length == 2, "You can only provide one OBJ file");
@@ -875,7 +878,7 @@ int main(string[] args){
 					~"Usage: "~args[0]~" "~command~" map.trx\n"
 					~"       "~args[0]~" "~command~" map.trx -o converted/\n",
 					res.options);
-				return 0;
+				return 1;
 			}
 			enforce(args.length == 2, "You can only provide one TRN file");
 
@@ -977,7 +980,7 @@ int main(string[] args){
 					~"Wavefront format notes:\n"
 					~"- Water data is always cleared before importing\n",
 					res.options);
-				return 0;
+				return 1;
 			}
 
 			enforce(args.length == 2, "You can only provide one OBJ file");

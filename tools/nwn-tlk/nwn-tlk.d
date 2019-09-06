@@ -35,7 +35,7 @@ int main(string[] args){
 		improvedGetoptPrinter(
 			"Parsing and serialization tool for TLK files",
 			res.options);
-		return 0;
+		return 1;
 	}
 
 	if(inputFormat == Format.detect){

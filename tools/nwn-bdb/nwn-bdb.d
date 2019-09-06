@@ -62,7 +62,7 @@ int main(string[] args){
 						"Search specific variables inside a database file\n"
 						~"Example: " ~ args[0] ~ " search foxpro-file-basename --name='^VAR_NAME_.*'",
 						res.options);
-					return 0;
+					return 1;
 				}
 
 				const db = new BiowareDB(args[1]);
