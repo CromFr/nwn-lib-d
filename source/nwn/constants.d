@@ -22,7 +22,7 @@ enum ResourceType: uint16_t{
 	wfx = 5,      ///
 	plt = 6,      /// Bioware Packed Layered Texture, used for player character skins, allows for multiple color layers
 	ini = 7,      /// Windows INI file format
-	mp3 = 8,      ///
+	bmu = 8,      /// MP3 or BMU audio file
 	mpg = 9,      ///
 	txt = 10,     /// Text file
 	plh = 2000,   ///
@@ -135,6 +135,7 @@ ResourceType fileExtensionToResourceType(in string fileExtension){
 	auto rtu = fileExtension.toLower;
 	if(rtu == "2da") return ResourceType.twoda;
 	if(rtu == "4pc") return ResourceType.fourpc;
+	if(rtu == "mp3") return ResourceType.bmu;
 
 	try return rtu.to!ResourceType;
 	catch(ConvException) return ResourceType.invalid;
