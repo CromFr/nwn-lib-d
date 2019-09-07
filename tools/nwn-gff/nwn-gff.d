@@ -56,7 +56,7 @@ int main(string[] args){
 			~"- '$-42': If parent is a list, '$' is replaced by the list length, allowing to access last children of the list\n"
 			~"- '$': Will add a child at the end of the list"
 			);
-		return 0;
+		return 1;
 	}
 
 	if(inputFormat == Format.detect){
@@ -310,7 +310,7 @@ unittest{
 	auto stdout_ = stdout;
 	version(Windows) stdout = File("nul","w");
 	else             stdout = File("/dev/null","w");
-	assert(main(["./nwn-gff","--help"])==0);
+	assert(main(["./nwn-gff","--help"])==1);
 	stdout = stdout_;
 
 

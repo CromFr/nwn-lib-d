@@ -59,7 +59,7 @@ int main(string[] args){
 
 	if(args.length <= 1 || (args.length > 1 && (args[1] == "--help" || args[1] == "-h"))){
 		usage(args[0]);
-		return 0;
+		return 1;
 	}
 
 	immutable command = args[1];
@@ -1103,11 +1103,11 @@ unittest{
 
 	auto filePath = buildPath(tempDir, "unittest-nwn-lib-d-"~__MODULE__);
 
-	assert(main(["nwn-trn", "--help"]) == 0);
+	assert(main(["nwn-trn", "--help"]) == 1);
 
-	assert(main(["nwn-trn", "check", "--help"]) == 0);
+	assert(main(["nwn-trn", "check", "--help"]) == 1);
 
-	assert(main(["nwn-trn", "bake", "--help"]) == 0);
+	assert(main(["nwn-trn", "bake", "--help"]) == 1);
 	assert(main([
 			"nwn-trn", "bake",
 			"--terrain2da=unittest/terrainmaterials.2da",
@@ -1115,13 +1115,13 @@ unittest{
 			"-o", nullFile,
 		]) == 0);
 
-	assert(main(["nwn-trn", "aswm-check", "--help"]) == 0);
+	assert(main(["nwn-trn", "aswm-check", "--help"]) == 1);
 	assert(main([
 			"nwn-trn", "aswm-check",
 			"unittest/WalkmeshObjects.trn", "unittest/WalkmeshObjects.trx", "unittest/TestImportExportTRN.trx",
 		]) == 0);
 
-	assert(main(["nwn-trn", "aswm-strip", "--help"]) == 0);
+	assert(main(["nwn-trn", "aswm-strip", "--help"]) == 1);
 	assert(main([
 			"nwn-trn", "aswm-strip",
 			"unittest/TestImportExportTRN.trx",
@@ -1134,7 +1134,7 @@ unittest{
 		assert(aswm.triangles.length == 3703);
 	}
 
-	assert(main(["nwn-trn", "aswm-export-fancy", "--help"]) == 0);
+	assert(main(["nwn-trn", "aswm-export-fancy", "--help"]) == 1);
 	assert(main([
 			"nwn-trn", "aswm-export-fancy",
 			"-f", "walkmesh",
@@ -1152,14 +1152,14 @@ unittest{
 	// Import/export functions
 
 	// ASWM
-	assert(main(["nwn-trn", "aswm-export", "--help"]) == 0);
+	assert(main(["nwn-trn", "aswm-export", "--help"]) == 1);
 	assert(main([
 			"nwn-trn", "aswm-export",
 			"unittest/TestImportExportTRN.trn",
 			"-o", filePath,
 		]) == 0);
 
-	assert(main(["nwn-trn", "aswm-import", "--help"]) == 0);
+	assert(main(["nwn-trn", "aswm-import", "--help"]) == 1);
 	assert(main([
 			"nwn-trn", "aswm-import",
 			"--obj", filePath,
@@ -1171,14 +1171,14 @@ unittest{
 	assert(main(["nwn-trn", "check", buildPath(tempDir, "TestImportExportTRN.new.trx")]) == 0);
 
 	// TRRN
-	assert(main(["nwn-trn", "trrn-export", "--help"]) == 0);
+	assert(main(["nwn-trn", "trrn-export", "--help"]) == 1);
 	assert(main([
 			"nwn-trn", "trrn-export",
 			"unittest/TestImportExportTRN.trx",
 			"-o", tempDir,
 		]) == 0);
 
-	assert(main(["nwn-trn", "trrn-import", "--help"]) == 0);
+	assert(main(["nwn-trn", "trrn-import", "--help"]) == 1);
 	assert(main([
 			"nwn-trn", "trrn-import",
 			buildPath(tempDir, "TestImportExportTRN.trx.trrn.obj"),
@@ -1189,14 +1189,14 @@ unittest{
 	assert(main(["nwn-trn", "check", buildPath(tempDir, "TestImportExportTRN.new.trx")]) == 0);
 
 	// WATR
-	assert(main(["nwn-trn", "watr-export", "--help"]) == 0);
+	assert(main(["nwn-trn", "watr-export", "--help"]) == 1);
 	assert(main([
 			"nwn-trn", "watr-export",
 			"unittest/TestImportExportTRN.trx",
 			"-o", tempDir,
 		]) == 0);
 
-	assert(main(["nwn-trn", "watr-import", "--help"]) == 0);
+	assert(main(["nwn-trn", "watr-import", "--help"]) == 1);
 	assert(main([
 			"nwn-trn", "watr-import",
 			buildPath(tempDir, "TestImportExportTRN.trx.watr.obj"),
@@ -1210,7 +1210,7 @@ unittest{
 	// Advanced commands
 	assert(main(["nwn-trn", "aswm-dump", "unittest/WalkmeshObjects.trx"]) == 0);
 
-	assert(main(["nwn-trn", "aswm-bake", "--help"]) == 0);
+	assert(main(["nwn-trn", "aswm-bake", "--help"]) == 1);
 	assert(main([
 			"nwn-trn", "aswm-bake",
 			"unittest/WalkmeshObjects.trx",
