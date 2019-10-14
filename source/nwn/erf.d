@@ -101,6 +101,7 @@ class Erf(NwnVersion NV){
 
 	/// Parse raw binary data
 	/// Params:
+	///   data = ERF File raw data
 	///   recover = Set to true to skip incomplete files and finish parsing a truncated ERF
 	this(in ubyte[] data, bool recover = false){
 		enforce!ErfParseException(data.length >= ErfHeader.sizeof, "ERF file is shorter than its header size. Cannot read");
