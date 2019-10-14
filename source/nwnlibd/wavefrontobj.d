@@ -184,7 +184,7 @@ class WavefrontObj {
 			if(v.color.isNull)
 				objData ~= format!"v %(%f %)\n"(v.position.v);
 			else
-				objData ~= format!"v %(%f %) %(%f %)\n"(v.position.v, v.color.v);
+				objData ~= format!"v %(%f %) %(%f %)\n"(v.position.v, v.color.get.v);
 		}
 
 		foreach(ref vt ; textCoords)
@@ -235,7 +235,7 @@ class WavefrontObj {
 	void validate() const {
 		foreach(vi, ref v ; vertices){
 			if(!v.color.isNull){
-				foreach(ci, c ; v.color.v)
+				foreach(ci, c ; v.color.get.v)
 					enforce(0 <= c && c <= 1.0,
 						format!"vertices[%d].color[%d]: value %f is invalid"(vi, ci, c));
 			}
