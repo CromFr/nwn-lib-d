@@ -6,6 +6,8 @@ import std.stdint;
 import std.string;
 import std.conv: to;
 import std.datetime;
+import std.typecons: Nullable;
+import std.exception: enforce;
 import nwnlibd.parseutils;
 import nwn.constants;
 public import nwn.constants: NwnVersion, ResourceType, Language;
@@ -31,6 +33,7 @@ alias NWN2ErfFile = ErfFile!(NwnVersion.NWN2);
 
 /// File stored in Erf class
 struct ErfFile(NwnVersion NV){
+	/// Construct a Erf file
 	this(in string name, ResourceType type, ubyte[] data){
 		this.name = name;
 		this.type = type;
@@ -82,6 +85,9 @@ struct ErfFile(NwnVersion NV){
 
 	/// File raw data
 	ubyte[] data;
+
+	/// Expected file size. If not null, can be used to detect truncated files
+	Nullable!size_t expectedLength;
 }
 
 alias NWN1Erf = Erf!(NwnVersion.NWN1);
@@ -94,7 +100,11 @@ class Erf(NwnVersion NV){
 	this(){}
 
 	/// Parse raw binary data
-	this(in ubyte[] data){
+	/// Params:
+	///   recover = Set to true to skip incomplete files and finish parsing a truncated ERF
+	this(in ubyte[] data, bool recover = false){
+		enforce!ErfParseException(data.length >= ErfHeader.sizeof, "ERF file is shorter than its header size. Cannot read");
+
 		const header = cast(ErfHeader*)data.ptr;
 		fileType = header.file_type.idup.stripRight;
 		fileVersion = header.file_version.idup.stripRight;
@@ -102,9 +112,12 @@ class Erf(NwnVersion NV){
 		date.dayOfYear = header.build_day + 1;
 		buildDate = date;
 
+		enforce!ErfParseException(data.length > (header.localizedstrings_offset + header.localizedstrings_size),
+			"Cannot read localized strings");
+
 		auto locStrings = ChunkReader(
 				data[header.localizedstrings_offset
-				.. header.localizedstrings_offset+header.localizedstrings_size]);
+				.. header.localizedstrings_offset + header.localizedstrings_size]);
 
 		foreach(i ; 0..header.localizedstrings_count){
 			immutable langage = cast(Language)locStrings.read!uint32_t;
@@ -113,16 +126,47 @@ class Erf(NwnVersion NV){
 			description[langage] = locStrings.readArray!char(length).idup;
 		}
 
-		const keys = cast(ErfKey*)(data.ptr+header.keys_offset);
-		const resources = cast(ErfResource*)(data.ptr+header.resources_offset);
+		const keys = cast(ErfKey*)(data.ptr + header.keys_offset);
+		size_t keysLength = header.keys_count;
+		const resources = cast(ErfResource*)(data.ptr + header.resources_offset);
 
-		files.length = header.keys_count;
-		foreach(i, ref key ; keys[0..header.keys_count]){
+		enforce!ErfParseException(data.length > header.keys_offset, "Cannot read keys table");
+		if(recover){
+			if(header.keys_offset + ErfKey.sizeof * keysLength >= data.length){
+				// Set lower keysLength
+				const availableSize = data.length - header.keys_offset;
+				keysLength = availableSize / ErfKey.sizeof;
+			}
+		}
+
+		// Read key table and allocate files
+		files.length = keysLength;
+		foreach(i, ref key ; keys[0 .. keysLength]){
 			files[i].name = key.file_name.charArrayToString;
 			files[i].type = cast(ResourceType)key.resource_type;
 
-			const res = resources + key.resource_id;
-			files[i].data = data[res.resource_offset .. res.resource_offset+res.resource_size].dup;
+			if(recover && header.resources_offset + ErfResource.sizeof * key.resource_id >= data.length){
+				continue;
+			}
+			const res = &resources[key.resource_id];
+			size_t startOffset = res.resource_offset;
+			size_t endOffset = res.resource_offset + res.resource_size;
+			files[i].expectedLength = res.resource_size;
+
+			if(recover){
+				if(startOffset > data.length){
+					// Null-sized file
+					startOffset = 0;
+					endOffset = 0;
+				}
+				else{
+					// Truncate file
+					endOffset = endOffset > data.length? data.length : endOffset;
+				}
+			}
+
+			files[i].data = data[startOffset .. endOffset].dup;
+
 		}
 
 	}

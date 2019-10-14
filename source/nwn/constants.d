@@ -152,7 +152,7 @@ string resourceTypeToFileExtension(in ResourceType resourceType){
 	switch(resourceType){
 		case ResourceType.twoda:  return "2da";
 		case ResourceType.fourpc: return "4pc";
-		default: return resourceType.to!string;
+		default: return "gff";
 	}
 }
 unittest{

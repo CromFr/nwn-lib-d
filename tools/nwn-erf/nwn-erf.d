@@ -91,8 +91,11 @@ int main(string[] args){
 
 			case "extract":{
 				string outputPath = ".";
+				bool recover = false;
 				auto res = getopt(args,
-					"o|output", "Output folder path", &outputPath);
+					"o|output", "Output folder path", &outputPath,
+					"r|recover", "Recover files from truncated file", &recover,
+				);
 				if(res.helpWanted || args.length < 2){
 					improvedGetoptPrinter(
 						"Extract an ERF file content\n"
@@ -101,11 +104,22 @@ int main(string[] args){
 					return 1;
 				}
 
-				auto erf = new NWN2Erf(cast(ubyte[])args[$-1].read);
+				auto erf = new NWN2Erf(cast(ubyte[])args[$-1].read, recover);
 				foreach(ref file ; erf.files){
-					immutable filePath = buildNormalizedPath(
+					auto filePath = buildNormalizedPath(
 						outputPath,
 						file.name ~ "." ~ resourceTypeToFileExtension(file.type));
+
+					if(recover){
+						if(file.data.length == 0){
+							writeln("No data available for file '", filePath.baseName, "'");
+							continue;
+						}
+						else if(file.data.length != file.expectedLength) {
+							filePath ~= ".part";
+							writeln("Truncated file: '", filePath.baseName, "'");
+						}
+					}
 					std.file.write(filePath, file.data);
 				}
 
