@@ -2,23 +2,18 @@
 module nwnlibd.parseutils;
 
 import std.traits;
+		import std.conv;
 
 /// Converts a static char array to string.
 /// The fixed char array may or may not be null terminated
-auto ref string charArrayToString(T)(in T str) if(isStaticArray!T && isSomeChar!(ForeachType!T)){
-	import std.string: fromStringz;
-	if(str[$-1]=='\0')
-		return str.ptr.fromStringz.idup;
-	else
-		return str.idup;
+auto ref string charArrayToString(T)(in T str) if(isSomeChar!(ForeachType!T)){
+	import std.string: indexOf;
+	auto i = str.indexOf('\0');
+	if(i >= 0)
+		return str[0 .. i].idup();
+	return str[0 .. $].idup();
 }
-auto ref string charArrayToString(T)(in T str, size_t length) if(isDynamicArray!T && isSomeChar!(ForeachType!T)){
-	import std.string: fromStringz;
-	if(str[length-1]=='\0')
-		return str.ptr.fromStringz.idup;
-	else
-		return str.idup;
-}
+
 T stringToCharArray(T)(in string str) if(isStaticArray!T && isSomeChar!(ForeachType!T)){
 	T ret;
 
@@ -29,6 +24,20 @@ T stringToCharArray(T)(in string str) if(isStaticArray!T && isSomeChar!(ForeachT
 	if(e < T.length)
 		ret[e .. $] = 0;
 
+	return ret;
+}
+
+// Escapes non printable characters from a string
+string toSafeString(T)(in T str){
+	import std.ascii;
+	import std.format;
+	string ret;
+	foreach(c ; str){
+		if(c.isPrintable)
+			ret ~= c;
+		else
+			ret ~= format!"\\x%02x"(c);
+	}
 	return ret;
 }
 
