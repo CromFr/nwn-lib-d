@@ -606,17 +606,22 @@ struct TrnNWN2WaterPayload{
 /// Compressed walkmesh (only contained inside TRX files)
 struct TrnNWN2WalkmeshPayload{
 
-	string data_type;
-
-	/// ASWM header
+	/// ASWM packet header
 	static align(1) struct Header{
 		static assert(this.sizeof == 53);
 		align(1):
-		ubyte[37] unknownA;
+		/// ASWM version. NWN2Toolset generates version 0x6c, but some NWN2 official campaign files are between 0x69 and 0x6c.
+		uint32_t aswm_version;
+		/// ASWM name (probably useless)
+		char[32] name;
+		/// Always true
+		bool owns_data;
 		uint32_t vertices_count;
 		uint32_t edges_count;
 		uint32_t triangles_count;
 		uint32_t unknownB;
+
+		mixin DebugPrintStruct;
 	}
 	/// ditto
 	Header header;
@@ -1070,17 +1075,25 @@ struct TrnNWN2WalkmeshPayload{
 	this(in ubyte[] payload){
 		auto data = ChunkReader(payload);
 
-		data_type               = data.read!(char[4]).charArrayToString;
-		immutable comp_length   = data.read!uint32_t;
-		immutable uncomp_length = data.read!uint32_t;
-		auto comp_wm            = data.readArray(comp_length);
+		ChunkReader* wmdata;
 
-		// zlib deflate
-		import std.zlib: uncompress;
-		auto walkmeshData = cast(ubyte[])uncompress(comp_wm, uncomp_length);
-		assert(walkmeshData.length == uncomp_length, "Length mismatch");
+		auto comp_type = data.read!(char[4]);
+		if(comp_type == "COMP"){
+			immutable comp_length   = data.read!uint32_t;
+			immutable uncomp_length = data.read!uint32_t;
 
-		auto wmdata = ChunkReader(walkmeshData);
+			auto comp_wm = data.readArray(comp_length);
+
+			// zlib deflate
+			import std.zlib: uncompress;
+			auto walkmeshData = cast(ubyte[])uncompress(comp_wm, uncomp_length);
+			assert(walkmeshData.length == uncomp_length, "Length mismatch");
+
+			wmdata = new ChunkReader(walkmeshData);
+		}
+		else{
+			wmdata = new ChunkReader(payload);
+		}
 
 		header = wmdata.read!Header;
 		assert(wmdata.read_ptr==0x35);
@@ -1138,7 +1151,7 @@ struct TrnNWN2WalkmeshPayload{
 
 
 		ChunkWriter cw;
-		cw.put(data_type, compLength, uncompLength, compData);
+		cw.put(cast(char[4])"COMP", compLength, uncompLength, compData);
 		return cw.data;
 	}
 
@@ -1147,6 +1160,8 @@ struct TrnNWN2WalkmeshPayload{
 	*/
 	ubyte[] serializeUncompressed(){
 		//update header values
+		header.aswm_version = 0x6c; // Only 0x6c serialization is supported
+		header.owns_data = true;
 		header.vertices_count  = vertices.length.to!uint32_t;
 		header.edges_count = edges.length.to!uint32_t;
 		header.triangles_count = triangles.length.to!uint32_t;
@@ -1317,7 +1332,9 @@ struct TrnNWN2WalkmeshPayload{
 		string ret;
 
 		ret ~= "==== HEADER ====\n";
-		ret ~= "unknownA: " ~ header.unknownA.to!string ~ "\n";
+		ret ~= "aswm_version: " ~ header.aswm_version.to!string ~ "\n";
+		ret ~= "name: " ~ header.name.charArrayToString ~ "\n";
+		ret ~= "owns_data: " ~ header.owns_data.to!string ~ "\n";
 		ret ~= "vertices_count: " ~ header.vertices_count.to!string ~ "\n";
 		ret ~= "edges_count: " ~ header.edges_count.to!string ~ "\n";
 		ret ~= "triangles_count: " ~ header.triangles_count.to!string ~ "\n";
