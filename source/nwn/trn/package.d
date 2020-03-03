@@ -231,7 +231,7 @@ class Trn{
 		ubyte[] packetsData;
 		foreach(i, ref packet ; packets){
 			auto typeStr = packet.type.toTrnPacketStr();
-			//writeln(offset);
+
 			indices[i].type = typeStr;
 			indices[i].offset = offset;
 			auto packetData = packet.serialize();
@@ -620,8 +620,6 @@ struct TrnNWN2WalkmeshPayload{
 		uint32_t edges_count;
 		uint32_t triangles_count;
 		uint32_t unknownB;
-
-		mixin DebugPrintStruct;
 	}
 	/// ditto
 	Header header;
@@ -644,6 +642,17 @@ struct TrnNWN2WalkmeshPayload{
 		align(1):
 		uint32_t[2] vertices; /// Vertex indices drawing the edge line
 		uint32_t[2] triangles; /// Joined triangles (`uint32_t.max` if none)
+	}
+	/// For v69 only
+	private static align(1) struct Edge_v69 {
+		static assert(this.sizeof == 52);
+		align(1):
+		uint32_t[2] vertices; /// Vertex indices drawing the edge line
+		uint32_t[2] triangles; /// Joined triangles (`uint32_t.max` if none)
+		uint32_t[9] _reserved;
+		Edge upgrade() const{
+			return Edge(vertices, triangles);
+		}
 	}
 	Edge[] edges;
 
@@ -682,6 +691,43 @@ struct TrnNWN2WalkmeshPayload{
 			puddles   = 0x2000, /// ditto
 
 			soundstepFlags = dirt | grass | stone | wood | carpet | metal | swamp | mud | leaves | water | puddles,
+		}
+	}
+	/// For v6a only
+	private static align(1) struct Triangle_v6a{
+		static assert(this.sizeof == 68);
+		align(1):
+		uint32_t  _reserved;
+		uint32_t[3] vertices;
+		uint32_t[3] linked_edges;
+		uint32_t[3] linked_triangles;
+		float[2] center;
+		float[3] normal;
+		float dot_product;
+		uint16_t island;
+		uint16_t flags;
+		Triangle upgrade() const{
+			return Triangle(vertices, linked_edges, linked_triangles, center, normal, dot_product, island, flags);
+		}
+	}
+	/// For v69 only
+	private static align(1) struct Triangle_v69{
+		static assert(this.sizeof == 88);
+		align(1):
+		uint32_t  _reserved0;
+		uint32_t flags;
+		uint32_t[3] vertices;
+		uint32_t[3] linked_edges;
+		uint32_t[3] linked_triangles;
+		uint32_t[3]  _reserved1;
+		float[2] center;
+		uint32_t  _reserved2;
+		float[3] normal;
+		float dot_product;
+		uint16_t  _reserved3;
+		uint16_t island;
+		Triangle upgrade() const{
+			return Triangle(vertices, linked_edges, linked_triangles, center, normal, dot_product, island, cast(uint16_t)flags);
 		}
 	}
 	Triangle[] triangles;
@@ -747,7 +793,18 @@ struct TrnNWN2WalkmeshPayload{
 				private uint32_t _local_to_node_length; /// use `local_to_node.length` instead
 				private ubyte _node_to_local_length; /// use `node_to_local.length` instead
 				uint32_t rle_table_size; /// Always 0 ? probably related to Run-Length Encoding
-
+			}
+			/// For v69 to v6b
+			private static align(1) struct Header_v69 {
+				static assert(this.sizeof == 10);
+				align(1):
+				uint32_t flags;
+				ubyte _local_to_node_length;
+				ubyte _node_to_local_length;
+				uint32_t rle_table_size;
+				Header upgrade() const{
+					return Header(flags, _local_to_node_length, _node_to_local_length, rle_table_size);
+				}
 			}
 			Header header;
 
@@ -801,21 +858,48 @@ struct TrnNWN2WalkmeshPayload{
 		}
 		PathTable path_table;
 
-		private void parse(ref ChunkReader wmdata){
-			header = wmdata.read!(typeof(header));
+		private void parse(ref ChunkReader wmdata, uint32_t aswmVersion=0x6c){
+			header = wmdata.read!Header;
 
 			if(header.owns_data){
 				vertices = wmdata.readArray!Vertex(header.vertices_count).dup;
-				edges = wmdata.readArray!Edge(header.edges_count).dup;
+				switch(aswmVersion){
+					case 0x69:
+						edges = wmdata.readArray!Edge_v69(header.edges_count).map!(a => a.upgrade()).array;
+						break;
+					case 0x6a: .. case 0x6c:
+						edges = wmdata.readArray!Edge(header.edges_count).dup;
+						break;
+					default: enforce(0, "Unsupported ASWM version " ~ aswmVersion.format!"0x%02x");
+				}
 			}
 
 			with(path_table){
-				header = wmdata.read!(typeof(header));
+				switch(aswmVersion){
+					case 0x69: .. case 0x6b:
+						header = wmdata.read!Header_v69.upgrade();
+						break;
+					case 0x6c:
+						header = wmdata.read!Header;
+						break;
+					default: enforce(0, "Unsupported ASWM version " ~ aswmVersion.format!"0x%02x");
+				}
 
 				enforce!TrnParseException((header.flags & (Header.Flags.rle | Header.Flags.zcompress)) == 0, "Compressed path tables not supported");
 
 				local_to_node = wmdata.readArray!ubyte(header._local_to_node_length).dup;
-				node_to_local = wmdata.readArray!uint32_t(header._node_to_local_length).dup;
+				switch(aswmVersion){
+					case 0x69, 0x6a:
+						// No node_to_local data
+						break;
+					case 0x6b:
+						node_to_local = wmdata.readArray!uint8_t(header._node_to_local_length).map!(a => cast(uint32_t)a).array;
+						break;
+					case 0x6c:
+						node_to_local = wmdata.readArray!uint32_t(header._node_to_local_length).dup;
+						break;
+					default: enforce(0, "Unsupported ASWM version " ~ aswmVersion.format!"0x%02x");
+				}
 				nodes = wmdata.readArray!ubyte(header._node_to_local_length ^^ 2).dup;
 
 				flags = wmdata.read!(typeof(flags));
@@ -1097,21 +1181,41 @@ struct TrnNWN2WalkmeshPayload{
 
 		header = wmdata.read!Header;
 		assert(wmdata.read_ptr==0x35);
-		vertices       = wmdata.readArray!Vertex(header.vertices_count).dup;
-		edges      = wmdata.readArray!Edge(header.edges_count).dup;
-		triangles      = wmdata.readArray!Triangle(header.triangles_count).dup;
+		enforce!TrnParseException(header.owns_data, "ASWM packet does not own any data (`header.owns_data=false`)");
 
-		tiles_flags      = wmdata.read!(typeof(tiles_flags));
+		vertices       = wmdata.readArray!Vertex(header.vertices_count).dup;
+		switch(header.aswm_version){
+			case 0x69:
+				edges = wmdata.readArray!Edge_v69(header.edges_count).map!(a => a.upgrade()).array;
+				break;
+			case 0x6a: .. case 0x6c:
+				edges = wmdata.readArray!Edge(header.edges_count).dup;
+				break;
+			default: enforce(0, "Unsupported ASWM version " ~ header.aswm_version.format!"0x%02x");
+		}
+		switch(header.aswm_version){
+			case 0x69:
+				triangles = wmdata.readArray!Triangle_v69(header.triangles_count).map!(a => a.upgrade()).array;
+				break;
+			case 0x6a:
+				triangles = wmdata.readArray!Triangle_v6a(header.triangles_count).map!(a => a.upgrade()).array;
+				break;
+			case 0x6b, 0x6c:
+				triangles = wmdata.readArray!Triangle(header.triangles_count).dup;
+				break;
+			default: enforce(0, "Unsupported ASWM version " ~ header.aswm_version.format!"0x%02x");
+		}
+
+		tiles_flags       = wmdata.read!(typeof(tiles_flags));
 		tiles_width       = wmdata.read!(typeof(tiles_width));
 		tiles_grid_height = wmdata.read!(typeof(tiles_grid_height));
 		tiles_grid_width  = wmdata.read!(typeof(tiles_grid_width));
-
 
 		// Tile list
 		tiles.length = tiles_grid_height * tiles_grid_width;
 		foreach(i, ref tile ; tiles){
 			// Path table
-			tile.parse(wmdata);
+			tile.parse(*wmdata, header.aswm_version);
 		}
 
 		tiles_border_size = wmdata.read!(typeof(tiles_border_size));
@@ -1119,7 +1223,7 @@ struct TrnNWN2WalkmeshPayload{
 		// Islands list
 		islands.length = wmdata.read!uint32_t;
 		foreach(ref island ; islands){
-			island.parse(wmdata);
+			island.parse(*wmdata);
 		}
 
 		islands_path_nodes = wmdata.readArray!IslandPathNode(islands.length ^^ 2).dup;
@@ -1127,12 +1231,10 @@ struct TrnNWN2WalkmeshPayload{
 		enforce!TrnParseException(data.read_ptr == payload.length,
 			(payload.length - data.read_ptr).to!string ~ " bytes were not read at the end of ASWM");
 
-
 		version(unittest){
-
 			auto serialized = serializeUncompressed();
-			assert(serialized.length == walkmeshData.length, "mismatch length "~walkmeshData.length.to!string~" -> "~serialized.length.to!string);
-			assert(walkmeshData == serialized, "Could not serialize correctly");
+			assert(serialized.length == wmdata.data.length, "mismatch length "~wmdata.data.length.to!string~" -> "~serialized.length.to!string);
+			assert(wmdata.data == serialized, "Could not serialize correctly");
 		}
 	}
 
@@ -2116,8 +2218,11 @@ struct TrnNWN2WalkmeshPayload{
 
 		size_t ptr = 0;
 		foreach(i, ref t ; triangles){
-			if(triangleFlags == uint16_t.max || t.flags & triangleFlags)
-				ret.triangles[ptr++] = ret.Triangle(t.vertices);
+			if(triangleFlags == uint16_t.max || t.flags & triangleFlags){
+				debug foreach(j, v ; t.vertices)
+					assert(v < ret.vertices.length, format!"Vertex %d (index=%d) of triangle %d is out of range. Please check mesh with Validate() before conversion."(j, v, i));
+				ret.triangles[ptr++] = GenericMesh.Triangle(t.vertices);
+			}
 		}
 		ret.triangles.length = ptr;
 		return ret;

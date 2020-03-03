@@ -6,7 +6,7 @@ import std.traits;
 
 /// Converts a static char array to string.
 /// The fixed char array may or may not be null terminated
-auto ref string charArrayToString(T)(in T str) if(isSomeChar!(ForeachType!T)){
+auto ref string charArrayToString(T)(in T str) if(isArray!T && isSomeChar!(ForeachType!T)){
 	import std.string: indexOf;
 	auto i = str.indexOf('\0');
 	if(i >= 0)
@@ -105,5 +105,25 @@ struct ChunkWriter{
 			else
 				data ~= (cast(ubyte*)&chunk)[0..chunk.sizeof];
 		}
+	}
+}
+
+
+
+template DebugPrintStruct(){
+	string toString() const {
+		string ret = Unqual!(typeof(this)).stringof ~ "(";
+		import std.traits;
+		bool first = true;
+		foreach(M ; FieldNameTuple!(typeof(this))){
+			ret ~= (first? null : ", ") ~ M ~ "=";
+			alias T = typeof(mixin("this." ~ M));
+			static if(isArray!T && isSomeChar!(ForeachType!T))
+				ret ~= '"' ~ mixin("this." ~ M).charArrayToString.toSafeString ~ '"';
+			else
+				ret ~= mixin("this." ~ M).to!string;
+			first = false;
+		}
+		return ret ~ ")";
 	}
 }
