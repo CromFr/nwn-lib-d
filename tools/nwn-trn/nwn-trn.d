@@ -37,6 +37,7 @@ void usage(in string cmd){
 	writeln("Usage: ", cmd, " command [args]");
 	writeln();
 	writeln("Commands");
+	writeln("  info: Print TRN and packets header information");
 	writeln("  bake: Bake an area (replacement for builtin nwn2toolset bake tool)");
 	writeln("  check: Performs several checks on the TRN packets data");
 	writeln("  trrn-export: Export the terrain mesh, textures and grass");
@@ -69,6 +70,73 @@ int main(string[] args){
 		default:
 			usage(args[0]);
 			return 1;
+
+		case "info":
+			bool strict = false;
+			auto res = getopt(args,
+				"strict", "Check some inconsistencies that does not cause issues with nwn2\nDefault: false", &strict);
+			if(res.helpWanted || args.length <= 1){
+				improvedGetoptPrinter(
+					"Print TRN file information\n"
+					~"Usage: "~args[0]~" "~command~" file.trn",
+					res.options);
+				return 1;
+			}
+
+			auto data = cast(ubyte[])args[1].read();
+			auto trn = new Trn(data);
+			writeln("nwnVersion: ", trn.nwnVersion);
+			writeln("versionMajor: ", trn.versionMajor);
+			writeln("versionMinor: ", trn.versionMinor);
+			writeln("packetsCount: ", trn.packets.length);
+			foreach(i, ref packet ; trn.packets){
+				writeln("# Packet ", i);
+				writeln("packet[", i, "].type: ", packet.type);
+				final switch(packet.type) with(TrnPacketType){
+					case NWN2_TRWH:
+						auto p = packet.as!TrnNWN2TerrainDimPayload;
+						writeln("packet[", i, "].width: ", p.width);
+						writeln("packet[", i, "].height: ", p.height);
+						writeln("packet[", i, "].id: ", p.id);
+						break;
+					case NWN2_TRRN:
+						auto p = packet.as!TrnNWN2MegatilePayload;
+						writeln("packet[", i, "].name: ", p.name.charArrayToString.toSafeString);
+						foreach(j, ref t ; p.textures){
+							writeln("packet[", i, "].textures[", j, "].name: ", t.name.charArrayToString.toSafeString);
+							writeln("packet[", i, "].textures[", j, "].color: ", t.color);
+						}
+						break;
+					case NWN2_WATR:
+						auto p = packet.as!TrnNWN2WaterPayload;
+						writeln("packet[", i, "].name: ", p.name.charArrayToString.toSafeString);
+						writeln("packet[", i, "].color: ", p.color);
+						writeln("packet[", i, "].ripple: ", p.ripple);
+						writeln("packet[", i, "].smoothness: ", p.smoothness);
+						writeln("packet[", i, "].reflect_bias: ", p.reflect_bias);
+						writeln("packet[", i, "].reflect_power: ", p.reflect_power);
+						writeln("packet[", i, "].specular_power: ", p.specular_power);
+						writeln("packet[", i, "].specular_cofficient: ", p.specular_cofficient);
+						foreach(j, ref t ; p.textures){
+							writeln("packet[", i, "].textures[", j, "].name: ", t.name.charArrayToString.toSafeString);
+							writeln("packet[", i, "].textures[", j, "].direction: ", t.direction);
+							writeln("packet[", i, "].textures[", j, "].rate: ", t.rate);
+							writeln("packet[", i, "].textures[", j, "].angle: ", t.angle);
+						}
+						writeln("packet[", i, "].uv_offset: ", p.uv_offset);
+						break;
+					case NWN2_ASWM:
+						auto p = packet.as!TrnNWN2WalkmeshPayload;
+						writeln("packet[", i, "].aswm_version: ", p.header.aswm_version.format!"%02x");
+						writeln("packet[", i, "].name: ", p.header.name.charArrayToString.toSafeString);
+						writeln("packet[", i, "].owns_data: ", p.header.owns_data);
+						writeln("packet[", i, "].vertices_count: ", p.header.vertices_count);
+						writeln("packet[", i, "].edges_count: ", p.header.edges_count);
+						writeln("packet[", i, "].triangles_count: ", p.header.triangles_count);
+						break;
+				}
+			}
+			break;
 
 		case "check":
 			bool strict = false;
