@@ -1228,8 +1228,8 @@ struct TrnNWN2WalkmeshPayload{
 
 		islands_path_nodes = wmdata.readArray!IslandPathNode(islands.length ^^ 2).dup;
 
-		enforce!TrnParseException(data.read_ptr == payload.length,
-			(payload.length - data.read_ptr).to!string ~ " bytes were not read at the end of ASWM");
+		enforce!TrnParseException(wmdata.read_ptr == wmdata.data.length,
+			(wmdata.data.length - wmdata.read_ptr).to!string ~ " bytes were not read at the end of ASWM");
 
 		version(unittest){
 			auto serialized = serializeUncompressed();
