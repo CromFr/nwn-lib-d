@@ -127,7 +127,7 @@ int main(string[] args){
 						break;
 					case NWN2_ASWM:
 						auto p = packet.as!TrnNWN2WalkmeshPayload;
-						writeln("packet[", i, "].aswm_version: ", p.header.aswm_version.format!"%02x");
+						writeln("packet[", i, "].aswm_version: ", p.header.aswm_version.format!"0x%02x");
 						writeln("packet[", i, "].name: ", p.header.name.charArrayToString.toSafeString);
 						writeln("packet[", i, "].owns_data: ", p.header.owns_data);
 						writeln("packet[", i, "].vertices_count: ", p.header.vertices_count);

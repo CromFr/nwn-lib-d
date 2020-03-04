@@ -1001,7 +1001,7 @@ struct TrnNWN2WalkmeshPayload{
 			immutable ltnLen = path_table.local_to_node.length;
 			immutable offset = header.triangles_offset;
 
-			enforce!ASWMInvalidValueException(header.triangles_count == ltnLen,
+			enforce!ASWMInvalidValueException(ltnLen == 0 || header.triangles_count == ltnLen,
 				"local_to_node: length ("~ltnLen.to!string~") does not match triangles_count ("~header.triangles_count.to!string~")");
 
 			enforce!ASWMInvalidValueException(offset < aswm.triangles.length || (offset == aswm.triangles.length && ltnLen == 0),
@@ -1049,22 +1049,25 @@ struct TrnNWN2WalkmeshPayload{
 			}
 
 			// Path table
-			enforce!ASWMInvalidValueException(nodesLen == ntlLen ^^ 2,
-				"Wrong number of nodes");
+			if(aswm.header.aswm_version >= 0x6b){
+				enforce!ASWMInvalidValueException(nodesLen == ntlLen ^^ 2,
+					format!"Wrong number of nodes (%d instead of %d)"(nodesLen, ntlLen ^^ 2));
+			}
+			else{
+				enforce!ASWMInvalidValueException(ntlLen == 0,
+					"Wrong number of nodes (shoule be 0)");
+			}
+
 			if(nodesLen < 0x7f){
 				foreach(j, node ; path_table.nodes){
-					if(node == 0xff)
-						continue;
-					enforce!ASWMInvalidValueException((node & 0b0111_1111) < ntlLen,
-						"nodes["~j.to!string~"]: Illegal value "~node.to!string);
+					enforce!ASWMInvalidValueException(node == 0xff || (node & 0b0111_1111) < ntlLen,
+						"nodes["~j.to!string~"]: Illegal value "~node.to!string ~ " (should be either 255 or less than 127)");
 				}
 			}
 			if(nodesLen < 0xff){
 				foreach(j, node ; path_table.local_to_node){
-					if(node == 0xff)
-						continue;
-					enforce!ASWMInvalidValueException(node < nodesLen,
-						"local_to_node["~j.to!string~"]: Illegal value"~node.to!string);
+					enforce!ASWMInvalidValueException(node == 0xff || node < nodesLen,
+						"local_to_node["~j.to!string~"]: Illegal value"~node.to!string ~ " (should be either 255 or an existing node index)");
 				}
 			}
 
@@ -1315,11 +1318,11 @@ struct TrnNWN2WalkmeshPayload{
 		foreach(iedge, ref edge ; edges){
 			foreach(v ; edge.vertices){
 				enforce!ASWMInvalidValueException(v < vertLen,
-					"edges["~iedge.to!string~"]: Invalid vertex index "~v.to!string);
+					format!"edges[%d]: Vertex index %d is out of range (0..%d)"(iedge, v, vertLen));
 			}
 			foreach(t ; edge.triangles){
 				enforce!ASWMInvalidValueException(t == uint32_t.max || t < triLen,
-					"edges["~iedge.to!string~"]: Invalid triangle index "~t.to!string);
+					format!"edges[%d]: Triangle index %d is out of range (0..%d)"(iedge, t, triLen));
 			}
 		}
 
@@ -1327,7 +1330,7 @@ struct TrnNWN2WalkmeshPayload{
 		foreach(itri, ref tri ; triangles){
 			foreach(v ; tri.vertices){
 				enforce!ASWMInvalidValueException(v < vertLen,
-					"triangles["~itri.to!string~"]: Invalid vertex index "~v.to!string);
+					format!"triangles[%d]: Vertex index %s is out of range (0..%d)"(itri, v, vertLen));
 			}
 
 			foreach(i ; 0 .. 3){
@@ -1335,24 +1338,30 @@ struct TrnNWN2WalkmeshPayload{
 				immutable lt = tri.linked_triangles[i];
 
 				enforce!ASWMInvalidValueException(lj < edgeLen,
-					"triangles["~itri.to!string~"].linked_edges["~i.to!string~"]: invalid edge index "~lj.to!string);
+					format!"triangles[%d].linked_edges[%d]: Edge index %d is out of range (0..%d)"(itri, i, lj, edgeLen));
 
 				enforce!ASWMInvalidValueException(lt == uint32_t.max || lt < triLen,
-					"triangles["~itri.to!string~"].linked_triangles["~i.to!string~"]: invalid triangle index "~lt.to!string);
+					format!"triangles[%d].linked_triangles[%d]: Triangle index %d is out of range (0..%d)"(itri, i, lt, triLen));
 
 				enforce!ASWMInvalidValueException(
 					(edges[lj].triangles[0] == itri && edges[lj].triangles[1] == lt)
 					|| (edges[lj].triangles[0] == lt && edges[lj].triangles[1] == itri),
-					"triangles["~itri.to!string~"].linked_xxx["~i.to!string~"]: linked edge does not match linked triangle");
+					format!"triangles[%d].linked_xxx[%d]: linked edge does not match linked triangle"(itri, i));
 			}
 
-			enforce!ASWMInvalidValueException(tri.island == uint16_t.max || tri.island < islLen,
-				"triangles["~itri.to!string~"].island: Invalid island index "~tri.island.to!string);
+			if(islLen == 0){
+				if(strict)
+					enforce!ASWMInvalidValueException(tri.island == uint16_t.max,
+						format!"triangles[%d].island: No islands are defined in the ASWM data. The island index %d should be 0xffff"(itri, tri.island));
+			}
+			else
+				enforce!ASWMInvalidValueException(tri.island == uint16_t.max || tri.island < islLen,
+					format!"triangles[%d].island: Island index %d is out of range (0..%d)"(itri, tri.island, islLen));
 		}
 
 		// Tiles
 		enforce!ASWMInvalidValueException(tiles.length == tiles_grid_width * tiles_grid_height,
-			"Wrong number of tiles (should be tiles_grid_width * tiles_grid_height)");
+			format!"Wrong number of tiles: %d instead of %d (tiles_grid_width * tiles_grid_height)"(tiles.length, tiles_grid_width * tiles_grid_height));
 
 		enforce!ASWMInvalidValueException(tiles_width > 0.0,
 			"tiles_width: must be > 0");
@@ -1360,7 +1369,7 @@ struct TrnNWN2WalkmeshPayload{
 		foreach(i, ref tile ; tiles){
 			try tile.validate(this, cast(uint32_t)i, strict);
 			catch(ASWMInvalidValueException e){
-				e.msg = "tiles["~i.to!string~"]: " ~ e.msg;
+				e.msg = format!"tiles[%d]: %s"(i, e.msg);
 				throw e;
 			}
 		}
@@ -1371,7 +1380,7 @@ struct TrnNWN2WalkmeshPayload{
 		foreach(i, ref tile ; tiles){
 			foreach(t ; tile.header.triangles_offset .. tile.header.triangles_offset + tile.header.triangles_count){
 				enforce!ASWMInvalidValueException(overlapingTri[t] == uint32_t.max,
-					"tiles["~i.to!string~"]: triangle "~t.to!string~" (center="~triangles[t].center.to!string~") is already owned by tile "~overlapingTri[t].to!string);
+					format!"tiles[%d]: Triangle index %d (center=%s) is already owned by tile %d"(i, t, triangles[t].center, overlapingTri[t]));
 
 				overlapingTri[t] = cast(uint32_t)i;
 			}
@@ -1381,23 +1390,23 @@ struct TrnNWN2WalkmeshPayload{
 		foreach(isli, ref island ; islands){
 
 			enforce!ASWMInvalidValueException(island.header.index == isli,
-				"islands["~isli.to!string~"].header.index: does not match island index in islands array");
+				format!"islands[%d].header.index: does not match island index in islands array"(isli));
 
 			enforce!ASWMInvalidValueException(
 				island.adjacent_islands.length == island.adjacent_islands_dist.length
 				&& island.adjacent_islands.length == island.exit_triangles.length,
-				"islands["~isli.to!string~"]: adjacent_islands/adjacent_islands_dist/exit_triangles length mismatch");
+				format!"islands[%d]: adjacent_islands/adjacent_islands_dist/exit_triangles lengths must match"(isli));
 
 			foreach(i ; 0 .. island.adjacent_islands.length){
 				enforce!ASWMInvalidValueException(island.adjacent_islands[i] < islLen,// Note: Skywing allows uint16_t.max value
-					"islands["~isli.to!string~"].adjacent_islands["~i.to!string~"]: Invalid island index");
+					format!"islands[%d].adjacent_islands[%d]: Island index %d is out of range (0..%d)"(isli, i, island.adjacent_islands[i], islLen));
 				enforce!ASWMInvalidValueException(island.exit_triangles[i] < triLen,
-					"islands["~isli.to!string~"].exit_triangles["~i.to!string~"]: Invalid triangle index");
+					format!"islands[%d].exit_triangles[%d]: Triangle index %d is out of range (0..%d)"(isli, i, island.exit_triangles[i], triLen));
 
 
 				foreach(exitIdx, t ; island.exit_triangles){
 					enforce!ASWMInvalidValueException(triangles[t].island == isli,
-						"islands["~isli.to!string~"].exit_triangles["~exitIdx.to!string~"]: triangle is outside of the island");
+						format!"islands[%d].exit_triangles[%d]: Triangle index %d is not linked to this island"(isli, exitIdx, t));
 
 					bool found = false;
 					foreach(lt ; triangles[t].linked_triangles){
@@ -1408,7 +1417,7 @@ struct TrnNWN2WalkmeshPayload{
 						}
 					}
 					enforce!ASWMInvalidValueException(found,
-						"islands["~isli.to!string~"].linked_triangles["~exitIdx.to!string~"]: triangle is not linked to island "~island.adjacent_islands[exitIdx].to!string);
+						format!"islands[%d].exit_triangles[%d]: Triangle index %d is not adjacent to island %d"(isli, exitIdx, t, island.adjacent_islands[exitIdx]));
 				}
 
 			}
@@ -1416,11 +1425,11 @@ struct TrnNWN2WalkmeshPayload{
 
 		// Island path nodes
 		enforce!ASWMInvalidValueException(islands_path_nodes.length == islands.length ^^ 2,
-			"Wrong number of islands / islands_path_nodes");
+			format!"Wrong number of islands / islands_path_nodes: %d instead of %d"(islands_path_nodes.length, islands.length ^^ 2));
 
 		foreach(i, ipn ; islands_path_nodes){
 			enforce!ASWMInvalidValueException(ipn.next == uint16_t.max || ipn.next < islLen,
-				"islands_path_nodes["~i.to!string~"]: Invalid next island index "~ipn.next.to!string);
+				format!"islands_path_nodes[%d]: Island index %d is out of range (0..%d)"(i, ipn.next, islLen));
 		}
 	}
 
