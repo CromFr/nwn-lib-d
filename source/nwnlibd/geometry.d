@@ -13,11 +13,6 @@ float signedArea(in vec2f a, in vec2f b, in vec2f c){
 }
 
 float distance(in vec2f[2] line, in vec2f point){
-	//auto lineVec = (line[1] - line[0]).normalized;
-	//auto hyp = point - line[0];
-	//auto proj = line[0] + lineVec * lineVec.dot(hyp);
-	//return proj.distanceTo(point);
-
 	return 2.0 * fabs(signedArea(line[0], line[1], point)) / line[0].distanceTo(line[1]);
 }
 unittest{
@@ -25,14 +20,20 @@ unittest{
 	assert(fabs(distance([vec2f(1.0, 12.0), vec2f(2.0, 19.0)], vec2f(3.0, 5.0)) - 2.9698485) < float.epsilon);
 }
 
-bool isPointInTriangle(in vec2f p, in vec2f[3] tri) {
-    immutable A = 1/2 * (-tri[1].y * tri[2].x + tri[0].y * (-tri[1].x + tri[2].x) + tri[0].x * (tri[1].y - tri[2].y) + tri[1].x * tri[2].y);
-    immutable sign = A < 0 ? -1 : 1;
-    immutable s = (tri[0].y * tri[2].x - tri[0].x * tri[2].y + (tri[2].y - tri[0].y) * p.x + (tri[0].x - tri[2].x) * p.y) * sign;
-    immutable t = (tri[0].x * tri[1].y - tri[0].y * tri[1].x + (tri[0].y - tri[1].y) * p.x + (tri[1].x - tri[0].x) * p.y) * sign;
+//bool isPointInTriangle(in vec2f p, in vec2f[3] tri) {
+//    immutable A = 1/2 * (-tri[1].y * tri[2].x + tri[0].y * (-tri[1].x + tri[2].x) + tri[0].x * (tri[1].y - tri[2].y) + tri[1].x * tri[2].y);
+//    immutable sign = A < 0 ? -1 : 1;
+//    immutable s = (tri[0].y * tri[2].x - tri[0].x * tri[2].y + (tri[2].y - tri[0].y) * p.x + (tri[0].x - tri[2].x) * p.y) * sign;
+//    immutable t = (tri[0].x * tri[1].y - tri[0].y * tri[1].x + (tri[0].y - tri[1].y) * p.x + (tri[1].x - tri[0].x) * p.y) * sign;
 
-    return s > 0 && t > 0 && (s + t) < 2 * A * sign;
-}
+//    return s > 0 && t > 0 && (s + t) < 2 * A * sign;
+//}
+//unittest{
+//	assert(isPointInTriangle(
+//		vec2f(vertices[v][0..2]),
+//		potentialTriangle[0..3],
+//	));
+//}
 
 bool isTriangleClockwise(in vec2f[3] tri){
 	return signedArea(tri[0], tri[1], tri[2]) > 0;
