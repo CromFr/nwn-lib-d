@@ -113,6 +113,7 @@ int main(string[] args){
 		GffNode* node = &gff.root;
 
 		auto eq = setValue.indexOf('=');
+		assert(eq >= 0, "--set value must contain a '=' character");
 		string[] path = setValue[0 .. eq].split(".");
 		string value = setValue[eq+1..$];
 		foreach(i, p ; path){

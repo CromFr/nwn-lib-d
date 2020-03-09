@@ -960,20 +960,20 @@ unittest{
 
 
 	//Variable searching
-	auto var2 = db.getVariable(null, null, "ThisIsAString");
+	auto var2 = db.getVariable(null, null, "ThisIsAString").get;
 	assert(var2.get.name == "ThisIsAString");
 	assert(var2.get.index == 4);
 	assert(db.getVariableIndex(null, null, "ThisIsAString") == 4);
 
-	var2 = db.getVariable("Crom 29", "Adaur Harbor", "StoredObjectName");
+	var2 = db.getVariable("Crom 29", "Adaur Harbor", "StoredObjectName").get;
 	assert(var2.get.name == "StoredObjectName");
 	assert(var2.get.index == 5);
 
-	var2 = db["Crom 29", "Adaur Harbor", "StoredObjectName"];
+	var2 = db["Crom 29", "Adaur Harbor", "StoredObjectName"].get;
 	assert(var2.get.name == "StoredObjectName");
 	assert(var2.get.index == 5);
 
-	var2 = db[PCID("Crom 29", "Adaur Harbor"), "StoredObject"];
+	var2 = db[PCID("Crom 29", "Adaur Harbor"), "StoredObject"].get;
 	assert(var2.get.name == "StoredObject");
 	assert(var2.get.index == 6);
 
