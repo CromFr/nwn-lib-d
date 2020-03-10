@@ -21,8 +21,44 @@ struct GenericMesh {
 
 	static struct Triangle{
 		uint32_t[3] vertices; /// Vertex indices composing the triangle
+		uint32_t material = uint32_t.max;
 	}
 	Triangle[] triangles;
+
+	uint32_t[][] lines;
+	static struct Material{
+		float[3] ambientColor; /// Ka
+		string ambientTexture; /// map_Ka
+		float[3] diffuseColor; /// Kd
+		string diffuseTexture; /// map_Kd
+		float[3] specularColor; /// Ks
+		string specularTexture; /// map_Ks
+		float specularWeight; /// Ns
+		float transparency; /// Tr ; 0 = opaque
+		string bumpTexture; /// bump
+		string dispTexture; /// disp
+		string decalTexture; /// decal
+		enum Illumniation : ubyte {
+			None = ubyte.max,
+			ColorOnAmbientOff = 0, /// Color on and Ambient off
+			ColorOnAmbientOn = 1, /// Color on and Ambient on
+			HilightOn = 2, /// Highlight on
+			ReflectRaytrace = 3, /// Reflection on and Ray trace on
+			GlassRaytrace = 4, /// Transparency: Glass on, Reflection: Ray trace on
+			FresnelRaytrace = 5, /// Reflection: Fresnel on and Ray trace on
+			RefractRaytrace = 6, /// Transparency: Refraction on, Reflection: Fresnel off and Ray trace on
+			RefractFresnelRaytrace = 7, /// Transparency: Refraction on, Reflection: Fresnel on and Ray trace on
+			Reflect = 8, /// Reflection on and Ray trace off
+			Glass = 9, /// Transparency: Glass on, Reflection: Ray trace off
+			Shadows = 10, /// Casts shadows onto invisible surfaces
+		}
+		Illumniation illumination = Illumniation.None; /// illum
+	}
+	Material[] materials;
+
+	GenericMesh dup() const {
+		return GenericMesh(vertices.dup, triangles.dup, lines.dup.map!(a => a.dup).array, materials.dup);
+	}
 
 	/// Throw an exception if mesh contains invalid indices
 	void validate(){
@@ -386,6 +422,12 @@ struct GenericMesh {
 
 				}
 				break;
+				case "l":{
+					string data;
+					line.formattedRead!"%s"(data);
+					mesh.lines ~= data.split(" ").map!(a => a.to!uint32_t - 1).array;
+				}
+				break;
 
 				default: break;
 
@@ -396,19 +438,55 @@ struct GenericMesh {
 	}
 
 
-	void toObj(File obj, in string name = "genericmesh") const {
-		obj.writeln("o ",name);
+	void toObj(in string file, in string objectName = "genericmesh") const {
+		auto obj = File(file, "w");
+		File mtl;
+		if(materials.length > 0)
+			mtl = File(file ~ ".mtl", "w");
+
+		// OBJ definition
+		if(materials.length > 0)
+			obj.writefln("mtllib %s", file ~ ".mtl");
+		obj.writeln("o ",objectName);
 		foreach(ref v ; vertices){
 			obj.writefln("v %(%f %)", v.v);
 		}
 
+		auto currentMaterial = uint32_t.max;
 		foreach(ref t ; triangles){
+			if(t.material != currentMaterial){
+				if(t.material == uint32_t.max)
+					obj.writeln("usemtl");
+				else
+					obj.writefln("usemtl mtl%d", t.material);
+				currentMaterial = t.material;
+			}
+
 			if(isTriangleClockwise(t.vertices[].map!(a => vec2f(vertices[a].v[0..2])).array[0 .. 3]))
 				obj.writefln("f %s %s %s", t.vertices[2]+1, t.vertices[1]+1, t.vertices[0]+1);
 			else
 				obj.writefln("f %s %s %s", t.vertices[0]+1, t.vertices[1]+1, t.vertices[2]+1);
 		}
+		foreach(ref l ; lines){
+			obj.writefln("l %(%s %)", l.map!(a => a + 1).array);
+		}
 
+		// Material lib
+		foreach(i, ref material ; materials){
+			mtl.writefln("newmtl mtl%d", i);
+			if(material.ambientColor[0] != float.nan)  mtl.writefln("Ka %(%f %)", material.ambientColor);
+			if(material.ambientTexture !is null)       mtl.writefln("map_Ka %s", material.ambientTexture);
+			if(material.diffuseColor[0] != float.nan)  mtl.writefln("Kd  %(%f %)", material.diffuseColor);
+			if(material.diffuseTexture !is null)       mtl.writefln("map_Kd %s", material.diffuseTexture);
+			if(material.specularColor[0] != float.nan) mtl.writefln("Ks  %(%f %)", material.specularColor);
+			if(material.specularTexture !is null)      mtl.writefln("map_Ks %s", material.specularTexture);
+			if(material.specularWeight != float.nan)   mtl.writefln("Ns %f", material.specularWeight);
+			if(material.transparency != float.nan)     mtl.writefln("Tr %f", material.transparency);
+			if(material.bumpTexture !is null)          mtl.writefln("bump %s", material.bumpTexture);
+			if(material.dispTexture !is null)          mtl.writefln("disp %s", material.dispTexture);
+			if(material.decalTexture !is null)         mtl.writefln("decal %s", material.decalTexture);
+			if(material.illumination != Material.Illumniation.None) mtl.writefln("illum %d", material.illumination);
+		}
 	}
 
 	/// Triangulates a set of vertices and adds the created triangles to the mesh (ear clipping algorithm)
@@ -471,17 +549,18 @@ unittest{
 	import nwn.trn;
 	import std.algorithm;
 	import std.math;
+	import std.file;
+	import std.path;
 	auto trn = new Trn(cast(ubyte[])import("TestImportExportTRN.trx"));
 
 	foreach(ref TrnNWN2WalkmeshPayload aswm ; trn){
 		auto mesh = aswm.toGenericMesh();
 		mesh.validate;
 
-		auto file = File.tmpfile();
+		auto file = tempDir.buildPath("test.obj");
 		mesh.toObj(file);
 
-		file.rewind;
-		auto mesh2 = GenericMesh.fromObj(file);
+		auto mesh2 = GenericMesh.fromObj(File(file));
 
 		assert(mesh.vertices.length == mesh2.vertices.length);
 		foreach(i ; 0 .. mesh.vertices.length){
