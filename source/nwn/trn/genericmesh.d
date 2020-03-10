@@ -11,6 +11,7 @@ import std.exception: enforce;
 import std.array: array;
 import std.typecons: Nullable;
 debug import std.stdio: stderr, write, writeln, writefln;
+import std.container.dlist;
 
 import nwnlibd.geometry;
 import gfm.math.vector;
@@ -96,6 +97,36 @@ struct GenericMesh {
 		}
 	}
 
+	void removeUnusedVertices(){
+		bool[] usedVertices;
+		usedVertices.length = vertices.length;
+		usedVertices[] = false;
+
+		foreach(ref t ; triangles)
+			t.vertices.each!(a => usedVertices[a] = true);
+		foreach(ref l ; lines)
+			l.each!(a => usedVertices[a] = true);
+
+		uint32_t[] vertexTransTable;
+		vertexTransTable.length = vertices.length;
+
+		uint32_t newIndex = 0;
+		foreach(oldIndex, used ; usedVertices){
+			if(used){
+				vertexTransTable[oldIndex] = newIndex;
+				vertices[newIndex] = vertices[oldIndex];
+				newIndex++;
+			}
+		}
+		vertices.length = newIndex;
+
+		foreach(ref t ; triangles)
+			t.vertices.each!((ref a) => vertexTransTable[a]);
+
+		foreach(ref l ; lines)
+			l.each!((ref a) => vertexTransTable[a]);
+	}
+
 
 	private static struct TriCut{
 		uint32_t triangle;
@@ -111,14 +142,24 @@ struct GenericMesh {
 	private auto lineCut(vec2f[2] line) const {
 		Cut ret;
 
-		uint32_t addVertex(in vec3f vertex){
-			foreach(i, ref v ; ret.newVertices){
-				if(v.squaredDistanceTo(vertex) < 0.0001)
-					return i.to!uint32_t;
+		alias EDGE = uint32_t[2];
+		uint32_t[EDGE] verticesOnEdge;
+		uint32_t addVertex(in vec3f vertex, in EDGE edge = [uint32_t.max, uint32_t.max]){
+			if(edge[0] != uint32_t.max && edge[1] != uint32_t.max){
+				EDGE sortedEdge = edge[].dup.sort.array;
+				if(auto v = sortedEdge in verticesOnEdge){
+					return *v;
+				}
+				auto index = ret.newVertices.length.to!uint32_t;
+				verticesOnEdge[sortedEdge] = index;
+				ret.newVertices ~= vertex;
+				return index;
 			}
-			auto index = ret.newVertices.length;
-			ret.newVertices ~= vertex;
-			return index.to!uint32_t;
+			else{
+				auto index = ret.newVertices.length.to!uint32_t;
+				ret.newVertices ~= vertex;
+				return index;
+			}
 		}
 
 
@@ -135,16 +176,15 @@ struct GenericMesh {
 				.array[0 .. 3];
 
 
-			// Check if the triangle is aligned with the cur line
+			// Check if the triangle collides with the infinite line
 			float[3] ndot;
-			foreach(j ; 0 .. 3){
+			static foreach(j ; 0 .. 3){
 				// we calculate the distance between the cutting line and each
 				// point of the triangle.
 				// If the distance will be >0 or <0 depending on which side of
 				// the line is the point.
 				ndot[j] = vec2f(triVertices[j]).dot(lineVecPer) - lineDist;
 			}
-
 			ubyte[] cutEdges;// will contain the list of edges cut by an infinite line
 			static foreach(j ; 0 .. 3){
 				// ndot[j] * ndot[(j + 1) % 3] is <0 if the two vertices of
@@ -182,7 +222,10 @@ struct GenericMesh {
 					auto intersection = getLineIntersection(edgePos[0..2], line);
 					assert(intersection.intersect, "Should intersect");
 
-					auto intersectIndex = addVertex(vec3f(intersection.position.x, intersection.position.y, 0.0)); //TODO: handle z
+					auto intersectIndex = addVertex(
+						vec3f(intersection.position.x, intersection.position.y, 0.0), //TODO: handle z
+						[t.vertices[edge], t.vertices[(edge + 1) % 3]],
+					);
 
 					triCut.cutVertices[j] = intersectIndex;
 					triCut.verticesEdge[j] = edge;
@@ -191,7 +234,9 @@ struct GenericMesh {
 			}
 			foreach(j ; 0 .. 2){
 				if(edgeDirections[0][j] == triDirection && edgeDirections[1][j] == triDirection){
-					auto linePointIndex = addVertex(vec3f(line[j].x, line[j].y, 0.0)); //TODO: handle z
+					auto linePointIndex = addVertex(
+						vec3f(line[j].x, line[j].y, 0.0), //TODO: handle z,
+					);
 
 					ubyte insertPos = triCut.cutVertices[0] == uint32_t.max? 0 : 1;
 					assert(triCut.cutVertices[insertPos] == uint32_t.max);
@@ -234,142 +279,285 @@ struct GenericMesh {
 		validate();
 
 		Cut mergedCut;
-		foreach(i ; 0 .. polygon.length){
-			auto nextCut = lineCut([polygon[i], polygon[(i + 1) % polygon.length]]);
+		uint32_t[float[2]] insertedPolygonVertices;
+		size_t[][uint32_t] triangleToTriCutIndices;
+		foreach(polyVertIdx ; 0 .. polygon.length){
+			auto nextCut = lineCut([polygon[polyVertIdx], polygon[(polyVertIdx + 1) % polygon.length]]);
 
-			// Merge new vertices together. We directly translate nextCut indices to GenericMesh.vertices indices
-			uint32_t[] vertTransTable;
+			// Add new vertices as needed, and construct a vertex translate table
+			uint32_t[] vertTransTable;// index in nextCut.newVertices => index in this.vertices
 			vertTransTable.length = nextCut.newVertices.length;
 			foreach(ni, ref nv ; nextCut.newVertices){
-				bool foundSimilar = false;
-				foreach(oi, ref ov ; mergedCut.newVertices){
-					if(nv.squaredDistanceTo(ov) < 0.0001){
-						vertTransTable[ni] = vertices.length + oi;
-						foundSimilar = true;
-						break;
+				float[2] newVertex2D = nv.v[0 .. 2];
+				if(newVertex2D == polygon[polyVertIdx] || newVertex2D == (polygon[(polyVertIdx + 1) % polygon.length])){
+					// The vertex is one of the polygon's vertices
+					if(auto ov = (newVertex2D in insertedPolygonVertices)){
+						// Vertex is already added, link back to it
+						vertTransTable[ni] = *ov;
+					}
+					else{
+						// Add vertex
+						auto pos = (vertices.length + mergedCut.newVertices.length).to!uint32_t;
+						vertTransTable[ni] = pos;
+						insertedPolygonVertices[newVertex2D] = pos;
+						mergedCut.newVertices ~= nv;
 					}
 				}
-				if(!foundSimilar){
-					vertTransTable[ni] = vertices.length + mergedCut.newVertices.length;
+				else{
+					// The vertex is on a triangle edge
+					vertTransTable[ni] = (vertices.length + mergedCut.newVertices.length).to!uint32_t;
 					mergedCut.newVertices ~= nv;
 				}
 			}
 
-			// Merge TriCuts...
-			immutable tcutLen = mergedCut.trianglesCut.length;
-			mergedCut.trianglesCut ~= nextCut.trianglesCut;
-			// ... and update vertex indices
-			foreach(ref tc ; mergedCut.trianglesCut[tcutLen .. $])
+			// Translate nextCut vertex indices
+			foreach(j, ref tc ; nextCut.trianglesCut){
+				// Keep a list of cuts for a given triangle
+				if(tc.triangle in triangleToTriCutIndices)
+					triangleToTriCutIndices[tc.triangle] ~= mergedCut.trianglesCut.length + j;
+				else
+					triangleToTriCutIndices[tc.triangle] = [mergedCut.trianglesCut.length + j];
+
+				// Translate vertex indices
 				foreach(ref v ; tc.cutVertices)
 					v = vertTransTable[v];
-		}
+			}
 
+			// Append TriCut
+			mergedCut.trianglesCut ~= nextCut.trianglesCut;
+		}
 		vertices ~= mergedCut.newVertices;
+		mergedCut.newVertices.length = 0;
 
-		// Separate triangles that has been cut more than once (they will be triangulated)
-		TriCut*[] simpleCuts;
-		TriCut*[][] complexCuts;
+		foreach(triangleIndex, const ref triangleCutIndices ; triangleToTriCutIndices){
 
-		TriCut*[] lastCuts;
-		foreach(ref tc ; mergedCut.trianglesCut.sort!"a.triangle < b.triangle"){
-			if(lastCuts.length == 0 || tc.triangle == lastCuts[0].triangle){
-				lastCuts ~= &tc;
-			}
-			else{
-				if(lastCuts.length == 1){
-					assert(lastCuts[0].verticesEdge[0] != 255 && lastCuts[0].verticesEdge[1] != 255,
-						"simple cuts should be cut through");
-					simpleCuts ~= lastCuts[0];
+			DList!uint32_t[] polygonCuts;
+			size_t extendPolygonCuts(uint32_t[2] segment){
+				foreach(pci, ref polygonCut ; polygonCuts){
+					static foreach(i ; 0 .. 2){
+						if(polygonCut.front == segment[i]){
+							polygonCut.insertFront(segment[!i]);
+							return pci;
+						}
+						else if(polygonCut.back == segment[i]){
+							polygonCut.insertBack(segment[!i]);
+							return pci;
+						}
+					}
 				}
-				else{
-					complexCuts ~= lastCuts;
+				auto len = polygonCuts.length;
+				polygonCuts ~= DList!uint32_t(segment);
+				return len;
+			}
+
+			// Merge cut segments into polygonal cuts (multi-vertex cut lines)
+			// and build tables for relationship between vertices, triangle edges and polygon cut ends
+			uint32_t[][3] verticesOnEdge; // Ordered list of vertices on one edge
+			size_t[uint32_t] vertexToPolygonalCut; // Vertex => polygon cut offset
+			ubyte[uint32_t] vertexToEdge; // vertex ID => edge offset
+			foreach(ref tcut ; triangleCutIndices.map!(a => mergedCut.trianglesCut[a])){
+				assert(tcut.cutVertices[0] != uint32_t.max && tcut.cutVertices[1] != uint32_t.max);
+				auto polygonIndex = extendPolygonCuts(tcut.cutVertices);
+				static foreach(i ; 0 .. 2){{
+					immutable edgeIndex = tcut.verticesEdge[i];
+					if(edgeIndex != ubyte.max){
+						immutable vertexIndex = tcut.cutVertices[i];
+						verticesOnEdge[edgeIndex] ~= vertexIndex;
+						vertexToPolygonalCut[vertexIndex] = polygonIndex;
+						vertexToEdge[vertexIndex] = edgeIndex;
+					}
+				}}
+			}
+
+			debug{
+				foreach(ref cut ; polygonCuts){
+					assert(cut.front in vertexToEdge, format!"Cut %s first vertex is not on a triangle edge (incomplete cut)"(cut.array));
+					assert(cut.back in vertexToEdge, format!"Cut %s last vertex is not on a triangle edge (incomplete cut)"(cut.array));
 				}
-				lastCuts.length = 1;
-				lastCuts[0] = &tc;
 			}
-		}
 
-		// Proceed to cutting
-		foreach(i, tc ; simpleCuts){
-
-			auto triangle = triangles[tc.triangle];
-
-			ubyte commonVertTriOffset;
-			auto cutEdgesOffsets = tc.verticesEdge[].sort.array();
-
-			if(cutEdgesOffsets == [0,1])      commonVertTriOffset = 1;
-			else if(cutEdgesOffsets == [1,2]) commonVertTriOffset = 2;
-			else if(cutEdgesOffsets == [0,2]) commonVertTriOffset = 0;
-			else assert(0);
-			uint32_t commonVertIdx = triangle.vertices[commonVertTriOffset];
-
-			auto isCommonInside = removeInside == true ? isPointInsidePolygon(vec2f(vertices[commonVertIdx][0..2]), polygon) : false;
-
-			// Add triangle next to the common vertex
-			if(removeInside == false || !isCommonInside){
-				triangles ~= Triangle([commonVertIdx, tc.cutVertices[0], tc.cutVertices[1]]);
+			// Sort verticesOnEdge by distance to triangle edge
+			foreach(i, ref voe ; verticesOnEdge){
+				auto start = &vertices[ triangles[triangleIndex].vertices[i] ];
+				voe = voe
+					.sort!((a, b) => start.squaredDistanceTo(vertices[a]) < start.squaredDistanceTo(vertices[b]))
+					.array;
 			}
-			 // Add two triangle to fill the 4-edge shape
-			if(removeInside == false || isCommonInside){
-				auto isClockwise = isTriangleClockwise(triangle.vertices[].map!(a => vec2f(vertices[a].v[0..2])).array[0 .. 3]);
-				// newVert[0] -> newVert[1] -> common vertex
-				auto abcCw = isTriangleClockwise([
-					vertices[tc.cutVertices[0]].toVec2f,
-					vertices[tc.cutVertices[1]].toVec2f,
-					vertices[commonVertIdx].toVec2f
-				]);
 
-				triangles ~= Triangle(
-					[
-						tc.cutVertices[0],
-						tc.cutVertices[1],
-						triangle.vertices[(commonVertTriOffset + (abcCw != isClockwise? 1 : 2)) % 3],
-					]);
-				triangles ~= Triangle(
-					[
-						tc.cutVertices[0],
-						triangle.vertices[(commonVertTriOffset + (abcCw != isClockwise? 1 : 2)) % 3],
-						triangle.vertices[(commonVertTriOffset + (abcCw != isClockwise? 2 : 1)) % 3],
-					]);
+			ubyte[] exploredCuts;// 0b01 for triangle-oriented direction, 0b10 for reverse direction
+			exploredCuts.length = polygonCuts.length;
+			uint32_t[] exploreCut(size_t cutIndex, byte direction){
+				assert(direction == -1 || direction == 1);
+				uint32_t[] resPolygon = polygonCuts[cutIndex].array;
+				ubyte directionMask = direction == 1? 0b01 : 0b10;
+
+				assert((exploredCuts[cutIndex] & directionMask) == 0, "Already explored cut " ~ cutIndex.to!string);
+
+				while(1){
+					// Explore last vertex of resPolygon
+
+					auto nextCutIndex = size_t.max;
+					bool orderedCut;// true=normal, false=reversed
+					while(nextCutIndex == size_t.max){
+						auto startVertex = resPolygon[$-1];
+
+						if(startVertex in vertexToEdge){
+							// startVertex is a vertex on the triangle edge
+
+							auto edgeIndex = vertexToEdge[startVertex];
+							auto indexOnEdge = verticesOnEdge[edgeIndex].countUntil(startVertex).to!uint32_t;
+
+							if(direction > 0 ? indexOnEdge + 1 < verticesOnEdge[edgeIndex].length : indexOnEdge > 0){
+								// nextEdgeVertex will be a cut vertex on the same edge
+								auto nextEdgeVertex = verticesOnEdge[edgeIndex][indexOnEdge + direction];
+								if(nextEdgeVertex == resPolygon[0])
+									return resPolygon;
+								nextCutIndex = vertexToPolygonalCut[nextEdgeVertex];
+								orderedCut = nextEdgeVertex == polygonCuts[nextCutIndex].front;
+								debug if(!orderedCut) assert(nextEdgeVertex == polygonCuts[nextCutIndex].back);
+							}
+							else{
+								// Add next triangle vertex
+								auto nextTriangleVertexIndex = direction > 0 ? (edgeIndex + 1) % 3 : edgeIndex;
+								resPolygon ~= triangles[triangleIndex].vertices[nextTriangleVertexIndex];
+							}
+						}
+						else{
+							// startVertex is a triangle vertex
+
+							auto triangleVertexIndex = triangles[triangleIndex].vertices[].countUntil(startVertex).to!uint32_t;
+							auto nextEdge = direction > 0 ? triangleVertexIndex : ((triangleVertexIndex + 2) % 3);
+
+							if(verticesOnEdge[nextEdge].length > 0){
+								// there are cuts on nextEdge, follow them
+								auto nextEdgeVertex = verticesOnEdge[nextEdge][direction > 0 ? 0 : $-1];
+								if(nextEdgeVertex == resPolygon[0])
+									return resPolygon;
+								nextCutIndex = vertexToPolygonalCut[nextEdgeVertex];
+								orderedCut = nextEdgeVertex == polygonCuts[nextCutIndex].front;
+								debug if(!orderedCut) assert(nextEdgeVertex == polygonCuts[nextCutIndex].back);
+							}
+							else{
+								// There are no cuts on nextEdge, add next triangle vertex
+								auto nextTriangleVertexIndex = (triangleVertexIndex + 3 + direction) % 3;
+								resPolygon ~= triangles[triangleIndex].vertices[nextTriangleVertexIndex];
+							}
+
+						}
+					}
+
+					if(orderedCut){
+						resPolygon ~= polygonCuts[nextCutIndex].array;
+						assert((exploredCuts[nextCutIndex] & directionMask) == 0);
+						exploredCuts[nextCutIndex] |= directionMask;
+					}
+					else{
+						resPolygon ~= polygonCuts[nextCutIndex].array.reverse.array;
+						assert((exploredCuts[nextCutIndex] & (directionMask ^ 0b11)) == 0);
+						exploredCuts[nextCutIndex] |= directionMask ^ 0b11;
+					}
+
+					assert(resPolygon.dup.sort.uniq.array.length == resPolygon.length, "Loop detected in polygon " ~ resPolygon.to!string);
+				}
 			}
+
+			uint32_t[][] finalPolygons;
+			foreach(polygonCutIndex ; 0 .. polygonCuts.length){
+				if((exploredCuts[polygonCutIndex] & 0b01) == 0){
+					finalPolygons ~= exploreCut(polygonCutIndex, 1);
+				}
+				if((exploredCuts[polygonCutIndex] & 0b10) == 0){
+					finalPolygons ~= exploreCut(polygonCutIndex, -1);
+				}
+			}
+
+			foreach(ref p ; finalPolygons){
+				triangulatePolygon(p);
+			}
+
 
 			// Mark triangle for removal
-			triangles[tc.triangle].vertices[0] = uint32_t.max;
+			triangles[triangleIndex].vertices[0] = uint32_t.max;
 		}
-
-		foreach(ref tcs ; complexCuts){
-			// TODO
-
-			// Mark triangle for removal
-			triangles[tcs[0].triangle].vertices[0] = uint32_t.max;
-		}
-
-		//debug{
-		//	immutable oldLen = triangles.length;
-		//	triangles = triangles.filter!(a => a.vertices[0] != uint32_t.max).array;
-
-		//	assert(triangles.length + mergedTriCut.length == oldLen,
-		//		(oldLen - triangles.length).to!string ~ " triangles removed, instead of " ~ mergedTriCut.length.to!string);
-		//}
 
 		if(removeInside){
+			// Remove triangles which center point is inside the polygon
 			foreach(i, ref t ; triangles){
 				if(t.vertices[0] == uint32_t.max)
 					continue;
 
-				bool inside = true;
-				foreach(v ; t.vertices){
-					// TODO: optimize by checking against an AABB
-					if(isPointInsidePolygon(vec2f(vertices[v][0..2]), polygon) == false){
-						inside = false;
-						break;
-					}
-				}
-				if(inside)
+				auto center = (vertices[t.vertices[0]] + vertices[t.vertices[1]] + vertices[t.vertices[2]]) / 3.0;
+				if(!isPointInsidePolygon(vec2f(center[0..2]), polygon) == false){
 					t.vertices[0] = uint32_t.max;
+				}
 			}
 		}
 		triangles = triangles.filter!(a => a.vertices[0] != uint32_t.max).array;
+	}
+
+	unittest {
+		GenericMesh simpleMesh;
+		simpleMesh.vertices = [
+			vec3f(0, 0, 0),
+			vec3f(0, 1, 0),
+			vec3f(1, 0, 0),
+		];
+		simpleMesh.triangles ~= GenericMesh.Triangle([0, 1, 2]);
+
+		GenericMesh mesh;
+		mesh = simpleMesh.dup();
+		mesh.polygonCut([
+			vec2f(2, 0.2),
+			vec2f(0.2, 0.2),
+			vec2f(0.2, 2),
+		]);
+		assert(mesh.vertices.length == 6);
+		assert(mesh.triangles.length == 4);
+
+		mesh = simpleMesh.dup();
+		mesh.polygonCut([
+				vec2f(2, -1),
+				vec2f(0.2, 0.2),
+				vec2f(0.2, 2),
+		]);
+		mesh.removeUnusedVertices();
+		assert(mesh.vertices.length == 5);
+		assert(mesh.triangles.length == 3);
+
+		mesh = simpleMesh.dup();
+		mesh.polygonCut([
+			vec2f(0.5, 1),
+			vec2f(-0.5, 0),
+			vec2f(0, -0.5),
+			vec2f(1, 0.5),
+		]);
+		mesh.removeUnusedVertices();
+		assert(mesh.vertices.length == 6);
+		assert(mesh.triangles.length == 2);
+
+		mesh = simpleMesh.dup();
+		mesh.polygonCut([
+			vec2f(0.2, 2),
+			vec2f(0.2, 0.2),
+			vec2f(0.4, 2),
+			vec2f(0.5, -0.5),
+			vec2f(1, 3),
+		]);
+		assert(mesh.vertices.length == 10);
+		assert(mesh.triangles.length == 6);
+
+		//// polygon on triangle vertex
+		//mesh = simpleMesh.dup();
+		//mesh.polygonCut([
+		//	vec2f(0, 0),
+		//	vec2f(0.2, 0.2),
+		//	vec2f(0.4, 2),
+		//	vec2f(0.5, -0.5),
+		//	vec2f(1, 3),
+		//]);
+		//mesh.removeUnusedVertices();
+		//assert(mesh.vertices.length == 10);
+		//assert(mesh.triangles.length == 6);
 	}
 
 	/**
@@ -612,35 +800,13 @@ unittest{
 			mesh.polygonCut(wmCutter);
 		}
 
-		auto offset = cast(uint32_t)mesh.vertices.length;
-		mesh.vertices ~= vec3f(0, 0, 0);
-		mesh.vertices ~= vec3f(2, 0, 0);
-		mesh.vertices ~= vec3f(2, 2, 0);
-		mesh.vertices ~= vec3f(1.2, 1, 0);
-		mesh.vertices ~= vec3f(0, 2, 0);
-		mesh.vertices ~= vec3f(-0.5, 1, 0);
-		mesh.vertices ~= vec3f(-0.7, -1, 0);
-		mesh.vertices ~= vec3f(1, -1, 0);
-		mesh.triangulatePolygon(iota(offset, offset+7).array);
 
 		aswm.setGenericMesh(mesh);
 		aswm.bake();
 		aswm.validate();
 
-		auto f = File("test.obj", "w");
-		mesh.toObj(f);
 
-		f.writefln("o walkmeshcutters");
-		size_t vertOffset = mesh.vertices.length + 1;
-		foreach(i, ref wmCutter ; wmCutters){
 
-			foreach(ref v ; wmCutter){
-				f.writefln("v %(%s %) 0.1", v.v);
-			}
-			f.writefln("l %(%s %)", iota(vertOffset, vertOffset + wmCutter.length).array ~ vertOffset);
-
-			vertOffset += wmCutter.length;
-		}
 	}
 
 

@@ -6,18 +6,18 @@ import gfm.math.vector;
 
 pure:
 
-float signedArea(in vec2f a, in vec2f b, in vec2f c){
+double signedArea(in vec2f a, in vec2f b, in vec2f c){
 	return ((b.x * a.y - a.x * b.y)
 		+ (c.x * b.y - b.x * c.y)
 		+ (a.x * c.y - c.x * a.y)) / 2.0;
 }
 
-float distance(in vec2f[2] line, in vec2f point){
+double distance(in vec2f[2] line, in vec2f point){
 	return 2.0 * fabs(signedArea(line[0], line[1], point)) / line[0].distanceTo(line[1]);
 }
 unittest{
-	assert(fabs(distance([vec2f(0.0, 0.0), vec2f(10.0, 0.0)], vec2f(3.0, 5.0)) - 5.0) < float.epsilon);
-	assert(fabs(distance([vec2f(1.0, 12.0), vec2f(2.0, 19.0)], vec2f(3.0, 5.0)) - 2.9698485) < float.epsilon);
+	assert(approxEqual(distance([vec2f(0.0, 0.0), vec2f(10.0, 0.0)], vec2f(3.0, 5.0)), 5.0));
+	assert(approxEqual(distance([vec2f(1.0, 12.0), vec2f(2.0, 19.0)], vec2f(3.0, 5.0)), 2.9698485));
 }
 
 //bool isPointInTriangle(in vec2f p, in vec2f[3] tri) {
