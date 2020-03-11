@@ -333,7 +333,7 @@ int main(string[] args){
 				outFile = buildPath(outFile, inputFile.baseName ~ ".aswm.obj");
 
 			foreach(ref TrnNWN2WalkmeshPayload aswm ; new Trn(inputFile)){
-				aswm.toGenericMesh.toObj(File(outFile, "w"));
+				aswm.toGenericMesh.toObj(outFile);
 			}
 		}
 		break;
