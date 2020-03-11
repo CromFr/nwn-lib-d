@@ -60,6 +60,24 @@ bool isPointInsidePolygon(in vec2f point, in vec2f[] polygon){
 	return c;
 }
 
+float getAltitudeOnPlane(in vec3f[3] triangle, in vec2f point){
+	auto normal = (triangle[1] - triangle[0])
+		.cross(triangle[2] - triangle[0])
+		.normalized;
+	return getAltitudeOnPlane(normal, triangle[0], point);
+}
+float getAltitudeOnPlane(in vec3f normal, in vec3f pointOnPlane, in vec2f point){
+	return (normal.x * (pointOnPlane.x - point.x) + normal.y * (pointOnPlane.y - point.y))
+		/ (normal.z)
+		+ pointOnPlane.z;
+}
+unittest{
+	vec3f[3] t = [vec3f([0,0,0]), vec3f([1,0,0]), vec3f([0,1,1])];
+	assert(getAltitudeOnPlane(t, vec2f([0,0])).approxEqual(0));
+	assert(getAltitudeOnPlane(t, vec2f([0,-1])).approxEqual(-1));
+	assert(getAltitudeOnPlane(t, vec2f([5,3])).approxEqual(3));
+}
+
 
 auto getLineIntersection(in vec2f[2] lineA, in vec2f[2] lineB)
 {

@@ -171,7 +171,10 @@ struct GenericMesh {
 		foreach(i, ref t ; triangles){
 			// TODO: optimize by checking against an AABB
 
-			vec2f[3] triVertices = t.vertices[]
+			vec3f[3] triVertices = t.vertices[]
+				.map!(a => vertices[a])
+				.array[0 .. 3];
+			vec2f[3] tri2DVertices = t.vertices[]
 				.map!(a => vec2f(vertices[a].v[0 .. 2]))
 				.array[0 .. 3];
 
@@ -183,7 +186,7 @@ struct GenericMesh {
 				// point of the triangle.
 				// If the distance will be >0 or <0 depending on which side of
 				// the line is the point.
-				ndot[j] = vec2f(triVertices[j]).dot(lineVecPer) - lineDist;
+				ndot[j] = vec2f(tri2DVertices[j]).dot(lineVecPer) - lineDist;
 			}
 			ubyte[] cutEdges;// will contain the list of edges cut by an infinite line
 			static foreach(j ; 0 .. 3){
@@ -200,13 +203,13 @@ struct GenericMesh {
 			assert(cutEdges.length == 2,
 				"Non-Euclidean geometry: You succeeded at cutting "~cutEdges.length.to!string~" edges of a triangle with a line, well done");
 
-			auto triDirection = isTriangleClockwise(triVertices);
+			auto triDirection = isTriangleClockwise(tri2DVertices);
 
 			// bool[cut edge 0/1][line start/end]
 			bool[2][2] edgeDirections;
 			foreach(iLinePoint, linePoint ; line){
 				foreach(j, edge ; cutEdges){
-					edgeDirections[j][iLinePoint] = isTriangleClockwise([triVertices[edge], triVertices[(edge + 1) % 3], linePoint]);
+					edgeDirections[j][iLinePoint] = isTriangleClockwise([tri2DVertices[edge], tri2DVertices[(edge + 1) % 3], linePoint]);
 				}
 			}
 
@@ -216,14 +219,14 @@ struct GenericMesh {
 				// value == triDirection <=> point is inside of the triangle edge
 				if(edgeDirections[j][0] != edgeDirections[j][1]){
 					// Calculate intersection point
-					auto edgePos = [triVertices[edge], triVertices[(edge + 1) % 3]];
-					auto edgeVec = edgePos[1] - edgePos[0];
+					auto edgePos = [tri2DVertices[edge], tri2DVertices[(edge + 1) % 3]];
 
 					auto intersection = getLineIntersection(edgePos[0..2], line);
 					assert(intersection.intersect, "Should intersect");
 
+					auto altitude = getAltitudeOnPlane(triVertices, intersection.position);
 					auto intersectIndex = addVertex(
-						vec3f(intersection.position.x, intersection.position.y, 0.0), //TODO: handle z
+						vec3f(intersection.position.x, intersection.position.y, altitude),
 						[t.vertices[edge], t.vertices[(edge + 1) % 3]],
 					);
 
@@ -234,8 +237,10 @@ struct GenericMesh {
 			}
 			foreach(j ; 0 .. 2){
 				if(edgeDirections[0][j] == triDirection && edgeDirections[1][j] == triDirection){
+
+					auto altitude = getAltitudeOnPlane(triVertices, line[j]);
 					auto linePointIndex = addVertex(
-						vec3f(line[j].x, line[j].y, 0.0), //TODO: handle z,
+						vec3f(line[j].x, line[j].y, altitude),
 					);
 
 					ubyte insertPos = triCut.cutVertices[0] == uint32_t.max? 0 : 1;

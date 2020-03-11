@@ -1857,6 +1857,7 @@ struct TrnNWN2WalkmeshPayload{
 		debug validate();
 	}
 
+	/// Bake tile path table
 	private IslandMeta[] bakeTile(uint32_t tileIndex){
 		//writeln("bakeTile: ", tileIndex);
 
