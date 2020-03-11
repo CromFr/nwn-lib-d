@@ -65,6 +65,7 @@ subPackage {
 	targetType "executable"
 	targetName "nwn-trn"
 	sourcePaths "source/" "tools/common/" "tools/nwn-trn/"
+	stringImportPaths "tools/nwn-trn/"
 	dependency "gfm:math" version="~>7.0.0"
 
 	configuration "application"

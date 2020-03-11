@@ -491,7 +491,7 @@ int main(string[] args){
 			auto res = getopt(args,
 				"output|o", "Output trx file or directory. Default: './'", &targetPath,
 				"in-place|i", "Provide this flag to write TRX files next to the TRN files", &inPlace,
-				"terrain2da", "Path to terrainmaterials.2da, to generate footstep sounds", &terrain2daPath,
+				"terrain2da", "Path to terrainmaterials.2da, to generate footstep sounds. By default the official NWN2 2da will be used.", &terrain2daPath,
 				"trn", "TRN file path. Default to $map_name_without_extension.trn", &trnPath,
 				"reuse-trx|r", "Reuse walkmesh from an already existing TRX file", &reuseTrx,
 				"force-walkable", "Make all triangles walkable. Triangles removed with walkmesh cutters won't be walkable.", &forceWalkable,
@@ -532,7 +532,7 @@ int main(string[] args){
 			if(terrain2daPath !is null)
 				terrainmaterials = new TwoDA(terrain2daPath);
 			else
-				writeln("Warning: No triangle soundstep flags will be set. Please provide --terrain2da");
+				terrainmaterials = new TwoDA(cast(ubyte[])import("terrainmaterials.2da"));
 
 			foreach(resname ; args[1 .. $].parallel){
 				if(trnPath !is null){
@@ -566,12 +566,42 @@ int main(string[] args){
 				import nwn.fastgff;
 				auto git = new FastGff(gitFilePath);
 
+				// Extract all walkmesh cutters data
+				alias WMCutter = vec2f[];
+				WMCutter[] wmCutters;
+				foreach(_, GffStruct trigger ; git["TriggerList"].get!GffList){
+					if(trigger["Type"].get!GffInt == 3){
+						// Walkmesh cutter
+						auto start = [trigger["XPosition"].get!GffFloat, trigger["YPosition"].get!GffFloat];
+
+						// what about: XOrientation YOrientation ZOrientation ?
+						WMCutter cutter;
+						foreach(_, GffStruct point ; trigger["Geometry"].get!GffList){
+							cutter ~= vec2f(
+								start[0] + point["PointX"].get!GffFloat,
+								start[1] + point["PointY"].get!GffFloat,
+							);
+						}
+
+						wmCutters ~= cutter;
+					}
+				}
+
 				import std.datetime.stopwatch: StopWatch;
 				auto sw = new StopWatch;
 				sw.start();
 
 				foreach(ref TrnNWN2WalkmeshPayload aswm ; trn){
 
+					stderr.writeln("Cutting mesh");
+					auto mesh = aswm.toGenericMesh();
+					foreach(i, ref wmCutter ; wmCutters){
+						stderr.writefln("  Walkmesh cutter %d / %d", i, wmCutters.length);
+						mesh.polygonCut(wmCutter);
+					}
+					aswm.setGenericMesh(mesh);
+
+					stderr.writeln("Calculating path tables");
 					aswm.tiles_flags = 31;
 					if(forceWalkable){
 						foreach(ref t ; aswm.triangles)
@@ -579,16 +609,20 @@ int main(string[] args){
 					}
 					aswm.bake(!keepBorders);
 
-					if(terrainmaterials !is null)
+					if(terrainmaterials !is null){
+						stderr.writeln("Setting footstep sounds");
 						aswm.setFootstepSounds(trn.packets, terrainmaterials);
+					}
 
 					if(!unsafe){
+						stderr.writeln("Verifying walkmesh");
 						aswm.validate();
 					}
 				}
 				sw.stop();
 				writeln(resname.baseName.leftJustify(32), " ", sw.peek.total!"msecs"/1000.0, " seconds");
 
+				stderr.writeln("Writing file");
 				std.file.write(trxFilePath, trn.serialize());
 
 			}
