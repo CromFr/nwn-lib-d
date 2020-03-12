@@ -64,7 +64,7 @@ class StrRefResolver{
 	const Tlk standartTable;
 	const Tlk userTable;
 }
-unittest{
+version(None) unittest{
 	immutable dialogTlk = cast(immutable ubyte[])import("dialog.tlk");
 	immutable userTlk = cast(immutable ubyte[])import("user.tlk");
 

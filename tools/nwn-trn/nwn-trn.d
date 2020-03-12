@@ -597,6 +597,13 @@ int main(string[] args){
 					auto mesh = aswm.toGenericMesh();
 					foreach(i, ref wmCutter ; wmCutters){
 						stderr.writefln("  Walkmesh cutter %d / %d", i, wmCutters.length);
+						if(i == 10){
+							import std.range;
+							stderr.writeln("wmCutter=", wmCutter);
+							mesh.vertices ~= wmCutter.map!(a => vec3f([a.x, a.y, 0.0])).array;
+							mesh.lines ~= (iota(mesh.vertices.length - wmCutter.length, mesh.vertices.length).array ~ (mesh.vertices.length - wmCutter.length)).to!(uint32_t[]);
+							mesh.toObj("test.obj");
+						}
 						mesh.polygonCut(wmCutter);
 					}
 					aswm.setGenericMesh(mesh);

@@ -161,7 +161,7 @@ struct MdbWALK {
 }
 
 
-unittest {
+version(None) unittest {
 	const balcony = cast(ubyte[])import("PLC_MC_BALCONY3.MDB");
 
 	auto mdb = new Mdb(balcony);

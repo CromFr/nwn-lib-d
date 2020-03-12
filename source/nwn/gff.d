@@ -1491,7 +1491,7 @@ private:
 		}
 	}
 }
-unittest{
+version(None) unittest{
 	import std.file : read;
 	with(GffType){
 		immutable krogarDataOrig = cast(immutable ubyte[])import("krogar.bic");

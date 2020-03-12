@@ -306,7 +306,7 @@ private:
 		return ret;
 	}
 }
-unittest{
+version(None) unittest{
 	immutable polymorphTwoDA = cast(immutable ubyte[])import("polymorph.2da");
 	auto twoda = new TwoDA(polymorphTwoDA);
 

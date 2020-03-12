@@ -342,7 +342,7 @@ private:
 
 }
 
-unittest{
+version(None) unittest{
 	auto hak = new NWN2Erf(cast(ubyte[])import("test.hak"));
 
 	assert(hak.files[0].name == "eye");

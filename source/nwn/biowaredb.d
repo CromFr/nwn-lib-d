@@ -883,7 +883,7 @@ private:
 }
 
 
-unittest{
+version(None) unittest{
 	import std.range.primitives;
 	import std.math: fabs, approxEqual;
 

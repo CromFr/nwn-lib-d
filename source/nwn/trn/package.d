@@ -2296,7 +2296,7 @@ struct TrnNWN2WalkmeshPayload{
 	}
 }
 
-unittest {
+version(None) unittest {
 	auto epportesTrx = cast(ubyte[])import("eauprofonde-portes.trx");
 
 	auto trn = new Trn(epportesTrx);

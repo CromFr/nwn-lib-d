@@ -336,46 +336,35 @@ struct GenericMesh {
 
 		foreach(triangleIndex, const ref triangleCutIndices ; triangleToTriCutIndices){
 
-			DList!uint32_t[] polygonCuts;
-			size_t extendPolygonCuts(uint32_t[2] segment){
-				foreach(pci, ref polygonCut ; polygonCuts){
-					static foreach(i ; 0 .. 2){
-						if(polygonCut.front == segment[i]){
-							polygonCut.insertFront(segment[!i]);
-							return pci;
-						}
-						else if(polygonCut.back == segment[i]){
-							polygonCut.insertBack(segment[!i]);
-							return pci;
-						}
-					}
-				}
-				auto len = polygonCuts.length;
-				polygonCuts ~= DList!uint32_t(segment);
-				return len;
-			}
-
-			// Merge cut segments into polygonal cuts (multi-vertex cut lines)
+			// Merge cut segments into chains (multi-vertex cut lines)
 			// and build tables for relationship between vertices, triangle edges and polygon cut ends
-			uint32_t[][3] verticesOnEdge; // Ordered list of vertices on one edge
-			size_t[uint32_t] vertexToPolygonalCut; // Vertex => polygon cut offset
-			ubyte[uint32_t] vertexToEdge; // vertex ID => edge offset
+			Chains!uint32_t cutChains;
 			foreach(ref tcut ; triangleCutIndices.map!(a => mergedCut.trianglesCut[a])){
 				assert(tcut.cutVertices[0] != uint32_t.max && tcut.cutVertices[1] != uint32_t.max);
-				auto polygonIndex = extendPolygonCuts(tcut.cutVertices);
+				cutChains.extend(tcut.cutVertices);
+			}
+			uint32_t[][3] verticesOnEdge; // Ordered list of vertices on one edge
+			size_t[uint32_t] vertexToCutChainIndex; // Vertex => polygon cut offset
+			ubyte[uint32_t] vertexToEdge; // vertex ID => edge offset
+			foreach(ref tcut ; triangleCutIndices.map!(a => mergedCut.trianglesCut[a])){
 				static foreach(i ; 0 .. 2){{
 					immutable edgeIndex = tcut.verticesEdge[i];
 					if(edgeIndex != ubyte.max){
 						immutable vertexIndex = tcut.cutVertices[i];
+
+						auto cutChainIndex = cutChains.countUntil!(a => a.front == vertexIndex || a.back == vertexIndex);
+						assert(cutChainIndex >= 0);
+
 						verticesOnEdge[edgeIndex] ~= vertexIndex;
-						vertexToPolygonalCut[vertexIndex] = polygonIndex;
+						vertexToCutChainIndex[vertexIndex] = cutChainIndex;
 						vertexToEdge[vertexIndex] = edgeIndex;
 					}
 				}}
 			}
 
 			debug{
-				foreach(ref cut ; polygonCuts){
+				stderr.writeln("cuts for triangle ", triangleIndex, ": ", cutChains[].map!(a => a.array).array);
+				foreach(ref cut ; cutChains){
 					assert(cut.front in vertexToEdge, format!"Cut %s first vertex is not on a triangle edge (incomplete cut)"(cut.array));
 					assert(cut.back in vertexToEdge, format!"Cut %s last vertex is not on a triangle edge (incomplete cut)"(cut.array));
 				}
@@ -390,10 +379,10 @@ struct GenericMesh {
 			}
 
 			ubyte[] exploredCuts;// 0b01 for triangle-oriented direction, 0b10 for reverse direction
-			exploredCuts.length = polygonCuts.length;
+			exploredCuts.length = cutChains.length;
 			uint32_t[] exploreCut(size_t cutIndex, byte direction){
 				assert(direction == -1 || direction == 1);
-				uint32_t[] resPolygon = polygonCuts[cutIndex].array;
+				uint32_t[] resPolygon = cutChains[cutIndex].array;
 				ubyte directionMask = direction == 1? 0b01 : 0b10;
 
 				assert((exploredCuts[cutIndex] & directionMask) == 0, "Already explored cut " ~ cutIndex.to!string);
@@ -417,9 +406,9 @@ struct GenericMesh {
 								auto nextEdgeVertex = verticesOnEdge[edgeIndex][indexOnEdge + direction];
 								if(nextEdgeVertex == resPolygon[0])
 									return resPolygon;
-								nextCutIndex = vertexToPolygonalCut[nextEdgeVertex];
-								orderedCut = nextEdgeVertex == polygonCuts[nextCutIndex].front;
-								debug if(!orderedCut) assert(nextEdgeVertex == polygonCuts[nextCutIndex].back);
+								nextCutIndex = vertexToCutChainIndex[nextEdgeVertex];
+								orderedCut = nextEdgeVertex == cutChains[nextCutIndex].front;
+								debug if(!orderedCut) assert(nextEdgeVertex == cutChains[nextCutIndex].back);
 							}
 							else{
 								// Add next triangle vertex
@@ -438,9 +427,9 @@ struct GenericMesh {
 								auto nextEdgeVertex = verticesOnEdge[nextEdge][direction > 0 ? 0 : $-1];
 								if(nextEdgeVertex == resPolygon[0])
 									return resPolygon;
-								nextCutIndex = vertexToPolygonalCut[nextEdgeVertex];
-								orderedCut = nextEdgeVertex == polygonCuts[nextCutIndex].front;
-								debug if(!orderedCut) assert(nextEdgeVertex == polygonCuts[nextCutIndex].back);
+								nextCutIndex = vertexToCutChainIndex[nextEdgeVertex];
+								orderedCut = nextEdgeVertex == cutChains[nextCutIndex].front;
+								debug if(!orderedCut) assert(nextEdgeVertex == cutChains[nextCutIndex].back);
 							}
 							else{
 								// There are no cuts on nextEdge, add next triangle vertex
@@ -452,12 +441,12 @@ struct GenericMesh {
 					}
 
 					if(orderedCut){
-						resPolygon ~= polygonCuts[nextCutIndex].array;
+						resPolygon ~= cutChains[nextCutIndex].array;
 						assert((exploredCuts[nextCutIndex] & directionMask) == 0);
 						exploredCuts[nextCutIndex] |= directionMask;
 					}
 					else{
-						resPolygon ~= polygonCuts[nextCutIndex].array.reverse.array;
+						resPolygon ~= cutChains[nextCutIndex].array.reverse.array;
 						assert((exploredCuts[nextCutIndex] & (directionMask ^ 0b11)) == 0);
 						exploredCuts[nextCutIndex] |= directionMask ^ 0b11;
 					}
@@ -467,7 +456,7 @@ struct GenericMesh {
 			}
 
 			uint32_t[][] finalPolygons;
-			foreach(polygonCutIndex ; 0 .. polygonCuts.length){
+			foreach(polygonCutIndex ; 0 .. cutChains.length){
 				if((exploredCuts[polygonCutIndex] & 0b01) == 0){
 					finalPolygons ~= exploreCut(polygonCutIndex, 1);
 				}
@@ -500,7 +489,7 @@ struct GenericMesh {
 		triangles = triangles.filter!(a => a.vertices[0] != uint32_t.max).array;
 	}
 
-	unittest {
+	version(None) unittest {
 		GenericMesh simpleMesh;
 		simpleMesh.vertices = [
 			vec3f(0, 0, 0),
@@ -767,7 +756,7 @@ unittest{
 
 }
 
-unittest{
+version(None) unittest{
 	import nwn.trn;
 	import nwn.fastgff;
 	import std.range;
@@ -797,21 +786,88 @@ unittest{
 		}
 	}
 
+
+
 	foreach(ref TrnNWN2WalkmeshPayload aswm ; trn){
 		auto mesh = aswm.toGenericMesh();
+		//GenericMesh mesh;
 
 		// Cut mesh
 		foreach(i, ref wmCutter ; wmCutters){
+			//if(i == 4)
 			mesh.polygonCut(wmCutter);
+			//mesh.polygonCut(wmCutter[] += vec2f([0.05, 0.05]));
 		}
+
+		//auto offset = cast(uint32_t)mesh.vertices.length;
+		//mesh.vertices ~= vec3f(0, 0, 0);
+		//mesh.vertices ~= vec3f(2, 0, 0);
+		//mesh.vertices ~= vec3f(2, 2, 0);
+		//mesh.vertices ~= vec3f(1.2, 1, 0);
+		//mesh.vertices ~= vec3f(0, 2, 0);
+		//mesh.vertices ~= vec3f(-0.5, 1, 0);
+		//mesh.vertices ~= vec3f(-0.7, -1, 0);
+		//mesh.vertices ~= vec3f(1, -1, 0);
+		//mesh.triangulatePolygon(iota(offset, offset+7).array);
+
+		//{
+		//	auto offset = cast(uint32_t)mesh.vertices.length;
+		//	mesh.vertices = [
+		//		vec3f(0, 0, 0),
+		//		vec3f(0, 1, 0),
+		//		vec3f(1, 0, 0),
+		//	];
+		//	mesh.triangles ~= GenericMesh.Triangle([offset, offset+1, offset+2]);
+
+		//	mesh.polygonCut([
+		//		vec2f(0, 1.5),
+		//		vec2f(0.2, 0.2),
+		//		vec2f(0.4, 2),
+		//		vec2f(0.5, -0.5),
+		//		vec2f(1, 3),
+		//	]);
+		//}
+
+
+		GenericMesh.Material mat;
+		mat.diffuseColor = [1,0,0];
+		mesh.materials ~= mat;
+		mat.diffuseColor = [1,1,0];
+		mesh.materials ~= mat;
+		mat.diffuseColor = [0,1,0];
+		mesh.materials ~= mat;
+
+		//mesh.triangles[836].material = 0;
+		//mesh.triangles[837].material = 1;
+		//mesh.triangles[838].material = 2;
+
+		//uint32_t vertOffset = mesh.vertices.length.to!uint32_t;
+		//foreach(i, ref wmCutter ; wmCutters){
+		//	foreach(ref v ; wmCutter){
+		//		mesh.vertices ~= vec3f(v[0], v[1], 0.01);
+		//	}
+		//	mesh.lines ~= iota(vertOffset, (vertOffset + wmCutter.length).to!uint32_t).array ~ vertOffset;
+
+		//	vertOffset += wmCutter.length;
+		//}
+		mesh.toObj("test.obj");
 
 
 		aswm.setGenericMesh(mesh);
 		aswm.bake();
 		aswm.validate();
 
+		//f.writefln("o walkmeshcutters");
+		//size_t vertOffset = mesh.vertices.length + 1;
+		//foreach(i, ref wmCutter ; wmCutters){
 
+		//	foreach(ref v ; wmCutter){
+		//		f.writefln("v %(%s %) 0.1", v.v);
+		//	}
+		//	f.writefln("l %(%s %)", iota(vertOffset, vertOffset + wmCutter.length).array ~ vertOffset);
 
+		//	vertOffset += wmCutter.length;
+		//}
 	}
 
 

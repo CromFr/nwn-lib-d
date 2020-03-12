@@ -223,7 +223,7 @@ struct Dds {
 
 
 
-unittest{
+version(None) unittest{
 	enum names = [
 		"dds_test_rgba.dds",
 		"dds_test_rgba_dxt5.dds",
