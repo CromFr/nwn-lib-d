@@ -22,6 +22,7 @@ import std.math;
 
 import nwnlibd.path;
 import nwnlibd.parseutils;
+import nwnlibd.geometry;
 import tools.common.getopt;
 import nwn.trn;
 import gfm.math.vector;
@@ -596,7 +597,15 @@ int main(string[] args){
 					stderr.writeln("Cutting mesh");
 					auto mesh = aswm.toGenericMesh();
 					foreach(i, ref wmCutter ; wmCutters){
-						stderr.writefln("  Walkmesh cutter %d / %d", i, wmCutters.length);
+						stderr.writefln("  Walkmesh cutter %d / %d", i + 1, wmCutters.length);
+						if(wmCutter.length < 3){
+							stderr.writeln("    Warning: Invalid walkmesh cutter geometry (cutter n°%d has only %d vertices)", i + 1, wmCutter.length);
+							continue;
+						}
+						if(isPolygonComplex(wmCutter)){
+							stderr.writeln("    Warning: Complex / self intersecting walkmesh cutters are not supported yet: ", wmCutter);
+							continue;
+						}
 						mesh.polygonCut(wmCutter);
 					}
 					aswm.setGenericMesh(mesh);
