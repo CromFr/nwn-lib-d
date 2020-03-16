@@ -199,9 +199,9 @@ struct GenericMesh {
 			if(cutEdges.length == 0)
 				continue; // The cutting line does not cross any triangle edge
 
-			// TODO: What happens if the cutting line goes exactly through a vertex, and cut only one edge
+			assert(cutEdges.length != 1, "Cutting on triangle vertex not supported yet");
 			assert(cutEdges.length == 2,
-				"Non-Euclidean geometry: You succeeded at cutting "~cutEdges.length.to!string~" edges of a triangle with a line, well done");
+				"Non-Euclidean geometry: You succeeded at cutting "~cutEdges.length.to!string~" edges of a triangle with a line, well done !");
 
 			auto triDirection = isTriangleClockwise(tri2DVertices);
 
@@ -336,46 +336,34 @@ struct GenericMesh {
 
 		foreach(triangleIndex, const ref triangleCutIndices ; triangleToTriCutIndices){
 
-			DList!uint32_t[] polygonCuts;
-			size_t extendPolygonCuts(uint32_t[2] segment){
-				foreach(pci, ref polygonCut ; polygonCuts){
-					static foreach(i ; 0 .. 2){
-						if(polygonCut.front == segment[i]){
-							polygonCut.insertFront(segment[!i]);
-							return pci;
-						}
-						else if(polygonCut.back == segment[i]){
-							polygonCut.insertBack(segment[!i]);
-							return pci;
-						}
-					}
-				}
-				auto len = polygonCuts.length;
-				polygonCuts ~= DList!uint32_t(segment);
-				return len;
-			}
-
-			// Merge cut segments into polygonal cuts (multi-vertex cut lines)
+			// Merge cut segments into chains (multi-vertex cut lines)
 			// and build tables for relationship between vertices, triangle edges and polygon cut ends
-			uint32_t[][3] verticesOnEdge; // Ordered list of vertices on one edge
-			size_t[uint32_t] vertexToPolygonalCut; // Vertex => polygon cut offset
-			ubyte[uint32_t] vertexToEdge; // vertex ID => edge offset
+			Chains!uint32_t cutChains;
 			foreach(ref tcut ; triangleCutIndices.map!(a => mergedCut.trianglesCut[a])){
 				assert(tcut.cutVertices[0] != uint32_t.max && tcut.cutVertices[1] != uint32_t.max);
-				auto polygonIndex = extendPolygonCuts(tcut.cutVertices);
+				cutChains.extend(tcut.cutVertices);
+			}
+			uint32_t[][3] verticesOnEdge; // Ordered list of vertices on one edge
+			size_t[uint32_t] vertexToCutChainIndex; // Vertex => polygon cut offset
+			ubyte[uint32_t] vertexToEdge; // vertex ID => edge offset
+			foreach(ref tcut ; triangleCutIndices.map!(a => mergedCut.trianglesCut[a])){
 				static foreach(i ; 0 .. 2){{
 					immutable edgeIndex = tcut.verticesEdge[i];
 					if(edgeIndex != ubyte.max){
 						immutable vertexIndex = tcut.cutVertices[i];
+
+						auto cutChainIndex = cutChains.countUntil!(a => a.front == vertexIndex || a.back == vertexIndex);
+						assert(cutChainIndex >= 0);
+
 						verticesOnEdge[edgeIndex] ~= vertexIndex;
-						vertexToPolygonalCut[vertexIndex] = polygonIndex;
+						vertexToCutChainIndex[vertexIndex] = cutChainIndex;
 						vertexToEdge[vertexIndex] = edgeIndex;
 					}
 				}}
 			}
 
 			debug{
-				foreach(ref cut ; polygonCuts){
+				foreach(ref cut ; cutChains){
 					assert(cut.front in vertexToEdge, format!"Cut %s first vertex is not on a triangle edge (incomplete cut)"(cut.array));
 					assert(cut.back in vertexToEdge, format!"Cut %s last vertex is not on a triangle edge (incomplete cut)"(cut.array));
 				}
@@ -390,13 +378,14 @@ struct GenericMesh {
 			}
 
 			ubyte[] exploredCuts;// 0b01 for triangle-oriented direction, 0b10 for reverse direction
-			exploredCuts.length = polygonCuts.length;
+			exploredCuts.length = cutChains.length;
 			uint32_t[] exploreCut(size_t cutIndex, byte direction){
 				assert(direction == -1 || direction == 1);
-				uint32_t[] resPolygon = polygonCuts[cutIndex].array;
+				uint32_t[] resPolygon = cutChains[cutIndex].array;
 				ubyte directionMask = direction == 1? 0b01 : 0b10;
 
 				assert((exploredCuts[cutIndex] & directionMask) == 0, "Already explored cut " ~ cutIndex.to!string);
+				exploredCuts[cutIndex] |= directionMask;
 
 				while(1){
 					// Explore last vertex of resPolygon
@@ -417,9 +406,9 @@ struct GenericMesh {
 								auto nextEdgeVertex = verticesOnEdge[edgeIndex][indexOnEdge + direction];
 								if(nextEdgeVertex == resPolygon[0])
 									return resPolygon;
-								nextCutIndex = vertexToPolygonalCut[nextEdgeVertex];
-								orderedCut = nextEdgeVertex == polygonCuts[nextCutIndex].front;
-								debug if(!orderedCut) assert(nextEdgeVertex == polygonCuts[nextCutIndex].back);
+								nextCutIndex = vertexToCutChainIndex[nextEdgeVertex];
+								orderedCut = nextEdgeVertex == cutChains[nextCutIndex].front;
+								debug if(!orderedCut) assert(nextEdgeVertex == cutChains[nextCutIndex].back);
 							}
 							else{
 								// Add next triangle vertex
@@ -438,9 +427,9 @@ struct GenericMesh {
 								auto nextEdgeVertex = verticesOnEdge[nextEdge][direction > 0 ? 0 : $-1];
 								if(nextEdgeVertex == resPolygon[0])
 									return resPolygon;
-								nextCutIndex = vertexToPolygonalCut[nextEdgeVertex];
-								orderedCut = nextEdgeVertex == polygonCuts[nextCutIndex].front;
-								debug if(!orderedCut) assert(nextEdgeVertex == polygonCuts[nextCutIndex].back);
+								nextCutIndex = vertexToCutChainIndex[nextEdgeVertex];
+								orderedCut = nextEdgeVertex == cutChains[nextCutIndex].front;
+								debug if(!orderedCut) assert(nextEdgeVertex == cutChains[nextCutIndex].back);
 							}
 							else{
 								// There are no cuts on nextEdge, add next triangle vertex
@@ -452,12 +441,12 @@ struct GenericMesh {
 					}
 
 					if(orderedCut){
-						resPolygon ~= polygonCuts[nextCutIndex].array;
+						resPolygon ~= cutChains[nextCutIndex].array;
 						assert((exploredCuts[nextCutIndex] & directionMask) == 0);
 						exploredCuts[nextCutIndex] |= directionMask;
 					}
 					else{
-						resPolygon ~= polygonCuts[nextCutIndex].array.reverse.array;
+						resPolygon ~= cutChains[nextCutIndex].array.reverse.array;
 						assert((exploredCuts[nextCutIndex] & (directionMask ^ 0b11)) == 0);
 						exploredCuts[nextCutIndex] |= directionMask ^ 0b11;
 					}
@@ -467,7 +456,7 @@ struct GenericMesh {
 			}
 
 			uint32_t[][] finalPolygons;
-			foreach(polygonCutIndex ; 0 .. polygonCuts.length){
+			foreach(polygonCutIndex ; 0 .. cutChains.length){
 				if((exploredCuts[polygonCutIndex] & 0b01) == 0){
 					finalPolygons ~= exploreCut(polygonCutIndex, 1);
 				}
