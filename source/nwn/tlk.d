@@ -4,13 +4,14 @@ module nwn.tlk;
 import std.stdint;
 import std.string;
 import std.conv;
+import std.traits: EnumMembers;
 
 import nwn.gff : GffNode, GffType, gffTypeToNative;
 
 debug import std.stdio: writeln;
 version(unittest) import std.exception: assertThrown, assertNotThrown;
 
-public import nwn.constants: Language;
+public import nwn.constants: Language, LanguageGender;
 
 class TlkOutOfBoundsException : Exception{
 	@safe pure nothrow this(string msg, string f=__FILE__, size_t l=__LINE__, Throwable t=null){
@@ -40,25 +41,28 @@ class StrRefResolver{
 
 	/// Resolves an ExoLocString GffNode to the appropriate language using the tlk tables and language ID
 	string opIndex(in GffNode node)const{
-		assert(node.type==GffType.ExoLocString, "Node '"~node.label~"' is not an ExoLocString");
+		assert(node.type == GffType.ExoLocString, "Node '"~node.label~"' is not an ExoLocString");
 
-		if(node.exoLocStringContainer.strref!=StrRef.max){
+		if(node.exoLocStringContainer.strings.length > 0){
+
+			immutable preferedLang = standartTable.language * 2;
+			if(auto str = preferedLang in node.exoLocStringContainer.strings)
+				return *str;
+			if(auto str = preferedLang + 1 in node.exoLocStringContainer.strings)
+				return *str;
+
+			foreach(lang ; EnumMembers!LanguageGender){
+				if(auto str = lang in node.exoLocStringContainer.strings)
+					return *str;
+			}
+		}
+
+		if(node.exoLocStringContainer.strref != StrRef.max){
 			try return this[node.exoLocStringContainer.strref];
 			catch(TlkOutOfBoundsException){}
 		}
 
-		if(node.exoLocStringContainer.strings.length == 0)
-			return "invalid_strref";
-
-		immutable strid = standartTable.language * 2;
-		//male
-		if(auto s = strid in node.exoLocStringContainer.strings)
-			return (*s).to!string;
-		//female
-		if(auto s = strid+1 in node.exoLocStringContainer.strings)
-			return (*s).to!string;
-
-		return node.exoLocStringContainer.strings.values[0].to!string;
+		return "invalid_strref";
 	}
 
 	const Tlk standartTable;
@@ -98,21 +102,19 @@ unittest{
 	node = Tlk.UserTlkIndexOffset + 1;
 	node = [0:"male english", 1:"female english", 2:"male french"];
 
-	assert(strref[node] == "Café liégeois");
-	node = Tlk.UserTlkIndexOffset + 50;
 	assert(strref[node] == "male french");
-	node = StrRef.max;
-	assert(strref[node] == "male french");
-	node = StrRef.max;
-	node = [1:"female english"];
-	assert(strref[node] == "female english");
-	node = [1:"female english", 3:"female french"];
-	assert(strref[node] == "female french");
-	node = [1:"female english", 4:"male yolo"];
-	assert(strref[node] == "female english");
-	node = (typeof(gffTypeToNative!(GffType.ExoLocString).strings)).init;
-	assert(strref[node] == "invalid_strref");
 
+	node = [0:"male english", 1:"female english"];
+	assert(strref[node] == "male english");
+
+	node = [4:"male german", 6:"female italian"];
+	assert(strref[node] == "male german");
+
+	node.exoLocStringContainer.strings.clear;
+	assert(strref[node] == "Café liégeois");
+
+	node = StrRef.max;
+	assert(strref[node] == "invalid_strref");
 }
 
 
