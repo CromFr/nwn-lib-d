@@ -415,6 +415,30 @@ struct GffField{
 		return value.get!GffList[index];
 	}
 
+	/// Serialize the field in a human-readable format. Does not represents struct or list children.
+	string toString(){
+		typeswitch:
+		final switch(type) with(GffType){
+			foreach(Type ; EnumMembers!GffType){
+				case Type:
+				static if(Type == Invalid)
+					assert(0, "Invalid type");
+				else static if(Type == Void){
+					import std.base64: Base64;
+					return Base64.encode(value.get!(ToNative!Type));
+				}
+				else static if(Type == Struct){
+					return "{Struct}";
+				}
+				else static if(Type == List){
+					return "[List]";
+				}
+				else{
+					return value.get!(ToNative!Type).to!string;
+				}
+			}
+		}
+	}
 
 	/// Serialize the field and its children in a human-readable format
 	string toPrettyString(in string tab = null){
