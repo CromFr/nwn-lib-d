@@ -8,6 +8,8 @@ import std.stdio;
 import std.conv: to, ConvException;
 import std.traits;
 import std.string;
+import std.path;
+import std.exception;
 import std.math: log10;
 import std.typecons: Tuple, Nullable;
 version(unittest) import std.exception: assertThrown, assertNotThrown;
@@ -45,7 +47,8 @@ int main(string[] args){
 				usage(args[0]);
 				return 1;
 			case "search":{
-				string playerid = r".*";
+				string playerid;
+				bool moduleOnly = false;
 				string name = r".*";
 				enum DeletedFlag: int { no = 0, yes = 1, any }
 				DeletedFlag deleted = DeletedFlag.any;
@@ -53,6 +56,7 @@ int main(string[] args){
 				else             bool colors = true;
 
 				auto res = getopt(args,
+					"module", "Search only for module variables (vars not linked to a player character)", &moduleOnly,
 					"playerid", "Player ID regex. Player ID is build by appending AccountName + CharacterName, up to 32 characters.", &playerid,
 					"name", "Variable name regex", &name,
 					"deleted", "Search for either deleted variables or not. Valid values are: any (default), yes, no", &deleted,
@@ -65,7 +69,17 @@ int main(string[] args){
 					return 1;
 				}
 
-				const db = new BiowareDB(args[1]);
+				if(moduleOnly)
+					enforce(playerid is null, "--module cannot be used with --playerid");
+				else
+					playerid = r".*";
+
+
+				auto dbName = args[1];
+				if(dbName.extension.toLower == ".dbf")
+					dbName = dbName.stripExtension;
+
+				const db = new BiowareDB(dbName, false);
 				auto dbLen = db.length;
 				int indexLength = cast(int)log10(dbLen) + 1;
 
@@ -78,9 +92,18 @@ int main(string[] args){
 					if(deleted != DeletedFlag.any && var.deleted != deleted)
 						continue;
 
-					auto playerIDCap = var.playerid.toString.matchFirst(rgxPlayerID);
-					if(playerIDCap.empty)
-						continue;
+					string[3] playerIDCapStr;
+					if(moduleOnly){
+						if(var.playerid.toString != "")
+							continue;
+						playerIDCapStr = [null, null, null];
+					}
+					else{
+						auto playerIDCap = var.playerid.toString.matchFirst(rgxPlayerID);
+						if(playerIDCap.empty)
+							continue;
+						playerIDCapStr = [playerIDCap.pre, playerIDCap.hit, playerIDCap.post];
+					}
 
 					auto nameCap = var.name.matchFirst(rgxName);
 					if(nameCap.empty)
@@ -103,12 +126,20 @@ int main(string[] args){
 							(var.deleted? colfg.red ~ "D" ~ colfg.def ~ colvar.faded : " ")
 							~ " " ~ var.index.to!string.leftJustify(indexLength)
 							~ " " ~ colvar.italic ~ var.timestamp.toSimpleString ~ colvar.noitalic
-							~ " " ~ (playerIDCap.pre ~ colvar.ulined ~ playerIDCap.hit ~ colvar.noulined ~ playerIDCap.post).leftJustify(32 + 9)
+							~ " " ~ (playerIDCapStr[0] ~ colvar.ulined ~ playerIDCapStr[1] ~ colvar.noulined ~ playerIDCapStr[2]).leftJustify(32 + 9)
+							~ " " ~ var.type.to!string.leftJustify(6)
 							~ " " ~ (nameCap.pre ~ colvar.ulined ~ nameCap.hit ~ colvar.noulined ~ nameCap.post).leftJustify(32 + 9)
-							~ " " ~ var.type.to!string ~ " = " ~ value ~ colvar.end);
+							~ " = " ~ value ~ colvar.end);
 					}
 					else{
-
+						writeln(
+							(var.deleted? "D" : " ")
+							~ " " ~ var.index.to!string.leftJustify(indexLength)
+							~ " " ~ var.timestamp.toSimpleString
+							~ " " ~ var.playerid.toString.leftJustify(32)
+							~ " " ~ var.type.to!string.leftJustify(6)
+							~ " " ~ var.name.leftJustify(32 + 9)
+							~ " = " ~ value);
 					}
 				}
 

@@ -145,11 +145,12 @@ class BiowareDB{
 	}
 
 	/// Constructor with file path without its extension. It will try to open the dbf and ftp files.
-	this(in string dbFilesPath){
+	this(in string dbFilesPath, bool buildIndex = true){
 		this(
 			dbFilesPath~".dbf",
 			null,//Not used
 			dbFilesPath~".fpt",
+			buildIndex
 		);
 	}
 
