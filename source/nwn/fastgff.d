@@ -173,26 +173,22 @@ struct GffStruct{
 	}
 
 	/// Get child GffField
-	GffField opIndex(in string label){
+	GffField opIndex(in string label) const{
 		assert(gff !is null, "GffStruct has no data");
 		auto fieldIndex = index[label];
 		return GffField(gff, gff.getField(fieldIndex));
 	}
 
 	/// Allows `foreach(gffField ; this)`
-	int opApply(scope int delegate(GffField child) dlg){
-		int res = 0;
-		foreach(uint32_t fieldIndex ; this){
+	int opApply(scope int delegate(GffField child) dlg) const{
+		return _opApply(delegate(uint32_t fieldIndex){
 			auto field = gff.getField(fieldIndex);
-
-			if((res = dlg(GffField(gff, field))) != 0)
-				return res;
-		}
-		return res;
+			return dlg(GffField(gff, field));
+		});
 	}
 
 	/// Allows `"value" in this`
-	Nullable!GffField opBinaryRight(string op : "in")(string label)
+	Nullable!GffField opBinaryRight(string op : "in")(string label) const
 	{
 		if(gff is null)
 			return Nullable!GffField();
@@ -205,26 +201,28 @@ struct GffStruct{
 
 
 	/// Serialize the struct and its children in a human-readable format
-	string toPrettyString(in string tab = null){
+	string toPrettyString(in string tab = null) const{
 		string ret;
 		ret ~= "(Struct "~(structType == structType.max? "-1" : structType.to!string)~")";
-		foreach(GffField field ; this){
+		foreach(field ; this){
 			ret ~= "\n" ~ field.toPrettyString(tab ~ "   | ");
 		}
 		return ret;
 	}
 
 package:
-	this(FastGff gff, FastGff.Struct* internal){
+	this(in FastGff gff, in FastGff.Struct* internal){
 		this.gff = gff;
 		this.internal = internal;
 
 		buildIndex();
 	}
-	FastGff gff = null;
-	FastGff.Struct* internal = null;
 
-	int opApply(scope int delegate(uint32_t fieldIndex) dlg){
+private:
+	const FastGff gff = null;
+	const FastGff.Struct* internal = null;
+
+	int _opApply(scope int delegate(uint32_t fieldIndex) dlg) const{
 		if(gff is null)
 			return 0;
 
@@ -246,14 +244,13 @@ package:
 		}
 	}
 
-
-private:
 	uint32_t[string] index;
 	void buildIndex(){
-		foreach(uint32_t fieldIndex ; this){
+		_opApply(delegate(uint32_t fieldIndex){
 			auto field = gff.getField(fieldIndex);
 			index[gff.getLabel(field.label_index).toString] = fieldIndex;
-		}
+			return 0;
+		});
 	}
 }
 /// GFF list value type (Array of GffStruct)
@@ -267,15 +264,11 @@ struct GffList{
 	}
 
 	/// Allows `foreach(index, gffStruct ; this)`
-	int opApply(scope int delegate(size_t index, GffStruct child) dlg){
-		int res = 0;
-		foreach(index, uint32_t structIndex ; this){
+	int opApply(scope int delegate(size_t index, GffStruct child) dlg) const {
+		return _opApply(delegate(index, uint32_t structIndex){
 			auto gffstruct = gff.getStruct(structIndex);
-
-			if((res = dlg(index, GffStruct(gff, gffstruct))) != 0)
-				return res;
-		}
-		return res;
+			return dlg(index, GffStruct(gff, gffstruct));
+		});
 	}
 
 	@property{
@@ -286,7 +279,7 @@ struct GffList{
 	}
 
 	/// Serialize the list and its children in a human-readable format
-	string toPrettyString(in string tab = null){
+	string toPrettyString(in string tab = null) const {
 		string ret;
 		ret ~= "(List)";
 		foreach(index, GffStruct gffstruct ; this){
@@ -296,12 +289,7 @@ struct GffList{
 	}
 
 package:
-	FastGff gff = null;
-	uint32_t listOffset = -1;
-	uint32_t listLength;
-
-
-	this(FastGff gff, uint32_t listOffset){
+	this(in FastGff gff, uint32_t listOffset){
 		this.gff = gff;
 		this.listOffset = listOffset;
 
@@ -309,7 +297,12 @@ package:
 	}
 
 
-	int opApply(scope int delegate(size_t index, uint32_t structIndex) dlg){
+private:
+	const FastGff gff = null;
+	uint32_t listOffset = -1;
+	uint32_t listLength;
+
+	int _opApply(scope int delegate(size_t index, uint32_t structIndex) dlg) const{
 		int res = 0;
 		if(gff !is null){
 			auto list = gff.getStructList(listOffset);
@@ -344,7 +337,7 @@ struct GffField{
 		}
 
 		/// Get the value as a Variant
-		Value value(){
+		inout(Value) value() inout{
 
 			final switch(type) with(GffType){
 				foreach(Type ; EnumMembers!GffType){
@@ -389,10 +382,10 @@ struct GffField{
 							return Value(fieldData[4 .. 4 + length].dup);
 						}
 						else static if(Type == Struct){
-							return Value(GffStruct(gff, gff.getStruct(internal.data_or_data_offset)));
+							return cast(inout)Value(GffStruct(gff, gff.getStruct(internal.data_or_data_offset)));
 						}
 						else static if(Type == List){
-							return Value(GffList(gff, internal.data_or_data_offset));
+							return cast(inout)Value(GffList(gff, internal.data_or_data_offset));
 						}
 					}
 				}
@@ -416,7 +409,7 @@ struct GffField{
 	}
 
 	/// Serialize the field in a human-readable format. Does not represents struct or list children.
-	string toString(){
+	string toString() const{
 		typeswitch:
 		final switch(type) with(GffType){
 			foreach(Type ; EnumMembers!GffType){
@@ -441,7 +434,7 @@ struct GffField{
 	}
 
 	/// Serialize the field and its children in a human-readable format
-	string toPrettyString(in string tab = null){
+	string toPrettyString(in string tab = null) const{
 		import std.string;
 		string ret;
 
@@ -474,12 +467,13 @@ struct GffField{
 
 
 package:
-	this(FastGff gff, FastGff.Field* field){
+	this(in FastGff gff, in FastGff.Field* field){
 		this.gff = gff;
 		internal = field;
 	}
-	FastGff gff = null;
-	FastGff.Field* internal = null;
+private:
+	const FastGff gff = null;
+	const FastGff.Field* internal = null;
 
 }
 
@@ -512,7 +506,7 @@ class FastGff{
 
 	@property{
 		/// Get root node (accessible with alias this)
-		GffStruct root(){
+		GffStruct root() inout{
 			return GffStruct(this, getStruct(0));
 		}
 
@@ -528,14 +522,14 @@ class FastGff{
 	}
 
 	/// Serialize the entire file in a human-readable format
-	string toPrettyString(){
+	string toPrettyString() const{
 		import std.string: stripRight;
 		return "========== GFF-"~header.file_type.idup.stripRight~"-"~header.file_version.idup.stripRight~" ==========\n"
 				~ root.toPrettyString;
 	}
 
 
-package:
+private:
 	Header header;
 	Struct[] structs;
 	Field[] fields;
