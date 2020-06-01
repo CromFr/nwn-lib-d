@@ -8,6 +8,7 @@ import std.stdio;
 import std.conv: to, ConvException;
 import std.traits;
 import std.string;
+import std.algorithm: remove;
 import std.typecons: Tuple, Nullable;
 version(unittest) import std.exception: assertThrown, assertNotThrown;
 
@@ -27,12 +28,14 @@ int main(string[] args){
 	string inputPath, outputPath;
 	Format inputFormat = Format.detect, outputFormat = Format.detect;
 	string[] setValuesList;
+	bool cleanLocale = false;
 	auto res = getopt(args,
 		"i|input", "Input file", &inputPath,
 		"j|input-format", "Input file format ("~EnumMembers!Format.stringof[6..$-1]~")", &inputFormat,
 		"o|output", "<file>:<format> Output file and format", &outputPath,
 		"k|output-format", "Output file format ("~EnumMembers!Format.stringof[6..$-1]~")", &outputFormat,
 		"s|set", "Set values in the GFF file. See section SET and PATH.\nEx: 'DayNight.7.SkyDomeModel=my_sky_dome.tga'", &setValuesList,
+		"locale-clean", "Remove empty values from localized strings.\n", &cleanLocale,
 		);
 	if(res.helpWanted){
 		improvedGetoptPrinter(
@@ -228,7 +231,35 @@ int main(string[] args){
 	}
 
 
+	if(cleanLocale){
 
+		static void cleanGffLocale(ref GffNode node){
+			switch(node.type) with(GffType){
+				case ExoLocString:
+					foreach(k ; node.as!ExoLocString.strings.keys){
+						if(node.as!ExoLocString.strings[k] == ""){
+					 		node.as!ExoLocString.strings.remove(k);
+						}
+					}
+					break;
+				case Struct:
+					foreach(ref GffNode innerNode ; node.as!Struct){
+						cleanGffLocale(innerNode);
+					}
+					break;
+				case List:
+					foreach(ref GffNode innerNode ; node.as!List){
+						cleanGffLocale(innerNode);
+					}
+					break;
+				default:
+					break;
+
+			}
+		}
+
+		cleanGffLocale(gff.root);
+	}
 
 
 
