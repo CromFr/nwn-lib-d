@@ -90,12 +90,12 @@ int main(string[] args){
 
 					string value;
 					final switch(var.type) with(BiowareDB.VarType){
-						case Int:          value = db.getVariableValue!NWInt(var.index).to!string;        break;
-						case Float:        value = db.getVariableValue!NWFloat(var.index).to!string;      break;
-						case String:       value = db.getVariableValue!NWString(var.index).to!string;     break;
-						case Vector:       value = db.getVariableValue!NWVector(var.index).to!string;     break;
-						case Location:     value = db.getVariableValue!NWLocation(var.index).to!string;   break;
-						case BinaryObject: value = Base64.encode(db.getVariableValue!(nwn.biowaredb.BinaryObject)(var.index)); break;
+						case Int:      value = db.getVariableValue!NWInt(var.index).to!string;        break;
+						case Float:    value = db.getVariableValue!NWFloat(var.index).to!string;      break;
+						case String:   value = db.getVariableValue!NWString(var.index).to!string;     break;
+						case Vector:   value = db.getVariableValue!NWVector(var.index).to!string;     break;
+						case Location: value = db.getVariableValue!NWLocation(var.index).to!string;   break;
+						case Object:   value = Base64.encode(db.getVariableValue!(nwn.biowaredb.BinaryObject)(var.index)); break;
 					}
 
 					if(colors){

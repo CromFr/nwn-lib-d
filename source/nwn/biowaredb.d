@@ -61,6 +61,7 @@ import std.datetime: Clock, DateTime;
 import std.typecons: Tuple, Nullable;
 import std.string;
 import std.exception: enforce;
+import std.json;
 import nwnlibd.parseutils;
 
 debug import std.stdio: writeln;
@@ -118,16 +119,17 @@ class BiowareDB{
 
 	/// Constructor with raw data
 	/// Note: data will be copied inside the class
-	this(in ubyte[] dbfData, in ubyte[] cdxData, in ubyte[] fptData){
+	this(in ubyte[] dbfData, in ubyte[] cdxData, in ubyte[] fptData, bool buildIndex = true){
 		table.data = dbfData.dup();
 		//index.data = null;//Not used
 		memo.data = fptData.dup();
 
-		buildIndex();
+		if(buildIndex)
+			buildTableIndex();
 	}
 
 	/// Constructor with file paths
-	this(in string dbfPath, in string cdxPath, in string fptPath){
+	this(in string dbfPath, in string cdxPath, in string fptPath, bool buildIndex = true){
 		import std.stdio: File;
 
 		auto dbf = File(dbfPath, "r");
@@ -138,7 +140,8 @@ class BiowareDB{
 		memo.data.length = fpt.size.to!size_t;
 		memo.data = fpt.rawRead(memo.data);
 
-		buildIndex();
+		if(buildIndex)
+			buildTableIndex();
 	}
 
 	/// Constructor with file path without its extension. It will try to open the dbf and ftp files.
@@ -147,7 +150,7 @@ class BiowareDB{
 			dbFilesPath~".dbf",
 			null,//Not used
 			dbFilesPath~".fpt",
-			);
+		);
 	}
 
 	/// Returns a tuple with dbf and fpt raw data (accessible with .dbf and .fpt)
@@ -165,7 +168,7 @@ class BiowareDB{
 		String = 'S',
 		Vector = 'V',
 		Location = 'L',
-		BinaryObject = 'O',
+		Object = 'O',
 	}
 	/// Convert a BiowareDB.VarType into the associated native type
 	template toVarType(T){
@@ -174,7 +177,7 @@ class BiowareDB{
 		else static if(is(T == NWString))     alias toVarType = VarType.String;
 		else static if(is(T == NWVector))     alias toVarType = VarType.Vector;
 		else static if(is(T == NWLocation))   alias toVarType = VarType.Location;
-		else static if(is(T == BinaryObject)) alias toVarType = VarType.BinaryObject;
+		else static if(is(T == BinaryObject)) alias toVarType = VarType.Object;
 		else static assert(0);
 	}
 	/// Representation of a stored variable
@@ -237,15 +240,17 @@ class BiowareDB{
 			return (cast(const char[])record[RecOffset.DBL1 .. RecOffset.DBL1End]).strip().to!T;
 		}
 		else static if(is(T == NWString)){
-			auto memoIndex = (cast(const char[])record[RecOffset.Memo .. RecOffset.MemoEnd]).strip().to!size_t;
-			return (cast(const char[])memo.getBlockContent(memoIndex)).to!string;
+			auto memoIndexStr = (cast(const char[])record[RecOffset.Memo .. RecOffset.MemoEnd]).strip();
+			if(memoIndexStr.length == 0)
+				return null;
+			return (cast(const char[])memo.getBlockContent(memoIndexStr.to!size_t)).to!string;
 		}
 		else static if(is(T == NWVector)){
 			return NWVector([
-					(cast(const char[])record[RecOffset.DBL1 .. RecOffset.DBL1End]).strip().to!NWFloat,
-					(cast(const char[])record[RecOffset.DBL2 .. RecOffset.DBL2End]).strip().to!NWFloat,
-					(cast(const char[])record[RecOffset.DBL3 .. RecOffset.DBL3End]).strip().to!NWFloat,
-				]);
+				(cast(const char[])record[RecOffset.DBL1 .. RecOffset.DBL1End]).strip().to!NWFloat,
+				(cast(const char[])record[RecOffset.DBL2 .. RecOffset.DBL2End]).strip().to!NWFloat,
+				(cast(const char[])record[RecOffset.DBL3 .. RecOffset.DBL3End]).strip().to!NWFloat,
+			]);
 		}
 		else static if(is(T == NWLocation)){
 			import std.math: atan2, PI;
@@ -261,11 +266,64 @@ class BiowareDB{
 					(cast(const char[])record[RecOffset.DBL3 .. RecOffset.DBL3End]).strip().to!NWFloat,
 				]),
 				facing * 180.0 / PI
-				);
+			);
 		}
 		else static if(is(T == BinaryObject)){
-			auto memoIndex = (cast(const char[])record[RecOffset.Memo .. RecOffset.MemoEnd]).strip().to!size_t;
-			return memo.getBlockContent(memoIndex);
+			auto memoIndexStr = (cast(const char[])record[RecOffset.Memo .. RecOffset.MemoEnd]).strip();
+			if(memoIndexStr.length == 0)
+				return null;
+			return memo.getBlockContent(memoIndexStr.to!size_t);
+		}
+		else static assert(0);
+	}
+
+	const(string) getVariableValueString(size_t index) const{
+		const record = table.getRecord(index);
+		const type = record[RecOffset.VarType].to!VarType;
+
+		final switch(type) with(VarType){
+			case Int:
+				return getVariableValue!NWInt(index).to!string;
+			case Float:
+				return getVariableValue!NWFloat(index).to!string;
+			case String:
+				return getVariableValue!NWString(index).to!string;
+			case Vector:
+				return getVariableValue!NWVector(index).toString;
+			case Location:
+				return getVariableValue!NWLocation(index).toString;
+			case Object:
+				import std.base64: Base64;
+				return Base64.encode(getVariableValue!BinaryObject(index));
+		}
+	}
+
+	JSONValue getVariableValueJSON(size_t index) const{
+		JSONValue ret = cast(JSONValue[string])null;
+
+		const record = table.getRecord(index);
+		const type = record[RecOffset.VarType].to!VarType;
+
+		final switch(type) with(VarType){
+			case Int:
+				return JSONValue(getVariableValue!NWInt(index));
+			case Float:
+				return JSONValue(getVariableValue!NWFloat(index));
+			case String:
+				return JSONValue(getVariableValue!NWString(index));
+			case Vector:
+				const v = getVariableValue!NWVector(index);
+				return JSONValue(v.value);
+			case Location:
+				const l = getVariableValue!NWLocation(index);
+				return JSONValue([
+					"area": JSONValue(l.area),
+					"position": JSONValue(l.position.value),
+					"facing": JSONValue(l.facing),
+				]);
+			case Object:
+				import std.base64: Base64;
+				return JSONValue(Base64.encode(getVariableValue!BinaryObject(index)));
 		}
 	}
 
@@ -555,7 +613,7 @@ private:
 		char[32] var;
 	}
 	size_t[Key] index = null;
-	void buildIndex(){
+	void buildTableIndex(){
 		foreach(i ; 0..table.header.records_count){
 			auto record = table.getRecord(i);
 
