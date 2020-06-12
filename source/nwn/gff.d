@@ -845,7 +845,7 @@ package:
 	invariant{
 		if(m_type == GffType.Struct){
 			foreach(ref kv ; structContainer.byKeyValue){
-				assert(kv.key == kv.value.label, "Corrupted GffNode Struct: Key does not match child's label");
+				assert(kv.key == kv.value.label, "Corrupted GffNode Struct: Key does not match child's label " ~ kv.key ~ " vs " ~ kv.value.label);
 			}
 		}
 	}
