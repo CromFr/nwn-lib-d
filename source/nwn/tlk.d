@@ -22,21 +22,21 @@ class TlkOutOfBoundsException : Exception{
 alias StrRef = uint32_t;
 
 class StrRefResolver{
-	this(in Tlk standartTable, in Tlk userTable){
+	this(in Tlk standartTable, in Tlk userTable = null){
 		this.standartTable = standartTable;
 		this.userTable = userTable;
 	}
 
 	/// Get a localized string in the tlk tables (can be a standard or user strref)
 	string opIndex(in StrRef strref)const{
-		if(strref<Tlk.UserTlkIndexOffset){
+		if(strref < Tlk.UserTlkIndexOffset){
 			assert(standartTable !is null, "standartTable is null");
 			return standartTable[strref];
 		}
-		else{
-			assert(standartTable !is null, "userTable is null");
+		else if(userTable !is null){
 			return userTable[strref-Tlk.UserTlkIndexOffset];
 		}
+		return "unknown_strref_" ~ strref.to!string;
 	}
 
 	/// Resolves an ExoLocString GffNode to the appropriate language using the tlk tables and language ID
@@ -59,10 +59,12 @@ class StrRefResolver{
 
 		if(node.exoLocStringContainer.strref != StrRef.max){
 			try return this[node.exoLocStringContainer.strref];
-			catch(TlkOutOfBoundsException){}
+			catch(TlkOutOfBoundsException){
+				return "invalid_strref";
+			}
 		}
 
-		return "invalid_strref";
+		return "";
 	}
 
 	const Tlk standartTable;
@@ -114,7 +116,7 @@ unittest{
 	assert(strref[node] == "Café liégeois");
 
 	node = StrRef.max;
-	assert(strref[node] == "invalid_strref");
+	assert(strref[node] == "");
 }
 
 
