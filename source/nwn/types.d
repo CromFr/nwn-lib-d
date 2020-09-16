@@ -1,15 +1,23 @@
-
+// Types compatible with NWN
 module nwn.types;
-import std.stdint;
 
+import std.stdint;
+import std.string;
+
+/// int
 alias NWInt = int32_t;
 
+/// float
 alias NWFloat = float;
 
+/// string
 alias NWString = string;
 
+/// object
 alias NWObject = uint32_t;
 
+
+/// vector
 struct NWVector{
 	NWFloat[3] value = [0.0, 0.0, 0.0];
 
@@ -21,7 +29,9 @@ struct NWVector{
 	}
 	enum NWVector init = NWVector([0.0, 0.0, 0.0]);
 }
-
+/// location
+///
+/// Warning: The area is stored as an onject ID and can change between module runs.
 struct NWLocation{
 	NWObject area;
 	NWVector position;
@@ -42,16 +52,22 @@ template NWInitValue(T){
 	else static if(is(T == NWObject))   enum NWInitValue = NWObject.max;
 	else static if(is(T == NWVector))   enum NWInitValue = NWVector.init;
 	else static if(is(T == NWLocation)) enum NWInitValue = NWLocation.init;
+	else static if(is(T == NWItemproperty)) enum NWInitValue = NWItemproperty(-1);
 	else static assert(0, "Unknown type");
 }
 
-struct ItemProperty {
+/// itemproperty
+struct NWItemproperty {
 	int32_t type = -1;
 	int32_t subType = -1;
 	int32_t costValue = -1;
 	int32_t p1 = -1;
 
-	//string toString() const{
+	string toString() const{
+		return format!"%d.%d(%d, %d)"(type, subType, costValue, p1);
+	}
+
+	//string toPrettyString() const{
 	//	immutable propNameLabel = getTwoDA("itempropdef").get("Label", type);
 
 	//	immutable subTypeTable = getTwoDA("itempropdef").get("SubTypeResRef", type);
