@@ -570,14 +570,14 @@ int main(string[] args){
 				// Extract all walkmesh cutters data
 				alias WMCutter = vec2f[];
 				WMCutter[] wmCutters;
-				foreach(_, GffStruct trigger ; git["TriggerList"].get!GffList){
+				foreach(_, trigger ; git["TriggerList"].get!GffList){
 					if(trigger["Type"].get!GffInt == 3){
 						// Walkmesh cutter
 						auto start = [trigger["XPosition"].get!GffFloat, trigger["YPosition"].get!GffFloat];
 
 						// what about: XOrientation YOrientation ZOrientation ?
 						WMCutter cutter;
-						foreach(_, GffStruct point ; trigger["Geometry"].get!GffList){
+						foreach(_, point ; trigger["Geometry"].get!GffList){
 							cutter ~= vec2f(
 								start[0] + point["PointX"].get!GffFloat,
 								start[1] + point["PointY"].get!GffFloat,
