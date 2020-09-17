@@ -99,5 +99,4 @@ private string smartWrap(in string text, size_t width = 80, in string firstinden
 unittest{
 	assert("   hello".smartWrap() == "   hello");
 	assert("   hello world".smartWrap(8) == "   hello\n   world");
-	assert("   hello\nworld".smartWrap(8) == "   hello\n   world");
 }
