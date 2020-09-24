@@ -298,9 +298,17 @@ void AddItemProperty(NWInt nDurationType, NWItemproperty ipProperty, ref GffStru
 }
 
 ///
-int GetItemPropertyDurationType(NWItemproperty iprp){
+NWInt GetItemPropertyDurationType(NWItemproperty iprp){
 	// duration is not stored in the struct
 	return DURATION_TYPE_PERMANENT;
+}
+
+//
+NWInt GetItemPropertyCostTable(NWItemproperty iProp){
+	string sCostTableID = getTwoDA("itempropdef")[iProp.type, "CostTableResRef"];
+	if(sCostTableID.length > 0)
+		return sCostTableID.to!NWInt;
+	return -1;
 }
 
 ///
@@ -311,4 +319,36 @@ void RemoveItemProperty(ref GffStruct oItem, NWItemproperty ipProperty){
 		auto ip = gffStructToIPRP(prop.as!(GffType.Struct));
 		return ip == ipProperty;
 	});
+}
+
+//
+NWString Get2DAString(NWString s2DA, NWString sColumn, NWInt nRow){
+	return getTwoDA(s2DA)[nRow, sColumn];
+}
+
+
+
+//
+NWString IntToString(NWInt nInteger){
+	return nInteger.to!NWString;
+}
+//
+NWFloat IntToFloat(NWInt nInteger){
+	return nInteger.to!NWFloat;
+}
+//
+NWInt FloatToInt(NWFloat fFloat){
+	return fFloat.to!NWInt;
+}
+//
+NWString FloatToString(NWFloat fFloat, NWInt nWidth=18, NWInt nDecimals=9){
+	return fFloat.to!NWString;
+}
+//
+NWInt StringToInt(NWString sNumber){
+	return sNumber.to!NWInt;
+}
+//
+NWFloat StringToFloat(NWString sNumber){
+	return sNumber.to!NWFloat;
 }
