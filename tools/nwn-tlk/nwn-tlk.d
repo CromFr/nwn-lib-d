@@ -8,6 +8,8 @@ import std.stdio;
 import std.conv: to, ConvException;
 import std.traits;
 import std.string;
+import std.path;
+import std.exception;
 import std.typecons: Tuple, Nullable;
 version(unittest) import std.exception: assertThrown, assertNotThrown;
 
@@ -25,17 +27,33 @@ int main(string[] args){
 
 	string inputPath, outputPath;
 	Format inputFormat = Format.detect, outputFormat = Format.detect;
+	bool baseIndices, userIndices;
 	auto res = getopt(args,
 		"i|input", "Input file", &inputPath,
 		"j|input-format", "Input file format ("~EnumMembers!Format.stringof[6..$-1]~")", &inputFormat,
 		"o|output", "<file> Output file", &outputPath,
 		"k|output-format", "Output file format ("~EnumMembers!Format.stringof[6..$-1]~")", &outputFormat,
+		"b|base", "Display TLK base indices (starting from 0)", &baseIndices,
+		"u|user", "Display TLK user indices (starting from 16777216)", &userIndices,
 		);
 	if(res.helpWanted){
 		improvedGetoptPrinter(
 			"Parsing and serialization tool for TLK files",
 			res.options);
 		return 1;
+	}
+
+
+	size_t offset = 0;
+	if(baseIndices || userIndices){
+		enforce(baseIndices ^ userIndices,
+			"You cannot provide both --base and --user");
+		if(userIndices)
+			offset = 16777216;
+	}
+	else{
+		if(!inputPath.baseName.stripExtension.toLower.startsWith("dialog"))
+			offset = 16777216;
 	}
 
 	if(inputFormat == Format.detect){
@@ -64,7 +82,6 @@ int main(string[] args){
 	}
 	inputFile.close();
 
-
 	//Serialization
 	File outputFile = outputPath is null? stdout : File(outputPath, "w");
 	switch(outputFormat){
@@ -73,12 +90,11 @@ int main(string[] args){
 			break;
 		case Format.text:
 			import std.math: log10;
-			writeln(tlk.length);
-			int idColLength = cast(int)log10(tlk.length) + 1;
+			int idColLength = cast(int)log10(offset + tlk.length) + 1;
 			foreach(strref, str ; tlk){
 				import std.typecons: Yes;
 				foreach(i, ref line ; str.splitLines(Yes.keepTerminator)){
-					outputFile.write((i == 0? strref.to!string : null).rightJustify(idColLength), "|", line);
+					outputFile.write((i == 0? (offset + strref).to!string : null).rightJustify(idColLength), "|", line);
 				}
 				writeln();
 			}
