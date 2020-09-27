@@ -4,7 +4,8 @@ module nwn.nwscript.tooling;
 import std.conv: to;
 
 import nwn.twoda;
-import nwn.nwscript.functions;
+import nwn.gff;
+import nwn.types;
 import nwn.nwscript.resources;
 
 // Converts an NWItemproperty into a user friendly string
@@ -26,4 +27,14 @@ string toPrettyString(in NWItemproperty ip){
 	return propNameLabel
 		~(subTypeLabel is null? null : "."~subTypeLabel)
 		~(costValueLabel is null? null : "("~costValueLabel~")");
+}
+
+// Converts a GFF struct to an item property
+NWItemproperty toNWItemproperty(in gffTypeToNative!(GffType.Struct) node){
+	return NWItemproperty(
+		node["PropertyName"].as!(GffType.Word),
+		node["Subtype"].as!(GffType.Word),
+		node["CostValue"].as!(GffType.Word),
+		node["Param1Value"].as!(GffType.Byte),
+	);
 }

@@ -52,38 +52,18 @@ template NWInitValue(T){
 	else static if(is(T == NWObject))   enum NWInitValue = NWObject.max;
 	else static if(is(T == NWVector))   enum NWInitValue = NWVector.init;
 	else static if(is(T == NWLocation)) enum NWInitValue = NWLocation.init;
-	else static if(is(T == NWItemproperty)) enum NWInitValue = NWItemproperty(-1);
+	else static if(is(T == NWItemproperty)) enum NWInitValue = NWItemproperty();
 	else static assert(0, "Unknown type");
 }
 
 /// itemproperty
 struct NWItemproperty {
-	int32_t type = -1;
-	int32_t subType = -1;
-	int32_t costValue = -1;
-	int32_t p1 = -1;
+	uint16_t type = uint16_t.max;
+	uint16_t subType = 0;
+	uint16_t costValue = 0;
+	uint8_t p1 = 0;
 
 	string toString() const{
 		return format!"%d.%d(%d, %d)"(type, subType, costValue, p1);
 	}
-
-	//string toPrettyString() const{
-	//	immutable propNameLabel = getTwoDA("itempropdef").get("Label", type);
-
-	//	immutable subTypeTable = getTwoDA("itempropdef").get("SubTypeResRef", type);
-	//	string subTypeLabel;
-	//	try subTypeLabel = subTypeTable is null? null : getTwoDA(subTypeTable).get("Label", subType);
-	//	catch(TwoDAColumnNotFoundException){
-	//		subTypeLabel = subTypeTable is null? null : getTwoDA(subTypeTable).get("NameString", subType);
-	//	}
-
-	//	immutable costValueTableIndex = getTwoDA("itempropdef").get("CostTableResRef", type);
-	//	immutable costValueTable = costValueTableIndex is null? null : getTwoDA("iprp_costtable").get("Name", costValueTableIndex.to!uint);
-
-	//	immutable costValueLabel = costValueTable is null? null : getTwoDA(costValueTable).get("Label", costValue);
-
-	//	return propNameLabel
-	//		~(subTypeLabel is null? null : "."~subTypeLabel)
-	//		~(costValueLabel is null? null : "("~costValueLabel~")");
-	//}
 }

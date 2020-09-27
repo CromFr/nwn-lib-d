@@ -7,7 +7,7 @@ import std.file;
 import nwn.tlk;
 import nwn.twoda;
 
-private string[] _twoDAPaths = null;
+private __gshared string[] _twoDAPaths = null;
 private TwoDA[string] _twoDAs;
 
 
@@ -31,7 +31,7 @@ TwoDA getTwoDA(in string _name){
 		if(p.isDir){
 			foreach(f ; p.dirEntries("*.2da", SpanMode.shallow)){
 				if(f.baseName.stripExtension == name){
-					_twoDAs[name.toLower] = new TwoDA(p);
+					_twoDAs[name.toLower] = new TwoDA(f);
 					return _twoDAs[name.toLower];
 				}
 			}
@@ -40,7 +40,7 @@ TwoDA getTwoDA(in string _name){
 	return null;
 }
 
-private StrRefResolver _tlkResolver;
+private __gshared StrRefResolver _tlkResolver;
 
 void initStrRefResolver(StrRefResolver resolver){
 	_tlkResolver = resolver;
