@@ -11,7 +11,7 @@ import nwn.gff;
 import nwn.twoda;
 import nwn.nwscript.constants;
 import nwn.nwscript.resources;
-import nwn.nwscript.tooling;
+import nwn.nwscript.extensions;
 
 public import nwn.types;
 
