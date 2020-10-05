@@ -5,12 +5,24 @@ module nwn.gff;
 import std.stdio: File;
 import std.stdint;
 import std.conv: to;
+import std.string;
 import std.exception: enforce;
+import std.base64: Base64;
+import std.algorithm;
+import std.array;
+
 import nwnlibd.orderedaa;
 import nwnlibd.orderedjson;
+import nwnlibd.parseutils;
 
-debug import std.stdio: writeln;
+debug import std.stdio;
 version(unittest) import std.exception: assertThrown, assertNotThrown;
+
+unittest{
+	import etc.linux.memoryerror;
+	static if (is(typeof(registerMemoryErrorHandler)))
+		registerMemoryErrorHandler();
+}
 
 /// Parsing exception
 class GffParseException : Exception{
@@ -57,9 +69,9 @@ enum GffType{
 	Int64        = 7,  /// Unsigned 64-bit int
 	Float        = 8,  /// 32-bit float
 	Double       = 9,  /// 64-bit float
-	ExoString    = 10, /// String
+	String    = 10, /// String
 	ResRef       = 11, /// String with width <= 16 (32 for NWN2)
-	ExoLocString = 12, /// Localized string
+	LocString = 12, /// Localized string
 	Void         = 13, /// Binary data
 	Struct       = 14, /// Map of other $(D GffNode)
 	List         = 15  /// Array of other $(D GffNode)
@@ -68,892 +80,544 @@ enum GffType{
 /// Maps $(D GffType) to native D type
 template gffTypeToNative(GffType t){
 	import std.typecons: Tuple;
-	     static if(t==GffType.Invalid)      static assert(0, "No native type for GffType.Invalid");
-	else static if(t==GffType.Byte)         alias gffTypeToNative = uint8_t;
-	else static if(t==GffType.Char)         alias gffTypeToNative = int8_t;
-	else static if(t==GffType.Word)         alias gffTypeToNative = uint16_t;
-	else static if(t==GffType.Short)        alias gffTypeToNative = int16_t;
-	else static if(t==GffType.DWord)        alias gffTypeToNative = uint32_t;
-	else static if(t==GffType.Int)          alias gffTypeToNative = int32_t;
-	else static if(t==GffType.DWord64)      alias gffTypeToNative = uint64_t;
-	else static if(t==GffType.Int64)        alias gffTypeToNative = int64_t;
-	else static if(t==GffType.Float)        alias gffTypeToNative = float;
-	else static if(t==GffType.Double)       alias gffTypeToNative = double;
-	else static if(t==GffType.ExoString)    alias gffTypeToNative = string;
-	else static if(t==GffType.ResRef)       alias gffTypeToNative = string;// length<=32
-	else static if(t==GffType.ExoLocString) alias gffTypeToNative = Tuple!(uint32_t,"strref", string[int32_t],"strings");
-	else static if(t==GffType.Void)         alias gffTypeToNative = ubyte[];
-	else static if(t==GffType.Struct)       alias gffTypeToNative = OrderedAA!(string, GffNode);
-	else static if(t==GffType.List)         alias gffTypeToNative = GffNode[];
+	     static if(t==GffType.Invalid)   static assert(0, "No native type for GffType.Invalid");
+	else static if(t==GffType.Byte)      alias gffTypeToNative = GffByte;
+	else static if(t==GffType.Char)      alias gffTypeToNative = GffChar;
+	else static if(t==GffType.Word)      alias gffTypeToNative = GffWord;
+	else static if(t==GffType.Short)     alias gffTypeToNative = GffShort;
+	else static if(t==GffType.DWord)     alias gffTypeToNative = GffDWord;
+	else static if(t==GffType.Int)       alias gffTypeToNative = GffInt;
+	else static if(t==GffType.DWord64)   alias gffTypeToNative = GffDWord64;
+	else static if(t==GffType.Int64)     alias gffTypeToNative = GffInt64;
+	else static if(t==GffType.Float)     alias gffTypeToNative = GffFloat;
+	else static if(t==GffType.Double)    alias gffTypeToNative = GffDouble;
+	else static if(t==GffType.String)    alias gffTypeToNative = GffString;
+	else static if(t==GffType.ResRef)    alias gffTypeToNative = GffResRef;
+	else static if(t==GffType.LocString) alias gffTypeToNative = GffLocString;
+	else static if(t==GffType.Void)      alias gffTypeToNative = GffVoid;
+	else static if(t==GffType.Struct)    alias gffTypeToNative = GffStruct;
+	else static if(t==GffType.List)      alias gffTypeToNative = GffList;
 	else static assert(0);
 }
 /// Converts a native type $(D T) to the associated $(D GffType). Types must match exactly
 template nativeToGffType(T){
 	import std.typecons: Tuple;
-	     static if(is(T == gffTypeToNative!(GffType.Byte)))         alias nativeToGffType = GffType.Byte;
-	else static if(is(T == gffTypeToNative!(GffType.Char)))         alias nativeToGffType = GffType.Char;
-	else static if(is(T == gffTypeToNative!(GffType.Word)))         alias nativeToGffType = GffType.Word;
-	else static if(is(T == gffTypeToNative!(GffType.Short)))        alias nativeToGffType = GffType.Short;
-	else static if(is(T == gffTypeToNative!(GffType.DWord)))        alias nativeToGffType = GffType.DWord;
-	else static if(is(T == gffTypeToNative!(GffType.Int)))          alias nativeToGffType = GffType.Int;
-	else static if(is(T == gffTypeToNative!(GffType.DWord64)))      alias nativeToGffType = GffType.DWord64;
-	else static if(is(T == gffTypeToNative!(GffType.Int64)))        alias nativeToGffType = GffType.Int64;
-	else static if(is(T == gffTypeToNative!(GffType.Float)))        alias nativeToGffType = GffType.Float;
-	else static if(is(T == gffTypeToNative!(GffType.Double)))       alias nativeToGffType = GffType.Double;
-	else static if(is(T == gffTypeToNative!(GffType.ExoString)))    alias nativeToGffType = GffType.ExoString;
-	else static if(is(T == gffTypeToNative!(GffType.ResRef)))       alias nativeToGffType = GffType.ResRef;
-	else static if(is(T == gffTypeToNative!(GffType.ExoLocString))) alias nativeToGffType = GffType.ExoLocString;
-	else static if(is(T == gffTypeToNative!(GffType.Void)))         alias nativeToGffType = GffType.Void;
-	else static if(is(T == gffTypeToNative!(GffType.Struct)))       alias nativeToGffType = GffType.Struct;
-	else static if(is(T == gffTypeToNative!(GffType.List)))         alias nativeToGffType = GffType.List;
+	     static if(is(T == Byte))         alias nativeToGffType = GffType.Byte;
+	else static if(is(T == Char))         alias nativeToGffType = GffType.Char;
+	else static if(is(T == Word))         alias nativeToGffType = GffType.Word;
+	else static if(is(T == Short))        alias nativeToGffType = GffType.Short;
+	else static if(is(T == DWord))        alias nativeToGffType = GffType.DWord;
+	else static if(is(T == Int))          alias nativeToGffType = GffType.Int;
+	else static if(is(T == DWord64))      alias nativeToGffType = GffType.DWord64;
+	else static if(is(T == Int64))        alias nativeToGffType = GffType.Int64;
+	else static if(is(T == Float))        alias nativeToGffType = GffType.Float;
+	else static if(is(T == Double))       alias nativeToGffType = GffType.Double;
+	else static if(is(T == GffString))    alias nativeToGffType = GffType.String;
+	else static if(is(T == GffResref))    alias nativeToGffType = GffType.ResRef;
+	else static if(is(T == GffLocString)) alias nativeToGffType = GffType.LocString;
+	else static if(is(T == GffVoid))      alias nativeToGffType = GffType.Void;
+	else static if(is(T == GffStruct))    alias nativeToGffType = GffType.Struct;
+	else static if(is(T == GffList))      alias nativeToGffType = GffType.List;
 	else static assert(0, "Type "~T.stringof~" is not a valid GffType");
 }
 
-alias GffByte         = gffTypeToNative!(GffType.Byte);        //GFF type Byte ( $(D uint8_t) )
-alias GffChar         = gffTypeToNative!(GffType.Char);        //GFF type Char ( $(D int8_t) )
-alias GffWord         = gffTypeToNative!(GffType.Word);        //GFF type Word ( $(D uint16_t) )
-alias GffShort        = gffTypeToNative!(GffType.Short);       //GFF type Short ( $(D int16_t) )
-alias GffDWord        = gffTypeToNative!(GffType.DWord);       //GFF type DWord ( $(D uint32_t) )
-alias GffInt          = gffTypeToNative!(GffType.Int);         //GFF type Int ( $(D int32_t) )
-alias GffDWord64      = gffTypeToNative!(GffType.DWord64);     //GFF type DWord64 ( $(D uint64_t) )
-alias GffInt64        = gffTypeToNative!(GffType.Int64);       //GFF type Int64 ( $(D int64_t) )
-alias GffFloat        = gffTypeToNative!(GffType.Float);       //GFF type Float ( $(D float) )
-alias GffDouble       = gffTypeToNative!(GffType.Double);      //GFF type Double ( $(D double) )
-alias GffExoString    = gffTypeToNative!(GffType.ExoString);   //GFF type ExoString ( $(D string) )
-alias GffResRef       = gffTypeToNative!(GffType.ResRef);      //GFF type ResRef ( $(D string;// length<=3) )
-alias GffExoLocString = gffTypeToNative!(GffType.ExoLocString);//GFF type ExoLocString ( $(D Tuple!(uint32_t,"strref", string[int32_t],"strings")) )
-alias GffVoid         = gffTypeToNative!(GffType.Void);        //GFF type Void ( $(D ubyte[]) )
-alias GffStruct       = gffTypeToNative!(GffType.Struct);//Moved at the end of file
-alias GffList         = gffTypeToNative!(GffType.List);        //GFF type List ( $(D GffNode[]) )
+/// returns true if T is implicitly convertible to a GFF storage type
+template isGffNativeType(T){
+	enum isGffNativeType =
+		   is(T: GffByte)
+		|| is(T: GffChar)
+		|| is(T: GffWord)
+		|| is(T: GffShort)
+		|| is(T: GffDWord)
+		|| is(T: GffInt)
+		|| is(T: GffDWord64)
+		|| is(T: GffInt64)
+		|| is(T: GffFloat)
+		|| is(T: GffDouble)
+		|| is(T: GffString)
+		|| is(T: GffResRef)
+		|| is(T: GffLocString)
+		|| is(T: GffVoid)
+		|| is(T: GffStruct)
+		|| is(T: GffList)
+		|| is(T: GffValue);
+}
 
+alias GffByte    = uint8_t; //GFF type Byte ( $(D uint8_t) )
+alias GffChar    = int8_t; //GFF type Char ( $(D int8_t) )
+alias GffWord    = uint16_t; //GFF type Word ( $(D uint16_t) )
+alias GffShort   = int16_t; //GFF type Short ( $(D int16_t) )
+alias GffDWord   = uint32_t; //GFF type DWord ( $(D uint32_t) )
+alias GffInt     = int32_t; //GFF type Int ( $(D int32_t) )
+alias GffDWord64 = uint64_t; //GFF type DWord64 ( $(D uint64_t) )
+alias GffInt64   = int64_t; //GFF type Int64 ( $(D int64_t) )
+alias GffFloat   = float; //GFF type Float ( $(D float) )
+alias GffDouble  = double; //GFF type Double ( $(D double) )
+alias GffString  = string; //GFF type String ( $(D string) )
 
-/// Gff node containing data
-struct GffNode{
+///
+struct GffResRef {
 	///
-	this(GffType t, string lbl=null){
-		m_type = t;
-		label = lbl;
-	}
-	///
-	this(T)(GffType t, string lbl, T value){
-		this(t, lbl);
-		this = value;
+	this(in string str){
+		value = str;
 	}
 
-	/// Duplicate GffNode data
-	GffNode dup() inout {
-		GffNode ret;
-		ret.m_type                = m_type;
-		ret.m_label               = m_label;
-		ret.rawContainer          = rawContainer.dup;
-		ret.simpleTypeContainer   = simpleTypeContainer;
-		ret.stringContainer       = stringContainer;
-		ret.listContainer.length  = listContainer.length;
-		foreach(i, ref node ; listContainer)
-			ret.listContainer[i]  = node.dup;
-		ret.structContainer       = structContainer.dup;
-		ret.exoLocStringContainer = GffExoLocString(exoLocStringContainer.strref, null);
-		foreach(k, ref v ; exoLocStringContainer.strings)
-			ret.exoLocStringContainer.strings[k] = v;
-		ret.m_structType          = m_structType;
-		return ret;
-	}
-
-	@property{
-		/// GFF node label
-		/// Max width: 16 chars
-		string label()const{return m_label;}
-		void label(string lbl){
-			enforce!GffValueSetException(lbl.length <= 16,
-				"Labels cannot be longer than 16 characters");
-			m_label = lbl;
-		}
-	}
-	unittest{
-		assertThrown!GffValueSetException(GffNode(GffType.Struct, "ThisLabelIsLongerThan16Chars"));
-		auto node = GffNode(GffType.Struct, "labelok");
-		assertThrown!GffValueSetException(node.label = "ThisLabelIsLongerThan16Chars");
-	}
-
-	/// GFF type
-	@property GffType type()const @safe {return m_type;}
-
-	@property{
-		/// Struct ID. Only if the node is a $(D GffType.Struct)
-		uint32_t structType()const{
-			enforce!GffTypeException(type == GffType.Struct, "GffNode is not a struct");
-			return m_structType;
+	@property @safe {
+		/// Accessor for manipulating GffResRef like a string
+		string value() const {
+			return data.charArrayToString();
 		}
 		/// ditto
-		void structType(uint32_t structType){
-			enforce!GffTypeException(type == GffType.Struct, "GffNode is not a struct");
-			m_structType = structType;
+		void value(in string str){
+			assert(str.length <= 32, "Resref cannot be longer than 32 characters");
+			data = str.stringToCharArray!(char[32]);
 		}
-	}
-
-	/// Access by reference the underlying data stored in the $(D GffNode).
-	/// The type of this data is determined by gffTypeToNative.
-	/// Types must match exactly or it will throw
-	auto ref as(GffType T)() inout{
-		static assert(T!=GffType.Invalid, "Cannot use GffNode.as with type Invalid");
-
-		enforce!GffTypeException(T == type && type != GffType.Invalid,
-			"Type mismatch: GffNode of type "~type.to!string~" cannot be used with as!(GffNode."~T.to!string~")");
-
-		with(GffType)
-		static if(
-			   T==Byte || T==Char
-			|| T==Word || T==Short
-			|| T==DWord || T==Int
-			|| T==DWord64 || T==Int64
-			|| T==Float || T==Double){
-			return *cast(gffTypeToNative!T*)&simpleTypeContainer;
-		}
-		else static if(T==ExoString || T==ResRef)
-			return stringContainer;
-		else static if(T==ExoLocString) return exoLocStringContainer;
-		else static if(T==Void)         return rawContainer;
-		else static if(T==Struct)
-			return structContainer;
-		else static if(T==List)
-			return listContainer;
-		else
-			static assert(0, "Type "~T.stringof~" not implemented");
-	}
-	unittest{
-		import std.exception;
-		import std.traits: EnumMembers;
-		with(GffType){
-			foreach(m ; EnumMembers!GffType){
-				static if(m!=GffType.Invalid)
-					GffNode(m).as!m;
-			}
-
-			assertThrown!GffTypeException(GffNode(GffType.Float).as!(GffType.Double));
-		}
-	}
-
-	/// Convert the node value to a certain type.
-	/// If the type is string, any type of value gets converted into string. Structs and lists are not expanded.
-	auto ref const(DestType) to(DestType)()const{
-		import std.traits;
-
-		final switch(type) with(GffType){
-
-			case Invalid: throw new GffTypeException("Cannot convert "~type.to!string);
-
-			foreach(TYPE ; EnumMembers!GffType){
-				static if(TYPE!=Invalid){
-					case TYPE:
-						//pragma(msg, "TYPE=",TYPE.to!string, " DESTTYPE=",DestType, "  =>  ",__traits(compiles, (as!TYPE.to!DestType) )	);
-
-						alias NativeType = gffTypeToNative!TYPE;
-						static if(is(DestType==NativeType) || isImplicitlyConvertible!(NativeType, DestType)){
-							static if(TYPE==Void) return as!Void.dup;
-							else                  return as!TYPE;
-						}
-						else static if(TYPE==Void && isArray!DestType && ForeachType!DestType.sizeof==1 && !isSomeString!DestType)
-							return cast(DestType)as!Void.dup;
-						else static if(TYPE==ExoLocString && isSomeString!DestType){
-							if(exoLocStringContainer.strref!=uint32_t.max)
-								return ("{{STRREF:"~exoLocStringContainer.strref.to!string~"}}").to!DestType;
-							else{
-								if(exoLocStringContainer.strings.length>0)
-									return exoLocStringContainer.strings.values[0].to!DestType;
-								return "{{INVALID_LOCSTRING}}".to!DestType;
-							}
-						}
-						else static if(TYPE==Struct && isSomeString!DestType)
-							return "{{Struct}}".to!DestType;
-						else static if(TYPE==List && isSomeString!DestType)
-							return "{{List("~listContainer.length.to!string~")}}".to!string;
-						else static if(TYPE!=List && TYPE!=Struct && __traits(compiles, as!TYPE.to!DestType)){
-
-							static if(TYPE==Void && isSomeString!DestType){
-								import std.string: format;
-								string ret = "0x";
-								foreach(i, b ; cast(ubyte[])rawContainer){
-									ret ~= format("%s%02x", (i%2==0 && i!=0)? " ":null, b);
-								}
-								return ret.to!DestType;
-							}
-							else
-								return as!TYPE.to!DestType;
-						}
-						else
-							throw new GffTypeException("Cannot convert GffType."~type.to!string~" from "~NativeType.stringof~" to "~DestType.stringof);
-
-				}
-			}
-		}
-		assert(0);
-	}
-	unittest{
-		with(GffType){
-			GffNode node;
-
-			node = GffNode(Void);
-			ubyte[] voidData = [0, 2, 5, 9, 255, 6];
-			node.as!Void = voidData;
-			assert(node.to!(ubyte[])[3] == 9);
-			assert(node.to!(byte[])[4] == -1);
-			assert(node.to!string == "0x0002 0509 ff06");
-			assertThrown!GffTypeException(node.to!int);
-
-			node = GffNode(ExoLocString);
-			node.as!ExoLocString.strref = 12;
-			//assert(node.to!int == 12);//TODO
-			assert(node.to!string == "{{STRREF:12}}");
-			node.as!ExoLocString.strref = -1;
-			assert(node.to!string == "{{INVALID_LOCSTRING}}");
-			node.as!ExoLocString.strings = [0: "a", 3: "b"];
-			assert(node.to!string == "a");
-			//assert(node.to!(string[int]) == [0: "a", 3: "b"]);//TODO
-			assertThrown!GffTypeException(node.to!float);
-
-			node = GffNode(Struct);
-			assert(node.to!string == "{{Struct}}");
-			assertThrown!GffTypeException(node.to!int);
-
-			node = GffNode(List);
-			node.as!List = [GffNode(Struct), GffNode(Struct)];
-			assert(node.to!string == "{{List(2)}}");
-
-			node = GffNode(Int);
-			node.as!Int = 42;
-			assert(node.to!byte == 42);
-
-			node = GffNode(Invalid);
-			assertThrown!GffTypeException(node.to!string);
-
-		}
-	}
-
-	/// Assign a value to the node. Assigned type must be convertible to the native node type;
-	void opAssign(T)(T rhs) if(!is(T==GffNode)){
-		import std.traits;
-
-		switch(type) with(GffType){
-			foreach(TYPE ; EnumMembers!GffType){
-				static if(TYPE==Invalid){
-					case TYPE:
-					throw new GffTypeException("GffNode type is Invalid");
-				}
-				else static if(TYPE==ResRef){
-					static if(isSomeString!T){
-						case TYPE:
-						immutable str = rhs.to!(gffTypeToNative!TYPE);
-						if(str.length > 32)
-							throw new GffValueSetException("String is too long for a ResRef (32 characters limit)");
-						as!TYPE = str;
-						return;
-					}
-				}
-				else static if(TYPE==ExoLocString){
-					static if(is(T==GffExoLocString)){
-						case TYPE:
-						as!TYPE = rhs;
-						return;
-					}
-					static if(__traits(isIntegral, T)){
-						//set strref
-						case TYPE:
-						as!TYPE.strref = rhs.to!uint32_t;
-						return;
-					}
-					else static if(is(T==typeof(GffExoLocString.strings))){
-						//set strings
-						case TYPE:
-						as!TYPE.strings = rhs;
-						return;
-					}
-				}
-				else{
-					static if(isAssignable!(gffTypeToNative!TYPE, T)){
-						case TYPE:
-						static if(TYPE==List){
-							//Check if all nodes are structs
-							foreach(ref s ; rhs){
-								if(s.type != GffType.Struct)
-									throw new GffValueSetException("The list contains one or more GffNode that is not a struct");
-							}
-						}
-						as!TYPE = rhs;
-						return;
-					}
-					else static if(
-						   (isScalarType!T && isScalarType!(gffTypeToNative!TYPE))
-						|| ((isSomeString!T || is(T: string)) && (isSomeString!(gffTypeToNative!TYPE) || is(gffTypeToNative!TYPE: string))) ){
-						case TYPE:
-						as!TYPE = rhs.to!(gffTypeToNative!TYPE);
-						return;
-					}
-				}
-			}
-			default: break;
-		}
-
-		throw new GffValueSetException("Cannot set GffNode of type "~type.to!string~" with type "~T.stringof);
-	}
-	unittest{
-		import std.conv: ConvOverflowException;
-		with(GffType){
-			auto node = GffNode(Byte);
-			assertThrown!ConvOverflowException(node = -1);
-			assertThrown!ConvOverflowException(node = 256);
-			assertThrown!GffValueSetException(node = "somestring");
-			node = 42;
-			assert(node.as!(Byte) == 42);
-
-			node = GffNode(Char);
-			assertThrown!ConvOverflowException(node = -129);
-			assertThrown!ConvOverflowException(node = 128);
-			assertThrown!GffValueSetException(node = "somestring");
-			node = 'a';
-			node = 'z';
-			assert(node.as!(Char) == 'z');
-
-			node = GffNode(ExoString);
-			node = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
-			node = "Hello";
-			assert(node.stringContainer == "Hello");
-
-			node = GffNode(ResRef);
-			assertThrown!GffValueSetException(node = "This text is longer than 32 characters");
-			assertThrown!GffValueSetException(node = 42);
-			node = "HelloWorld";
-			assert(node.stringContainer == "HelloWorld");
-
-			node = GffNode(ExoLocString);
-			node = 1337;//set strref
-			node = [0: "English guy", 1: "English girl", 3: "French girl"];
-			assert(node.exoLocStringContainer.strref == 1337);
-			assert(node.exoLocStringContainer.strings.length == 3);
-			assert(node.exoLocStringContainer.strings[0] == "English guy");
-			assert(node.exoLocStringContainer.strings[3] == "French girl");
-
-			node = GffNode(Void);
-			ubyte[] data = [0,1,2,3,4,5,6];
-			node = data;
-			assert((cast(ubyte[])node.rawContainer)[3] == 3);
-
-			node = GffNode(Struct);
-			auto testStruct = GffStruct();
-			testStruct["TestByte"] = GffNode(Byte, "TestByte");
-			testStruct["TestExoString"] = GffNode(ExoString, "TestExoString");
-
-			node = testStruct;
-			assertNotThrown(node["TestByte"]);
-			assertNotThrown(node["TestExoString"]);
-
-			auto listStructs = [
-				GffNode(Struct, "StructA"),
-				GffNode(Struct, "StructB"),
-			];
-			listStructs[0].appendField(GffNode(Int, "TestInt"));
-			listStructs[0].appendField(GffNode(Float, "TestFloat"));
-			listStructs[0]["TestInt"].as!Int = 6;
-			listStructs[0]["TestFloat"].as!Float = float.epsilon;
-			listStructs[1].appendField(GffNode(Void, "TestVoid"));
-
-			node = GffNode(List);
-			node = listStructs;
-			assertNotThrown(node[0]);
-			assertNotThrown(node[0]["TestInt"]);
-			assert(node[0]["TestInt"].as!Int == 6);
-			assertNotThrown(node[0]["TestFloat"]);
-			assert(node[0]["TestFloat"].as!Float == float.epsilon);
-			assertNotThrown(node[1]);
-			assertNotThrown(node[1]["TestVoid"]);
-			assertThrown!GffValueSetException(node = [GffNode(Byte, "TestByte")]);
-
-			node = GffNode(Invalid);
-			assertThrown!GffTypeException(node = 5);
-		}
-	}
-
-
-	/// Gets child node from a $(D GffNode.Struct) using its label as key
-	ref const(GffNode) opIndex(in string label)const{
-		return (cast(GffNode)this).opIndex(label);
-	}
-	/// ditto
-	ref GffNode opIndex(in string label){
-		enforce!GffTypeException(type == GffType.Struct, "GffNode is not a struct");
-
-		return structContainer[label];
-	}
-
-	/// Gets child node from a $(D GffNode.List) using its index
-	ref const(GffNode) opIndex(in size_t index)const{
-		return (cast(GffNode)this).opIndex(index);
-	}
-	/// ditto
-	ref GffNode opIndex(in size_t index){
-		enforce!GffTypeException(type == GffType.List, "GffNode is not a list");
-
-		return listContainer[index];
-	}
-	unittest{
-		with(GffType){
-			GffNode node;
-			const(GffNode)* constNode;
-
-			node = GffNode(Struct);
-			constNode = &node;
-			node.appendField(GffNode(Byte, "TestByte"));
-			node.appendField(GffNode(Float, "TestFloat"));
-
-			assertNotThrown((*constNode)["TestByte"]);
-			assertNotThrown((*constNode)["TestFloat"]);
-			assertThrown!Error((*constNode)["yoloooo"]);
-			assertThrown!GffTypeException((*constNode)[0]);
-
-			node = GffNode(List);
-			constNode = &node;
-			node = [GffNode(Struct), GffNode(Struct)];
-			assertNotThrown((*constNode)[0]);
-			assertNotThrown((*constNode)[1]);
-			assertThrown!Error((*constNode)[2]);
-			assertThrown!GffTypeException((*constNode)["yoloooo"]);
-
-
-			node = GffNode(Void);
-			assertThrown!GffTypeException(node["any"]);
-		}
-	}
-
-	///
-	void opIndexAssign(GffNode value, string key){
-		assert(type == GffType.Struct, "GffNode must be a struct");
-
-		if(value.label is null) value.label = key;
-		assert(key == value.label, "Key and GffNode's label mismatch");
-
-		structContainer[key] = value;
 	}
 	///
-	void opIndexAssign(GffNode value, size_t index){
-		assert(type == GffType.List, "GffNode must be a list");
-		enforce!GffTypeException(value.type == GffType.Struct, "value must be a struct");
-		listContainer[index] = value;
+	alias value this;
+private:
+	char[32] data;
+}
+
+struct GffLocString{
+	/// String ref linking to a TLK entry
+	uint32_t strref;
+	/// Language => string pairs
+	string[int32_t] strings;
+
+	///
+	this(uint32_t strref, string[int32_t] strings = null){
+		this.strref = strref;
+		this.strings = strings;
 	}
 
-	/// Adds a GffNode to a $(D GffNode.Struct), using its label as key
-	GffNode* appendField(GffNode field){
-		assert(type == GffType.Struct, "GffNode must be a struct");
-		assert(field.type != GffType.Invalid, "Cannot append invalid GffNode");
-
-		structContainer[field.label] = field;
-		return &structContainer[field.label];
+	/// Get the string value without attempting to resolve strref using TLKs
+	string toString() const {
+		return format!"{%d, %s}"(strref == strref.max ? -1 : cast(long)strref, strings);
 	}
 
-	/// Support for $D(in) operator
-	auto opBinaryRight(string op : "in")(string k) @safe
-	{
-		if(type == GffType.Struct)
-			return k in structContainer;
-		return null;
-	}
-
-	/// Find a child from this node, using the node path
-	/// The path must be a dot-separated list, containing either words or numbers, eg "Tint_Head.Tintable.Tint.1.b"
-	GffNode* getChild(in string path){
-		import std.string: split, join;
-		import std.conv: ConvException;
-		GffNode* node = &this;
-
-		string[] pathElmts = path.split(".");
-		foreach(i, p ; pathElmts){
-			if(node.type == GffType.Struct){
-
-				auto n = p in *node;
-				if(n)
-					node = n;
-				else
-					throw new GffNotFoundException("Cannot find GFF struct child with key='"~p~"', in path '"~(pathElmts[0..i].join("."))~"'");
-			}
-			else if(node.type == GffType.List){
-				size_t idx;
-				try idx = p.to!size_t;
-				catch(ConvException e)
-					throw new GffTypeException("Cannot convert '"~p~"' to int (because GffNode is a list) for argument in path '"~(pathElmts[0..idx].join("."))~"'");
-
-				auto listLength = node.as!(GffType.List).length;
-				if(idx < 0 || idx >= listLength)
-					throw new GffNotFoundException("Cannot find GFF list child with index='"~p~"', in path '"~(pathElmts[0..i].join("."))~"'");
-				node = &(*node)[idx];
-			}
-			else
-				throw new GffTypeException("GFF node at path '"~(pathElmts[0..i].join("."))~"' is of type "~node.type.to!string~" and cannot containchild nodes");
+	/// JSON to LocString
+	this(in nwnlibd.orderedjson.JSONValue json){
+		assert(json.type == JSON_TYPE.OBJECT, "json value " ~ json.toPrettyString ~ " is not an object");
+		assert(json["type"].str == "cexolocstr", "json object "~ json.toPrettyString ~" is not a GffLocString");
+		assert(json["value"].type == JSON_TYPE.OBJECT, "json .value "~ json.toPrettyString ~" is not an object");
+		strref = json["str_ref"].conv!uint32_t;
+		foreach(lang, text ; json["value"].object){
+			strings[lang.to!int32_t] = text.str;
 		}
-		return node;
+	}
+	/// LocString to JSON
+	nwnlibd.orderedjson.JSONValue toJson() const {
+		JSONValue ret;
+		ret["type"] = "cexolocstr";
+		ret["str_ref"] = strref;
+		ret["value"] = JSONValue(cast(JSONValue[string])null);
+		foreach(ref lang, ref str ; strings)
+			ret["value"][lang.to!string] = str;
+		return ret;
+	}
+}
+
+///
+alias GffVoid = ubyte[];
+
+
+///
+struct GffStruct {
+	///
+	this(GffValue[string] children, uint32_t structType){
+		foreach(k, ref v ; children){
+			m_children[k] = *cast(ubyte[_gffValueSize]*)&v;
+		}
 	}
 
-	/// Produces a readable string of the node and its children
-	string toPrettyString()const{
+	/// Struct ID
+	uint32_t id = 0;
 
-		string toPrettyStringInternal(const(GffNode)* node, string tabs){
-			import std.string: leftJustify;
 
-			if(node.type == GffType.Struct){
-				string ret = tabs;
-				if(node.label !is null)
-					ret ~= node.label~": ";
-				ret ~= "(Struct "~node.structType.to!string~")\n";
-				foreach(ref kv ; node.structContainer.byKeyValue){
-					ret ~= toPrettyStringInternal(&kv.value, tabs~"   | ");
-				}
-				return ret;
-			}
-			else if(node.type == GffType.List){
-				string ret = tabs~node.label.leftJustify(16)~": ("~node.type.to!string~")\n";
-				foreach(ref childNode ; node.listContainer){
-					ret ~= toPrettyStringInternal(&childNode, tabs~"   | ");
-				}
-				return ret;
-			}
-			else if(node.type == GffType.Invalid){
-				return tabs~node.label.leftJustify(16)~": {{INVALID}}\n";
-			}
-			else{
-				return tabs~node.label.leftJustify(16)~": "~node.to!string~" ("~node.type.to!string~")\n";
-			}
+	@property{
+		/// GffStruct children associative array
+		ref inout(ChildrenAA) children() inout {
+			return *cast(inout(ChildrenAA)*)(&m_children);
 		}
+		/// ditto
+		void children(ChildrenAA children){
+			m_children = *cast(ChildrenStor*)&children;
+		}
+	}
+	///
+	alias children this;
 
 
-		return toPrettyStringInternal(&this, "");
+	/// Automatically encapsulate and add a GFF native type
+	auto ref opIndexAssign(T)(T rhs, in string label) if(isGffNativeType!T){
+		return children[label] = GffValue(rhs);
 	}
 
-	/// Builds a $(D nwnlibd.orderedjson.JSONValue) from a $(D GffNode)
-	/// Params:
-	///   topLevelStruct = Set to true for the root struct or any list element
-	auto ref nwnlibd.orderedjson.JSONValue toJson(bool topLevelStruct=false) const{
-		import std.traits: EnumMembers;
-		string gffTypeToStringType(GffType type){
-			import std.string: toLower;
-			switch(type) with(GffType){
-				case ExoLocString: return "cexolocstr";
-				case ExoString: return "cexostr";
-				default: return type.to!string.toLower;
-			}
+	/// Converts a GffStruct to a user-friendly string
+	string toPrettyString(string tabs = null) const {
+		string ret = format!"%s(Struct %s)"(tabs, id == id.max ? "-1" : id.to!string);
+		foreach(i, ref kv ; children.byKeyValue){
+			bool keepLine = i + 1 < children.length;
+			const innerTabs = tabs ~ (keepLine? "|  " : "   ");
+			const type = (kv.value.type != GffType.Struct && kv.value.type != GffType.List) ? " (" ~ kv.value.type.to!string ~ ")" : null;
+
+			ret ~= format!"\n%s%s %-16s = %s%s"(
+				tabs, keepLine ? "├╴" : "└╴",
+				kv.key, kv.value.toPrettyString(innerTabs)[innerTabs.length .. $], type
+			);
 		}
+		return ret;
+	}
 
-		enforce!GffTypeException(topLevelStruct? type == GffType.Struct : true,
-			"topLevelStruct should only be set for a GffType.Struct");
 
-		JSONValue ret = cast(JSONValue[string])null;
+	/// JSON to GffStruct
+	this(in nwnlibd.orderedjson.JSONValue json){
+		assert(json.type == JSON_TYPE.OBJECT, "json value " ~ json.toPrettyString ~ " is not an object");
+		assert(json["type"].str == "struct", "json object "~ json.toPrettyString ~" is not a GffStruct");
+		assert(json["value"].type == JSON_TYPE.OBJECT, "json .value "~ json.toPrettyString ~" is not an object");
+		id = json["__struct_id"].conv!uint32_t;
+		foreach(ref label ; json["value"].objectKeyOrder){
+			children[label] = GffValue(json["value"][label]);
+		}
+	}
+	/// GffStruct to JSON
+	nwnlibd.orderedjson.JSONValue toJson() const {
+		JSONValue ret;
+		ret["type"] = "struct";
+		ret["__struct_id"] = id;
+		ret["value"] = JSONValue();
+		foreach(ref kv ; children.byKeyValue){
+			ret["value"][kv.key] = kv.value.toJson();
+		}
+		return ret;
+	}
 
-		if(!topLevelStruct)
-			ret["type"] = gffTypeToStringType(this.type);
 
-		typeswitch:
-		final switch(this.type) with(GffType){
-			foreach(TYPE ; EnumMembers!GffType){
-				case TYPE:
-				static if(TYPE==Invalid){
-					assert(0, "GFF node '"~this.label~"' is of type Invalid and can't be serialized");
-				}
-				else static if(TYPE==ExoLocString){
-					ret["str_ref"] = this.as!ExoLocString.strref;
-					ret["value"] = JSONValue();
-					foreach(strref, str ; this.as!ExoLocString.strings)
-						ret["value"][strref.to!string] = str;
-					break typeswitch;
-				}
-				else static if(TYPE==Void){
-					import std.base64: Base64;
-					ret["value"] = JSONValue(Base64.encode(cast(ubyte[])this.as!Void));
-					break typeswitch;
-				}
-				else static if(TYPE==Struct){
-					JSONValue* value;
-					ret["__struct_id"] = JSONValue(this.structType);
+private:
+	alias ChildrenAA = OrderedAA!(string, GffValue);
+	alias ChildrenStor = OrderedAA!(string, ubyte[_gffValueSize]);
 
-					if(!topLevelStruct) {
-						ret["value"] = JSONValue();
-						value = &ret["value"];
-					}
+	// We store children as ubyte[5] instead of GffValue, because GffValue
+	// needs a complete GffStruct definition
+	enum _gffValueSize = 5;
+	static assert(GffValue.sizeof == 8 * _gffValueSize);
+	OrderedAA!(string, ubyte[_gffValueSize]) m_children;
+}
+
+///
+struct GffList {
+
+	/// GffList children list
+	GffStruct[] children;
+	alias children this;
+
+	/// Converts a GffStruct to a user-friendly string
+	string toPrettyString(string tabs = null) const {
+		string ret = format!"%s(List)"(tabs);
+		foreach(i, ref value ; children){
+			bool keepLine = i + 1 < children.length;
+			auto innerTabs = tabs ~ (keepLine? "|  " : "   ");
+
+			ret ~= format!"\n%s%s %s"(
+				tabs, keepLine ? "├╴" : "└╴",
+				value.toPrettyString(innerTabs)[innerTabs.length .. $]
+			);
+		}
+		return ret;
+	}
+
+	/// JSON to GffList
+	this(in nwnlibd.orderedjson.JSONValue json){
+		assert(json.type == JSON_TYPE.OBJECT, "json value " ~ json.toPrettyString ~ " is not an object");
+		assert(json["type"].str == "list", "json object "~ json.toPrettyString ~" is not a GffList");
+		assert(json["value"].type == JSON_TYPE.ARRAY, "json .value "~ json.toPrettyString ~" is not an array");
+		children.length = json["value"].array.length;
+		foreach(i, ref child ; json["value"].array){
+			children[i] = GffStruct(child);
+		}
+	}
+	/// GffList to JSON
+	nwnlibd.orderedjson.JSONValue toJson() const {
+		JSONValue ret;
+		ret["type"] = "list";
+		ret["value"] = JSONValue(cast(JSONValue[])null);
+		ret["value"].array.length = children.length;
+		foreach(i, ref child ; children){
+			ret["value"][i] = child.toJson();
+		}
+		return ret;
+	}
+}
+
+
+
+
+
+struct GffValue {
+	import std.variant: VariantN;
+	alias Value = VariantN!(32,
+		GffByte, GffChar,
+		GffWord, GffShort,
+		GffDWord, GffInt,
+		GffDWord64, GffInt64,
+		GffFloat, GffDouble,
+		GffString, GffResRef, GffLocString, GffVoid,
+		GffStruct, GffList,
+	);
+
+	Value value;
+	alias value this;
+
+	///
+	this(T)(T _value) if(isGffNativeType!T) {
+		value = _value;
+	}
+
+	@property {
+		GffType type() const {
+			static GffType[ulong] lookupTable = null;
+			if(lookupTable is null){
+				import std.traits: EnumMembers;
+				static foreach(gffType ; EnumMembers!GffType){
+					static if(gffType != GffType.Invalid)
+						lookupTable[typeid(gffTypeToNative!gffType).toHash] = gffType;
 					else
-						value = &ret;
-
-					foreach(ref kv ; this.as!Struct.byKeyValue){
-						(*value)[kv.value.label] = kv.value.toJson(false);
-					}
-					break typeswitch;
-				}
-				else static if(TYPE==List){
-					auto value = cast(JSONValue[])null;
-					foreach(i, ref child ; this.as!List){
-						value ~= child.toJson(true);
-					}
-					ret["value"] = value;
-					break typeswitch;
-				}
-				else{
-					ret["value"] = this.as!TYPE;
-					break typeswitch;
+						lookupTable[typeid(void).toHash] = gffType;
 				}
 			}
+			return lookupTable[value.type.toHash];
+		}
+	}
+
+	ref inout(T) get(T)() inout {
+		return *cast(inout T*)value.peek!T;
+	}
+
+	/// Shorthand for modifying the GffValue as a GffStruct
+	auto ref opIndex(in string label){
+		return value.get!GffStruct[label];
+	}
+	/// ditto
+	auto ref opIndexAssign(T)(T rhs, in string label) if(is(T: GffValue) || isGffNativeType!T){
+		static if(isGffNativeType!T)
+			return value.get!GffStruct[label] = GffValue(rhs);
+		else
+			return value.get!GffStruct[label] = rhs;
+	}
+
+	/// Shorthand for modifying the GffValue as a GffList
+	auto ref opIndex(size_t index){
+		return value.get!GffList[index];
+	}
+	/// ditto
+	auto ref opIndexAssign(GffStruct rhs, size_t index){
+		return value.get!GffList[index] = rhs;
+	}
+
+
+	auto to(T)() const {
+		final switch(type) with(GffType) {
+			case Byte:      return get!GffByte.to!T;
+			case Char:      return get!GffChar.to!T;
+			case Word:      return get!GffWord.to!T;
+			case Short:     return get!GffShort.to!T;
+			case DWord:     return get!GffDWord.to!T;
+			case Int:       return get!GffInt.to!T;
+			case DWord64:   return get!GffDWord64.to!T;
+			case Int64:     return get!GffInt64.to!T;
+			case Float:     return get!GffFloat.to!T;
+			case Double:    return get!GffDouble.to!T;
+			case String:    return get!GffString.to!T;
+			case ResRef:    return get!GffResRef.to!T;
+			case LocString: return get!GffLocString.to!T;
+			case Void:      return get!GffVoid.to!T;
+			case Struct:    return get!GffStruct.to!T;
+			case List:      return get!GffList.to!T;
+			case Invalid:   assert(0, "No type set");
+		}
+	}
+	/// JSON to GffValue
+	this(in nwnlibd.orderedjson.JSONValue json){
+		assert(json.type == JSON_TYPE.OBJECT, "json value " ~ json.toPrettyString ~ " is not an object");
+		switch(json["type"].str){
+			case "byte":       value = json["value"].conv!GffByte;    break;
+			case "char":       value = json["value"].conv!GffChar;    break;
+			case "word":       value = json["value"].conv!GffWord;    break;
+			case "short":      value = json["value"].conv!GffShort;   break;
+			case "dword":      value = json["value"].conv!GffDWord;   break;
+			case "int":        value = json["value"].conv!GffInt;     break;
+			case "dword64":    value = json["value"].conv!GffDWord64; break;
+			case "int64":      value = json["value"].conv!GffInt64;   break;
+			case "float":      value = json["value"].conv!GffFloat;   break;
+			case "double":     value = json["value"].conv!GffDouble;  break;
+			case "cexostr":    value = json["value"].str;             break;
+			case "resref":     value = GffResRef(json["value"].str); break;
+			case "cexolocstr": value = GffLocString(json); break;
+			case "void":       value = Base64.decode(json["value"].str); break;
+			case "struct":     value = GffStruct(json); break;
+			case "list":       value = GffList(json); break;
+			default: throw new GffJsonParseException("Unknown Gff type string: '"~json["type"].str~"'");
+		}
+	}
+	/// GffValue to JSON
+	nwnlibd.orderedjson.JSONValue toJson() const {
+		JSONValue ret;
+		final switch(type) with(GffType) {
+			case Byte:      ret["type"] = "byte";    ret["value"] = get!GffByte; break;
+			case Char:      ret["type"] = "char";    ret["value"] = get!GffChar; break;
+			case Word:      ret["type"] = "word";    ret["value"] = get!GffWord; break;
+			case Short:     ret["type"] = "short";   ret["value"] = get!GffShort; break;
+			case DWord:     ret["type"] = "dword";   ret["value"] = get!GffDWord; break;
+			case Int:       ret["type"] = "int";     ret["value"] = get!GffInt; break;
+			case DWord64:   ret["type"] = "dword64"; ret["value"] = get!GffDWord64; break;
+			case Int64:     ret["type"] = "int64";   ret["value"] = get!GffInt64; break;
+			case Float:     ret["type"] = "float";   ret["value"] = get!GffFloat; break;
+			case Double:    ret["type"] = "double";  ret["value"] = get!GffDouble; break;
+			case String:    ret["type"] = "cexostr"; ret["value"] = get!GffString; break;
+			case ResRef:    ret["type"] = "resref";  ret["value"] = get!GffResRef.value; break;
+			case LocString: return get!GffLocString.toJson;
+			case Void:      ret["type"] = "void";    ret["value"] = Base64.encode(get!GffVoid).to!string; break;
+			case Struct:    return get!GffStruct.toJson;
+			case List:      return get!GffList.toJson;
+			case Invalid:   assert(0, "No type set");
 		}
 		return ret;
 	}
 
-	/// Constructs a GFF node from a $(D nwnlibd.orderedjson.JSONValue) structure
-	static GffNode fromJson(in nwnlibd.orderedjson.JSONValue jsonNode, string label, bool baseStructNode=false){
-		import std.traits: isIntegral, isFloatingPoint, EnumMembers;
-		GffType stringTypeToGffType(string type){
-			import std.string: toLower;
-			switch(type) with(GffType){
-				case "byte":         return GffType.Byte;
-				case "char":         return GffType.Char;
-				case "word":         return GffType.Word;
-				case "short":        return GffType.Short;
-				case "dword":        return GffType.DWord;
-				case "int":          return GffType.Int;
-				case "dword64":      return GffType.DWord64;
-				case "int64":        return GffType.Int64;
-				case "float":        return GffType.Float;
-				case "double":       return GffType.Double;
-				case "cexostr":      return GffType.ExoString;
-				case "resref":       return GffType.ResRef;
-				case "cexolocstr":   return GffType.ExoLocString;
-				case "void":         return GffType.Void;
-				case "struct":       return GffType.Struct;
-				case "list":         return GffType.List;
-				default: throw new GffJsonParseException("Unknown Gff type string: '"~type~"'");
-			}
-		}
-
-		uint64_t jsonToUint(in JSONValue json){
-			switch(json.type) with(JSON_TYPE){
-				case INTEGER: return json.integer;
-				case UINTEGER: return json.uinteger;
-				default: throw new GffJsonParseException("Type "~json.type~" is not an unsigned int");
-			}
-		}
-		int64_t jsonToInt(in JSONValue json){
-			switch(json.type) with(JSON_TYPE){
-				case INTEGER: return json.integer;
-				case UINTEGER: return json.uinteger;
-				default: throw new GffJsonParseException("Type "~json.type~" is not an int");
-			}
-		}
-		double jsonToFloat(in JSONValue json){
-			switch(json.type) with(JSON_TYPE){
-				case INTEGER: return json.integer;
-				case UINTEGER: return json.uinteger;
-				case FLOAT: return json.floating;
-				default: throw new GffJsonParseException("Type "~json.type~" is not an int");
-			}
-		}
-
-		GffNode ret;
-		if(baseStructNode){
-			assert(jsonNode.type == JSON_TYPE.OBJECT);
-
-			ret = GffNode(GffType.Struct);
-			ret.structType = -1;
-		}
-		else{
-			assert(jsonNode.type == JSON_TYPE.OBJECT);
-			ret = GffNode(stringTypeToGffType(jsonNode["type"].str), label);
-		}
-
-		typeswitch:
-		final switch(ret.type) with(GffType){
-			foreach(TYPE ; EnumMembers!GffType){
-				case TYPE:
-				static if(TYPE==Invalid)
-					assert(0);
-				else static if(isIntegral!(gffTypeToNative!TYPE)){
-					ret = jsonToInt(jsonNode["value"]);
-					break typeswitch;
-				}
-				else static if(isFloatingPoint!(gffTypeToNative!TYPE)){
-					ret = jsonToFloat(jsonNode["value"]);
-					break typeswitch;
-				}
-				else static if(TYPE==ExoString || TYPE==ResRef){
-					ret = jsonNode["value"].str;
-					break typeswitch;
-				}
-				else static if(TYPE==ExoLocString){
-					alias Type = gffTypeToNative!ExoLocString;
-					ret = jsonToUint(jsonNode["str_ref"]);
-
-					if(!jsonNode["value"].isNull){
-						foreach(string key, ref str ; jsonNode["value"].object){
-							auto id = key.to!(typeof(Type.strings.keys[0]));
-							ret.as!ExoLocString.strings[id] = str.str;
-						}
-					}
-					break typeswitch;
-				}
-				else static if(TYPE==Void){
-					import std.base64: Base64;
-					ret = Base64.decode(jsonNode["value"].str);
-					break typeswitch;
-				}
-				else static if(TYPE==Struct){
-					auto jsonValue = baseStructNode? &jsonNode : &jsonNode["value"];
-
-					auto structId = "__struct_id" in jsonNode;
-					if(structId !is null)
-						ret.structType = jsonToUint(*structId).to!(typeof(ret.structType));
-
-
-					if(jsonValue.type == JSON_TYPE.NULL)
-						break typeswitch;
-
-					assert(jsonValue.type==JSON_TYPE.OBJECT, "Struct is not a Json Object");
-
-
-					foreach(ref key ; jsonValue.objectKeyOrder){
-						if(key.length<2 || key[0..2]!="__"){
-							auto child = GffNode.fromJson((*jsonValue)[key], key);
-							ret.appendField(child);
-						}
-					}
-					break typeswitch;
-				}
-				else static if(TYPE==List){
-					foreach(ref node ; jsonNode["value"].array){
-						enforce!GffJsonParseException(node.type == JSON_TYPE.OBJECT, "Array element children must be a Json Object");
-						ret.as!List ~= GffNode.fromJson(node, null, true);
-					}
-					break typeswitch;
-				}
-			}
-		}
-
-		return ret;
-	}
-
-
-package:
-	GffType m_type = GffType.Invalid;
-	string m_label;
-	ubyte[] rawContainer;
-	uint64_t simpleTypeContainer;
-	string stringContainer;
-	GffNode[] listContainer;
-	OrderedAA!(string, GffNode) structContainer;
-	GffExoLocString exoLocStringContainer;
-	uint32_t m_structType = 0;
-
-	invariant{
-		if(m_type == GffType.Struct){
-			foreach(ref kv ; structContainer.byKeyValue){
-				assert(kv.key == kv.value.label, "Corrupted GffNode Struct: Key does not match child's label");
-			}
+	/// Converts into a user-readable string
+	string toPrettyString(string tabs = null) const {
+		final switch(type) with(GffType) {
+			case Byte, Char, Word, Short, DWord, Int, DWord64, Int64, Float, Double, String:
+			case ResRef, LocString:
+				return tabs ~ to!string;
+			case Void:
+				import std.base64: Base64;
+				return tabs ~ Base64.encode(get!GffVoid).to!string;
+			case Struct:
+				return get!GffStruct.toPrettyString(tabs);
+			case List:
+				return get!GffList.toPrettyString(tabs);
+			case Invalid:
+				assert(0);
 		}
 	}
 }
 
-/// Gff class for building complete $(D GffNode) from a file, binary data, json, ...
-class Gff{
 
+
+
+
+
+
+class Gff{
 	/// Empty GFF
 	this(){}
 
-	/// Read and parse GFF file
-	this(in string path){
-		this(File(path, "r"));
-	}
-	/// Read and parse GFF data in memory
+	/// Create a Gff by parsing the binary format
 	this(in ubyte[] data){
-		auto parser = Parser(data);
-
-		import std.string: stripRight;
-		m_fileType = parser.headerPtr.file_type.stripRight;
-		m_fileVersion = parser.headerPtr.file_version.stripRight;
-
-		parser.buildNodeFromStructInPlace(0, &root);
+		GffRawParser(data).parse(this);
 	}
-	/// Read and parse a GFF file
+	/// Create a Gff by parsing a file in binary format
 	this(File file){
 		ubyte[] data;
-		data.length = GffHeader.sizeof;
+		data.length = GffRawParser.RawHeader.sizeof;
 		auto readCount = file.rawRead(data).length;
-		enforce!GffParseException(readCount >= GffHeader.sizeof,
-			"File is too small to be GFF: "~readCount.to!string~" bytes read, "~GffHeader.sizeof.to!string~" needed !");
+		enforce!GffParseException(readCount >= GffRawParser.RawHeader.sizeof,
+			"File is too small to be GFF: "~readCount.to!string~" bytes read, "~GffRawParser.RawHeader.sizeof.to!string~" needed !");
 
-		GffHeader* header = cast(GffHeader*)data.ptr;
+		auto header = cast(GffRawParser.RawHeader*)data.ptr;
 		immutable size_t fileLength =
 			header.list_indices_offset + header.list_indices_count;
 
 		data.length = fileLength;
-		readCount += file.rawRead(data[GffHeader.sizeof..$]).length;
+		readCount += file.rawRead(data[GffRawParser.RawHeader.sizeof..$]).length;
 		enforce!GffParseException(readCount >= fileLength,
 			"File is too small to be GFF: "~readCount.to!string~" bytes read, "~fileLength.to!string~" needed !");
 
 		this(data);
 	}
+	// ditto
+	this(in string path){
+		this(File(path, "r"));
+	}
+
+	/// Convert to binary format
+	ubyte[] serialize(){
+		return GffRawSerializer().serialize(this);
+	}
+
+	/// Create a Gff by parsing JSON
+	this(in nwnlibd.orderedjson.JSONValue json){
+		fileType = json["__data_type"].str;
+		fileVersion = "__data_version" in json ? json["__data_version"].str : "V3.2";
+		root = GffStruct(json);
+	}
+
+	/// Convert to JSON
+	nwnlibd.orderedjson.JSONValue toJson() const {
+		auto ret = root.toJson();
+		ret["__data_type"] = fileType;
+		ret["__data_version"] = fileVersion;
+		return ret;
+	}
 
 	@property{
 		/// GFF type name stored in the GFF file
 		/// Max width: 4 chars
-		const string fileType(){return m_fileType;}
+		const string fileType(){return m_fileType.idup.stripRight;}
 		/// ditto
 		void fileType(in string type){
+			const len = type.length;
 			enforce!GffValueSetException(type.length <= 4, "fileType length must be <= 4");
-			m_fileType = type;
+			m_fileType[0 .. len] = type;
+			if(len < 4)
+				m_fileType[len .. $] = ' ';
 		}
 		/// GFF version stored in the GFF file. Usually "V3.2"
 		/// Max width: 4 chars
-		const string fileVersion(){return m_fileVersion;}
+		const string fileVersion(){return m_fileVersion.idup.stripRight;}
+		/// ditto
 		void fileVersion(in string ver){
+			const len = ver.length;
 			enforce!GffValueSetException(ver.length <= 4, "fileVersion length must be <= 4");
-			m_fileVersion = ver;
+			m_fileVersion[0 .. len] = ver;
+			if(len < 4)
+				m_fileVersion[len .. $] = ' ';
 		}
 	}
-
-	/// Produces a readable string of the node and its children
-	const string toPrettyString(){
-		return "========== GFF-"~fileType~"-"~fileVersion~" ==========\n"
-				~ root.toPrettyString;
-	}
-
-	/// Constructs a $(D Gff) from a $(D nwnlibd.orderedjson.JSONValue) structure
-	static Gff fromJson(in JSONValue json){
-		auto gff = new Gff;
-		gff.root = GffNode.fromJson(json, null, true);
-
-		gff.fileType = json["__data_type"].str;
-		gff.fileVersion = "V3.2";
-
-		return gff;
-	}
-
-	/// Builds a $(D nwnlibd.orderedjson.JSONValue) from a $(D Gff)
-	auto ref JSONValue toJson(){
-		auto json = root.toJson(true);
-		json["__data_type"] = JSONValue(fileType);
-		return json;
-	}
-
+	///
 	alias root this;
-	/// Root $(D GffNode)
-	GffNode root;
-
-	/// Serializes the $(D Gff) to the binary nwn GFF format
-	ubyte[] serialize(){
-		Serializer serializer;
-		serializer.registerStruct(&root);
-		return serializer.serialize(m_fileType, m_fileVersion);
-	}
-
-	/// Dumps gff content with header and tables
-	/// Useful for debugging
-	static string dumpRawGffData(in ubyte[] data){
-		return Parser(data).dumpRawGff();
-	}
+	/// Root $(D GffStruct)
+	GffStruct root;
 
 private:
-	string m_fileType, m_fileVersion;
+	char[4] m_fileType, m_fileVersion;
 
-	align(1) struct GffHeader{
+
+}
+
+
+
+private struct GffRawParser{
+	@disable this();
+	this(in ubyte[] _data){
+		assert(_data.length >= RawHeader.sizeof, "Data length is so small it cannot even contain the header");
+
+		data = _data;
+		headerPtr       = cast(const RawHeader*)      (data.ptr);
+		structsPtr      = cast(const RawStruct*)      (data.ptr + headerPtr.struct_offset);
+		fieldsPtr       = cast(const RawField*)       (data.ptr + headerPtr.field_offset);
+		labelsPtr       = cast(const RawLabel*)       (data.ptr + headerPtr.label_offset);
+		fieldDatasPtr   = cast(const RawFieldData*)   (data.ptr + headerPtr.field_data_offset);
+		fieldIndicesPtr = cast(const RawFieldIndices*)(data.ptr + headerPtr.field_indices_offset);
+		listIndicesPtr  = cast(const RawListIndices*) (data.ptr + headerPtr.list_indices_offset);
+
+		assert(data.length == headerPtr.list_indices_offset+headerPtr.list_indices_count,
+			"Data length do not match header");
+	}
+
+	static align(1) struct RawHeader{
 		char[4]  file_type;
 		char[4]  file_version;
 		uint32_t struct_offset;
@@ -969,628 +633,620 @@ private:
 		uint32_t list_indices_offset;
 		uint32_t list_indices_count;
 	}
-	align(1) struct GffStruct{
-		uint32_t type;
+	static align(1) struct RawStruct{
+		uint32_t id;
 		uint32_t data_or_data_offset;
 		uint32_t field_count;
+		string toString() const {
+			return format!"Struct(id=%d dodo=%d fc=%d)"(id, data_or_data_offset, field_count);
+		}
 	}
-	align(1) struct GffField{
+	static align(1) struct RawField{
 		uint32_t type;
 		uint32_t label_index;
 		uint32_t data_or_data_offset;
+		string toString() const {
+			return format!"Field(t=%s lblidx=%d dodo=%d)"(type.to!GffType, label_index, data_or_data_offset);
+		}
 	}
-	align(1) struct GffLabel{
+	static align(1) struct RawLabel{
 		char[16] value;
+		string toString() const {
+			return format!"Label(%s)"(value.charArrayToString);
+		}
 	}
-	align(1) struct GffFieldData{
+	static align(1) struct RawFieldData{
 		uint8_t first_data;//First byte of data. Other follows
 	}
-	align(1) struct GffFieldIndices{
+	static align(1) struct RawFieldIndices{
 		uint32_t field_index;
 	}
-	align(1) struct GffListIndices{
+	static align(1) struct RawListIndices{
 		uint32_t length;
 		uint32_t first_struct_index;
-	}
-
-	struct Parser{
-		@disable this();
-		this(in ubyte[] rawData){
-			assert(rawData.length>GffHeader.sizeof, "Data length is so small it cannot even contain the header");
-
-			headerPtr       = cast(immutable GffHeader*)      (rawData.ptr);
-			structsPtr      = cast(immutable GffStruct*)      (rawData.ptr + headerPtr.struct_offset);
-			fieldsPtr       = cast(immutable GffField*)       (rawData.ptr + headerPtr.field_offset);
-			labelsPtr       = cast(immutable GffLabel*)       (rawData.ptr + headerPtr.label_offset);
-			fieldDatasPtr   = cast(immutable GffFieldData*)   (rawData.ptr + headerPtr.field_data_offset);
-			fieldIndicesPtr = cast(immutable GffFieldIndices*)(rawData.ptr + headerPtr.field_indices_offset);
-			listIndicesPtr  = cast(immutable GffListIndices*) (rawData.ptr + headerPtr.list_indices_offset);
-
-			assert(rawData.length == headerPtr.list_indices_offset+headerPtr.list_indices_count,
-				"Data length do not match header");
-		}
-
-		immutable GffHeader*       headerPtr;
-		immutable GffStruct*       structsPtr;
-		immutable GffField*        fieldsPtr;
-		immutable GffLabel*        labelsPtr;
-		immutable GffFieldData*    fieldDatasPtr;
-		immutable GffFieldIndices* fieldIndicesPtr;
-		immutable GffListIndices*  listIndicesPtr;
-
-		immutable(GffStruct*) getStruct(in size_t index){
-			assert(index < headerPtr.struct_count, "index "~index.to!string~" out of bounds");
-			return &structsPtr[index];
-		}
-		immutable(GffField*) getField(in size_t index){
-			assert(index < headerPtr.field_count, "index "~index.to!string~" out of bounds");
-			return &fieldsPtr[index];
-		}
-		immutable(GffLabel*) getLabel(in size_t index){
-			assert(index < headerPtr.label_count, "index "~index.to!string~" out of bounds");
-			return &labelsPtr[index];
-		}
-		immutable(GffFieldData*) getFieldData(in size_t offset){
-			assert(offset < headerPtr.field_data_count, "offset "~offset.to!string~" out of bounds");
-			return cast(immutable GffFieldData*)(cast(void*)fieldDatasPtr + offset);
-		}
-		immutable(GffFieldIndices*) getFieldIndices(in size_t offset){
-			assert(offset < headerPtr.field_indices_count, "offset "~offset.to!string~" out of bounds");
-			return cast(immutable GffFieldIndices*)(cast(void*)fieldIndicesPtr + offset);
-		}
-		immutable(GffListIndices*) getListIndices(in size_t offset){
-			assert(offset < headerPtr.list_indices_count, "offset "~offset.to!string~" out of bounds");
-			return cast(immutable GffListIndices*)(cast(void*)listIndicesPtr + offset);
-		}
-
-		version(gff_verbose) string gff_verbose_rtIndent;
-
-		void buildNodeFromStructInPlace(in size_t structIndex, GffNode* destNode){
-			destNode.m_type = GffType.Struct;
-
-			auto s = getStruct(structIndex);
-			destNode.structType = s.type;
-
-			version(gff_verbose){
-				writeln(gff_verbose_rtIndent, "Parsing struct: id=",structIndex,
-					" dodo=", s.data_or_data_offset,
-					" field_count=", s.field_count,
-					" type=",s.type);
-				gff_verbose_rtIndent ~= "│ ";
-			}
-
-			if(s.field_count==1){
-				GffNode field;
-				buildNodeFromFieldInPlace(s.data_or_data_offset, &field);
-
-				destNode.structContainer.dirtyAppendKeyValue(field.label, field);
-			}
-			else if(s.field_count > 1){
-				auto fi = getFieldIndices(s.data_or_data_offset);
-
-				foreach(i ; 0..s.field_count){
-					GffNode field;
-					buildNodeFromFieldInPlace(fi[i].field_index, &field);
-
-					destNode.structContainer.dirtyAppendKeyValue(field.label, field);
-				}
-			}
-
-			version(gff_verbose) gff_verbose_rtIndent = gff_verbose_rtIndent[0..$-4];
-		}
-
-		void buildNodeFromListInPlace(in size_t listIndex, GffNode* destList){
-			destList.m_type = GffType.List;
-
-			auto li = getListIndices(listIndex);
-			if(li.length>0){
-				immutable uint32_t* indices = &li.first_struct_index;
-
-				destList.listContainer.length = li.length;
-
-				foreach(i, ref structNode ; destList.listContainer){
-					buildNodeFromStructInPlace(indices[i], &structNode);
-				}
-			}
-		}
-
-
-		void buildNodeFromFieldInPlace(in size_t fieldIndex, GffNode* destField){
-			import std.typetuple: TypeTuple;
-			import nwnlibd.parseutils;
-
-			try{
-				import std.conv : to;
-				immutable f = getField(fieldIndex);
-
-				destField.m_type = cast(GffType)f.type;
-				destField.label = charArrayToString(getLabel(f.label_index).value);
-
-				version(gff_verbose){
-					writeln(gff_verbose_rtIndent, "Parsing  field: '", destField.label,
-						"' (",destField.type,
-						", id=",fieldIndex,
-						", dodo:",f.data_or_data_offset,")");
-					gff_verbose_rtIndent ~= "│ ";
-				}
-
-				typeswitch:
-				final switch(destField.type) with(GffType){
-					case Invalid: assert(0, "type has not been set");
-
-					foreach(TYPE ; TypeTuple!(Byte,Char,Word,Short,DWord,Int,Float)){
-						case TYPE:
-							alias NativeType = gffTypeToNative!TYPE;
-							*cast(NativeType*)&destField.simpleTypeContainer = *cast(NativeType*)&f.data_or_data_offset;
-							break typeswitch;
-					}
-					foreach(TYPE ; TypeTuple!(DWord64,Int64,Double)){
-						case TYPE:
-							alias NativeType = gffTypeToNative!TYPE;
-							immutable d = getFieldData(f.data_or_data_offset);
-							*cast(NativeType*)&destField.simpleTypeContainer = *cast(NativeType*)d;
-							break typeswitch;
-					}
-					case ExoString:
-						immutable data = getFieldData(f.data_or_data_offset);
-						immutable size = cast(immutable uint32_t*)data;
-						immutable chars = cast(immutable char*)(data+uint32_t.sizeof);
-
-						destField.stringContainer = chars[0..*size].idup;
-						break;
-					case ResRef:
-						immutable data = getFieldData(f.data_or_data_offset);
-						immutable size = cast(immutable uint8_t*)data;
-						immutable chars = cast(immutable char*)(data+uint8_t.sizeof);
-
-						destField.stringContainer = chars[0..*size].idup;
-						break;
-
-					case ExoLocString:
-						immutable data = getFieldData(f.data_or_data_offset);
-						//immutable total_size = cast(uint32_t*)data;
-						immutable str_ref = cast(immutable uint32_t*)(data+uint32_t.sizeof);
-						immutable str_count = cast(immutable uint32_t*)(data+2*uint32_t.sizeof);
-						auto sub_str = cast(void*)(data+3*uint32_t.sizeof);
-
-						destField.exoLocStringContainer.strref = *str_ref;
-
-						foreach(i ; 0 .. *str_count){
-							immutable id = cast(immutable int32_t*)sub_str;
-							immutable length = cast(immutable int32_t*)(sub_str+uint32_t.sizeof);
-							immutable str = cast(immutable char*)(sub_str+2*uint32_t.sizeof);
-
-							destField.exoLocStringContainer.strings[*id] = str[0..*length].idup;
-							sub_str += 2*uint32_t.sizeof + char.sizeof*(*length);
-						}
-						break;
-
-					case Void:
-						immutable data = getFieldData(f.data_or_data_offset);
-						immutable size = cast(immutable uint32_t*)data;
-						immutable dataVoid = cast(immutable ubyte*)(data+uint32_t.sizeof);
-
-						destField.rawContainer = dataVoid[0..*size].dup;
-						break;
-
-					case Struct:
-						buildNodeFromStructInPlace(f.data_or_data_offset, destField);
-						break;
-
-					case List:
-						buildNodeFromListInPlace(f.data_or_data_offset, destField);
-						break;
-				}
-				version(gff_verbose) gff_verbose_rtIndent = gff_verbose_rtIndent[0..$-4];
-			}
-			catch(Throwable t){
-				if(t.msg.length==0 || t.msg[0] != '@'){
-					t.msg = "@"~destField.label~": "~t.msg;
-				}
-				throw t;
-			}
-		}
-
-		string dumpRawGff() const{
-			import std.string: center, rightJustify, toUpper;
-			import nwnlibd.parseutils;
-
-			string ret;
-
-			void printTitle(in string title){
-				ret ~= "======================================================================================\n";
-				ret ~= title.toUpper.center(86)~"\n";
-				ret ~= "======================================================================================\n";
-			}
-
-			printTitle("header");
-			with(headerPtr){
-				ret ~= "'"~file_type~"'    '"~file_version~"'\n";
-				ret ~= "struct:        offset="~struct_offset.to!string~"  count="~struct_count.to!string~"\n";
-				ret ~= "field:         offset="~field_offset.to!string~"  count="~field_count.to!string~"\n";
-				ret ~= "label:         offset="~label_offset.to!string~"  count="~label_count.to!string~"\n";
-				ret ~= "field_data:    offset="~field_data_offset.to!string~"  count="~field_data_count.to!string~"\n";
-				ret ~= "field_indices: offset="~field_indices_offset.to!string~"  count="~field_indices_count.to!string~"\n";
-				ret ~= "list_indices:  offset="~list_indices_offset.to!string~"  count="~list_indices_count.to!string~"\n";
-			}
-			printTitle("structs");
-			foreach(id, ref a ; structsPtr[0..headerPtr.struct_count])
-				ret ~= id.to!string.rightJustify(4)~" >"
-					~"  id="~a.type.to!string
-					~"  dodo="~a.data_or_data_offset.to!string
-					~"  fc="~a.field_count.to!string
-					~"\n";
-
-			printTitle("fields");
-			foreach(id, ref a ; fieldsPtr[0..headerPtr.field_count])
-				ret ~= id.to!string.rightJustify(4)~" >"
-					~"  type="~a.type.to!string
-					~"  lbl="~a.label_index.to!string
-					~"  dodo="~a.data_or_data_offset.to!string
-					~"\n";
-
-			printTitle("labels");
-			foreach(id, ref a ; labelsPtr[0..headerPtr.label_count])
-				ret ~= id.to!string.rightJustify(4)~" > "~a.to!string~"\n";
-
-			printTitle("field data");
-			ret ~= dumpByteArray(cast(ubyte[])fieldDatasPtr[0..headerPtr.field_data_count]);
-
-			printTitle("field indices");
-			ret ~= dumpByteArray(cast(ubyte[])fieldIndicesPtr[0..headerPtr.field_indices_count]);
-
-			printTitle("list indices");
-			ret ~= dumpByteArray(cast(ubyte[])listIndicesPtr[0..headerPtr.list_indices_count]);
-
-			return ret;
-		}
-		unittest{
-			Gff.dumpRawGffData(cast(ubyte[])import("doge.utc"));
+		string toString() const {
+			return format!"ListIndices(len=%d start=%d)"(length, first_struct_index);
 		}
 	}
 
+	const ubyte[] data;
+	const RawHeader* headerPtr;
+	const RawStruct* structsPtr;
+	const RawField*  fieldsPtr;
+	const RawLabel*  labelsPtr;
+	const void*         fieldDatasPtr;
+	const void*         fieldIndicesPtr;
+	const void*         listIndicesPtr;
 
-	struct Serializer{
-		GffHeader   header;
-		GffStruct[] structs;
-		GffField[]  fields;
-		GffLabel[]  labels;
-		ubyte[]     fieldDatas;
-		ubyte[]     fieldIndices;
-		ubyte[]     listIndices;
+	const(RawStruct*) getRawStruct(in size_t index) const {
+		assert(index < headerPtr.struct_count, "index "~index.to!string~" out of bounds");
+		return &structsPtr[index];
+	}
+	const(RawField*) getRawField(in size_t index) const {
+		assert(index < headerPtr.field_count, "index "~index.to!string~" out of bounds");
+		return &fieldsPtr[index];
+	}
+	const(RawLabel*) getRawLabel(in size_t index) const {
+		assert(index < headerPtr.label_count, "index "~index.to!string~" out of bounds");
+		return &labelsPtr[index];
+	}
+	const(RawFieldData*) getRawFieldData(in size_t offset) const {
+		assert(offset < headerPtr.field_data_count, "offset "~offset.to!string~" out of bounds");
+		return cast(const RawFieldData*)(fieldDatasPtr + offset);
+	}
+	const(RawFieldIndices*) getRawFieldIndices(in size_t offset) const {
+		assert(offset < headerPtr.field_indices_count, "offset "~offset.to!string~" out of bounds");
+		return cast(const RawFieldIndices*)(fieldIndicesPtr + offset);
+	}
+	const(RawListIndices*) getRawListIndices(in size_t offset) const {
+		assert(offset < headerPtr.list_indices_count, "offset "~offset.to!string~" out of bounds");
+		return cast(const RawListIndices*)(listIndicesPtr + offset);
+	}
 
-		version(gff_verbose) string gff_verbose_rtIndent;
+	void parse(Gff gff){
+		gff.fileType = headerPtr.file_type.to!string;
+		gff.fileVersion = headerPtr.file_version.to!string;
+		gff.root = buildStruct(0);
+	}
 
+	GffStruct buildStruct(size_t structIndex){
+		GffStruct ret;
 
-		uint32_t registerStruct(const(GffNode)* node){
-			assert(node.type == GffType.Struct);
+		auto s = getRawStruct(structIndex);
+		ret.id = s.id;
 
-			immutable createdStructIndex = cast(uint32_t)structs.length;
-			structs ~= GffStruct();
-
-			immutable fieldCount = cast(uint32_t)node.structContainer.length;
-			structs[createdStructIndex].type = node.structType;
-			structs[createdStructIndex].field_count = fieldCount;
-
-
-			version(gff_verbose){
-				writeln(gff_verbose_rtIndent,
-					"Registering struct id=",createdStructIndex,
-					" from node '",node.label,"'",
-					"(type=",structs[createdStructIndex].type,", fields_count=",structs[createdStructIndex].field_count,")");
-				gff_verbose_rtIndent ~= "│ ";
-			}
-
-			if(fieldCount == 1){
-				//index in field array
-				immutable fieldId = registerField(&node.structContainer.byKeyValue[0].value);
-				structs[createdStructIndex].data_or_data_offset = fieldId;
-			}
-			else if(fieldCount>1){
-				//byte offset in field indices array
-				immutable fieldIndicesIndex = cast(uint32_t)fieldIndices.length;
-				structs[createdStructIndex].data_or_data_offset = fieldIndicesIndex;
-
-				fieldIndices.length += uint32_t.sizeof*fieldCount;
-				foreach(i, ref kv ; node.structContainer.byKeyValue){
-
-					immutable fieldId = registerField(&kv.value);
-
-					immutable offset = fieldIndicesIndex + i*uint32_t.sizeof;
-					fieldIndices[offset..offset+uint32_t.sizeof] = cast(ubyte[])(cast(uint32_t*)&fieldId)[0..1];
-				}
-			}
-			else{
-				structs[createdStructIndex].data_or_data_offset = -1;
-			}
-
-			version(gff_verbose) gff_verbose_rtIndent = gff_verbose_rtIndent[0..$-4];
-			return createdStructIndex;
+		version(gff_verbose_parse){
+			stderr.writefln("%sParsing struct: id=%d %s",
+				gff_verbose_rtIndent, structIndex, *s
+			);
+			gff_verbose_rtIndent ~= "│ ";
 		}
-		uint32_t registerField(const(GffNode)* node){
-			immutable createdFieldIndex = cast(uint32_t)fields.length;
-			fields ~= GffField(node.type);
 
-			version(gff_verbose){
-				writeln(gff_verbose_rtIndent, "Registering  field: '", node.label,
-					"' (",node.type,
-					", id=",createdFieldIndex,
-					", value=",node.to!string,")");
-				gff_verbose_rtIndent ~= "│ ";
-			}
+		if(s.field_count==1){
+			const fieldIndex = s.data_or_data_offset;
 
-			assert(node.label.length <= 16, "Label too long");//TODO: Throw exception on GffNode.label set
+			auto f = getRawField(fieldIndex);
+			const label = charArrayToString(getRawLabel(f.label_index).value);
+			ret.dirtyAppendKeyValue(label, buildValue(fieldIndex));
+		}
+		else if(s.field_count > 1){
+			auto fi = getRawFieldIndices(s.data_or_data_offset);
 
-			char[16] label = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
-			label[0..node.label.length] = node.label.dup;
-			//TODO: this may be totally stupid and complexity too high
-			bool labelFound = false;
-			foreach(i, ref s ; labels){
-				if(s.value == label){
-					labelFound = true;
-					fields[createdFieldIndex].label_index = cast(uint32_t)i;
-					break;
+			foreach(i ; 0 .. s.field_count){
+				const fieldIndex = fi[i].field_index;
+				auto f = getRawField(fieldIndex);
+				const label = charArrayToString(getRawLabel(f.label_index).value);
+
+				version(gff_verbose_parse){
+					stderr.writefln("%s%d: %s ↴",
+						gff_verbose_rtIndent, i, label
+					);
+					gff_verbose_rtIndent ~= "   ";
 				}
+
+				ret.dirtyAppendKeyValue(label, buildValue(fieldIndex));
+
+				version(gff_verbose_parse) gff_verbose_rtIndent = gff_verbose_rtIndent[0 .. $ - 3];
 			}
-			if(!labelFound){
-				fields[createdFieldIndex].label_index = cast(uint32_t)labels.length;
-				labels ~= GffLabel(label);
+		}
+
+		version(gff_verbose_parse) gff_verbose_rtIndent = gff_verbose_rtIndent[0 .. $ - 4];
+
+		return ret;
+	}
+
+
+	GffList buildList(size_t listIndex){
+		GffList ret;
+		auto li = getRawListIndices(listIndex);
+		if(li.length>0){
+			const indices = &li.first_struct_index;
+
+			ret.length = li.length;
+			foreach(i, ref gffStruct ; ret){
+				gffStruct = buildStruct(indices[i]);
 			}
+		}
+		return ret;
+	}
 
-			final switch(node.type) with(GffType){
-				case Invalid: assert(0, "type has not been set");
-				case Byte, Char, Word, Short, DWord, Int, Float:
-					//cast is ok because all those types are <= 32bit
-					fields[createdFieldIndex].data_or_data_offset = *cast(uint32_t*)&node.simpleTypeContainer;
-					break;
-				case DWord64, Int64, Double:
-					//stored in fieldDatas
-					fields[createdFieldIndex].data_or_data_offset = cast(uint32_t)fieldDatas.length;
-					fieldDatas ~= cast(ubyte[])(&node.simpleTypeContainer)[0..1].dup;
-					break;
-				case ExoString:
-					immutable stringLength = cast(uint32_t)node.stringContainer.length;
+	GffValue buildValue(size_t fieldIndex){
+		GffValue ret;
+		auto f = getRawField(fieldIndex);
 
-					fields[createdFieldIndex].data_or_data_offset = cast(uint32_t)fieldDatas.length;
-					fieldDatas ~= cast(ubyte[])(&stringLength)[0..1].dup;
-					fieldDatas ~= (cast(ubyte*)node.stringContainer.ptr)[0..stringLength].dup;
-					break;
-				case ResRef:
-					assert(node.stringContainer.length<=32, "Resref too long (max length: 32 characters)");//TODO: Throw exception on GffNode value set
+		version(gff_verbose_parse){
+			stderr.writefln("%sParsing value: type=%s fieldIndex=%d",
+				gff_verbose_rtIndent, f.type.to!GffType, fieldIndex,
+			);
+			gff_verbose_rtIndent ~= "│ ";
+		}
 
-					immutable stringLength = cast(uint8_t)node.stringContainer.length;
+		final switch(f.type) with(GffType){
+			case Invalid: assert(0, "Invalid value type");
 
-					fields[createdFieldIndex].data_or_data_offset = cast(uint32_t)fieldDatas.length;
-					fieldDatas ~= cast(ubyte[])(&stringLength)[0..1].dup;
-					fieldDatas ~= (cast(ubyte*)node.stringContainer.ptr)[0..stringLength].dup;
-					break;
-				case ExoLocString:
-					immutable fieldDataIndex = fieldDatas.length;
-					fields[createdFieldIndex].data_or_data_offset = cast(uint32_t)fieldDataIndex;
+			case Byte:  ret.value = *cast(GffByte*) &f.data_or_data_offset; break;
+			case Char:  ret.value = *cast(GffChar*) &f.data_or_data_offset; break;
+			case Word:  ret.value = *cast(GffWord*) &f.data_or_data_offset; break;
+			case Short: ret.value = *cast(GffShort*)&f.data_or_data_offset; break;
+			case DWord: ret.value = *cast(GffDWord*)&f.data_or_data_offset; break;
+			case Int:   ret.value = *cast(GffInt*)  &f.data_or_data_offset; break;
+			case Float: ret.value = *cast(GffFloat*)&f.data_or_data_offset; break;
 
-					//total size
-					fieldDatas ~= [0,0,0,0];//uint32_t
+			case DWord64:
+			case Int64:
+			case Double:
+				const d = getRawFieldData(f.data_or_data_offset);
+				switch(f.type){
+					case DWord64: ret.value = *cast(GffDWord64*)d; break;
+					case Int64:   ret.value = *cast(GffInt64*)  d; break;
+					case Double:  ret.value = *cast(GffDouble*) d; break;
+					default: assert(0);
+				}
+				break;
 
-					immutable strref = cast(uint32_t)node.exoLocStringContainer.strref;
-					fieldDatas ~= cast(ubyte[])(&strref)[0..1].dup;
+			case String:
+				const data = getRawFieldData(f.data_or_data_offset);
+				const size = cast(const uint32_t*)data;
+				const chars = cast(const char*)(data + uint32_t.sizeof);
+				ret.value = chars[0..*size].idup;
+				break;
 
-					immutable strcount = cast(uint32_t)node.exoLocStringContainer.strings.length;
-					fieldDatas ~= cast(ubyte[])(&strcount)[0..1].dup;
+			case ResRef:
+				const data = getRawFieldData(f.data_or_data_offset);
+				const size = cast(const uint8_t*)data;
+				const chars = cast(const char*)(data + uint8_t.sizeof);
+				ret.value = GffResRef(chars[0..*size].idup);
+				break;
 
-					import std.algorithm: sort;
-					import std.array: array;
-					foreach(locstr ; node.exoLocStringContainer.strings.byKeyValue.array.sort!((a,b)=>a.key<b.key)){
-						immutable key = cast(int32_t)locstr.key;
-						fieldDatas ~= cast(ubyte[])(&key)[0..1].dup;//string id
+			case LocString:
+				const data = getRawFieldData(f.data_or_data_offset);
+				const str_ref = cast(const uint32_t*)(data+uint32_t.sizeof);
+				const str_count = cast(const uint32_t*)(data+2*uint32_t.sizeof);
+				auto sub_str = cast(void*)(data+3*uint32_t.sizeof);
 
-						immutable length = cast(int32_t)locstr.value.length;
-						fieldDatas ~= cast(ubyte[])(&length)[0..1].dup;
+				auto val = GffLocString(*str_ref);
+				foreach(i ; 0 .. *str_count){
+					const id = cast(const int32_t*)sub_str;
+					const length = cast(const int32_t*)(sub_str+uint32_t.sizeof);
+					const str = cast(const char*)(sub_str+2*uint32_t.sizeof);
 
-						fieldDatas ~= cast(ubyte[])locstr.value.ptr[0..length].dup;
+					val.strings[*id] = str[0..*length].idup;
+					sub_str += 2*uint32_t.sizeof + char.sizeof*(*length);
+				}
+				ret.value = val;
+				break;
+
+			case Void:
+				const data = getRawFieldData(f.data_or_data_offset);
+				const size = cast(const uint32_t*)data;
+				const dataVoid = cast(const ubyte*)(data+uint32_t.sizeof);
+				ret.value = dataVoid[0..*size].dup;
+				break;
+
+			case Struct:
+				ret.value = buildStruct(f.data_or_data_offset);
+				break;
+
+			case List:
+				ret.value = buildList(f.data_or_data_offset);
+				break;
+
+		}
+		version(gff_verbose_parse) gff_verbose_rtIndent = gff_verbose_rtIndent[0..$-4];
+		return ret;
+	}
+	string dumpRawGff() const{
+		import std.string: center, rightJustify, toUpper;
+		import nwnlibd.parseutils;
+
+		string ret;
+
+		void printTitle(in string title){
+			ret ~= "======================================================================================\n";
+			ret ~= title.toUpper.center(86)~"\n";
+			ret ~= "======================================================================================\n";
+		}
+
+		printTitle("header");
+		with(headerPtr){
+			ret ~= "'"~file_type~"'    '"~file_version~"'\n";
+			ret ~= "struct:        offset="~struct_offset.to!string~"  count="~struct_count.to!string~"\n";
+			ret ~= "field:         offset="~field_offset.to!string~"  count="~field_count.to!string~"\n";
+			ret ~= "label:         offset="~label_offset.to!string~"  count="~label_count.to!string~"\n";
+			ret ~= "field_data:    offset="~field_data_offset.to!string~"  count="~field_data_count.to!string~"\n";
+			ret ~= "field_indices: offset="~field_indices_offset.to!string~"  count="~field_indices_count.to!string~"\n";
+			ret ~= "list_indices:  offset="~list_indices_offset.to!string~"  count="~list_indices_count.to!string~"\n";
+		}
+		printTitle("structs");
+		foreach(id, ref a ; structsPtr[0..headerPtr.struct_count])
+			ret ~= id.to!string.rightJustify(4)~" >"
+				~"  id="~a.id.to!string
+				~"  dodo="~a.data_or_data_offset.to!string
+				~"  fc="~a.field_count.to!string
+				~"\n";
+
+		printTitle("fields");
+		foreach(id, ref a ; fieldsPtr[0..headerPtr.field_count])
+			ret ~= id.to!string.rightJustify(4)~" >"
+				~"  type="~a.type.to!string
+				~"  lbl="~a.label_index.to!string
+				~"  dodo="~a.data_or_data_offset.to!string
+				~"\n";
+
+		printTitle("labels");
+		foreach(id, ref a ; labelsPtr[0..headerPtr.label_count])
+			ret ~= id.to!string.rightJustify(4)~" > "~a.to!string~"\n";
+
+		printTitle("field data");
+		ret ~= dumpByteArray(cast(ubyte[])fieldDatasPtr[0..headerPtr.field_data_count]);
+
+		printTitle("field indices");
+		ret ~= dumpByteArray(cast(ubyte[])fieldIndicesPtr[0..headerPtr.field_indices_count]);
+
+		printTitle("list indices");
+		ret ~= dumpByteArray(cast(ubyte[])listIndicesPtr[0..headerPtr.list_indices_count]);
+
+		return ret;
+	}
+
+	version(gff_verbose_parse) string gff_verbose_rtIndent;
+}
+
+private struct GffRawSerializer{
+	GffRawParser.RawHeader   header;
+	GffRawParser.RawStruct[] structs;
+	GffRawParser.RawField[]  fields;
+	GffRawParser.RawLabel[]  labels;
+	ubyte[]     fieldDatas;
+	ubyte[]     fieldIndices;
+	ubyte[]     listIndices;
+
+	uint32_t[string]  knownLabels;
+	version(gff_verbose_ser) string gff_verbose_rtIndent;
+
+	uint32_t registerStruct(in GffStruct gffStruct){
+		immutable createdStructIndex = cast(uint32_t)structs.length;
+		structs ~= GffRawParser.RawStruct();
+
+		immutable fieldCount = cast(uint32_t)gffStruct.length;
+		structs[createdStructIndex].id = gffStruct.id;
+		structs[createdStructIndex].field_count = fieldCount;
+
+
+		version(gff_verbose_ser){
+			stderr.writeln(gff_verbose_rtIndent,
+				"Registering struct id=",createdStructIndex,
+				"(type=",structs[createdStructIndex].type,", fields_count=",structs[createdStructIndex].field_count,")");
+			gff_verbose_rtIndent ~= "│ ";
+		}
+
+		if(fieldCount == 1){
+			//index in field array
+			auto child = &gffStruct.byKeyValue[0];
+			immutable fieldId = registerField(child.key, child.value);
+			structs[createdStructIndex].data_or_data_offset = fieldId;
+		}
+		else if(fieldCount>1){
+			//byte offset in field indices array
+			immutable fieldIndicesIndex = cast(uint32_t)fieldIndices.length;
+			structs[createdStructIndex].data_or_data_offset = fieldIndicesIndex;
+
+			fieldIndices.length += uint32_t.sizeof * fieldCount;
+			foreach(i, ref kv ; gffStruct.byKeyValue){
+
+				immutable fieldId = registerField(kv.key, kv.value);
+
+				immutable offset = fieldIndicesIndex + i * uint32_t.sizeof;
+				fieldIndices[offset..offset+uint32_t.sizeof] = cast(ubyte[])(cast(uint32_t*)&fieldId)[0..1];
+			}
+		}
+		else{
+			structs[createdStructIndex].data_or_data_offset = -1;
+		}
+
+		version(gff_verbose_ser) gff_verbose_rtIndent = gff_verbose_rtIndent[0..$-4];
+		return createdStructIndex;
+	}
+
+	uint32_t registerField(in string label, in GffValue value){
+		immutable createdFieldIndex = cast(uint32_t)fields.length;
+		fields ~= GffRawParser.RawField(value.type);
+
+		version(gff_verbose_ser){
+			stderr.writefln("%sRegistering field id=%d: %s %s = %s",
+				gff_verbose_rtIndent, createdFieldIndex, value.type, label, value
+			);
+			gff_verbose_rtIndent ~= "│ ";
+		}
+
+		assert(label.length <= 16, "Label too long");//TODO: Throw exception on GffNode.label set
+
+		if(auto i = (label in knownLabels)){
+			fields[createdFieldIndex].label_index = *i;
+		}
+		else{
+			fields[createdFieldIndex].label_index = cast(uint32_t)labels.length;
+			knownLabels[label] = cast(uint32_t)labels.length;
+			labels ~= GffRawParser.RawLabel(label.stringToCharArray!(char[16]));
+		}
+
+		final switch(value.type) with(GffType){
+			case Invalid: assert(0, "type has not been set");
+
+			//cast is ok because all those types are <= 32bit
+			case Byte:  fields[createdFieldIndex].data_or_data_offset = *cast(uint32_t*)&value.get!GffByte(); break;
+			case Char:  fields[createdFieldIndex].data_or_data_offset = *cast(uint32_t*)&value.get!GffChar(); break;
+			case Word:  fields[createdFieldIndex].data_or_data_offset = *cast(uint32_t*)&value.get!GffWord(); break;
+			case Short: fields[createdFieldIndex].data_or_data_offset = *cast(uint32_t*)&value.get!GffShort(); break;
+			case DWord: fields[createdFieldIndex].data_or_data_offset = *cast(uint32_t*)&value.get!GffDWord(); break;
+			case Int:   fields[createdFieldIndex].data_or_data_offset = *cast(uint32_t*)&value.get!GffInt(); break;
+			case Float: fields[createdFieldIndex].data_or_data_offset = *cast(uint32_t*)&value.get!GffFloat(); break;
+
+			case DWord64:
+			case Int64:
+			case Double:
+				fields[createdFieldIndex].data_or_data_offset = cast(uint32_t)fieldDatas.length;
+				switch(value.type){
+					case DWord64: fieldDatas ~= cast(ubyte[])(&value.get!GffDWord64())[0..1].dup; break;
+					case Int64:   fieldDatas ~= cast(ubyte[])(&value.get!GffInt64())[0..1].dup; break;
+					case Double:  fieldDatas ~= cast(ubyte[])(&value.get!GffDouble())[0..1].dup; break;
+					default: assert(0);
+				}
+				break;
+
+			case String:
+				immutable strLen = cast(uint32_t)value.get!GffString.length;
+
+				fields[createdFieldIndex].data_or_data_offset = cast(uint32_t)fieldDatas.length;
+				fieldDatas ~= cast(ubyte[])(&strLen)[0..1].dup;
+				fieldDatas ~= (cast(ubyte*)value.get!GffString.ptr)[0..strLen].dup;
+				break;
+			case ResRef:
+				assert(value.get!GffResRef.length <= 32, "Resref too long (max length: 32 characters)");
+				immutable strLen = cast(uint8_t)value.get!GffResRef.length;
+
+				fields[createdFieldIndex].data_or_data_offset = cast(uint32_t)fieldDatas.length;
+				fieldDatas ~= cast(ubyte[])(&strLen)[0..1].dup;
+				fieldDatas ~= (cast(ubyte*)value.get!GffResRef.ptr)[0..strLen].dup;
+				break;
+			case LocString:
+				immutable fieldDataIndex = fieldDatas.length;
+				fields[createdFieldIndex].data_or_data_offset = cast(uint32_t)fieldDataIndex;
+
+				//total size
+				fieldDatas ~= [0,0,0,0];//uint32_t
+
+				immutable strref = cast(uint32_t)value.get!GffLocString.strref;
+				fieldDatas ~= cast(ubyte[])(&strref)[0..1].dup;
+
+				immutable strcount = cast(uint32_t)value.get!GffLocString.strings.length;
+				fieldDatas ~= cast(ubyte[])(&strcount)[0..1].dup;
+
+				import std.algorithm: sort;
+				import std.array: array;
+				foreach(locstr ; value.get!GffLocString.strings.byKeyValue.array.sort!((a,b)=>a.key<b.key)){
+					immutable key = cast(int32_t)locstr.key;
+					fieldDatas ~= cast(ubyte[])(&key)[0..1].dup;//string id
+
+					immutable length = cast(int32_t)locstr.value.length;
+					fieldDatas ~= cast(ubyte[])(&length)[0..1].dup;
+
+					fieldDatas ~= cast(ubyte[])locstr.value.ptr[0..length].dup;
+				}
+
+				//total size
+				immutable totalSize = cast(uint32_t)(fieldDatas.length-fieldDataIndex) - 4;//totalSize does not count first 4 bytes
+				fieldDatas[fieldDataIndex..fieldDataIndex+4] = cast(ubyte[])(&totalSize)[0..1].dup;
+				break;
+			case Void:
+				auto dataLength = cast(uint32_t)value.get!GffVoid.length;
+				fields[createdFieldIndex].data_or_data_offset = cast(uint32_t)fieldDatas.length;
+				fieldDatas ~= cast(ubyte[])(&dataLength)[0..1];
+				fieldDatas ~= value.get!GffVoid;
+				break;
+			case Struct:
+				immutable structId = registerStruct(value.get!GffStruct);
+				fields[createdFieldIndex].data_or_data_offset = structId;
+				break;
+			case List:
+				immutable createdListOffset = cast(uint32_t)listIndices.length;
+				fields[createdFieldIndex].data_or_data_offset = createdListOffset;
+
+				uint32_t listLength = cast(uint32_t)value.get!GffList.length;
+				listIndices ~= cast(ubyte[])(&listLength)[0..1];
+				listIndices.length += listLength * uint32_t.sizeof;
+				if(value.get!GffList !is null){
+					foreach(i, ref field ; value.get!GffList){
+						immutable offset = createdListOffset+uint32_t.sizeof*(i+1);
+
+						uint32_t structIndex = registerStruct(field);
+						listIndices[offset..offset+uint32_t.sizeof] = cast(ubyte[])(&structIndex)[0..1];
 					}
 
-					//total size
-					immutable totalSize = cast(uint32_t)(fieldDatas.length-fieldDataIndex) - 4;//totalSize does not count first 4 bytes
-					fieldDatas[fieldDataIndex..fieldDataIndex+4] = cast(ubyte[])(&totalSize)[0..1].dup;
-					break;
-				case Void:
-					auto dataLength = cast(uint32_t)node.rawContainer.length;
-					fields[createdFieldIndex].data_or_data_offset = cast(uint32_t)fieldDatas.length;
-					fieldDatas ~= cast(ubyte[])(&dataLength)[0..1];
-					fieldDatas ~= node.rawContainer;
-					break;
-				case Struct:
-					immutable structId = registerStruct(node);
-					fields[createdFieldIndex].data_or_data_offset = structId;
-					break;
-				case List:
-					immutable createdListOffset = cast(uint32_t)listIndices.length;
-					fields[createdFieldIndex].data_or_data_offset = createdListOffset;
-
-					uint32_t listLength = cast(uint32_t)node.listContainer.length;
-					listIndices ~= cast(ubyte[])(&listLength)[0..1];
-					listIndices.length += listLength * uint32_t.sizeof;
-					if(node.listContainer !is null){
-						foreach(i, ref listField ; node.listContainer){
-							immutable offset = createdListOffset+uint32_t.sizeof*(i+1);
-
-							uint32_t structIndex = registerStruct(&listField);
-							listIndices[offset..offset+uint32_t.sizeof] = cast(ubyte[])(&structIndex)[0..1];
-						}
-
-					}
-					break;
-			}
-			version(gff_verbose) gff_verbose_rtIndent = gff_verbose_rtIndent[0..$-4];
-			return createdFieldIndex;
+				}
+				break;
 		}
+		version(gff_verbose_ser) gff_verbose_rtIndent = gff_verbose_rtIndent[0..$-4];
+		return createdFieldIndex;
+	}
 
-		ubyte[] serialize(in string fileType, in string fileVersion){
-			assert(fileType.length <= 4);
-			header.file_type = "    ";
-			header.file_type[0..fileType.length] = fileType.dup;
+	ubyte[] serialize(Gff gff){
+		registerStruct(gff.root);
 
-			assert(fileVersion.length <= 4);
-			header.file_version = "    ";
-			header.file_version[0..fileVersion.length] = fileVersion.dup;
+		assert(gff.fileType.length <= 4);
+		header.file_type = "    ";
+		header.file_type[0..gff.fileType.length] = gff.fileType.dup;
 
-			uint32_t offset = cast(uint32_t)GffHeader.sizeof;
+		assert(gff.fileVersion.length <= 4);
+		header.file_version = "    ";
+		header.file_version[0..gff.fileVersion.length] = gff.fileVersion.dup;
 
-			header.struct_offset = offset;
-			header.struct_count = cast(uint32_t)structs.length;
-			offset += GffStruct.sizeof * structs.length;
+		uint32_t offset = cast(uint32_t)GffRawParser.RawHeader.sizeof;
 
-			header.field_offset = offset;
-			header.field_count = cast(uint32_t)fields.length;
-			offset += GffField.sizeof * fields.length;
+		header.struct_offset = offset;
+		header.struct_count = cast(uint32_t)structs.length;
+		offset += GffRawParser.RawStruct.sizeof * structs.length;
 
-			header.label_offset = offset;
-			header.label_count = cast(uint32_t)labels.length;
-			offset += GffLabel.sizeof * labels.length;
+		header.field_offset = offset;
+		header.field_count = cast(uint32_t)fields.length;
+		offset += GffRawParser.RawField.sizeof * fields.length;
 
-			header.field_data_offset = offset;
-			header.field_data_count = cast(uint32_t)fieldDatas.length;
-			offset += fieldDatas.length;
+		header.label_offset = offset;
+		header.label_count = cast(uint32_t)labels.length;
+		offset += GffRawParser.RawLabel.sizeof * labels.length;
 
-			header.field_indices_offset = offset;
-			header.field_indices_count = cast(uint32_t)fieldIndices.length;
-			offset += fieldIndices.length;
+		header.field_data_offset = offset;
+		header.field_data_count = cast(uint32_t)fieldDatas.length;
+		offset += fieldDatas.length;
 
-			header.list_indices_offset = offset;
-			header.list_indices_count = cast(uint32_t)listIndices.length;
-			offset += listIndices.length;
+		header.field_indices_offset = offset;
+		header.field_indices_count = cast(uint32_t)fieldIndices.length;
+		offset += fieldIndices.length;
+
+		header.list_indices_offset = offset;
+		header.list_indices_count = cast(uint32_t)listIndices.length;
+		offset += listIndices.length;
 
 
-			version(unittest) auto offsetCheck = 0;
-			ubyte[] data;
-			data.reserve(offset);
-			data ~= cast(ubyte[])(&header)[0..1];
-			version(unittest) offsetCheck += GffHeader.sizeof;
-			version(unittest) assert(data.length == offsetCheck);
-			data ~= cast(ubyte[])structs;
-			version(unittest) offsetCheck += structs.length * GffStruct.sizeof;
-			version(unittest) assert(data.length == offsetCheck);
-			data ~= cast(ubyte[])fields;
-			version(unittest) offsetCheck += fields.length * GffStruct.sizeof;
-			version(unittest) assert(data.length == offsetCheck);
-			data ~= cast(ubyte[])labels;
-			version(unittest) offsetCheck += labels.length * GffLabel.sizeof;
-			version(unittest) assert(data.length == offsetCheck);
-			data ~= cast(ubyte[])fieldDatas;
-			version(unittest) offsetCheck += fieldDatas.length;
-			version(unittest) assert(data.length == offsetCheck);
-			data ~= fieldIndices;
-			version(unittest) offsetCheck += fieldIndices.length;
-			version(unittest) assert(data.length == offsetCheck);
-			data ~= listIndices;
-			version(unittest) offsetCheck += listIndices.length;
-			version(unittest) assert(data.length == offsetCheck);
+		version(unittest) auto offsetCheck = 0;
+		ubyte[] data;
+		data.reserve(offset);
+		data ~= cast(ubyte[])(&header)[0..1];
+		version(unittest) offsetCheck += GffRawParser.RawHeader.sizeof;
+		version(unittest) assert(data.length == offsetCheck);
+		data ~= cast(ubyte[])structs;
+		version(unittest) offsetCheck += structs.length * GffRawParser.RawStruct.sizeof;
+		version(unittest) assert(data.length == offsetCheck);
+		data ~= cast(ubyte[])fields;
+		version(unittest) offsetCheck += fields.length * GffRawParser.RawStruct.sizeof;
+		version(unittest) assert(data.length == offsetCheck);
+		data ~= cast(ubyte[])labels;
+		version(unittest) offsetCheck += labels.length * GffRawParser.RawLabel.sizeof;
+		version(unittest) assert(data.length == offsetCheck);
+		data ~= cast(ubyte[])fieldDatas;
+		version(unittest) offsetCheck += fieldDatas.length;
+		version(unittest) assert(data.length == offsetCheck);
+		data ~= fieldIndices;
+		version(unittest) offsetCheck += fieldIndices.length;
+		version(unittest) assert(data.length == offsetCheck);
+		data ~= listIndices;
+		version(unittest) offsetCheck += listIndices.length;
+		version(unittest) assert(data.length == offsetCheck);
 
-			assert(data.length == offset);
-			return data;
-		}
+		assert(data.length == offset);
+		return data;
 	}
 }
+
+
+
 unittest{
 	import std.file : read;
-	with(GffType){
-		immutable krogarDataOrig = cast(immutable ubyte[])import("krogar.bic");
-		auto gff = new Gff(krogarDataOrig);
 
-		//Parsing checks
-		assert(gff.fileType == "BIC");
-		assert(gff.fileVersion == "V3.2");
-		//assert(gff.fileVersion)
-		assert(gff["IsPC"].as!Byte == true);
-		assert(gff["RefSaveThrow"].as!Char == 13);
-		assert(gff["SoundSetFile"].as!Word == 363);
-		assert(gff["HitPoints"].as!Short == 320);
-		assert(gff["Gold"].as!DWord == 6400);
-		assert(gff["Age"].as!Int == 50);
-		//assert(gff[""].as!DWord64 == );
-		//assert(gff[""].as!Int64 == );
-		assert(gff["XpMod"].as!Float == 1);
-		//assert(gff[""].as!Double == );
-		assert(gff["Deity"].as!ExoString    == "Gorm Gulthyn");
-		assert(gff["ScriptHeartbeat"].as!ResRef       == "gb_player_heart");
-		assert(gff["FirstName"].as!ExoLocString.strref == -1);
-		assert(gff["FirstName"].as!ExoLocString.strings[0] == "Krogar");
-		//assert(gff[""].as!Void == );
-		assert(gff["Tint_Head"]["Tintable"]["Tint"]["1"]["b"].as!Byte == 109);
-		assert(gff["ClassList"][0]["Class"].as!Int == 4);
+	immutable krogarDataOrig = cast(immutable ubyte[])import("krogar.bic");
+	auto gff = new Gff(krogarDataOrig);
 
-		// Tintable appears two times in the gff
-		// Both must be stored but only the last one should be accessed by its key
-		assert(gff.as!Struct.byKeyValue[53].key == "Tintable");
-		assert(gff.as!Struct.byKeyValue[53].value["Tint"]["1"]["r"].as!Byte == 255);
-		assert(gff.as!Struct.byKeyValue[188].key == "Tintable");
-		assert(gff.as!Struct.byKeyValue[188].value["Tint"]["1"]["r"].as!Byte == 253);
-		assert(gff["Tintable"]["Tint"]["1"]["r"].as!Byte == 253);
+	//Parsing checks
+	assert(gff.fileType == "BIC");
+	assert(gff.fileVersion == "V3.2");
+	//assert(gff.fileVersion)
+	assert(gff["IsPC"].get!GffByte == true);
+	assert(gff["RefSaveThrow"].get!GffChar == 13);
+	assert(gff["SoundSetFile"].get!GffWord == 363);
+	assert(gff["HitPoints"].get!GffShort == 320);
+	assert(gff["Gold"].get!GffDWord == 6400);
+	assert(gff["Age"].get!GffInt == 50);
+	//assert(gff[""].get!GffDWord64 == );
+	//assert(gff[""].get!GffInt64 == );
+	assert(gff["XpMod"].get!GffFloat == 1);
+	//assert(gff[""].get!GffDouble == );
+	assert(gff["Deity"].get!GffString    == "Gorm Gulthyn");
+	assert(gff["ScriptHeartbeat"].get!GffResRef       == "gb_player_heart");
+	assert(gff["FirstName"].get!GffLocString.strref == -1);
+	assert(gff["FirstName"].get!GffLocString.strings[0] == "Krogar");
+	//assert(gff[""].get!GffVoid == );
+	assert(gff["Tint_Head"]["Tintable"]["Tint"]["1"]["b"].get!GffByte == 109);
+	assert(gff["ClassList"][0]["Class"].get!GffInt == 4);
 
-		//Perfect Serialization
-		auto krogarDataSerialized = gff.serialize();
-		auto gffSerialized = new Gff(krogarDataSerialized);
+	// Tintable appears two times in the gff
+	// Both must be stored but only the last one should be accessed by its key
+	assert(gff.byKeyValue[53].key == "Tintable");
+	assert(gff.byKeyValue[53].value["Tint"]["1"]["r"].get!GffByte == 255);
+	assert(gff.byKeyValue[188].key == "Tintable");
+	assert(gff.byKeyValue[188].value["Tint"]["1"]["r"].get!GffByte == 253);
+	assert(gff["Tintable"]["Tint"]["1"]["r"].get!GffByte == 253);
 
-		assert(gff.toPrettyString() == gffSerialized.toPrettyString(), "Serialization data mismatch");
-		assert(krogarDataOrig == krogarDataSerialized, "Serialization not byte perfect");
+	//Perfect Serialization
+	auto krogarDataSerialized = gff.serialize();
+	auto gffSerialized = new Gff(krogarDataSerialized);
 
-		//getChild tests
-		assert(gff.getChild("Tint_Head.Tintable.Tint.1.b").as!Byte == 109);
-		assertThrown!GffNotFoundException(gff.getChild("Tint_Head.Tintable.Tint.4.b"));
-		assertThrown!GffNotFoundException(gff.getChild("Tint_Head.Tintable.Tintsss.1.b"));
+	assert(gff.toPrettyString() == gffSerialized.toPrettyString(), "Serialization data mismatch");
+	assert(krogarDataOrig == krogarDataSerialized, "Serialization not byte perfect");
 
-		assert(gff.getChild("FeatList.42.Feat").as!Word == 1394);
-		assertThrown!GffTypeException(gff.getChild("FeatList.yolo.Feat"));
-		assertThrown!GffTypeException(gff.getChild("FeatList.-1.Feat"));
-		assertThrown!GffNotFoundException(gff.getChild("FeatList.50.Feat"));
+	////Dup
+	//auto gffRoot2 = gff.root.dup;
+	//assert(gffRoot2 == gff.root);
 
+	assertThrown!GffValueSetException(gff.fileType = "FILETYPE");
+	gff.fileType = "A C";
+	assert(gff.fileType == "A C");
+	assertThrown!GffValueSetException(gff.fileVersion = "VERSION");
+	gff.fileVersion = "V42";
+	assert(gff.fileVersion == "V42");
 
-		//Dup
-		auto gffRoot2 = gff.root.dup;
-		assert(gffRoot2 == gff.root);
-
-		assertThrown!GffValueSetException(gff.fileType = "FILETYPE");
-		gff.fileType = "A C";
-		assert(gff.fileType == "A C");
-		assertThrown!GffValueSetException(gff.fileVersion = "VERSION");
-		gff.fileVersion = "V42";
-		assert(gff.fileVersion == "V42");
-
-		auto data = cast(char[])gff.serialize();
-		assert(data[0..4]=="A C ");
-		assert(data[4..8]=="V42 ");
+	auto data = cast(char[])gff.serialize();
+	assert(data[0..4]=="A C ");
+	assert(data[4..8]=="V42 ");
 
 
-		//Gff modifications
-		gff["Deity"] = GffNode(ExoString, null, "Crom");
-		assert(gff["Deity"].as!ExoString == "Crom");
+	//Gff modifications
+	gff["Deity"] = "Crom";
+	assert(gff["Deity"].get!GffString == "Crom");
 
-		gff["ScriptHeartbeat"] = GffNode(ExoString, "ScriptHeartbeat", "123456");
-		assert(gff["ScriptHeartbeat"].as!ExoString == "123456");
+	gff["NewValue"] = GffInt(42);
+	assert(gff["NewValue"].get!GffInt == 42);
 
-		assertThrown!Error(gff["OriginHeartbeat"] = GffNode(ExoString, "ScriptHeartbeat", "hello"));
+	assertThrown!Error(GffResRef("this is a bit longer than 32 characters"));
+	gff["ResRefExample"] = GffResRef("Hello");
+	assert(gff["ResRefExample"].get!GffResRef == "Hello");
+	gff["ResRefExample"].get!GffResRef = GffResRef("world");
+	assert(gff["ResRefExample"].to!string == "world");
 
-
-		assertThrown!GffTypeException(gff["Equip_ItemList"][0] = GffNode(ExoString, "Equip_ItemList", "yolo"));
-
-		gff["Equip_ItemList"][1] = GffNode(Struct, null);
-		gff["Equip_ItemList"][1]["Hello"] = GffNode(ExoString, null, "world");
-		assert(gff["Equip_ItemList"][1]["Hello"].as!ExoString == "world");
-		assertThrown!Error(gff["Equip_ItemList"][99] = GffNode(Struct, null));
+	gff["Equip_ItemList"][1] = GffStruct();
+	gff["Equip_ItemList"][1]["Hello"] = "world";
+	assert(gff["Equip_ItemList"][1]["Hello"].get!GffString == "world");
+	assertThrown!Error(gff["Equip_ItemList"][99] = GffStruct());
 
 
 
+	// JSON parsing /serialization
+	immutable dogeDataOrig = cast(immutable ubyte[])import("doge.utc");
+	auto dogeGff = new Gff(dogeDataOrig);
 
-
-		immutable dogeDataOrig = cast(immutable ubyte[])import("doge.utc");
-		auto dogeGff = new Gff(dogeDataOrig);
-
-		// duplication fixing serializations
-		auto dogeJson = dogeGff.toJson();
-		auto dogeFromJson = Gff.fromJson(dogeJson);
-		auto dogeFromJsonStr = Gff.fromJson(parseJSON(dogeJson.toString()));
-		assert(dogeFromJson.serialize() == dogeDataOrig);
-		assert(dogeFromJsonStr.serialize() == dogeDataOrig);
-	}
-
+	// duplication fixing serializations
+	auto dogeJson = dogeGff.toJson();
+	auto dogeFromJson = new Gff(dogeJson);
+	auto dogeFromJsonStr = new Gff(parseJSON(dogeJson.toString()));
+	assert(dogeFromJson.serialize() == dogeDataOrig);
+	assert(dogeFromJsonStr.serialize() == dogeDataOrig);
 }
