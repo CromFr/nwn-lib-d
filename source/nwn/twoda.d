@@ -64,7 +64,7 @@ class TwoDA{
 				case 2:
 					//Column name definition
 					foreach(index, title ; extractRowData(line)){
-						header[title] = index;
+						header[title.toLower] = index;
 					}
 					header.rehash();
 					columnsCount = header.length;
@@ -115,6 +115,21 @@ class TwoDA{
 		}
 	}
 
+	/// Get a value in the 2da, converted to T.
+	/// Returns: value if found, otherwise defaultValue
+	T get(T = string)(in string colName, in size_t line, T defaultValue) const {
+		if(line >= rows)
+			return defaultValue;
+
+		if(auto colIndex = colName.toLower in header){
+			if(this[line, *colIndex] !is null){
+				try return this[line, *colIndex].to!T;
+				catch(ConvException){}
+			}
+		}
+		return defaultValue;
+	}
+
 	/// ditto
 	/// Throws: `TwoDAColumnNotFoundException` if the column does not exist
 	auto ref get(T = string)(in string colName, in size_t line) const {
@@ -124,20 +139,26 @@ class TwoDA{
 
 	/// Get the index of a column by its name, for faster access
 	size_t columnIndex(in string colName) const {
-		if(auto colIndex = colName in header){
+		if(auto colIndex = colName.toLower in header){
 			return *colIndex;
 		}
-		else
-			throw new TwoDAColumnNotFoundException("Column '"~colName~"' not found");
+		throw new TwoDAColumnNotFoundException("Column '"~colName~"' not found");
+	}
+
+	/// Check if a column exists in the 2da, and returns a pointer to its index
+	const(size_t*) opBinaryRight(string op: "in")(in string colName) const {
+		return colName.toLower in header;
 	}
 
 
+	// TODO: invert row and column, it makes more sense to do twoDA[column, row]
 	/// Note: column 0 is the first named column (not the index column)
-	ref inout(string) opIndex(size_t row, size_t column) inout {
+	ref inout(string) opIndex(size_t row, size_t column) inout nothrow {
 		assert(column < columnsCount);
 		return valueList[row * columnsCount + column];
 	}
-	ref inout(string) opIndex(size_t row, string column) inout {
+	// TODO: invert row and column, it makes more sense to do twoDA[column, row]
+	ref inout(string) opIndex(size_t row, string column) inout nothrow {
 		return this[row, header[column]];
 	}
 
@@ -171,7 +192,7 @@ class TwoDA{
 
 	@property{
 		/// Number of rows in the 2da
-		size_t rows()const{
+		size_t rows() const nothrow {
 			return valueList.length / columnsCount;
 		}
 	}
