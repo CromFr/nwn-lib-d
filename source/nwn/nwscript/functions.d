@@ -24,30 +24,30 @@ enum OBJECT_INVALID = NWObject.max;
 NWString GetName(ref GffStruct objectGff){
 	scope resolv = getStrRefResolver();
 	if("FirstName" in objectGff){
-		auto firstName = resolv[objectGff["FirstName"]];
-		auto lastName = resolv[objectGff["LastName"]];
+		auto firstName = objectGff["FirstName"].get!GffLocString.resolve(resolv);
+		auto lastName = objectGff["LastName"].get!GffLocString.resolve(resolv);
 		if(lastName != "")
 			return [firstName, lastName].join(" ");
 		return firstName;
 	}
 	if("LocalizedName" in objectGff)
-		return resolv[objectGff["LocalizedName"]];
+		return objectGff["LocalizedName"].get!GffLocString.resolve(resolv);
 	else if("LocName" in objectGff)
-		return resolv[objectGff["LocName"]];
+		return objectGff["LocName"].get!GffLocString.resolve(resolv);
 	return "";
 }
 ///
 NWString GetFirstName(ref GffStruct objectGff){
 	if("FirstName" in objectGff)
-		return getStrRefResolver()[objectGff["FirstName"]];
+		return objectGff["FirstName"].get!GffLocString.resolve(getStrRefResolver());
 	else if("LocalizedName" in objectGff)
-		return getStrRefResolver()[objectGff["LocalizedName"]];
+		return objectGff["LocalizedName"].get!GffLocString.resolve(getStrRefResolver());
 	return "";
 }
 ///
 NWString GetLastName(ref GffStruct objectGff){
 	if("LastName" in objectGff)
-		return getStrRefResolver()[objectGff["LastName"]];
+		return objectGff["LastName"].get!GffLocString.resolve(getStrRefResolver());
 	return "";
 }
 
@@ -55,9 +55,9 @@ NWString GetLastName(ref GffStruct objectGff){
 void SetFirstName(ref GffStruct objectGff, in NWString name){
 	int32_t language = getStrRefResolver().standartTable.language;
 	if("FirstName" in objectGff)
-		objectGff["FirstName"].as!(GffType.ExoLocString).strings = [language * 2: name];
+		objectGff["FirstName"].get!GffLocString.strings = [language * 2: name];
 	else if("LocalizedName" in objectGff)
-		objectGff["LocalizedName"].as!(GffType.ExoLocString).strings = [language * 2: name];
+		objectGff["LocalizedName"].get!GffLocString.strings = [language * 2: name];
 	else assert(0, "No FirstName GFF field");
 }
 ///
@@ -66,12 +66,12 @@ void SetLastName(ref GffStruct objectGff, in NWString name){
 	int32_t language = 0;
 	if(getStrRefResolver() !is null)
 		language = getStrRefResolver().standartTable.language;
-	objectGff["LastName"].as!(GffType.ExoLocString).strings = [language * 2: name];
+	objectGff["LastName"].get!GffLocString.strings = [language * 2: name];
 }
 
 unittest{
 	immutable dogeUtc = cast(immutable ubyte[])import("doge.utc");
-	auto obj = new Gff(dogeUtc).as!(GffType.Struct);
+	auto obj = new Gff(dogeUtc).root;
 
 	immutable dialogTlk = cast(immutable ubyte[])import("dialog.tlk");
 	immutable userTlk = cast(immutable ubyte[])import("user.tlk");
@@ -111,14 +111,14 @@ private template TypeToNWTypeConst(T){
 
 private void SetLocal(T)(ref GffStruct oObject, NWString sVarName, T value){
 	if("VarTable" in oObject){
-		foreach(ref var ; oObject["VarTable"].as!(GffType.List)){
+		foreach(ref var ; oObject["VarTable"].get!GffList){
 			// TODO: check behaviour when setting two variables with the same name and different types
-			if(var["Name"].as!(GffType.ExoString) == sVarName){
-				var["Type"].as!(GffType.DWord) = TypeToNWTypeConst!T;
-				static if     (is(T == NWInt))       var["Value"].as!(GffType.Int) = value;
-				else static if(is(T == NWFloat))     var["Value"].as!(GffType.Float) = value;
-				else static if(is(T == NWString))    var["Value"].as!(GffType.ExoString) = value;
-				else static if(is(T == NWObject))    var["Value"].as!(GffType.DWord) = value;
+			if(var["Name"].get!GffString == sVarName){
+				var["Type"].get!GffDWord = TypeToNWTypeConst!T;
+				static if     (is(T == NWInt))       var["Value"].get!GffInt = value;
+				else static if(is(T == NWFloat))     var["Value"].get!GffFloat = value;
+				else static if(is(T == NWString))    var["Value"].get!GffString = value;
+				else static if(is(T == NWObject))    var["Value"].get!GffDWord = value;
 				else static if(is(T == NWLocation))  static assert(0, "Not implemented");
 				else static assert(0, "Invalid type");
 				return;
@@ -126,20 +126,20 @@ private void SetLocal(T)(ref GffStruct oObject, NWString sVarName, T value){
 		}
 	}
 	else{
-		oObject["VarTable"] = GffNode(GffType.List);
+		oObject["VarTable"] = GffList();
 	}
 
-	auto var = GffNode(GffType.Struct);
-	var["Name"] = GffNode(GffType.ExoString, null, sVarName);
-	var["Type"] = GffNode(GffType.DWord, null, TypeToNWTypeConst!T);
-	static if     (is(T == NWInt))       var["Value"] = GffNode(GffType.Int, null, value);
-	else static if(is(T == NWFloat))     var["Value"] = GffNode(GffType.Float, null, value);
-	else static if(is(T == NWString))    var["Value"] = GffNode(GffType.ExoString, null, value);
-	else static if(is(T == NWObject))    var["Value"] = GffNode(GffType.DWord, null, value);
+	auto var = GffStruct();
+	var["Name"] = sVarName;
+	var["Type"] = GffDWord(TypeToNWTypeConst!T);
+	static if     (is(T == NWInt))       var["Value"] = GffInt(value);
+	else static if(is(T == NWFloat))     var["Value"] = GffFloat(value);
+	else static if(is(T == NWString))    var["Value"] = value;
+	else static if(is(T == NWObject))    var["Value"] = GffDWord(value);
 	else static if(is(T == NWLocation))  static assert(0, "Not implemented");
 	else static assert(0, "Invalid type");
 
-	oObject["VarTable"].as!(GffType.List) ~= var;
+	oObject["VarTable"].get!GffList ~= var;
 }
 
 ///
@@ -156,12 +156,12 @@ alias SetLocalObject = SetLocal!NWObject;
 
 private T GetLocal(T)(ref GffStruct oObject, NWString sVarName){
 	if("VarTable" in oObject){
-		foreach(ref var ; oObject["VarTable"].as!(GffType.List)){
-			if(var["Name"].as!(GffType.ExoString) == sVarName && var["Type"].as!(GffType.DWord) == TypeToNWTypeConst!T){
-				static if     (is(T == NWInt))       return var["Value"].as!(GffType.Int);
-				else static if(is(T == NWFloat))     return var["Value"].as!(GffType.Float);
-				else static if(is(T == NWString))    return var["Value"].as!(GffType.ExoString);
-				else static if(is(T == NWObject))    return var["Value"].as!(GffType.DWord);
+		foreach(ref var ; oObject["VarTable"].get!GffList){
+			if(var["Name"].get!GffString == sVarName && var["Type"].get!GffDWord == TypeToNWTypeConst!T){
+				static if     (is(T == NWInt))       return var["Value"].get!GffInt;
+				else static if(is(T == NWFloat))     return var["Value"].get!GffFloat;
+				else static if(is(T == NWString))    return var["Value"].get!GffString;
+				else static if(is(T == NWObject))    return var["Value"].get!GffDWord;
 				else static if(is(T == NWLocation))  static assert(0, "Not implemented");
 				else static assert(0, "Invalid type");
 			}
@@ -184,7 +184,7 @@ alias GetLocalObject = GetLocal!NWObject;
 unittest{
 	import std.math;
 	immutable dogeUtc = cast(immutable ubyte[])import("doge.utc");
-	auto obj = new Gff(dogeUtc).as!(GffType.Struct);
+	auto obj = new Gff(dogeUtc).root;
 
 	SetLocalInt(obj, "TestInt", 5);
 	SetLocalFloat(obj, "TestFloat", 5.3);
@@ -207,9 +207,9 @@ unittest{
 private void DeleteLocal(T)(ref GffStruct oObject, NWString sVarName){
 	import std.algorithm: remove;
 	if("VarTable" in oObject){
-		foreach(i, ref var ; oObject["VarTable"].as!(GffType.List)){
-			if(var["Name"].as!(GffType.ExoString) == sVarName && var["Type"].as!(GffType.DWord) == TypeToNWTypeConst!T){
-				oObject["VarTable"].as!(GffType.List) = oObject["VarTable"].as!(GffType.List).remove(i);
+		foreach(i, ref var ; oObject["VarTable"].get!GffList){
+			if(var["Name"].get!GffString == sVarName && var["Type"].get!GffDWord == TypeToNWTypeConst!T){
+				oObject["VarTable"].get!GffList.children = oObject["VarTable"].get!GffList.children.remove(i);
 				return;
 			}
 		}
@@ -247,18 +247,18 @@ NWInt GetItemPropertyParam1Value(NWItemproperty ip){
 
 
 
-private static GffNode[] currentGetItemPropertyRange;
+private static GffStruct[] currentGetItemPropertyRange;
 ///
 NWItemproperty GetFirstItemProperty(ref GffStruct oItem){
 	if("PropertiesList" !in oItem)
 		return NWInitValue!NWItemproperty;
 
-	currentGetItemPropertyRange = oItem["PropertiesList"].as!(GffType.List);
+	currentGetItemPropertyRange = oItem["PropertiesList"].get!GffList;
 
 	if(currentGetItemPropertyRange.empty)
 		return NWInitValue!NWItemproperty;
 
-	return currentGetItemPropertyRange.front.as!(GffType.Struct).toNWItemproperty;
+	return currentGetItemPropertyRange.front.toNWItemproperty;
 }
 
 ///
@@ -271,17 +271,17 @@ NWItemproperty GetNextItemProperty(ref GffStruct oItem){
 	if(currentGetItemPropertyRange.empty)
 		return NWInitValue!NWItemproperty;
 
-	return currentGetItemPropertyRange.front.as!(GffType.Struct).toNWItemproperty;
+	return currentGetItemPropertyRange.front.toNWItemproperty;
 }
 
 unittest{
 	immutable itemData = cast(immutable ubyte[])import("ceinturedeschevaliersquidisentni.uti");
-	auto item = new Gff(itemData).as!(GffType.Struct);
+	auto item = new Gff(itemData).root;
 
 	size_t index = 0;
 	auto ip = GetFirstItemProperty(item);
 	while(GetIsItemPropertyValid(ip)){
-		assert(ip == item["PropertiesList"][index].as!(GffType.Struct).toNWItemproperty, "Mismatch on ip " ~ index.to!string);
+		assert(ip == item["PropertiesList"][index].toNWItemproperty, "Mismatch on ip " ~ index.to!string);
 		index++;
 		ip = GetNextItemProperty(item);
 	}
@@ -296,7 +296,7 @@ NWInt GetBaseItemType(in GffStruct oItem){
 void AddItemProperty(NWInt nDurationType, NWItemproperty ipProperty, ref GffStruct oItem, NWFloat fDuration=0.0f){
 	assert(nDurationType == DURATION_TYPE_PERMANENT, "Only permanent is supported");
 	if("PropertiesList" !in oItem){
-		oItem["PropertiesList"] = GffNode(GffType.List);
+		oItem["PropertiesList"] = GffList();
 	}
 
 	static GffStruct buildPropStruct(in NWItemproperty iprp){
@@ -304,7 +304,7 @@ void AddItemProperty(NWInt nDurationType, NWItemproperty ipProperty, ref GffStru
 		with(ret){
 			assert(iprp.type < getTwoDA("itempropdef").rows);
 
-			ret["PropertyName"] = GffNode(GffType.Word, "PropertyName", iprp.type);
+			ret["PropertyName"] = GffWord(iprp.type);
 
 			immutable subTypeTable = getTwoDA("itempropdef").get("SubTypeResRef", iprp.type);
 			if(subTypeTable is null)
@@ -312,7 +312,7 @@ void AddItemProperty(NWInt nDurationType, NWItemproperty ipProperty, ref GffStru
 			else
 				assert(iprp.subType!=uint16_t.max, "iprp.subType must be defined");
 
-			ret["Subtype"] = GffNode(GffType.Word, "Subtype", iprp.subType);
+			ret["Subtype"] = GffWord(iprp.subType);
 
 			string costTableResRef = getTwoDA("itempropdef").get("CostTableResRef", iprp.type);
 			if(costTableResRef is null)
@@ -320,31 +320,31 @@ void AddItemProperty(NWInt nDurationType, NWItemproperty ipProperty, ref GffStru
 			else
 				assert(iprp.costValue!=uint16_t.max, "iprp.costValue must be defined");
 
-			ret["CostTable"] = GffNode(GffType.Byte, "CostTable", costTableResRef !is null? costTableResRef.to!ubyte : 0);
-			ret["CostValue"] = GffNode(GffType.Word, "CostValue", iprp.costValue);
+			ret["CostTable"] = GffByte(costTableResRef !is null? costTableResRef.to!ubyte : 0);
+			ret["CostValue"] = GffWord(iprp.costValue);
 
 			immutable paramTableResRef = getTwoDA("itempropdef").get("Param1ResRef", iprp.type);
 			if(paramTableResRef !is null){
 				assert(iprp.p1!=uint8_t.max, "iprp.p1 must be defined for IPRP " ~ iprp.to!string);
-				ret["Param1"] = GffNode(GffType.Byte, "Param1", paramTableResRef.to!ubyte);
-				ret["Param1Value"] = GffNode(GffType.Byte, "Param1Value", iprp.p1);
+				ret["Param1"] = GffByte(paramTableResRef.to!ubyte);
+				ret["Param1Value"] = GffByte(iprp.p1);
 			}
 			else{
 				assert(iprp.p1==uint8_t.max || iprp.p1==0, format!"iprp.p1 pointing to non-existent Param1ResRef (for iprp=%s)"(iprp.to!string));
-				ret["Param1"] = GffNode(GffType.Byte, "Param1", 0);
-				ret["Param1Value"] = GffNode(GffType.Byte, "Param1Value", 0);
+				ret["Param1"] = GffByte(0);
+				ret["Param1Value"] = GffByte(0);
 			}
 
-			//ret["Param2"] = GffNode(GffType.Byte, "Param2", 0);
-			//ret["Param2Value"] = GffNode(GffType.Byte, "Param2Value", 0);
-			ret["ChanceAppear"] = GffNode(GffType.Byte, "ChanceAppear", 100);
-			ret["UsesPerDay"] = GffNode(GffType.Byte,"UsesPerDay", 255);
-			ret["Useable"] = GffNode(GffType.Byte, "Useable", 1);
+			//ret["Param2"] = GffByte(0);
+			//ret["Param2Value"] = GffByte(0);
+			ret["ChanceAppear"] = GffByte(100);
+			ret["UsesPerDay"] = GffByte(255);
+			ret["Useable"] = GffByte(1);
 		}
 		return ret;
 	}
 
-	oItem["PropertiesList"].as!(GffType.List) ~= GffNode(GffType.Struct, null, buildPropStruct(ipProperty));
+	oItem["PropertiesList"].get!GffList ~= buildPropStruct(ipProperty);
 }
 
 ///
@@ -358,8 +358,8 @@ void RemoveItemProperty(ref GffStruct oItem, NWItemproperty ipProperty){
 	auto param1Table = getTwoDA("itempropdef").get("Param1ResRef", ipProperty.type);
 	bool hasParam1 = param1Table !is null && param1Table != "" && param1Table.to!int >= 0;
 
-	oItem["PropertiesList"].as!(GffType.List) = oItem["PropertiesList"].as!(GffType.List).remove!((node){
-		auto ip = node.as!(GffType.Struct).toNWItemproperty;
+	oItem["PropertiesList"].get!GffList.children = oItem["PropertiesList"].get!GffList.children.remove!((node){
+		auto ip = node.toNWItemproperty;
 
 		if(ip.type != ipProperty.type)
 			return false;
@@ -375,34 +375,34 @@ void RemoveItemProperty(ref GffStruct oItem, NWItemproperty ipProperty){
 
 unittest{
 	immutable itemData = cast(immutable ubyte[])import("ceinturedeschevaliersquidisentni.uti");
-	auto item = new Gff(itemData).as!(GffType.Struct);
+	auto item = new Gff(itemData).root;
 
 	initTwoDAPaths(["unittest/2da"]);
 
 	auto ipRegen10 = NWItemproperty(51, 0, 10);
 
 	AddItemProperty(DURATION_TYPE_PERMANENT, ipRegen10, item);
-	assert(item["PropertiesList"].as!(GffType.List).length == 3);
+	assert(item["PropertiesList"].get!GffList.length == 3);
 
-	auto addedProp = item["PropertiesList"].as!(GffType.List)[$-1].as!(GffType.Struct);
-	assert(addedProp["PropertyName"].as!(GffType.Word) == 51);
-	assert(addedProp["Subtype"].as!(GffType.Word) == 0);
-	assert(addedProp["CostValue"].as!(GffType.Word) == 10);
-	assert(addedProp["CostTable"].as!(GffType.Byte) == 2);
-	assert(addedProp["Param1"].as!(GffType.Byte) == 0);
-	assert(addedProp["Param1Value"].as!(GffType.Byte) == 0);
-	//assert(addedProp["Param2"].as!(GffType.Byte) == 0);
-	//assert(addedProp["Param2Value"].as!(GffType.Byte) == 0);
-	assert(addedProp["ChanceAppear"].as!(GffType.Byte) == 100);
-	assert(addedProp["UsesPerDay"].as!(GffType.Byte) == 255);
-	assert(addedProp["Useable"].as!(GffType.Byte) == 1);
+	auto addedProp = item["PropertiesList"].get!GffList[$-1];
+	assert(addedProp["PropertyName"].get!GffWord == 51);
+	assert(addedProp["Subtype"].get!GffWord == 0);
+	assert(addedProp["CostValue"].get!GffWord == 10);
+	assert(addedProp["CostTable"].get!GffByte == 2);
+	assert(addedProp["Param1"].get!GffByte == 0);
+	assert(addedProp["Param1Value"].get!GffByte == 0);
+	//assert(addedProp["Param2"].get!GffByte == 0);
+	//assert(addedProp["Param2Value"].get!GffByte == 0);
+	assert(addedProp["ChanceAppear"].get!GffByte == 100);
+	assert(addedProp["UsesPerDay"].get!GffByte == 255);
+	assert(addedProp["Useable"].get!GffByte == 1);
 
 	auto ipRegen5 = NWItemproperty(51, 0, 5);
 	RemoveItemProperty(item, ipRegen5);
-	assert(item["PropertiesList"].as!(GffType.List).length == 3);
+	assert(item["PropertiesList"].get!GffList.length == 3);
 
 	RemoveItemProperty(item, ipRegen10);
-	assert(item["PropertiesList"].as!(GffType.List).length == 2);
+	assert(item["PropertiesList"].get!GffList.length == 2);
 }
 
 ///

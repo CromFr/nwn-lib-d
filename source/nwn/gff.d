@@ -478,24 +478,25 @@ struct GffValue {
 
 	auto to(T)() const {
 		final switch(type) with(GffType) {
-			case Byte:      return get!GffByte.to!T;
-			case Char:      return get!GffChar.to!T;
-			case Word:      return get!GffWord.to!T;
-			case Short:     return get!GffShort.to!T;
-			case DWord:     return get!GffDWord.to!T;
-			case Int:       return get!GffInt.to!T;
-			case DWord64:   return get!GffDWord64.to!T;
-			case Int64:     return get!GffInt64.to!T;
-			case Float:     return get!GffFloat.to!T;
-			case Double:    return get!GffDouble.to!T;
-			case String:    return get!GffString.to!T;
-			case ResRef:    return get!GffResRef.to!T;
-			case LocString: return get!GffLocString.to!T;
-			case Void:      return get!GffVoid.to!T;
-			case Struct:    return get!GffStruct.to!T;
-			case List:      return get!GffList.to!T;
+			case Byte:      static if(__traits(compiles, get!GffByte.to!T))      return get!GffByte.to!T;      else break;
+			case Char:      static if(__traits(compiles, get!GffChar.to!T))      return get!GffChar.to!T;      else break;
+			case Word:      static if(__traits(compiles, get!GffWord.to!T))      return get!GffWord.to!T;      else break;
+			case Short:     static if(__traits(compiles, get!GffShort.to!T))     return get!GffShort.to!T;     else break;
+			case DWord:     static if(__traits(compiles, get!GffDWord.to!T))     return get!GffDWord.to!T;     else break;
+			case Int:       static if(__traits(compiles, get!GffInt.to!T))       return get!GffInt.to!T;       else break;
+			case DWord64:   static if(__traits(compiles, get!GffDWord64.to!T))   return get!GffDWord64.to!T;   else break;
+			case Int64:     static if(__traits(compiles, get!GffInt64.to!T))     return get!GffInt64.to!T;     else break;
+			case Float:     static if(__traits(compiles, get!GffFloat.to!T))     return get!GffFloat.to!T;     else break;
+			case Double:    static if(__traits(compiles, get!GffDouble.to!T))    return get!GffDouble.to!T;    else break;
+			case String:    static if(__traits(compiles, get!GffString.to!T))    return get!GffString.to!T;    else break;
+			case ResRef:    static if(__traits(compiles, get!GffResRef.to!T))    return get!GffResRef.to!T;    else break;
+			case LocString: static if(__traits(compiles, get!GffLocString.to!T)) return get!GffLocString.to!T; else break;
+			case Void:      static if(__traits(compiles, get!GffVoid.to!T))      return get!GffVoid.to!T;      else break;
+			case Struct:    static if(__traits(compiles, get!GffStruct.to!T))    return get!GffStruct.to!T;    else break;
+			case List:      static if(__traits(compiles, get!GffList.to!T))      return get!GffList.to!T;      else break;
 			case Invalid:   assert(0, "No type set");
 		}
+		assert(0, format!"Cannot convert GFFType %s to %s"(type, T.stringof));
 	}
 	/// Create a GffValue by parsing JSON.
 	/// JSON format should be like `{"type": "resref", "value": "hello world"}`
