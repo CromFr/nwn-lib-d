@@ -375,13 +375,13 @@ struct GffList {
 	/// Converts a GffStruct to a user-friendly string
 	string toPrettyString(string tabs = null) const {
 		string ret = format!"%s(List)"(tabs);
-		foreach(i, ref value ; children){
+		foreach(i, ref child ; children){
 			bool keepLine = i + 1 < children.length;
 			auto innerTabs = tabs ~ (keepLine? "|  " : "   ");
 
 			ret ~= format!"\n%s%s %s"(
 				tabs, keepLine ? "├╴" : "└╴",
-				value.toPrettyString(innerTabs)[innerTabs.length .. $]
+				child.toPrettyString(innerTabs)[innerTabs.length .. $]
 			);
 		}
 		return ret;
@@ -624,6 +624,11 @@ class Gff{
 		return ret;
 	}
 
+	string toPrettyString() const {
+		return "========== GFF-"~fileType~"-"~fileVersion~" ==========\n"
+			~ root.toPrettyString;
+	}
+
 	@property{
 		/// GFF type name stored in the GFF file
 		/// Max width: 4 chars
@@ -648,6 +653,8 @@ class Gff{
 				m_fileVersion[len .. $] = ' ';
 		}
 	}
+
+
 	///
 	alias root this;
 	/// Root $(D GffStruct)
