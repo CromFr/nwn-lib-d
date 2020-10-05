@@ -22,6 +22,10 @@
 					"shell_cmd": "dub test",
 				},
 				{
+					"name": "Benchmark",
+					"shell_cmd": "dub run -b release :benchmark",
+				},
+				{
 					"name": "Coverage",
 					"shell_cmd": "dub test :nwn-tlk -b unittest-cov",
 				},

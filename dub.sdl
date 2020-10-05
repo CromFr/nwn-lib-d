@@ -86,3 +86,14 @@ subPackage {
 	}
 }
 
+
+
+
+subPackage {
+	name "benchmark"
+	targetType "executable"
+	targetName "nwn-lib-d-benchmark"
+	sourceFiles "tools/benchmark.d"
+	dependency "gfm:math" version="~>7.0.0"
+	stringImportPaths "unittest"
+}
