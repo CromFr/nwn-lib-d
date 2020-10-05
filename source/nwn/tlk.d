@@ -6,8 +6,6 @@ import std.string;
 import std.conv;
 import std.traits: EnumMembers;
 
-import nwn.gff : GffNode, GffType, gffTypeToNative;
-
 debug import std.stdio: writeln;
 version(unittest) import std.exception: assertThrown, assertNotThrown;
 
@@ -19,8 +17,10 @@ class TlkOutOfBoundsException : Exception{
 	}
 }
 
+/// String ref base type
 alias StrRef = uint32_t;
 
+/// Utility class to resolve string refs using two TLKs
 class StrRefResolver{
 	this(in Tlk standartTable, in Tlk userTable = null){
 		this.standartTable = standartTable;
@@ -39,44 +39,14 @@ class StrRefResolver{
 		return "unknown_strref_" ~ strref.to!string;
 	}
 
-	/// Resolves an ExoLocString GffNode to the appropriate language using the tlk tables and language ID
-	string opIndex(in GffNode node)const{
-		assert(node.type == GffType.ExoLocString, "Node '"~node.label~"' is not an ExoLocString");
-
-		if(node.exoLocStringContainer.strings.length > 0){
-
-			immutable preferedLang = standartTable.language * 2;
-			if(auto str = preferedLang in node.exoLocStringContainer.strings)
-				return *str;
-			if(auto str = preferedLang + 1 in node.exoLocStringContainer.strings)
-				return *str;
-
-			foreach(lang ; EnumMembers!LanguageGender){
-				if(auto str = lang in node.exoLocStringContainer.strings)
-					return *str;
-			}
-		}
-
-		if(node.exoLocStringContainer.strref != StrRef.max){
-			try return this[node.exoLocStringContainer.strref];
-			catch(TlkOutOfBoundsException){
-				return "invalid_strref";
-			}
-		}
-
-		return "";
-	}
-
 	const Tlk standartTable;
 	const Tlk userTable;
 }
 unittest{
-	immutable dialogTlk = cast(immutable ubyte[])import("dialog.tlk");
-	immutable userTlk = cast(immutable ubyte[])import("user.tlk");
-
-	auto strref = new StrRefResolver(
-		new Tlk(dialogTlk),
-		new Tlk(userTlk));
+	auto resolv = new StrRefResolver(
+		new Tlk(cast(immutable ubyte[])import("dialog.tlk")),
+		new Tlk(cast(immutable ubyte[])import("user.tlk"))
+	);
 
 	enum string lastLine =
 		 "Niveau(x) de lanceur de sorts : prêtre 1, paladin 1\n"
@@ -92,41 +62,23 @@ unittest{
 		~"\n"
 		~"Tous les trois niveaux effectifs de lanceur de sorts, vous gagnez un bonus de +1 à vos jets d'attaque et un bonus de +1 de dégâts magiques (minimum +1, maximum +3).";
 
-	assert(strref.standartTable.language == Language.French);
-	assert(strref[0] == "Bad Strref");
-	assert(strref[54] == lastLine);
-	assertThrown!TlkOutOfBoundsException(strref[55]);
+	assert(resolv.standartTable.language == Language.French);
+	assert(resolv[0] == "Bad Strref");
+	assert(resolv[54] == lastLine);
+	assertThrown!TlkOutOfBoundsException(resolv[55]);
 
-	assert(strref[Tlk.UserTlkIndexOffset + 0] == "Hello world");
-	assert(strref[Tlk.UserTlkIndexOffset + 1] == "Café liégeois");
-
-	auto node = GffNode(GffType.ExoLocString);
-	node = Tlk.UserTlkIndexOffset + 1;
-	node = [0:"male english", 1:"female english", 2:"male french"];
-
-	assert(strref[node] == "male french");
-
-	node = [0:"male english", 1:"female english"];
-	assert(strref[node] == "male english");
-
-	node = [4:"male german", 6:"female italian"];
-	assert(strref[node] == "male german");
-
-	node.exoLocStringContainer.strings.clear;
-	assert(strref[node] == "Café liégeois");
-
-	node = StrRef.max;
-	assert(strref[node] == "");
+	assert(resolv[Tlk.UserTlkIndexOffset + 0] == "Hello world");
+	assert(resolv[Tlk.UserTlkIndexOffset + 1] == "Café liégeois");
 }
 
-
+/// TLK
 class Tlk{
-
+	///
 	this(Language langId, immutable(char[4]) tlkVersion = "V3.0"){
 		header.file_type = "TLK ";
 		header.file_version = tlkVersion;
 	}
-
+	///
 	this(in string path){
 		import std.file: read;
 		this(cast(ubyte[])path.read());

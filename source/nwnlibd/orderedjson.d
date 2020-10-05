@@ -692,6 +692,33 @@ struct JSONValue
     {
         return toJSON(this, true, options);
     }
+
+
+    //#################################################################################################################
+    //#################################################################################################################
+    //#################################################################################################################
+    /// Utility added for nwn-lib-d
+    T conv(T)() const if(isIntegral!T || isFloatingPoint!T){
+        static if(isIntegral!T){
+            switch(type) with(JSON_TYPE){
+                case INTEGER: return integer.to!T;
+                case UINTEGER: return uinteger.to!T;
+                default: throw new Exception("Type "~type~" cannot be converted to " ~ T.stringof);
+            }
+        }
+        else static if(isFloatingPoint!T){
+            switch(type) with(JSON_TYPE){
+                case INTEGER: return integer.to!T;
+                case UINTEGER: return uinteger.to!T;
+                case FLOAT: return floating.to!T;
+                default: throw new Exception("Type "~type~" cannot be converted to " ~ T.stringof);
+            }
+        }
+        else static assert(0);
+    }
+    //#################################################################################################################
+    //#################################################################################################################
+    //#################################################################################################################
 }
 
 /**

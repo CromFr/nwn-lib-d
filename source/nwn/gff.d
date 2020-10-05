@@ -10,6 +10,7 @@ import std.exception: enforce;
 import std.base64: Base64;
 import std.algorithm;
 import std.array;
+import std.traits;
 
 import nwnlibd.orderedaa;
 import nwnlibd.orderedjson;
@@ -216,6 +217,65 @@ struct GffLocString{
 			ret["value"][lang.to!string] = str;
 		return ret;
 	}
+
+	/// Remove all localization and set its value to a unique string
+	auto ref opAssign(in string value){
+		strref = strref.max;
+		strings = [0: value];
+	}
+
+
+	import nwn.tlk: StrRefResolver, LanguageGender, TlkOutOfBoundsException;
+	/// Resolve the localized string using TLKs
+	string resolve(in StrRefResolver resolver) const {
+		if(strings.length > 0){
+			immutable preferedLang = resolver.standartTable.language * 2;
+			if(auto str = preferedLang in strings)
+				return *str;
+			if(auto str = preferedLang + 1 in strings)
+				return *str;
+
+			foreach(lang ; EnumMembers!LanguageGender){
+				if(auto str = lang in strings)
+					return *str;
+			}
+		}
+
+		if(strref != strref.max){
+			try return resolver[strref];
+			catch(TlkOutOfBoundsException){
+				return "invalid_strref";
+			}
+		}
+
+		return "";
+	}
+}
+unittest {
+	// TLK resolving
+	import nwn.tlk;
+	auto resolv = new StrRefResolver(
+		new Tlk(cast(ubyte[])import("dialog.tlk")),
+		new Tlk(cast(ubyte[])import("user.tlk"))
+	);
+
+	auto locStr = GffLocString();
+	locStr.strref = Tlk.UserTlkIndexOffset + 1;
+	locStr.strings = [0:"male english", 1:"female english", 2:"male french"];
+
+	assert(locStr.resolve(resolv) == "male french");
+
+	locStr.strings = [0:"male english", 1:"female english"];
+	assert(locStr.resolve(resolv) == "male english");
+
+	locStr.strings = [4:"male german", 6:"female italian"];
+	assert(locStr.resolve(resolv) == "male german");
+
+	locStr.strings.clear;
+	assert(locStr.resolve(resolv) == "Café liégeois");
+
+	locStr.strref = StrRef.max;
+	assert(locStr.resolve(resolv) == "");
 }
 
 ///
@@ -437,7 +497,8 @@ struct GffValue {
 			case Invalid:   assert(0, "No type set");
 		}
 	}
-	/// JSON to GffValue
+	/// Create a GffValue by parsing JSON.
+	/// JSON format should be like `{"type": "resref", "value": "hello world"}`
 	this(in nwnlibd.orderedjson.JSONValue json){
 		assert(json.type == JSON_TYPE.OBJECT, "json value " ~ json.toPrettyString ~ " is not an object");
 		switch(json["type"].str){
@@ -460,7 +521,7 @@ struct GffValue {
 			default: throw new GffJsonParseException("Unknown Gff type string: '"~json["type"].str~"'");
 		}
 	}
-	/// GffValue to JSON
+	/// Converts to JSON
 	nwnlibd.orderedjson.JSONValue toJson() const {
 		JSONValue ret;
 		final switch(type) with(GffType) {
@@ -485,7 +546,7 @@ struct GffValue {
 		return ret;
 	}
 
-	/// Converts into a user-readable string
+	/// Converts to a user-readable string
 	string toPrettyString(string tabs = null) const {
 		final switch(type) with(GffType) {
 			case Byte, Char, Word, Short, DWord, Int, DWord64, Int64, Float, Double, String:

@@ -5,7 +5,8 @@ import std.traits;
 		import std.conv;
 
 /// Converts a static char array to string.
-/// The fixed char array may or may not be null terminated
+/// The static char array may or may not be null terminated
+pure @safe
 auto ref string charArrayToString(T)(in T str) if(isArray!T && isSomeChar!(ForeachType!T)){
 	import std.string: indexOf;
 	auto i = str.indexOf('\0');
@@ -14,6 +15,9 @@ auto ref string charArrayToString(T)(in T str) if(isArray!T && isSomeChar!(Forea
 	return str[0 .. $].idup();
 }
 
+/// Converts a string to a static char array.
+/// The static char array may or may not be null terminated
+pure @safe
 T stringToCharArray(T)(in string str) if(isStaticArray!T && isSomeChar!(ForeachType!T)){
 	T ret;
 
