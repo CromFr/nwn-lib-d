@@ -43,11 +43,11 @@ void usage(in string cmd){
 	writeln("  check: Performs several checks on the TRN packets data");
 	writeln("  trrn-export: Export the terrain mesh, textures and grass");
 	writeln("  trrn-import: Import a terrain mesh, textures and grass into an existing TRN/TRX file");
-	writeln("  watr-import: Export water mesh");
+	writeln("  watr-export: Export water mesh");
 	writeln("  watr-import: Import a water mesh into an existing TRN/TRX file");
 	writeln("  aswm-strip: Optimize TRX file size");
-	writeln("  aswm-export-fancy: Export custom walkmesh data into a colored wavefront obj");
 	writeln("  aswm-export: Export walkable walkmesh into a wavefront obj");
+	writeln("  aswm-export-fancy: Export custom walkmesh data into a colored wavefront obj");
 	writeln("  aswm-import: Import a wavefront obj as the walkmesh of an existing TRX file");
 	writeln();
 	writeln("Advanced commands:");
