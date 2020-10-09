@@ -39,56 +39,49 @@ int main(string[] args){
 	string[] removeValuesList;
 	bool cleanLocale = false;
 	auto res = getopt(args,
-		"i|input", "Input file", &inputPath,
+		"i|input", "Input file. Provided for compatibility with Niv GFF tool.", &inputPath,
 		"j|input-format", "Input file format ("~EnumMembers!Format.stringof[6..$-1]~")", &inputFormat,
 		"o|output", "<file>:<format> Output file and format", &outputPath,
 		"k|output-format", "Output file format ("~EnumMembers!Format.stringof[6..$-1]~")", &outputFormat,
-		"s|set", "Set values in the GFF file. See section SET and PATH.\nEx: 'DayNight.7.SkyDomeModel=my_sky_dome.tga'", &setValuesList,
-		"r|remove", "Removes a GFF node. See section PATH.\nEx: 'DayNight.7.SkyDomeModel'", &removeValuesList,
+		"s|set", "Set or add nodes in the GFF file. See section 'Setting nodes'.\nEx: 'DayNight.7.SkyDomeModel=my_sky_dome.tga'", &setValuesList,
+		"r|remove", "Removes a GFF node with the given node path. See section 'Node paths'.\nEx: 'DayNight.7.SkyDomeModel'", &removeValuesList,
 		"locale-clean", "Remove empty values from localized strings.\n", &cleanLocale,
 		);
 	if(res.helpWanted){
 		improvedGetoptPrinter(
 			 "Parsing and serialization tool for GFF files like ifo, are, bic, uti, ...",
 			res.options,
-			 "===== Setting values =====\n"
+			 "===== Setting nodes =====\n"
 			~"There are 3 ways to set a GFF value:\n"
 			~"\n"
-			~"--set <path_to_node>=<node_value>\n"
+			~"--set <node_path>=<node_value>\n"
 			~"    Sets the value of an existing GFF node, without changing its type\n"
 			~"    Ex: --set 'ItemList.0.Tag=test-tag'\n"
-			~"--set <path_to_node>:<node_type>=<node_value>\n"
+			~"--set <node_path>:<node_type>=<node_value>\n"
 			~"    Sets the value and type of a GFF node, creating it if does not exist.\n"
 			~"    Structs and Lists cannot be set using this technique.\n"
 			~"    Ex: --set 'ItemList.0.Tag:cexostr=test-tag'\n"
-			~"--set <path_to_node>:json=<json_value>\n"
+			~"--set <node_path>:json=<json_value>\n"
 			~"    Sets the value and type of a GFF node using a JSON object.\n"
 			~"    Ex: --set 'ItemList.0.Tag:json={\"type\": \"cexostr\", \"value\": \"test-tag\"}'\n"
 			~"\n"
-			~"<path_to_node> Dot-separated path to the node to set (see section PATH)\n"
-			~"<node_type>    GFF type. Any of byte, char, word, short, dword, int, dword64, int64, float, double, cexostr, resref, cexolocstr, void\n"
+			~"<node_path>    Dot-separated path to the node to set. See section 'Node paths'\n"
+			~"<node_type>    GFF type. Any of byte, char, word, short, dword, int, dword64, int64, float, double, cexostr, resref, cexolocstr, void, list, struct\n"
 			~"<node_value>   GFF value.\n"
 			~"               'void' values must be encoded in base64.\n"
 			~"               'cexolocstr' values can be either an integer (sets the resref) or a string (sets the english string).\n"
-			~"<json_value>   GFF JSON value, as represented in .\n"
+			~"<json_value>   GFF JSON value, as represented in the json output format.\n"
+			~"               ex: {\"type\": \"struct\",\"value\":{\"Name\":{\"type\":\"cexostr\",\"value\":\"tk_item_dropped\"}}}\n"
 			~"\n"
-
-
-			~"The --set argument folows this scheme: Path=Value\n"
-			~"Path is explained in the PATH section\n"
-			~"Value is converted to the type of the field selected by Path\n"
-			~"If Path leads to a Struct or a List field, Value will be parsed as Json and converted to the field type\n"
-			~"The Json format used in this case is similar to the format output with --output-format=json.\n"
-			~"ex: {\"type\": \"struct\",\"value\":{\"Name\":{\"type\":\"cexostr\",\"value\":\"tk_item_dropped\"}}}\n"
 			~"\n"
-			~"===== Section PATH =====\n"
-			~"A GFF path is a succession of path elements separated by points:\n"
+			~"===== Node paths =====\n"
+			~"A GFF node path is a succession of path elements separated by dots:\n"
 			~"ex: 'VarTable.2.Name', 'DayNight.7.SkyDomeModel', ...\n"
-			~"Path element types:\n"
-			~"- Any string: If parent is a struct, will select matching child field\n"
-			~"- Any integer: If parent is a list, will select Nth child struct\n"
-			~"- 'FieldName:FieldType': If parent is a struct, will add a child field named 'FieldName' of type 'FieldType'. 'FieldType' can be any of: byte char word short dword int dword64 int64 float double cexostr resref cexolocstr void struct list\n"
-			~"- '$-42': If parent is a list, '$' is replaced by the list length, allowing to access last children of the list\n"
+			~"\n"
+			~"The path elements can be:\n"
+			~"- Any string: If the parent is a struct, will select the child value with a given label\n"
+			~"- Any integer: If the parent is a list, will select the Nth child struct\n"
+			~"- '$-42': If parent is a list, '$' is replaced by the list length, allowing to access last children of the list with '$-1'\n"
 			~"- '$': Will add a child at the end of the list"
 			);
 		return 1;
