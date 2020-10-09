@@ -56,26 +56,26 @@ class GffJsonParseException : Exception{
 	}
 }
 
-/// Type of data owned by a $(D GffNode)
-/// See_Also: $(D gffTypeToNative)
+/// Type of data owned by a `GffNode`
+/// See_Also: `gffTypeToNative`
 enum GffType{
-	Invalid      = -1, /// Init value
-	Byte         = 0,  /// Signed 8-bit int
-	Char         = 1,  /// Unsigned 8-bit int
-	Word         = 2,  /// Signed 16-bit int
-	Short        = 3,  /// Unsigned 16-bit int
-	DWord        = 4,  /// Signed 32-bit int
-	Int          = 5,  /// Unsigned 32-bit int
-	DWord64      = 6,  /// Signed 64-bit int
-	Int64        = 7,  /// Unsigned 64-bit int
-	Float        = 8,  /// 32-bit float
-	Double       = 9,  /// 64-bit float
+	Invalid   = -1, /// Init value
+	Byte      = 0,  /// Signed 8-bit int
+	Char      = 1,  /// Unsigned 8-bit int
+	Word      = 2,  /// Signed 16-bit int
+	Short     = 3,  /// Unsigned 16-bit int
+	DWord     = 4,  /// Signed 32-bit int
+	Int       = 5,  /// Unsigned 32-bit int
+	DWord64   = 6,  /// Signed 64-bit int
+	Int64     = 7,  /// Unsigned 64-bit int
+	Float     = 8,  /// 32-bit float
+	Double    = 9,  /// 64-bit float
 	String    = 10, /// String
-	ResRef       = 11, /// String with width <= 16 (32 for NWN2)
+	ResRef    = 11, /// String with width <= 16 (32 for NWN2)
 	LocString = 12, /// Localized string
-	Void         = 13, /// Binary data
-	Struct       = 14, /// Map of other $(D GffNode)
-	List         = 15  /// Array of other $(D GffNode)
+	Void      = 13, /// Binary data
+	Struct    = 14, /// Map of other $(D GffNode)
+	List      = 15  /// Array of other $(D GffNode)
 }
 
 /// Maps $(D GffType) to native D type
@@ -144,6 +144,52 @@ template isGffNativeType(T){
 		|| is(T: GffValue);
 }
 
+string gffTypeToCompatStr(in GffType t){
+	final switch(t) with(GffType) {
+		case Invalid:   assert(0, "Invalid GffType");
+		case Byte:      return "byte";
+		case Char:      return "char";
+		case Word:      return "word";
+		case Short:     return "short";
+		case DWord:     return "dword";
+		case Int:       return "int";
+		case DWord64:   return "dword64";
+		case Int64:     return "int64";
+		case Float:     return "float";
+		case Double:    return "double";
+		case String:    return "cexostr";
+		case ResRef:    return "resref";
+		case LocString: return "cexolocstr";
+		case Void:      return "void";
+		case Struct:    return "struct";
+		case List:      return "list";
+	}
+}
+GffType compatStrToGffType(in string t){
+	switch(t) with(GffType) {
+		case "byte":       return Byte;
+		case "char":       return Char;
+		case "word":       return Word;
+		case "short":      return Short;
+		case "dword":      return DWord;
+		case "int":        return Int;
+		case "dword64":    return DWord64;
+		case "int64":      return Int64;
+		case "float":      return Float;
+		case "double":     return Double;
+		case "cexostr":    return String;
+		case "resref":     return ResRef;
+		case "cexolocstr": return LocString;
+		case "void":       return Void;
+		case "struct":     return Struct;
+		case "list":       return List;
+		default:           return GffType.Invalid;
+	}
+
+}
+
+
+
 alias GffByte    = uint8_t; //GFF type Byte ( $(D uint8_t) )
 alias GffChar    = int8_t; //GFF type Char ( $(D int8_t) )
 alias GffWord    = uint16_t; //GFF type Word ( $(D uint16_t) )
@@ -176,6 +222,11 @@ struct GffResRef {
 	}
 	///
 	alias value this;
+
+
+	auto ref opAssign(in string _value){
+		value = _value;
+	}
 private:
 	char[32] data;
 }
@@ -194,6 +245,21 @@ struct GffLocString{
 
 	/// Get the string value without attempting to resolve strref using TLKs
 	string toString() const {
+		if(strings.length > 0){
+			foreach(lang ; EnumMembers!LanguageGender){
+				if(auto str = lang in strings)
+					return *str;
+			}
+		}
+
+		if(strref != strref.max){
+			return format!"{{STRREF:%d}}"(strref);
+		}
+		return "";
+	}
+
+	/// Get the string value without attempting to resolve strref using TLKs
+	string toPrettyString() const {
 		return format!"{%d, %s}"(strref == strref.max ? -1 : cast(long)strref, strings);
 	}
 
@@ -222,6 +288,11 @@ struct GffLocString{
 	auto ref opAssign(in string value){
 		strref = strref.max;
 		strings = [0: value];
+	}
+
+	/// Set the strref
+	auto ref opAssign(in uint32_t value){
+		strref = value;
 	}
 
 
@@ -264,15 +335,19 @@ unittest {
 	locStr.strings = [0:"male english", 1:"female english", 2:"male french"];
 
 	assert(locStr.resolve(resolv) == "male french");
+	assert(locStr.to!string == "male english");// without TLK, use english
 
 	locStr.strings = [0:"male english", 1:"female english"];
 	assert(locStr.resolve(resolv) == "male english");
+	assert(locStr.to!string == "male english");
 
 	locStr.strings = [4:"male german", 6:"female italian"];
 	assert(locStr.resolve(resolv) == "male german");
+	assert(locStr.to!string == "male german");
 
 	locStr.strings.clear;
 	assert(locStr.resolve(resolv) == "Café liégeois");
+	assert(locStr.to!string == "{{STRREF:16777217}}");
 
 	locStr.strref = StrRef.max;
 	assert(locStr.resolve(resolv) == "");
@@ -310,8 +385,9 @@ struct GffStruct {
 
 
 	/// Automatically encapsulate and add a GFF native type
-	auto ref opIndexAssign(T)(T rhs, in string label) if(isGffNativeType!T){
-		return children[label] = GffValue(rhs);
+	ref GffValue opIndexAssign(T)(T rhs, in string label) if(isGffNativeType!T) {
+		children[label] = GffValue(rhs);
+		return children[label];
 	}
 
 	/// Converts a GffStruct to a user-friendly string
@@ -336,7 +412,8 @@ struct GffStruct {
 		assert(json.type == JSON_TYPE.OBJECT, "json value " ~ json.toPrettyString ~ " is not an object");
 		assert(json["type"].str == "struct", "json object "~ json.toPrettyString ~" is not a GffStruct");
 		assert(json["value"].type == JSON_TYPE.OBJECT, "json .value "~ json.toPrettyString ~" is not an object");
-		id = json["__struct_id"].conv!uint32_t;
+		if(auto structId = ("__struct_id" in json))
+			id = structId.conv!uint32_t;
 		foreach(ref label ; json["value"].objectKeyOrder){
 			children[label] = GffValue(json["value"][label]);
 		}
@@ -434,6 +511,29 @@ struct GffValue {
 		value = _value;
 	}
 
+	///
+	this(GffType _type) {
+		final switch(_type) with(GffType) {
+			case Byte:      value = GffByte.init;      break;
+			case Char:      value = GffChar.init;      break;
+			case Word:      value = GffWord.init;      break;
+			case Short:     value = GffShort.init;     break;
+			case DWord:     value = GffDWord.init;     break;
+			case Int:       value = GffInt.init;       break;
+			case DWord64:   value = GffDWord64.init;   break;
+			case Int64:     value = GffInt64.init;     break;
+			case Float:     value = GffFloat.init;     break;
+			case Double:    value = GffDouble.init;    break;
+			case String:    value = GffString.init;    break;
+			case ResRef:    value = GffResRef.init;    break;
+			case LocString: value = GffLocString.init; break;
+			case Void:      value = GffVoid.init;      break;
+			case Struct:    value = GffStruct.init;    break;
+			case List:      value = GffList.init;      break;
+			case Invalid:   assert(0);
+		}
+	}
+
 	@property {
 		GffType type() const {
 			static GffType[ulong] lookupTable = null;
@@ -451,7 +551,9 @@ struct GffValue {
 	}
 
 	ref inout(T) get(T)() inout {
-		return *cast(inout T*)value.peek!T;
+		if(auto ptr = value.peek!T)
+			return *cast(inout T*)ptr;
+		throw new GffTypeException(format!"GFF Type mismatch: node is %s, trying to get it as %s"(value.type, T.stringof));
 	}
 
 	/// Shorthand for modifying the GffValue as a GffStruct
@@ -502,23 +604,23 @@ struct GffValue {
 	/// JSON format should be like `{"type": "resref", "value": "hello world"}`
 	this(in nwnlibd.orderedjson.JSONValue json){
 		assert(json.type == JSON_TYPE.OBJECT, "json value " ~ json.toPrettyString ~ " is not an object");
-		switch(json["type"].str){
-			case "byte":       value = json["value"].conv!GffByte;    break;
-			case "char":       value = json["value"].conv!GffChar;    break;
-			case "word":       value = json["value"].conv!GffWord;    break;
-			case "short":      value = json["value"].conv!GffShort;   break;
-			case "dword":      value = json["value"].conv!GffDWord;   break;
-			case "int":        value = json["value"].conv!GffInt;     break;
-			case "dword64":    value = json["value"].conv!GffDWord64; break;
-			case "int64":      value = json["value"].conv!GffInt64;   break;
-			case "float":      value = json["value"].conv!GffFloat;   break;
-			case "double":     value = json["value"].conv!GffDouble;  break;
-			case "cexostr":    value = json["value"].str;             break;
-			case "resref":     value = GffResRef(json["value"].str); break;
-			case "cexolocstr": value = GffLocString(json); break;
-			case "void":       value = Base64.decode(json["value"].str); break;
-			case "struct":     value = GffStruct(json); break;
-			case "list":       value = GffList(json); break;
+		switch(json["type"].str.compatStrToGffType) with(GffType) {
+			case Byte:      value = json["value"].conv!GffByte;       break;
+			case Char:      value = json["value"].conv!GffChar;       break;
+			case Word:      value = json["value"].conv!GffWord;       break;
+			case Short:     value = json["value"].conv!GffShort;      break;
+			case DWord:     value = json["value"].conv!GffDWord;      break;
+			case Int:       value = json["value"].conv!GffInt;        break;
+			case DWord64:   value = json["value"].conv!GffDWord64;    break;
+			case Int64:     value = json["value"].conv!GffInt64;      break;
+			case Float:     value = json["value"].conv!GffFloat;      break;
+			case Double:    value = json["value"].conv!GffDouble;     break;
+			case String:    value = json["value"].str;                break;
+			case ResRef:    value = GffResRef(json["value"].str);     break;
+			case LocString: value = GffLocString(json);               break;
+			case Void:      value = Base64.decode(json["value"].str); break;
+			case Struct:    value = GffStruct(json);                  break;
+			case List:      value = GffList(json);                    break;
 			default: throw new GffJsonParseException("Unknown Gff type string: '"~json["type"].str~"'");
 		}
 	}
@@ -526,24 +628,25 @@ struct GffValue {
 	nwnlibd.orderedjson.JSONValue toJson() const {
 		JSONValue ret;
 		final switch(type) with(GffType) {
-			case Byte:      ret["type"] = "byte";    ret["value"] = get!GffByte; break;
-			case Char:      ret["type"] = "char";    ret["value"] = get!GffChar; break;
-			case Word:      ret["type"] = "word";    ret["value"] = get!GffWord; break;
-			case Short:     ret["type"] = "short";   ret["value"] = get!GffShort; break;
-			case DWord:     ret["type"] = "dword";   ret["value"] = get!GffDWord; break;
-			case Int:       ret["type"] = "int";     ret["value"] = get!GffInt; break;
-			case DWord64:   ret["type"] = "dword64"; ret["value"] = get!GffDWord64; break;
-			case Int64:     ret["type"] = "int64";   ret["value"] = get!GffInt64; break;
-			case Float:     ret["type"] = "float";   ret["value"] = get!GffFloat; break;
-			case Double:    ret["type"] = "double";  ret["value"] = get!GffDouble; break;
-			case String:    ret["type"] = "cexostr"; ret["value"] = get!GffString; break;
-			case ResRef:    ret["type"] = "resref";  ret["value"] = get!GffResRef.value; break;
+			case Byte:      ret["value"] = get!GffByte; break;
+			case Char:      ret["value"] = get!GffChar; break;
+			case Word:      ret["value"] = get!GffWord; break;
+			case Short:     ret["value"] = get!GffShort; break;
+			case DWord:     ret["value"] = get!GffDWord; break;
+			case Int:       ret["value"] = get!GffInt; break;
+			case DWord64:   ret["value"] = get!GffDWord64; break;
+			case Int64:     ret["value"] = get!GffInt64; break;
+			case Float:     ret["value"] = get!GffFloat; break;
+			case Double:    ret["value"] = get!GffDouble; break;
+			case String:    ret["value"] = get!GffString; break;
+			case ResRef:    ret["value"] = get!GffResRef.value; break;
 			case LocString: return get!GffLocString.toJson;
-			case Void:      ret["type"] = "void";    ret["value"] = Base64.encode(get!GffVoid).to!string; break;
+			case Void:      ret["value"] = Base64.encode(get!GffVoid).to!string; break;
 			case Struct:    return get!GffStruct.toJson;
 			case List:      return get!GffList.toJson;
 			case Invalid:   assert(0, "No type set");
 		}
+		ret["type"] = type.gffTypeToCompatStr;
 		return ret;
 	}
 
@@ -551,8 +654,10 @@ struct GffValue {
 	string toPrettyString(string tabs = null) const {
 		final switch(type) with(GffType) {
 			case Byte, Char, Word, Short, DWord, Int, DWord64, Int64, Float, Double, String:
-			case ResRef, LocString:
+			case ResRef:
 				return tabs ~ to!string;
+			case LocString:
+				return tabs ~ get!GffLocString.toPrettyString;
 			case Void:
 				import std.base64: Base64;
 				return tabs ~ Base64.encode(get!GffVoid).to!string;
@@ -1253,9 +1358,13 @@ unittest{
 	assert(gff["ScriptHeartbeat"].get!GffResRef       == "gb_player_heart");
 	assert(gff["FirstName"].get!GffLocString.strref == -1);
 	assert(gff["FirstName"].get!GffLocString.strings[0] == "Krogar");
+	assert(gff["FirstName"].to!string == "Krogar");
 	//assert(gff[""].get!GffVoid == );
 	assert(gff["Tint_Head"]["Tintable"]["Tint"]["1"]["b"].get!GffByte == 109);
 	assert(gff["ClassList"][0]["Class"].get!GffInt == 4);
+
+	assertThrown!GffTypeException(gff["IsPC"].get!GffInt);
+	assertThrown!GffTypeException(gff["ClassList"].get!GffStruct);
 
 	// Tintable appears two times in the gff
 	// Both must be stored but only the last one should be accessed by its key

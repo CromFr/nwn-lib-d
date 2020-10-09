@@ -3,10 +3,10 @@ import std.datetime.stopwatch;
 
 
 void main(){
+	StopWatch sw;
 
 	{
 		import nwn.gff;
-		StopWatch sw;
 		Duration min = Duration.max;
 		foreach(i ; 0 .. 100){
 			sw.reset();
@@ -20,7 +20,6 @@ void main(){
 
 		auto gff = new Gff(cast(immutable ubyte[])import("krogar.bic"));
 		min = Duration.max;
-		sw.reset();
 		foreach(i ; 0 .. 100){
 			sw.reset();
 			sw.start();
@@ -34,17 +33,29 @@ void main(){
 	}
 	{
 		import nwn.fastgff;
-		StopWatch sw;
 		Duration min = Duration.max;
 		foreach(i ; 0 .. 100){
 			sw.reset();
 			sw.start();
-			new FastGff(cast(immutable ubyte[])import("krogar.bic"));
+			new FastGff(cast(immutable ubyte[])import("krogar.bic")).toPrettyString;
 			sw.stop();
 			if(sw.peek() < min)
 				min = sw.peek();
 		}
-		stderr.writeln("nwn.fastgff.FastGff Parsing: ", min.total!"usecs" / 1000.0, "ms");
+		stderr.writeln("nwn.fastgff.FastGff Parsing + toPrettyString: ", min.total!"usecs" / 1000.0, "ms");
+	}
+	{
+		import nwn.gff;
+		Duration min = Duration.max;
+		foreach(i ; 0 .. 100){
+			sw.reset();
+			sw.start();
+			new Gff(cast(immutable ubyte[])import("krogar.bic")).toPrettyString;
+			sw.stop();
+			if(sw.peek() < min)
+				min = sw.peek();
+		}
+		stderr.writeln("nwn.gff.Gff Parsing + toPrettyString: ", min.total!"usecs" / 1000.0, "ms");
 	}
 
 }

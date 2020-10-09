@@ -682,11 +682,6 @@ unittest{
 
 		// parity with nwn.gff.Gff
 		static import nwn.gff;
-		import std.stdio; stderr.writeln(new FastGff(krogarDataOrig).toPrettyString);
-
-		import std.file;
-		std.file.write("krogar.target.txt", new nwn.gff.Gff(krogarDataOrig).toPrettyString);
-		std.file.write("krogar.fast.txt", new FastGff(krogarDataOrig).toPrettyString);
 		assert(new FastGff(krogarDataOrig).toPrettyString == new nwn.gff.Gff(krogarDataOrig).toPrettyString);
 		//assert(new FastGff(krogarDataOrig).toJson.toString == new nwn.gff.Gff(krogarDataOrig).toJson.toString);
 	}
