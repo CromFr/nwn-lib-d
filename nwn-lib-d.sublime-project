@@ -22,6 +22,10 @@
 					"shell_cmd": "dub test",
 				},
 				{
+					"name": "Unittests :nwn-gff",
+					"shell_cmd": "dub test :nwn-gff",
+				},
+				{
 					"name": "Benchmark",
 					"shell_cmd": "dub run -b release :benchmark",
 				},

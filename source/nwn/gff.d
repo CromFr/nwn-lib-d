@@ -265,9 +265,9 @@ struct GffLocString{
 
 	/// JSON to LocString
 	this(in nwnlibd.orderedjson.JSONValue json){
-		assert(json.type == JSON_TYPE.OBJECT, "json value " ~ json.toPrettyString ~ " is not an object");
-		assert(json["type"].str == "cexolocstr", "json object "~ json.toPrettyString ~" is not a GffLocString");
-		assert(json["value"].type == JSON_TYPE.OBJECT, "json .value "~ json.toPrettyString ~" is not an object");
+		enforce!GffJsonParseException(json.type == JSON_TYPE.OBJECT, "json value " ~ json.toPrettyString ~ " is not an object");
+		enforce!GffJsonParseException(json["type"].str == "cexolocstr", "json object "~ json.toPrettyString ~" is not a GffLocString");
+		enforce!GffJsonParseException(json["value"].type == JSON_TYPE.OBJECT, "json .value "~ json.toPrettyString ~" is not an object");
 		strref = json["str_ref"].conv!uint32_t;
 		foreach(lang, text ; json["value"].object){
 			strings[lang.to!int32_t] = text.str;
@@ -351,6 +351,7 @@ unittest {
 
 	locStr.strref = StrRef.max;
 	assert(locStr.resolve(resolv) == "");
+	assert(locStr.to!string == "");
 }
 
 ///
@@ -811,7 +812,7 @@ private struct GffRawParser{
 		uint32_t id;
 		uint32_t data_or_data_offset;
 		uint32_t field_count;
-		string toString() const {
+		debug string toString() const {
 			return format!"Struct(id=%d dodo=%d fc=%d)"(id, data_or_data_offset, field_count);
 		}
 	}
@@ -819,13 +820,13 @@ private struct GffRawParser{
 		uint32_t type;
 		uint32_t label_index;
 		uint32_t data_or_data_offset;
-		string toString() const {
+		debug string toString() const {
 			return format!"Field(t=%s lblidx=%d dodo=%d)"(type.to!GffType, label_index, data_or_data_offset);
 		}
 	}
 	static align(1) struct RawLabel{
 		char[16] value;
-		string toString() const {
+		debug string toString() const {
 			return format!"Label(%s)"(value.charArrayToString);
 		}
 	}
@@ -838,7 +839,7 @@ private struct GffRawParser{
 	static align(1) struct RawListIndices{
 		uint32_t length;
 		uint32_t first_struct_index;
-		string toString() const {
+		debug string toString() const {
 			return format!"ListIndices(len=%d start=%d)"(length, first_struct_index);
 		}
 	}
