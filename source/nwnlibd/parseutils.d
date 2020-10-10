@@ -103,12 +103,30 @@ struct ChunkWriter{
 	ubyte[] data;
 
 	void put(T...)(in T chunks){
+		size_t i = data.length;
+
+		size_t addLen = 0;
 		static foreach(chunk ; chunks){
 			static if(isArray!(typeof(chunk)))
-				data ~= cast(ubyte[])chunk;
+				addLen += chunk.length * chunk[0].sizeof;
 			else
-				data ~= (cast(ubyte*)&chunk)[0..chunk.sizeof];
+				addLen += chunk.sizeof;
 		}
+		data.length += addLen;
+
+		foreach(chunk ; chunks){
+			static if(isArray!(typeof(chunk))){
+				const l = (cast(ubyte[])chunk).length;
+				data[i .. i + l] = cast(ubyte[])chunk;
+			}
+			else{
+				const l = chunk.sizeof;
+				data[i .. i + l] = (cast(ubyte*)&chunk)[0..l];
+			}
+			i += l;
+		}
+
+		assert(data.length == i);
 	}
 }
 
