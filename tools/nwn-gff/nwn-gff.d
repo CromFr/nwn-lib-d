@@ -39,14 +39,14 @@ int main(string[] args){
 	string[] removeValuesList;
 	bool cleanLocale = false;
 	auto res = getopt(args,
-		"i|input", "Input file. Provided for compatibility with Niv GFF tool.", &inputPath,
+		"i|input", "Input file. '-' to read from stdin. Provided for compatibility with Niv GFF tool.", &inputPath,
 		"j|input-format", "Input file format ("~EnumMembers!Format.stringof[6..$-1]~")", &inputFormat,
-		"o|output", "<file>:<format> Output file and format", &outputPath,
+		"o|output", "Output file. Defaults to stdout.", &outputPath,
 		"k|output-format", "Output file format ("~EnumMembers!Format.stringof[6..$-1]~")", &outputFormat,
 		"s|set", "Set or add nodes in the GFF file. See section 'Setting nodes'.\nEx: 'DayNight.7.SkyDomeModel=my_sky_dome.tga'", &setValuesList,
 		"r|remove", "Removes a GFF node with the given node path. See section 'Node paths'.\nEx: 'DayNight.7.SkyDomeModel'", &removeValuesList,
 		"locale-clean", "Remove empty values from localized strings.\n", &cleanLocale,
-		);
+	);
 	if(res.helpWanted){
 		improvedGetoptPrinter(
 			 "Parsing and serialization tool for GFF files like ifo, are, bic, uti, ...",
@@ -87,6 +87,12 @@ int main(string[] args){
 		return 1;
 	}
 
+	if(inputPath is null){
+		enforce(args.length > 1, "No input file provided");
+		enforce(args.length <= 2, "Too many input files provided");
+		inputPath = args[1];
+	}
+
 	if(inputFormat == Format.detect){
 		if(inputPath is null)
 			inputFormat = Format.gff;
@@ -105,10 +111,10 @@ int main(string[] args){
 	if(inputFormat == Format.gff && outputFormat == Format.pretty && setValuesList.length == 0){
 		import nwn.fastgff: FastGff;
 
-		File inputFile = inputPath is null? stdin : File(inputPath, "r");
+		File inputFile = inputPath == "-" ? stdin : File(inputPath, "r");
 		auto gff = new FastGff(inputFile.readAll);
 
-		File outputFile = outputPath is null? stdout : File(outputPath, "w");
+		File outputFile = outputPath == "-" || outputPath is null ? stdout : File(outputPath, "w");
 		outputFile.rawWrite(gff.toPrettyString());
 		return 0;
 	}
@@ -117,7 +123,7 @@ int main(string[] args){
 
 	//Parsing
 	Gff gff;
-	File inputFile = inputPath is null? stdin : File(inputPath, "r");
+	File inputFile = inputPath == "-"? stdin : File(inputPath, "r");
 
 	switch(inputFormat){
 		case Format.gff:
@@ -416,7 +422,7 @@ int main(string[] args){
 
 
 	//Serialization
-	File outputFile = outputPath is null? stdout : File(outputPath, "w");
+	File outputFile = outputPath is null || outputPath == "-" ? stdout : File(outputPath, "w");
 	switch(outputFormat){
 		case Format.gff:
 			outputFile.rawWrite(gff.serialize());
@@ -515,6 +521,7 @@ unittest{
 
 	assert(main(["./nwn-gff","-i",dogePath,"-o",dogePathJson])==0);
 	assert(main(["./nwn-gff","-i",dogePathJson,"-o",dogePathDup])==0);
+	assert(main(["./nwn-gff",dogePath,"-o",dogePathJson])==0);
 
 
 	// Simple modifications
