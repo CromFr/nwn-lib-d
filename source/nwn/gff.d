@@ -395,12 +395,11 @@ struct GffStruct {
 	string toPrettyString(string tabs = null) const {
 		string ret = format!"%s(Struct %s)"(tabs, id == id.max ? "-1" : id.to!string);
 		foreach(i, ref kv ; children.byKeyValue){
-			bool keepLine = i + 1 < children.length;
-			const innerTabs = tabs ~ (keepLine? "|  " : "   ");
+			const innerTabs = tabs ~ "|  ";
 			const type = (kv.value.type != GffType.Struct && kv.value.type != GffType.List) ? " (" ~ kv.value.type.to!string ~ ")" : null;
 
-			ret ~= format!"\n%s%s %-16s = %s%s"(
-				tabs, keepLine ? "├╴" : "└╴",
+			ret ~= format!"\n%s├╴ %-16s = %s%s"(
+				tabs,
 				kv.key, kv.value.toPrettyString(innerTabs)[innerTabs.length .. $], type
 			);
 		}
@@ -454,11 +453,10 @@ struct GffList {
 	string toPrettyString(string tabs = null) const {
 		string ret = format!"%s(List)"(tabs);
 		foreach(i, ref child ; children){
-			bool keepLine = i + 1 < children.length;
-			auto innerTabs = tabs ~ (keepLine? "|  " : "   ");
+			auto innerTabs = tabs ~ "|  ";
 
-			ret ~= format!"\n%s%s %s"(
-				tabs, keepLine ? "├╴" : "└╴",
+			ret ~= format!"\n%s├╴ %s"(
+				tabs,
 				child.toPrettyString(innerTabs)[innerTabs.length .. $]
 			);
 		}
