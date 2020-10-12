@@ -71,7 +71,7 @@ unittest{
 	assert(resolv[Tlk.UserTlkIndexOffset + 1] == "Café liégeois");
 }
 
-/// TLK
+/// TLK (read only)
 class Tlk{
 	///
 	this(Language langId, immutable(char[4]) tlkVersion = "V3.0"){
@@ -83,13 +83,14 @@ class Tlk{
 		import std.file: read;
 		this(cast(ubyte[])path.read());
 	}
-
+	///
 	this(in ubyte[] rawData){
 		header = *cast(TlkHeader*)rawData.ptr;
 		strData = (cast(TlkStringData[])rawData[TlkHeader.sizeof .. header.string_entries_offset]).dup();
 		strEntries = cast(char[])rawData[header.string_entries_offset .. $];
 	}
 
+	/// tlk[strref]
 	string opIndex(in StrRef strref) const{
 		assert(strref < UserTlkIndexOffset, "Tlk indexes must be lower than "~UserTlkIndexOffset.to!string);
 
@@ -100,10 +101,12 @@ class Tlk{
 		return cast(immutable)strEntries[data.offset_to_string .. data.offset_to_string + data.string_size];
 	}
 
+	/// Number of entries
 	@property size_t length() const{
 		return header.string_count;
 	}
 
+	/// foreach(text ; tlk)
 	int opApply(scope int delegate(in string) dlg) const{
 		int res = 0;
 		foreach(ref data ; strData){
@@ -112,58 +115,24 @@ class Tlk{
 		}
 		return res;
 	}
-	int opApply(scope int delegate(size_t, in string) dlg) const{
+	/// foreach(strref, text ; tlk)
+	int opApply(scope int delegate(StrRef, in string) dlg) const{
 		int res = 0;
 		foreach(i, ref data ; strData){
-			res = dlg(i, cast(immutable)strEntries[data.offset_to_string .. data.offset_to_string + data.string_size]);
+			res = dlg(cast(StrRef)i, cast(immutable)strEntries[data.offset_to_string .. data.offset_to_string + data.string_size]);
 			if(res != 0) break;
 		}
 		return res;
 	}
 
 	@property{
+		/// TLK language ID
 		Language language() const{
 			return cast(Language)(header.language_id);
 		}
 	}
 
-	immutable(ubyte[]) serialize() const{
-		return ((cast(ubyte*)&header)[0 .. TlkHeader.sizeof]
-		       ~(cast(ubyte[])strData)
-		       ~(cast(ubyte[])strEntries)).idup();
-	}
-
-
-
-	void opIndexAssign(string text, StrRef strref){
-
-		if(strref >= length){
-			header.string_count = strref + 1;
-			strData.length = header.string_count;
-		}
-
-		auto data = &strData[strref];
-		if(data.flags & StringFlag.TEXT_PRESENT && text.length <= data.string_size){
-			// Existing string
-			// Rewrite content in place
-			strEntries[data.offset_to_string .. data.offset_to_string + text.length] = text;
-		}
-		else{
-			// Append text at the end
-			data.flags = StringFlag.TEXT_PRESENT;
-			data.offset_to_string = strEntries.length.to!uint32_t;
-			data.sound_length = 0.0;
-
-			strEntries ~= text;
-		}
-		data.string_size = text.length.to!uint32_t;
-	}
-
-
-
-
 	enum UserTlkIndexOffset = 16777216;
-
 
 private:
 	TlkHeader header;

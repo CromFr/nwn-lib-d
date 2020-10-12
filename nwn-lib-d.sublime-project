@@ -22,40 +22,66 @@
 					"shell_cmd": "dub test",
 				},
 				{
-					"name": "Unittests :nwn-gff",
-					"shell_cmd": "dub test :nwn-gff",
-				},
-				{
 					"name": "Benchmark",
 					"shell_cmd": "dub run -b release :benchmark",
 				},
 				{
 					"name": "Coverage",
-					"shell_cmd": "dub test :nwn-tlk -b unittest-cov",
+					"shell_cmd": "dub test -b unittest-cov",
 				},
 				{
-					"name": ":nwn-gff",
-					"shell_cmd": "dub build :nwn-gff",
+					"name": "nwn-bdb",
+					"working_dir": "${project_path}/tools/nwn-bdb",
 				},
 				{
-					"name": ":nwn-erf",
-					"shell_cmd": "dub build :nwn-erf",
+					"name": "nwn-bdb - Unittests",
+					"working_dir": "${project_path}/tools/nwn-bdb",
+					"shell_cmd": "dub test",
 				},
 				{
-					"name": ":nwn-tlk",
-					"shell_cmd": "dub build :nwn-tlk",
+					"name": "nwn-erf",
+					"working_dir": "${project_path}/tools/nwn-erf",
 				},
 				{
-					"name": ":nwn-bdb",
-					"shell_cmd": "dub build :nwn-bdb",
+					"name": "nwn-erf - Unittests",
+					"working_dir": "${project_path}/tools/nwn-erf",
+					"shell_cmd": "dub test",
 				},
 				{
-					"name": ":nwn-trn",
-					"shell_cmd": "dub build :nwn-trn",
+					"name": "nwn-gff",
+					"working_dir": "${project_path}/tools/nwn-gff",
 				},
 				{
-					"name": ":nwn-srv",
-					"shell_cmd": "dub build :nwn-srv",
+					"name": "nwn-gff - Unittests",
+					"working_dir": "${project_path}/tools/nwn-gff",
+					"shell_cmd": "dub test",
+				},
+				{
+					"name": "nwn-srv",
+					"working_dir": "${project_path}/tools/nwn-srv",
+				},
+				{
+					"name": "nwn-srv - Unittests",
+					"working_dir": "${project_path}/tools/nwn-srv",
+					"shell_cmd": "dub test",
+				},
+				{
+					"name": "nwn-tlk",
+					"working_dir": "${project_path}/tools/nwn-tlk",
+				},
+				{
+					"name": "nwn-tlk - Unittests",
+					"working_dir": "${project_path}/tools/nwn-tlk",
+					"shell_cmd": "dub test",
+				},
+				{
+					"name": "nwn-trn",
+					"working_dir": "${project_path}/tools/nwn-trn",
+				},
+				{
+					"name": "nwn-trn - Unittests",
+					"working_dir": "${project_path}/tools/nwn-trn",
+					"shell_cmd": "dub test",
 				},
 				{
 					"name": "Documentation",

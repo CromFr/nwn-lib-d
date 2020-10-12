@@ -28,7 +28,7 @@ uint calcItemCost(ref GffStruct oItem)
 	unitPrice += chargeCost;
 	unitPrice += 1000f * (bonusCost * bonusCost);
 	unitPrice -= 1000f * malusCost * malusCost;
-	unitPrice *= getTwoDA("baseitems").get("ItemMultiplier", baseItemType, 1f);
+	unitPrice *= getTwoDA("baseitems").get("itemmultiplier", baseItemType, 1f);
 
 	const stack = oItem["StackSize"].get!GffWord;
 
@@ -101,12 +101,12 @@ private void getPropertiesCost(ref GffStruct oItem, out float bonusCost, out flo
 		auto ip = prop.toNWItemproperty;
 
 		float specialCostAdjust = 0f;
-		float fTypeCost = getTwoDA("itempropdef").get("Cost", ip.type, 0f);
+		float fTypeCost = getTwoDA("itempropdef").get("cost", ip.type, 0f);
 
 		float fSubTypeCost = 0.0;
-		string sSubTypeTable = getTwoDA("itempropdef").get("SubTypeResRef", ip.type);
+		string sSubTypeTable = getTwoDA("itempropdef").get("subtyperesref", ip.type);
 		if(sSubTypeTable !is null)
-			fSubTypeCost = getTwoDA(sSubTypeTable).get("Cost", ip.subType, 0f);
+			fSubTypeCost = getTwoDA(sSubTypeTable).get("cost", ip.subType, 0f);
 		float fCostValueCost = getCostValueCost(ip, specialCostAdjust);
 
 		if(ip.type == 15){

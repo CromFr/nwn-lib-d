@@ -413,19 +413,15 @@ NWInt GetItemPropertyDurationType(NWItemproperty iprp){
 
 ///
 NWInt GetItemPropertyCostTable(NWItemproperty iProp){
-	string sCostTableID = getTwoDA("itempropdef")[iProp.type, "CostTableResRef"];
-	if(sCostTableID.length > 0)
-		return sCostTableID.to!NWInt;
-	return -1;
+	return getTwoDA("itempropdef").get!NWInt("CostTableResRef", iProp.type, -1);
 }
 
 
 
 ///
 NWString Get2DAString(NWString s2DA, NWString sColumn, NWInt nRow){
-	return getTwoDA(s2DA)[nRow, sColumn];
+	return getTwoDA(s2DA).get!NWString(sColumn, nRow, "");
 }
-
 
 
 ///

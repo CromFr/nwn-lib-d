@@ -1,0 +1,15 @@
+name "nwn-bdb"
+description "Bioware campaign database tool (FoxproDB)"
+license "GPL-3.0"
+copyright "Copyright © 2020, Thibaut CHARLES"
+authors "Thibaut CHARLES (CromFr)"
+
+targetType "executable"
+sourcePaths "source" "../common/"
+importPaths "source" "../common/"
+dependency "nwn-lib-d" path="../../"
+dependency "colorize" version="~>1.0.5"
+
+configuration "unittest" {
+	stringImportPaths "../../unittest"
+}

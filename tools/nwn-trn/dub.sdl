@@ -1,0 +1,15 @@
+name "nwn-trn"
+description "TRN file tool (TRN, TRX)"
+license "GPL-3.0"
+copyright "Copyright © 2020, Thibaut CHARLES"
+authors "Thibaut CHARLES (CromFr)"
+
+targetType "executable"
+sourcePaths "source" "../common/"
+importPaths "source" "../common/"
+dependency "nwn-lib-d" path="../../"
+stringImportPaths "res"
+
+configuration "unittest" {
+	stringImportPaths "../../unittest"
+}
