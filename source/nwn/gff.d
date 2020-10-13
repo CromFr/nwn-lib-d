@@ -11,6 +11,7 @@ import std.base64: Base64;
 import std.algorithm;
 import std.array;
 import std.traits;
+import std.math;
 
 import nwnlibd.orderedaa;
 import nwnlibd.orderedjson;
@@ -18,12 +19,6 @@ import nwnlibd.parseutils;
 
 debug import std.stdio;
 version(unittest) import std.exception: assertThrown, assertNotThrown;
-
-unittest{
-	import etc.linux.memoryerror;
-	static if (is(typeof(registerMemoryErrorHandler)))
-		registerMemoryErrorHandler();
-}
 
 /// Parsing exception
 class GffParseException : Exception{
@@ -438,7 +433,7 @@ private:
 	// We store children as ubyte[5] instead of GffValue, because GffValue
 	// needs a complete GffStruct definition
 	enum _gffValueSize = 5;
-	static assert(GffValue.sizeof == 8 * _gffValueSize);
+	static assert(ceil(GffValue.sizeof / 8.0) * 8 == 8 * _gffValueSize);
 	OrderedAA!(string, ubyte[_gffValueSize]) m_children;
 }
 

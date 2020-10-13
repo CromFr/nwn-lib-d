@@ -5,6 +5,7 @@ copyright "Copyright © 2020, Thibaut CHARLES"
 authors "Thibaut CHARLES (CromFr)"
 
 targetType "executable"
+mainSourceFile "source/nwn-tlk.d"
 sourcePaths "source" "../common/"
 importPaths "source" "../common/"
 dependency "nwn-lib-d" path="../../"
