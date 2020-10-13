@@ -8,7 +8,7 @@ targetType "library"
 targetName "nwn-d"
 stringImportPaths "unittest"
 dependency "gfm:math" version="~>7.0.0"
-preBuildCommands `echo -e "/// nwn-lib-d version
+preBuildCommands `echo "/// nwn-lib-d version
 module nwn.ver;
 
 /// nwn-lib-d git version

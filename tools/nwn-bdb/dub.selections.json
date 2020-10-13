@@ -1,7 +1,6 @@
 {
 	"fileVersion": 1,
 	"versions": {
-		"colorize": "1.0.5",
 		"gfm": "7.0.8",
 		"nwn-lib-d": {"path":"../../"}
 	}

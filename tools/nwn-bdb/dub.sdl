@@ -9,7 +9,6 @@ mainSourceFile "source/nwn-bdb.d"
 sourcePaths "source" "../common/"
 importPaths "source" "../common/"
 dependency "nwn-lib-d" path="../../"
-dependency "colorize" version="~>1.0.5"
 
 configuration "unittest" {
 	stringImportPaths "../../unittest"

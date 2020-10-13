@@ -68,11 +68,13 @@ jobs:
 
       # Testing
       - name: Run unit tests
-        if: matrix.platform == 'linux-gnu'
+        if: matrix.platform == 'linux-gnu' && matrix.arch == 'x86_64'
         run: |
           source ~/dlang/activate
 
           dub test --compiler=ldc2 --arch=${{ matrix.arch }}-${{ matrix.platform }} -b unittest-cov
+
+          cat source/nwn/ver.d
 
           for MOD in tools/nwn-*; do
             cd "$MOD"
@@ -111,6 +113,8 @@ jobs:
       - name: "Generate documentation"
         if: matrix.platform == 'linux-gnu' && matrix.arch == 'x86_64'
         run: |
+          source ~/dlang/activate
+
           dub build --build=ddox
 
           mkdir public/
@@ -212,18 +216,17 @@ jobs:
         id: create_pkg
         run: |
           BASENAME="nwn-lib-d-tools-$(echo "${{ matrix.platform }}" | cut -d '-' -f 1)-${{ matrix.arch }}"
+          ARTIFACTS="nwn-lib-d-tools-${{ matrix.platform }}-${{ matrix.arch }}"
 
-          cd "nwn-lib-d-tools-${{ matrix.platform }}-${{ matrix.arch }}"
           if [[ "${{ matrix.platform }}" == windows-* ]]; then
             PKG="$BASENAME.zip"
-            zip -9 ../$PKG *
+            zip -9 -r "$PKG" "$ARTIFACTS"
             echo "::set-output name=mime_type::application/zip"
           else
             PKG="$BASENAME.tar.xz"
-            tar cfJ ../$PKG *
+            tar cfJ "$PKG" "$ARTIFACTS"
             echo "::set-output name=mime_type::application/x-xz"
           fi
-          cd -
 
           echo "::set-output name=file::$PKG"
 
@@ -250,16 +253,16 @@ jobs:
 
 
       # GH pages
-      - name: Download artifacts
+      - name: Download doc artifacts
         if: steps.rel_info.outputs.tag != '' && matrix.platform == 'linux-gnu' && matrix.arch == 'x86_64'
         uses: actions/download-artifact@v1
         with:
           name: "documentation"
 
-      - name: Deploy
+      - name: Deploy documentation
         if: steps.rel_info.outputs.tag != '' && matrix.platform == 'linux-gnu' && matrix.arch == 'x86_64'
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./public
+          publish_dir: ./documentation
 

@@ -9,6 +9,7 @@ import std.conv: to, ConvException;
 import std.traits;
 import std.string;
 import std.path;
+import std.file;
 import std.exception;
 import std.algorithm;
 import std.math: log10;
@@ -39,6 +40,7 @@ int main(string[] args){
 		writeln(NWN_LIB_D_VERSION);
 		return 0;
 	}
+	enforce(args.length >= 2, "No subcommand provided");
 
 	immutable command = args[1];
 	args = args[0] ~ args[2..$];
@@ -78,7 +80,8 @@ int main(string[] args){
 
 			if(moduleOnly)
 				enforce(playerid is null, "--module cannot be used with --playerid");
-			else if(playerid is null)
+
+			if(playerid is null)
 				playerid = r".*";
 
 			Nullable!(BiowareDB.VarType) varType;
@@ -186,9 +189,6 @@ int main(string[] args){
 
 
 unittest {
-	import std.file;
-	import std.path;
-
 	auto stdout_ = stdout;
 	auto tmpOut = buildPath(tempDir, "unittest-nwn-lib-d-"~__MODULE__);
 	stdout = File(tmpOut, "w");
@@ -196,7 +196,7 @@ unittest {
 	scope(exit) stdout = stdout_;
 
 
-	assert(main(["nwn-bdb"]) != 0);
+	assertThrown(main(["nwn-bdb"]) != 0);
 	assert(main(["nwn-bdb","--help"]) == 0);
 	assert(main(["nwn-bdb","--version"]) == 0);
 
