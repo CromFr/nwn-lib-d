@@ -15,7 +15,7 @@ import std.stdint;
 import std.typecons: Tuple, Nullable;
 import std.algorithm;
 import std.array;
-import std.exception: enforce;
+import std.exception;
 import std.random: uniform;
 import std.format;
 import std.math;
@@ -35,7 +35,7 @@ class ArgException : Exception{
 
 void usage(in string cmd){
 	writeln("TRN / TRX tool");
-	writeln("Usage: ", cmd, " command [args]");
+	writeln("Usage: ", cmd.baseName, " command [args]");
 	writeln();
 	writeln("Commands");
 	writeln("  info: Print TRN and packets header information");
@@ -57,13 +57,17 @@ void usage(in string cmd){
 }
 
 int main(string[] args){
-	version(unittest) if(args.length <= 1) return 0;
-
-	if(args.length <= 1 || (args.length > 1 && (args[1] == "--help" || args[1] == "-h"))){
+	if(args.any!(a => a == "--version")){
+		import nwn.ver: NWN_LIB_D_VERSION;
+		writeln(NWN_LIB_D_VERSION);
+		return 0;
+	}
+	if(args.length >= 2 && (args[1] == "--help" || args[1] == "-h")){
 		usage(args[0]);
-		return 1;
+		return 0;
 	}
 
+	enforce(args.length > 1, "No subcommand provided");
 	immutable command = args[1];
 	args = args[0] ~ args[2..$];
 
@@ -76,13 +80,15 @@ int main(string[] args){
 			bool strict = false;
 			auto res = getopt(args,
 				"strict", "Check some inconsistencies that does not cause issues with nwn2\nDefault: false", &strict);
-			if(res.helpWanted || args.length <= 1){
+			if(res.helpWanted){
 				improvedGetoptPrinter(
 					"Print TRN file information\n"
-					~"Usage: "~args[0]~" "~command~" file.trn",
+					~"Usage: "~args[0].baseName~" "~command~" file.trn",
 					res.options);
-				return 1;
+				return 0;
 			}
+			enforce(args.length > 1, "No input file provided");
+			enforce(args.length <=2, "Too many input files provided");
 
 			auto data = cast(ubyte[])args[1].read();
 			auto trn = new Trn(data);
@@ -143,13 +149,14 @@ int main(string[] args){
 			bool strict = false;
 			auto res = getopt(args,
 				"strict", "Check some inconsistencies that does not cause issues with nwn2\nDefault: false", &strict);
-			if(res.helpWanted || args.length == 1){
+			if(res.helpWanted){
 				improvedGetoptPrinter(
 					"Check if TRN packets contains valid data\n"
-					~"Usage: "~args[0]~" "~command~" file1.trx file2.trn ...",
+					~"Usage: "~args[0].baseName~" "~command~" file1.trx file2.trn ...",
 					res.options);
-				return 1;
+				return 0;
 			}
+			enforce(args.length > 1, "No input file provided");
 
 			foreach(file ; args[1 .. $]){
 				Trn trn;
@@ -194,20 +201,22 @@ int main(string[] args){
 				"output|o", "Output file or directory. Mandatory if --in-place is not provided.", &targetPath,
 				"quiet|q", "Do not display statistics", &quiet,
 				);
-			if(res.helpWanted || args.length == 1){
+			if(res.helpWanted){
 				improvedGetoptPrinter(
 					"Reduce TRX file size by removing non walkable triangles from walkmesh and path tables\n"
-					~"Usage: "~args[0]~" "~command~" map.trx -o stripped_map.trx\n"
-					~"       "~args[0]~" "~command~" -i map.trx",
+					~"Usage: "~args[0].baseName~" "~command~" map.trx -o stripped_map.trx\n"
+					~"       "~args[0].baseName~" "~command~" -i map.trx",
 					res.options);
-				return 1;
+				return 0;
 			}
+			enforce(args.length > 1, "No input file provided");
 
 			if(inPlace){
 				enforce(targetPath is null, "You cannot use --in-place with --output");
 				enforce(args.length >= 2, "No input file");
 			}
 			else{
+				enforce(args.length <=2, "Too many input files provided");
 				if(targetPath is null)
 					targetPath = ".";
 			}
@@ -259,10 +268,10 @@ int main(string[] args){
 				"feature|f", "Features to render. Can be provided multiple times. Default: [\"walkmesh\"]", &features,
 				);
 
-			if(res.helpWanted || args.length == 1){
+			if(res.helpWanted){
 				improvedGetoptPrinter(
 					"Convert NWN2 walkmeshes into TRX / OBJ (only TRX => OBJ supported for now)\n"
-					~"Usage: "~args[0]~" "~command~" map.trx\n"
+					~"Usage: "~args[0].baseName~" "~command~" map.trx\n"
 					~"\n"
 					~"Available features to render:\n"
 					~"- walkmesh: All triangles including non-walkable.\n"
@@ -273,9 +282,10 @@ int main(string[] args){
 					~"- randomislandspaths: Calculate random paths between islands.\n"
 					~"- islands: Each island using random colors.\n",
 					res.options);
-				return 1;
+				return 0;
 			}
-			enforce(args.length == 2, "You can only provide one TRX file");
+			enforce(args.length > 1, "No input file provided");
+			enforce(args.length <=2, "Too many input files provided");
 
 			if(targetDir == null && targetDir != "-"){
 				targetDir = args[1].dirName;
@@ -316,17 +326,18 @@ int main(string[] args){
 			string outFile = ".";
 			auto res = getopt(args,
 				"output|o", "Output file or directory where to write the obj file. Default: '.'", &outFile,
-				);
+			);
 
-			if(res.helpWanted || args.length == 1){
+			if(res.helpWanted){
 				improvedGetoptPrinter(
 					"Export all walkable triangles into a Wavefront OBJ file.\n"
-					~"Usage: "~args[0]~" "~command~" map.trx\n"
-					~"       "~args[0]~" "~command~" map.trx -o outputFile.obj\n",
+					~"Usage: "~args[0].baseName~" "~command~" map.trx\n"
+					~"       "~args[0].baseName~" "~command~" map.trx -o outputFile.obj\n",
 					res.options);
-				return 1;
+				return 0;
 			}
-			enforce(args.length == 2, "You can only provide one TRN file");
+			enforce(args.length > 1, "No input file provided");
+			enforce(args.length <=2, "Too many input files provided");
 
 			auto inputFile = args[1];
 
@@ -356,12 +367,12 @@ int main(string[] args){
 			if(res.helpWanted){
 				improvedGetoptPrinter(
 					"Import a Wavefront OBJ file and use it as the area walkmesh. All triangles will be walkable.\n"
-					~"Usage: "~args[0]~" "~command~" --trn map.trx --obj walkmesh.obj --terrain2da ./terrainmaterials.2da -o newmap.trx\n"
-					~"       "~args[0]~" "~command~" --trn map.trx --obj walkmesh.obj --terrain2da ./terrainmaterials.2da\n",
+					~"Usage: "~args[0].baseName~" "~command~" --trn map.trx --obj walkmesh.obj --terrain2da ./terrainmaterials.2da -o newmap.trx\n"
+					~"       "~args[0].baseName~" "~command~" --trn map.trx --obj walkmesh.obj --terrain2da ./terrainmaterials.2da\n",
 					res.options);
-				return 1;
+				return 0;
 			}
-			enforce(args.length == 1, "Too many arguments. See --help");
+			enforce(args.length == 1, "Too many arguments");
 
 			if(outFile is null)
 				outFile = trnFile;
@@ -393,11 +404,14 @@ int main(string[] args){
 		break;
 
 		case "aswm-dump":{
-			if(args.length != 2){
-				writeln("Bad argument number.");
-				writeln("Usage: "~args[0]~" "~command~" file.trx");
-				return 1;
+			if(args.any!(a => a == "-h" || a == "--help")){
+				writeln("Dump walkmesh data");
+				writeln("Usage: "~args[0].baseName~" "~command~" file.trx");
+				return 0;
 			}
+			enforce(args.length > 1, "No input file provided");
+			enforce(args.length <=2, "Too many input files provided");
+
 			auto trn = new Trn(args[1]);
 
 			bool found = false;
@@ -417,14 +431,15 @@ int main(string[] args){
 				"in-place|i", "Provide this flag to overwrite the provided TRX file", &inPlace,
 				"output|o", "Output file or directory. Mandatory if --in-place is not provided.", &targetPath,
 				);
-			if(res.helpWanted || args.length == 1){
+			if(res.helpWanted){
 				improvedGetoptPrinter(
 					"Re-bake all tile / islands path tables of a baked TRX file.\n"
-					~"Usage: "~args[0]~" "~command~" map.trx -o baked_map.trx\n"
-					~"       "~args[0]~" "~command~" -i map.trx",
+					~"Usage: "~args[0].baseName~" "~command~" map.trx -o baked_map.trx\n"
+					~"       "~args[0].baseName~" "~command~" -i map.trx",
 					res.options);
-				return 1;
+				return 0;
 			}
+			enforce(args.length > 1, "No input file provided");
 
 			if(inPlace){
 				enforce(targetPath is null, "You cannot use --in-place with --output");
@@ -455,13 +470,14 @@ int main(string[] args){
 			bool strict = false;
 			auto res = getopt(args,
 				"strict", "Check some inconsistencies that does not cause issues with nwn2\nDefault: false", &strict);
-			if(res.helpWanted || args.length == 1){
+			if(res.helpWanted){
 				improvedGetoptPrinter(
 					"Check if ASWM packets are valid.\n"
-					~"Usage: "~args[0]~" "~command~" file1.trx file2.trx ...",
+					~"Usage: "~args[0].baseName~" "~command~" file1.trx file2.trx ...",
 					res.options);
-				return 1;
+				return 0;
 			}
+			enforce(args.length > 1, "No input file provided");
 
 			foreach(file ; args[1 .. $]){
 				auto trn = new Trn(file);
@@ -501,16 +517,19 @@ int main(string[] args){
 				// "git", "GIT file path. Default to $map_name_without_extension.git", &gitPath,
 				"j", "Parallel threads for baking multiple maps at the same time", &threads,
 				"unsafe", "Skip TRX validation checks, ie for dumping content & debugging", &unsafe,
-				);
-			if(res.helpWanted || (args.length == 1 && trnPath is null)){
+			);
+			if(res.helpWanted){
 				improvedGetoptPrinter(
 					"Generate baked TRX file.\n"
-					~"Usage: "~args[0]~" "~command~" map_name -o baked.trx\n"
-					~"       "~args[0]~" "~command~" --terrain2da ./terrainmaterials.2da map_name map_name_2 ...\n"
+					~"Usage: "~args[0].baseName~" "~command~" map_name -o baked.trx\n"
+					~"       "~args[0].baseName~" "~command~" --terrain2da ./terrainmaterials.2da map_name map_name_2 ...\n"
 					~" `map_name` can be any map file with or without its extension (.are, .git, .gic, .trn, .trx)",
 					res.options);
-				return 1;
+				return 0;
 			}
+
+			enforce(args.length > 1 || trnPath !is null, "No input file provided");
+			enforce(args.length <= 2 || trnPath !is null, "Too many input files provided");
 
 			if(inPlace)
 				enforce(targetPath is null, "You cannot use --in-place with --output");
@@ -648,14 +667,14 @@ int main(string[] args){
 				"output|o", "Output directory where to write the OBJ and DDS file. Default: '.'", &outFolder,
 				"no-textures", "Do not output texture data (DDS alpha maps & config)", &noTextures,
 				"no-grass", "Do not output grass data (3D lines & config)", &noGrass,
-				);
+			);
 
-			if(res.helpWanted || args.length == 1){
+			if(res.helpWanted){
 				improvedGetoptPrinter(
 					"Export terrain mesh, textures and grass into wavefront obj, json and DDS files.\n"
 					~"Note: works for both TRN and TRX files, though TRN files are only used by the toolset.\n"
-					~"Usage: "~args[0]~" "~command~" map.trx\n"
-					~"       "~args[0]~" "~command~" map.trx -o converted/\n"
+					~"Usage: "~args[0].baseName~" "~command~" map.trx\n"
+					~"       "~args[0].baseName~" "~command~" map.trx -o converted/\n"
 					~"\n"
 					~"Wavefront format notes:\n"
 					~"- Each megatile is stored in a different object named with its megatile coordinates: 'megatile-x6y9' or 'megatile-x6y9-MTName' if the megatile has a name.\n"
@@ -667,9 +686,10 @@ int main(string[] args){
 					~"    + second point: grass blade normal + position\n"
 					~"    + third point: grass blade dimension + normal + position\n",
 					res.options);
-				return 1;
+				return 0;
 			}
-			enforce(args.length == 2, "You can only provide one TRN file");
+			enforce(args.length > 1, "No input file provided");
+			enforce(args.length <=2, "Too many input files provided");
 
 
 			auto trnFile = args[1];
@@ -806,22 +826,22 @@ int main(string[] args){
 				"no-grass", "Do not import grass data (3D lines & config)", &noGrass,
 				"rm", "Empty all megatiles before importing new mesh.\nUse with --no-textures to obtain harmless but glitchy textures.", &emptyMegatiles,
 				"output|o", "TRN/TRX file to write.\nDefault: overwrite the file provided by --trn", &outputFile,
-				);
+			);
 
-			if(res.helpWanted || args.length == 1){
+			if(res.helpWanted){
 				improvedGetoptPrinter(
 					"Import terrain mesh, textures and grass into an existing TRN or TRX file\n"
 					~"All needed files (json, dds) must be located in the same directory as the obj file.\n"
-					~"Usage: "~args[0]~" "~command~" map.obj --trn map.trx\n"
+					~"Usage: "~args[0].baseName~" "~command~" map.obj --trn map.trx\n"
 					~"\n"
 					~"Wavefront format notes:\n"
 					~"- Each megatile must be stored in a different object named with its megatile coordinates: 'megatile-x6y9'.\n"
 					~"- If a megatile is not in the obj file, the TRN/TRX megatile won't be modified\n",
 					res.options);
-				return 1;
+				return 0;
 			}
-
-			enforce(args.length == 2, "You can only provide one OBJ file");
+			enforce(args.length > 1, "No input file provided");
+			enforce(args.length <=2, "Too many input files provided");
 
 			auto objFilePath = args[1];
 			auto objFileDir = objFilePath.dirName;
@@ -982,16 +1002,17 @@ int main(string[] args){
 				"no-textures", "Do not output texture data (DDS alpha maps & config)", &noTextures,
 				);
 
-			if(res.helpWanted || args.length == 1){
+			if(res.helpWanted){
 				improvedGetoptPrinter(
 					"Export water mesh and properties into a wavefront obj, json and dds files.\n"
 					~"Note: works on both TRN and TRX files, though TRN files are only used by the toolset.\n"
-					~"Usage: "~args[0]~" "~command~" map.trx\n"
-					~"       "~args[0]~" "~command~" map.trx -o converted/\n",
+					~"Usage: "~args[0].baseName~" "~command~" map.trx\n"
+					~"       "~args[0].baseName~" "~command~" map.trx -o converted/\n",
 					res.options);
-				return 1;
+				return 0;
 			}
-			enforce(args.length == 2, "You can only provide one TRN file");
+			enforce(args.length > 1, "No input file provided");
+			enforce(args.length <=2, "Too many input files provided");
 
 
 			auto trnFile = args[1];
@@ -1081,20 +1102,20 @@ int main(string[] args){
 			auto res = getopt(args,
 				config.required, "trn", "Existing TRN or TRX file to store the water mesh", &trnFile,
 				"output|o", "TRN/TRX file to write.\nDefault: the file provided by --trn", &outputFile,
-				);
+			);
 
-			if(res.helpWanted || args.length == 1){
+			if(res.helpWanted){
 				improvedGetoptPrinter(
 					"Import mater mesh properties into an existing TRN or TRX file\n"
-					~"Usage: "~args[0]~" "~command~" map.watr.obj --trn map.trx\n"
+					~"Usage: "~args[0].baseName~" "~command~" map.watr.obj --trn map.trx\n"
 					~"\n"
 					~"Wavefront format notes:\n"
 					~"- Water data is always cleared before importing\n",
 					res.options);
-				return 1;
+				return 0;
 			}
-
-			enforce(args.length == 2, "You can only provide one OBJ file");
+			enforce(args.length > 1, "No input file provided");
+			enforce(args.length <=2, "Too many input files provided");
 
 			auto objFilePath = args[1];
 			auto objFileDir = objFilePath.dirName;
@@ -1201,24 +1222,27 @@ int main(string[] args){
 
 
 unittest{
-	import std.file: tempDir, read, writeFile=write, exists;
-	import std.path: buildPath;
-
 	version(Windows)
 		auto nullFile = "nul";
 	else
 		auto nullFile = "/dev/null";
 
 	auto stdout_ = stdout;
-	stdout = File(nullFile, "w");
+	auto tmpOut = buildPath(tempDir, "unittest-nwn-lib-d-"~__MODULE__);
+	stdout = File(tmpOut, "w");
+	scope(success) tmpOut.remove();
+	scope(exit) stdout = stdout_;
+
+
+	assertThrown(main(["nwn-trn"]));
+	assert(main(["nwn-trn","--help"]) == 0);
+	assert(main(["nwn-trn","--version"]) == 0);
 
 	auto filePath = buildPath(tempDir, "unittest-nwn-lib-d-"~__MODULE__);
 
-	assert(main(["nwn-trn", "--help"]) == 1);
+	assert(main(["nwn-trn", "check", "--help"]) == 0);
 
-	assert(main(["nwn-trn", "check", "--help"]) == 1);
-
-	assert(main(["nwn-trn", "bake", "--help"]) == 1);
+	assert(main(["nwn-trn", "bake", "--help"]) == 0);
 	assert(main([
 			"nwn-trn", "bake",
 			"--terrain2da=../../unittest/terrainmaterials.2da",
@@ -1226,13 +1250,13 @@ unittest{
 			"-o", nullFile,
 		]) == 0);
 
-	assert(main(["nwn-trn", "aswm-check", "--help"]) == 1);
+	assert(main(["nwn-trn", "aswm-check", "--help"]) == 0);
 	assert(main([
 			"nwn-trn", "aswm-check",
 			"../../unittest/WalkmeshObjects.trn", "../../unittest/WalkmeshObjects.trx", "../../unittest/TestImportExportTRN.trx",
 		]) == 0);
 
-	assert(main(["nwn-trn", "aswm-strip", "--help"]) == 1);
+	assert(main(["nwn-trn", "aswm-strip", "--help"]) == 0);
 	assert(main([
 			"nwn-trn", "aswm-strip",
 			"../../unittest/TestImportExportTRN.trx",
@@ -1245,7 +1269,7 @@ unittest{
 		assert(aswm.triangles.length == 3703);
 	}
 
-	assert(main(["nwn-trn", "aswm-export-fancy", "--help"]) == 1);
+	assert(main(["nwn-trn", "aswm-export-fancy", "--help"]) == 0);
 	assert(main([
 			"nwn-trn", "aswm-export-fancy",
 			"-f", "walkmesh",
@@ -1263,14 +1287,14 @@ unittest{
 	// Import/export functions
 
 	// ASWM
-	assert(main(["nwn-trn", "aswm-export", "--help"]) == 1);
+	assert(main(["nwn-trn", "aswm-export", "--help"]) == 0);
 	assert(main([
 			"nwn-trn", "aswm-export",
 			"../../unittest/TestImportExportTRN.trn",
 			"-o", filePath,
 		]) == 0);
 
-	assert(main(["nwn-trn", "aswm-import", "--help"]) == 1);
+	assert(main(["nwn-trn", "aswm-import", "--help"]) == 0);
 	assert(main([
 			"nwn-trn", "aswm-import",
 			"--obj", filePath,
@@ -1282,14 +1306,14 @@ unittest{
 	assert(main(["nwn-trn", "check", buildPath(tempDir, "TestImportExportTRN.new.trx")]) == 0);
 
 	// TRRN
-	assert(main(["nwn-trn", "trrn-export", "--help"]) == 1);
+	assert(main(["nwn-trn", "trrn-export", "--help"]) == 0);
 	assert(main([
 			"nwn-trn", "trrn-export",
 			"../../unittest/TestImportExportTRN.trx",
 			"-o", tempDir,
 		]) == 0);
 
-	assert(main(["nwn-trn", "trrn-import", "--help"]) == 1);
+	assert(main(["nwn-trn", "trrn-import", "--help"]) == 0);
 	assert(main([
 			"nwn-trn", "trrn-import",
 			buildPath(tempDir, "TestImportExportTRN.trx.trrn.obj"),
@@ -1300,14 +1324,14 @@ unittest{
 	assert(main(["nwn-trn", "check", buildPath(tempDir, "TestImportExportTRN.new.trx")]) == 0);
 
 	// WATR
-	assert(main(["nwn-trn", "watr-export", "--help"]) == 1);
+	assert(main(["nwn-trn", "watr-export", "--help"]) == 0);
 	assert(main([
 			"nwn-trn", "watr-export",
 			"../../unittest/TestImportExportTRN.trx",
 			"-o", tempDir,
 		]) == 0);
 
-	assert(main(["nwn-trn", "watr-import", "--help"]) == 1);
+	assert(main(["nwn-trn", "watr-import", "--help"]) == 0);
 	assert(main([
 			"nwn-trn", "watr-import",
 			buildPath(tempDir, "TestImportExportTRN.trx.watr.obj"),
@@ -1321,7 +1345,7 @@ unittest{
 	// Advanced commands
 	assert(main(["nwn-trn", "aswm-dump", "../../unittest/WalkmeshObjects.trx"]) == 0);
 
-	assert(main(["nwn-trn", "aswm-bake", "--help"]) == 1);
+	assert(main(["nwn-trn", "aswm-bake", "--help"]) == 0);
 	assert(main([
 			"nwn-trn", "aswm-bake",
 			"../../unittest/WalkmeshObjects.trx",

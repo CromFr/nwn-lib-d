@@ -24,17 +24,18 @@ import nwn.nwnserver;
 
 
 int main(string[] args){
+	if(args.length >= 2 && (args[1] == "-h" || args[1] == "--help")){
+		writeln("Send requests to NWN2 servers.");
+		writefln("Usage: %s (ping|bnes|bnds|bnxi|bnlm)", args[0].baseName);
+		return 0;
+	}
 	if(args.any!(a => a == "--version")){
 		import nwn.ver: NWN_LIB_D_VERSION;
 		writeln(NWN_LIB_D_VERSION);
 		return 0;
 	}
-	if(args.length == 2 && args[2] == "-h" || args[2] == "--help"){
-		writeln("Send requests to NWN2 servers.");
-		writefln("Usage: %s (ping|bnes|bnds|bnxi|bnlm)", args[0].baseName);
-		return 0;
-	}
 
+	enforce(args.length > 1, "No subcommand provided");
 	immutable command = args[1];
 	args = args[0] ~ args[2..$];
 
@@ -146,4 +147,19 @@ string serializeStruct(string format, T)(in T s){
 	else{
 		return ret;
 	}
+}
+
+unittest {
+	auto stdout_ = stdout;
+	auto tmpOut = buildPath(tempDir, "unittest-nwn-lib-d-"~__MODULE__);
+	stdout = File(tmpOut, "w");
+	scope(success) tmpOut.remove();
+	scope(exit) stdout = stdout_;
+
+	assertThrown(main(["nwn-srv"]));
+	assert(main(["nwn-srv","--help"]) == 0);
+	assert(main(["nwn-srv","--version"]) == 0);
+
+	assertThrown(main(["nwn-srv","bnxi"]));
+	assert(main(["nwn-srv","bnxi", "--help"]) == 0);
 }
