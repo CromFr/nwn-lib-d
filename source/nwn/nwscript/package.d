@@ -1,3 +1,4 @@
+/// Imports everything from nwn.nwscript
 module nwn.nwscript;
 
 public import nwn.nwscript.constants;

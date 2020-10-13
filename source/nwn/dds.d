@@ -9,7 +9,7 @@ debug import std.stdio: writeln;
 
 import nwnlibd.parseutils;
 
-///
+/// DDS file parsing
 struct Dds {
 
 	///

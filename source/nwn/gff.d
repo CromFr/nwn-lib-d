@@ -139,6 +139,7 @@ template isGffNativeType(T){
 		|| is(T: GffValue);
 }
 
+/// Converts a GFF type to a string compatible with niv tools
 string gffTypeToCompatStr(in GffType t){
 	final switch(t) with(GffType) {
 		case Invalid:   assert(0, "Invalid GffType");
@@ -160,6 +161,7 @@ string gffTypeToCompatStr(in GffType t){
 		case List:      return "list";
 	}
 }
+/// Converts a string compatible with niv tools to a GFF type
 GffType compatStrToGffType(in string t){
 	switch(t) with(GffType) {
 		case "byte":       return Byte;
@@ -197,7 +199,7 @@ alias GffFloat   = float; //GFF type Float ( $(D float) )
 alias GffDouble  = double; //GFF type Double ( $(D double) )
 alias GffString  = string; //GFF type String ( $(D string) )
 
-///
+/// Gff type ResRef (32-char string)
 struct GffResRef {
 	///
 	this(in string str){
@@ -226,6 +228,7 @@ private:
 	char[32] data;
 }
 
+/// Gff type LocString (TLK ID + translations)
 struct GffLocString{
 	/// String ref linking to a TLK entry
 	uint32_t strref;
@@ -349,11 +352,11 @@ unittest {
 	assert(locStr.to!string == "");
 }
 
-///
+/// Gff type Void ( $(D ubyte[]) )
 alias GffVoid = ubyte[];
 
 
-///
+/// Gff type Struct ( `GffValue[string]` )
 struct GffStruct {
 	///
 	this(GffValue[string] children, uint32_t structType){
@@ -437,7 +440,7 @@ private:
 	OrderedAA!(string, ubyte[_gffValueSize]) m_children;
 }
 
-///
+/// Gff type List ( `GffStruct[]` )
 struct GffList {
 
 	/// GffList children list
@@ -484,9 +487,10 @@ struct GffList {
 
 
 
-
+/// GFF value that can contain any type of GFF node
 struct GffValue {
 	import std.variant: VariantN;
+	///
 	alias Value = VariantN!(32,
 		GffByte, GffChar,
 		GffWord, GffShort,
@@ -497,7 +501,9 @@ struct GffValue {
 		GffStruct, GffList,
 	);
 
+	///
 	Value value;
+	///
 	alias value this;
 
 	///
@@ -529,6 +535,7 @@ struct GffValue {
 	}
 
 	@property {
+		/// Get currently stored GFF type
 		GffType type() const {
 			static GffType[ulong] lookupTable = null;
 			if(lookupTable is null){
@@ -544,6 +551,8 @@ struct GffValue {
 		}
 	}
 
+	/// Retrieve a reference to the GFF value or throws
+	/// Throws: GffTypeException if the types don't match
 	ref inout(T) get(T)() inout {
 		if(auto ptr = value.peek!T)
 			return *cast(inout T*)ptr;
@@ -571,7 +580,7 @@ struct GffValue {
 		return value.get!GffList[index] = rhs;
 	}
 
-
+	/// Converts the stored value into the given type
 	auto to(T)() const {
 		final switch(type) with(GffType) {
 			case Byte:      static if(__traits(compiles, get!GffByte.to!T))      return get!GffByte.to!T;      else break;
@@ -668,9 +677,7 @@ struct GffValue {
 
 
 
-
-
-
+/// Complete GFF file
 class Gff{
 	/// Empty GFF
 	this(){}
@@ -723,6 +730,7 @@ class Gff{
 		return ret;
 	}
 
+	/// Converts the GFF into a user-friendly string
 	string toPrettyString() const {
 		return "========== GFF-"~fileType~"-"~fileVersion~" ==========\n"
 			~ root.toPrettyString;
@@ -761,8 +769,6 @@ class Gff{
 
 private:
 	char[4] m_fileType, m_fileVersion;
-
-
 }
 
 

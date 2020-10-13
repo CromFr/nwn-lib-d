@@ -15,8 +15,11 @@ __test__*__
 /tools/nwn-???/nwn-???.exe
 /tools/nwn-???/nwn-???-test-*
 
+/nwn-lib-d-benchmark
+/nwn-lib-d-test-library
 *.exe
 *.lib
 libnwn-d.*
 
+# Generated with dub
 source/nwn/ver.d

@@ -1,13 +1,13 @@
+/// MDB file parsing
 module nwn.mdb;
 
 import std.stdint;
 import std.typecons;
 import nwnlibd.parseutils;
 
+/// MDB file parsing
 class Mdb {
-
-
-
+	///
 	static align(1) struct Header {
 		static assert(this.sizeof == 12);
 		align(1):
@@ -16,8 +16,10 @@ class Mdb {
 		uint16_t minorVersion;
 		uint32_t packets_length;
 	}
+	///
 	Header header;
 
+	///
 	enum PacketType: char[4] {
 		RIGD = "RIGD", /// Rigid body
 		SKIN = "SKIN", /// Skin Vertex
@@ -31,23 +33,30 @@ class Mdb {
 		HAIR = "HAIR"
 	}
 
+	///
 	static align(1) struct PacketKey {
 		static assert(this.sizeof == 8);
 		align(1):
 		PacketType type;
 		uint32_t offset;
 	}
+	///
 	PacketKey[] packet_keys;
 
+	///
 	static struct Packet {
+		///
 		PacketType type;
+		///
 		package ubyte[] rawData;
 
+		///
 		package this(PacketType type, in ubyte[] rawData){
 			this.type = type;
 			this.rawData = rawData.dup;
 		}
 
+		///
 		auto get(PacketType type)(){
 			assert(type == this.type, "Wrong packet type");
 
@@ -57,10 +66,12 @@ class Mdb {
 			else static assert(0, "MDB packet "~type~" not implemented");
 		}
 	}
+	///
 	Packet[] packets;
 
 
 
+	///
 	this(in ubyte[] data){
 		auto cr = new ChunkReader(data);
 		header = cr.read!Header;
@@ -97,17 +108,22 @@ private align(1) struct MdbTriangle {
 }
 
 
+///
 struct MdbWALK {
 
+	///
 	static align(1) struct Header {
 		char[32] name;
 		uint32_t ui_flags;
 		uint32_t vertices_length;
 		uint32_t triangles_length;
 	}
+	///
 	Header header;
+	///
 	MdbVertex[] vertices;
 
+	///
 	static align(1) struct MdbWalkTriangle {
 		align(1):
 		MdbTriangle tri;
@@ -132,8 +148,10 @@ struct MdbWALK {
 		}
 		uint32_t flags;
 	}
+	///
 	MdbWalkTriangle[] triangles;
 
+	///
 	this(in ubyte[] rawData){
 		auto cr = ChunkReader(rawData);
 
@@ -144,6 +162,7 @@ struct MdbWALK {
 		assert(cr.bytesLeft == 0, "Remaining data");
 	}
 
+	///
 	void toObj(string filePath) const {
 		import std.stdio;
 		auto obj = File(filePath, "w");

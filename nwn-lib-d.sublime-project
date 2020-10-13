@@ -89,7 +89,7 @@
 				},
 				{
 					"name": "Clean coverage",
-					"shell_cmd": "rm -- *.lst",
+					"shell_cmd": "rm -- *.lst .*.lst",
 				}
 			]
 		}

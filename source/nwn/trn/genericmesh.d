@@ -1,3 +1,4 @@
+/// Generic 3d mesh representation
 module nwn.trn.genericmesh;
 
 import std.stdint;
@@ -16,7 +17,7 @@ import std.container.dlist;
 import nwnlibd.geometry;
 import gfm.math.vector;
 
-
+///
 struct GenericMesh {
 	vec3f[] vertices;
 

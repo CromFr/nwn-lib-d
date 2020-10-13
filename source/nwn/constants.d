@@ -1,4 +1,4 @@
-/// NWN constants
+/// NWN constants (not nwscript builtin constants)
 module nwn.constants;
 
 import std.stdint;

@@ -1,5 +1,4 @@
-
-/// Experimental module that aims to provide faster and more memory efficient GFF file reading (and eventually writing)
+/// Faster and more memory efficient GFF file reading without writing support
 module nwn.fastgff;
 
 import std.exception: enforce, assertNotThrown;

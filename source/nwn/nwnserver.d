@@ -34,8 +34,14 @@ class NWNServer{
 		return (cast(TickDuration)sw.peek()).to!("msecs", double);
 	}
 
+	///
+	struct BNERU {
+		uint16_t port;
+		ubyte __padding;
+		string serverName;
+	}
 	/// Query server name info
-	auto queryBNES(){
+	BNERU queryBNES(){
 		sock.send("BNES" ~ localPort ~ '\0');
 
 		ubyte[] buff;
@@ -45,11 +51,6 @@ class NWNServer{
 		enforce(len > 5 && buff[0..5] == "BNERU", "Wrong answer received");
 		auto cr = ChunkReader(buff[5 .. len]);
 
-		struct BNERU {
-			uint16_t port;
-			ubyte __padding;
-			string serverName;
-		}
 		return BNERU(
 			cr.read!(ubyte[2]).littleEndianToNative!(uint16_t, 2),
 			cr.read!ubyte,
@@ -57,8 +58,34 @@ class NWNServer{
 		);
 	}
 
+	///
+	static struct BNDR {
+		uint16_t port;
+		string serverDesc;
+		string moduleDesc;
+		string gameVersion;
+		enum GameType: uint16_t {
+			Action = 0,
+			Story = 1,
+			Story_lite = 2,
+			Role_Play = 3,
+			Team = 4,
+			Melee = 5,
+			Arena = 6,
+			Social = 7,
+			Alternative = 8,
+			PW_Action = 9,
+			PW_Story = 10,
+			Solo = 11,
+			Tech_Support  = 12,
+		}
+		GameType gameType;
+		string webUrl;
+		string filesUrl;
+	}
+
 	/// Query server game / module info
-	auto queryBNDS(){
+	BNDR queryBNDS(){
 		sock.send("BNDS" ~ localPort);
 
 		ubyte[] buff;
@@ -68,30 +95,6 @@ class NWNServer{
 		enforce(len > 4 && buff[0..4] == "BNDR", "Wrong answer received");
 		auto cr = ChunkReader(buff[4 .. len]);
 
-		struct BNDR {
-			uint16_t port;
-			string serverDesc;
-			string moduleDesc;
-			string gameVersion;
-			enum GameType: uint16_t {
-				Action = 0,
-				Story = 1,
-				Story_lite = 2,
-				Role_Play = 3,
-				Team = 4,
-				Melee = 5,
-				Arena = 6,
-				Social = 7,
-				Alternative = 8,
-				PW_Action = 9,
-				PW_Story = 10,
-				Solo = 11,
-				Tech_Support  = 12,
-			}
-			GameType gameType;
-			string webUrl;
-			string filesUrl;
-		}
 		return BNDR(
 			cr.read!(ubyte[2]).littleEndianToNative!(uint16_t, 2),
 			cr.readArray!char(cr.read!(ubyte[4]).littleEndianToNative!(uint32_t, 4)).to!string,
@@ -103,8 +106,37 @@ class NWNServer{
 		);
 	}
 
+	///
+	static struct BNXR {
+		uint16_t port;
+		ubyte bnxiVersion;
+		bool hasPassword;
+		ubyte minLevel;
+		ubyte maxLevel;
+		ubyte currentPlayers;
+		ubyte maxPlayers;
+		enum VaultType: ubyte {
+			server = 0,
+			local = 1,
+		}
+		VaultType vaultType;
+		enum PvpType: ubyte {
+			none = 0,
+			party = 1,
+			full = 2,
+		}
+		PvpType pvp;
+		bool playerPause;
+		bool oneParty;
+		bool enforceLegalChars;
+		bool itemLvlRestriction;
+		bool xp;
+		string modName;
+		string gameVersion;
+	}
+
 	/// Query server config
-	auto queryBNXI(){
+	BNXR queryBNXI(){
 		sock.send("BNXI" ~ localPort);
 
 		ubyte[] buff;
@@ -113,34 +145,6 @@ class NWNServer{
 		enforce(len > 0, "Server did not answer");
 		enforce(len > 4 && buff[0..4] == "BNXR", "Wrong answer received");
 		auto cr = ChunkReader(buff[4 .. len]);
-
-		struct BNXR {
-			uint16_t port;
-			ubyte bnxiVersion;
-			bool hasPassword;
-			ubyte minLevel;
-			ubyte maxLevel;
-			ubyte currentPlayers;
-			ubyte maxPlayers;
-			enum VaultType: ubyte {
-				server = 0,
-				local = 1,
-			}
-			VaultType vaultType;
-			enum PvpType: ubyte {
-				none = 0,
-				party = 1,
-				full = 2,
-			}
-			PvpType pvp;
-			bool playerPause;
-			bool oneParty;
-			bool enforceLegalChars;
-			bool itemLvlRestriction;
-			bool xp;
-			string modName;
-			string gameVersion;
-		}
 
 		return BNXR(
 			cr.read!(ubyte[2]).littleEndianToNative!(uint16_t, 2),
@@ -163,7 +167,14 @@ class NWNServer{
 	}
 
 	///
-	auto queryBNLM(ubyte messageNo = 0, ubyte sessionID = 0){
+	static struct BNLR {
+		uint16_t port;
+		ubyte messageNo;
+		ubyte sessionID;
+		ubyte[3] unknown;
+	}
+	///
+	BNLR queryBNLM(ubyte messageNo = 0, ubyte sessionID = 0){
 		sock.send("BNLM" ~ localPort ~ messageNo ~ sessionID ~ hexString!"00 00 00");
 
 		ubyte[] buff;
@@ -173,12 +184,6 @@ class NWNServer{
 		enforce(buff.length > 4 && buff[0..4] == "BNLR", "Wrong answer received");
 		auto cr = ChunkReader(buff[4 .. len]);
 
-		struct BNLR {
-			uint16_t port;
-			ubyte messageNo;
-			ubyte sessionID;
-			ubyte[3] unknown;
-		}
 		return cr.readPackedStruct!BNLR;
 	}
 

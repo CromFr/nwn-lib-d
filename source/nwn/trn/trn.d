@@ -104,7 +104,7 @@ char[4] toTrnPacketStr(TrnPacketType type){
 }
 
 
-
+///
 struct TrnPacket{
 
 	/// Create an packet with default values
@@ -175,7 +175,7 @@ private:
 
 
 
-/// UNTESTED WITH NWN1
+/// TRN / TRX file parsing
 class Trn{
 	/// Empty TRN file
 	this(){}
