@@ -1,0 +1,163 @@
+<html>
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>nwn-lib-d downloads</title>
+	<link rel="stylesheet" href="./docs/styles/ddox.css">
+	<style>
+		.flex-container {
+			height: 100%;
+			display: flex;
+			flex-wrap: wrap;
+			align-content: flex-start;
+			justify-content: space-around;
+		}
+		.flex-container>div {
+			margin: 1em;
+			max-width: 400px;
+			flex-grow: 1;
+			font-size: 1.1em;
+			background-color: rgba(0,0,0,0.05);
+			padding: 1.5em;
+			border-radius: 0.5em;
+
+			display: flex;
+			flex-direction: column;
+		}
+		.flex-container>div ul {
+			flex-grow: 1;
+		}
+		.flex-container>div table {
+			font-size: 1em;
+			width: 100%;
+		}
+
+	</style>
+</head>
+<body>
+	<nav id="main-nav">
+		<ul class="tree-view">
+			<li><a href="#">Downloads</a></li>
+			<li><a href="docs/">API reference</a></li>
+			<li><a href="https://github.com/CromFr/nwn-lib-d">Source code</a></li>
+		</ul>
+	</nav>
+	<div id="main-contents">
+		<h1>nwn-lib-d tools</h1>
+
+		<div class="flex-container">
+			<div>
+				<h1>nwn-gff</h1>
+				<p>
+					Serialize / deserialize GFF files (bic, utc, jrl, ...).
+				</p>
+				<ul>
+					<li>Dump GFF content</li>
+					<li>Quickly serialize/deserialize to JSON</li>
+					<li>Modify GFF fields</li>
+					<li>Same serialization algorithm as NWN2 game engine</li>
+					<li>Suited for git diff</li>
+				</ul>
+				<table>
+					<tr><th>Version</th> <th>Platform</th>       <th>Link</th></tr>
+					<tr><td>master</td>  <td>Windows x86</td>    <td><a href="bin/nwn-gff.win-x86" download="nwn-gff.exe">Download</a></td></tr>
+					<tr><td>master</td>  <td>Windows x86_64</td> <td><a href="bin/nwn-gff.win-x86_64" download="nwn-gff.exe">Download</a></td></tr>
+					<tr><td>master</td>  <td>Linux x86</td>      <td><a href="bin/nwn-gff.linux-x86" download="nwn-gff">Download</a></td></tr>
+					<tr><td>master</td>  <td>Linux x86_64</td>   <td><a href="bin/nwn-gff.linux-x86_64" download="nwn-gff">Download</a></td></tr>
+				</table>
+			</div>
+
+			<div>
+				<h1>nwn-tlk</h1>
+				<p>
+					Serialize TLK files to readable text.
+				</p>
+				<ul>
+					<li>Dump TLK content to text</li>
+					<li>Suited for git diff</li>
+				</ul>
+				<table>
+					<tr><th>Version</th> <th>Platform</th>       <th>Link</th></tr>
+					<tr><td>master</td>  <td>Windows x86</td>    <td><a href="bin/nwn-tlk.win-x86" download="nwn-tlk.exe">Download</a></td></tr>
+					<tr><td>master</td>  <td>Windows x86_64</td> <td><a href="bin/nwn-tlk.win-x86_64" download="nwn-tlk.exe">Download</a></td></tr>
+					<tr><td>master</td>  <td>Linux x86</td>      <td><a href="bin/nwn-tlk.linux-x86" download="nwn-tlk">Download</a></td></tr>
+					<tr><td>master</td>  <td>Linux x86_64</td>   <td><a href="bin/nwn-tlk.linux-x86_64" download="nwn-tlk">Download</a></td></tr>
+				</table>
+			</div>
+
+			<div>
+				<h1>nwn-erf</h1>
+				<p>
+					Create, extract or view ERF files (hak, erf, mod).
+				</p>
+				<ul>
+					<li>Create reproducible HAKs (the date field is set to 1900-01-01 by default)</li>
+					<li>Dump HAK metadata</li>
+				</ul>
+				<table>
+					<tr><th>Version</th> <th>Platform</th>       <th>Link</th></tr>
+					<tr><td>master</td>  <td>Windows x86</td>    <td><a href="bin/nwn-erf.win-x86" download="nwn-erf.exe">Download</a></td></tr>
+					<tr><td>master</td>  <td>Windows x86_64</td> <td><a href="bin/nwn-erf.win-x86_64" download="nwn-erf.exe">Download</a></td></tr>
+					<tr><td>master</td>  <td>Linux x86</td>      <td><a href="bin/nwn-erf.linux-x86" download="nwn-erf">Download</a></td></tr>
+					<tr><td>master</td>  <td>Linux x86_64</td>   <td><a href="bin/nwn-erf.linux-x86_64" download="nwn-erf">Download</a></td></tr>
+				</table>
+			</div>
+
+			<div>
+				<h1>nwn-bdb</h1>
+				<p>
+					View/search Bioware/foxpro database content (dbf + ctx + fpt) using regular expressions.
+				</p>
+				<ul>
+					<li>Find deleted campaign variables</li>
+					<li>Coloured output (ANSI colours)</li>
+				</ul>
+				<table>
+					<tr><th>Version</th> <th>Platform</th>       <th>Link</th></tr>
+					<tr><td>master</td>  <td>Windows x86</td>    <td><a href="bin/nwn-bdb.win-x86" download="nwn-bdb.exe">Download</a></td></tr>
+					<tr><td>master</td>  <td>Windows x86_64</td> <td><a href="bin/nwn-bdb.win-x86_64" download="nwn-bdb.exe">Download</a></td></tr>
+					<tr><td>master</td>  <td>Linux x86</td>      <td><a href="bin/nwn-bdb.linux-x86" download="nwn-bdb">Download</a></td></tr>
+					<tr><td>master</td>  <td>Linux x86_64</td>   <td><a href="bin/nwn-bdb.linux-x86_64" download="nwn-bdb">Download</a></td></tr>
+				</table>
+			</div>
+
+			<div>
+				<h1>nwn-trn</h1>
+				<p>
+					TRN/TRX terrain, water, walkmesh import/export and bake tool
+				</p>
+				<ul>
+					<li>Reduce TRX file size</li>
+					<li>Import/Export content to Wavefront OBJ and DDS files</li>
+					<li>Experimental walkmesh baking tool (placeables and walkmesh cutters not supported)</li>
+				</ul>
+				<table>
+					<tr><th>Version</th> <th>Platform</th>       <th>Link</th></tr>
+					<tr><td>master</td>  <td>Windows x86</td>    <td><a href="bin/nwn-trn.win-x86" download="nwn-trn.exe">Download</a></td></tr>
+					<tr><td>master</td>  <td>Windows x86_64</td> <td><a href="bin/nwn-trn.win-x86_64" download="nwn-trn.exe">Download</a></td></tr>
+					<tr><td>master</td>  <td>Linux x86</td>      <td><a href="bin/nwn-trn.linux-x86" download="nwn-trn">Download</a></td></tr>
+					<tr><td>master</td>  <td>Linux x86_64</td>   <td><a href="bin/nwn-trn.linux-x86_64" download="nwn-trn">Download</a></td></tr>
+				</table>
+			</div>
+
+			<div>
+				<h1>nwn-srv</h1>
+				<p>
+					Send requests to NWN2 servers
+				</p>
+				<ul>
+					<li>Measure latency (ping)</li>
+					<li>Query server info and status</li>
+				</ul>
+				<table>
+					<tr><th>Version</th> <th>Platform</th>       <th>Link</th></tr>
+					<tr><td>master</td>  <td>Windows x86</td>    <td><a href="bin/nwn-srv.win-x86" download="nwn-srv.exe">Download</a></td></tr>
+					<tr><td>master</td>  <td>Windows x86_64</td> <td><a href="bin/nwn-srv.win-x86_64" download="nwn-srv.exe">Download</a></td></tr>
+					<tr><td>master</td>  <td>Linux x86</td>      <td><a href="bin/nwn-srv.linux-x86" download="nwn-srv">Download</a></td></tr>
+					<tr><td>master</td>  <td>Linux x86_64</td>   <td><a href="bin/nwn-srv.linux-x86_64" download="nwn-srv">Download</a></td></tr>
+				</table>
+			</div>
+		</div>
+	</div>
+</body>
+</html>

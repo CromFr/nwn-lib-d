@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/>
+		<title>Module nwnlibd.parseutils</title>
+		<link rel="stylesheet" type="text/css" href="../styles/ddox.css"/>
+		<link rel="stylesheet" href="../prettify/prettify.css" type="text/css"/>
+		<script type="text/javascript" src="../scripts/jquery.js">/**/</script><script type="text/javascript" src="../scripts/ddox.js">/**/</script>
+	</head>
+	<body onload="setupDdox();">
+		<nav id="main-nav">
+			<noscript>
+				<p style="color: red">The search functionality needs JavaScript enabled</p>
+			</noscript>
+			<div id="symbolSearchPane" style="display: none">
+				<form action="#" method="GET">
+					<input id="symbolSearch" type="text" name="q" placeholder="Search for symbols" autocomplete="off" onchange="performSymbolSearch(40);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
+				</form>
+				<ul id="symbolSearchResults" class="symbolList" style="display: none"></ul><script type="application/javascript" src="../symbols.js"></script><script type="application/javascript">var symbolSearchRootDir = "../";
+$('#symbolSearchPane').show();</script>
+			</div>
+			<ul class="tree-view">
+				<li class="tree-view collapsed">
+					<div class="package ">
+						<a href="../nwn.html">nwn</a>
+					</div>
+			<ul class="tree-view">
+				<li class="tree-view collapsed">
+					<div class="package ">
+						<a href="../nwn/nwscript.html">nwscript</a>
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../nwn/nwscript/constants.html">constants</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwn/nwscript/extensions.html">extensions</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwn/nwscript/functions.html">functions</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwn/nwscript/resources.html">resources</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">
+						<a href="../nwn/trn.html">trn</a>
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../nwn/trn/genericmesh.html">genericmesh</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwn/biowaredb.html">biowaredb</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwn/constants.html">constants</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwn/dds.html">dds</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwn/erf.html">erf</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwn/fastgff.html">fastgff</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwn/gff.html">gff</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwn/mdb.html">mdb</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwn/nwnserver.html">nwnserver</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwn/tlk.html">tlk</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwn/twoda.html">twoda</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwn/types.html">types</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view ">
+					<div class="package ">nwnlibd
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../nwnlibd/geometry.html">geometry</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwnlibd/orderedaa.html">orderedaa</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwnlibd/orderedjson.html">orderedjson</a>
+					</div>
+				</li>
+				<li>
+					<div class="module selected">
+						<a href="../nwnlibd/parseutils.html">parseutils</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwnlibd/path.html">path</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwnlibd/wavefrontobj.html">wavefrontobj</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+			</ul>
+		</nav>
+		<div id="main-contents">
+			<h1>Module nwnlibd.parseutils</h1><p>Internal parsing tools
+</p>
+			<section></section>
+			<section>
+				<h2>Functions</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="charArrayToString" class="public" href="../nwnlibd/parseutils/charArrayToString.html">charArrayToString</a><span class="tableEntryAnnotation">(str)</span>
+							</code>
+						</td>
+						<td>Converts a static char array to string.
+The fixed char array may or may not be null terminated
+</td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="dumpByteArray" class="public" href="../nwnlibd/parseutils/dumpByteArray.html">dumpByteArray</a><span class="tableEntryAnnotation">(byteArray)</span>
+							</code>
+						</td>
+						<td>Formats a binary array to something readable
+</td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="stringToCharArray" class="public" href="../nwnlibd/parseutils/stringToCharArray.html">stringToCharArray</a><span class="tableEntryAnnotation">(str)</span>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="toSafeString" class="public" href="../nwnlibd/parseutils/toSafeString.html">toSafeString</a><span class="tableEntryAnnotation">(str)</span>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+				</table>
+			</section>
+			<section>
+				<h2>Structs</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="ChunkReader" class="public" href="../nwnlibd/parseutils/ChunkReader.html">ChunkReader</a>
+							</code>
+						</td>
+						<td>Read a <code class="lang-d"><span class="typ">ubyte</span><span class="pun">[]</span></code> by chunks
+</td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="ChunkWriter" class="public" href="../nwnlibd/parseutils/ChunkWriter.html">ChunkWriter</a>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+				</table>
+			</section>
+			<section>
+				<h2>Templates</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="DebugPrintStruct" class="public" href="../nwnlibd/parseutils/DebugPrintStruct.html">DebugPrintStruct</a>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+				</table>
+			</section>
+			<footer>
+				<table class="license-info">
+					<tr>
+						<th>Authors</th>
+						<td>
+							
+						</td>
+					</tr>
+					<tr>
+						<th>Copyright</th>
+						<td>
+							
+						</td>
+					</tr>
+					<tr>
+						<th>License</th>
+						<td>
+							
+						</td>
+					</tr>
+				</table>
+				<p class="faint">Generated using the DDOX documentation generator</p>
+			</footer>
+		</div>
+	</body>
+</html>

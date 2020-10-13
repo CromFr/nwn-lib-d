@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/>
+		<title>Enum ResourceType</title>
+		<link rel="stylesheet" type="text/css" href="../../styles/ddox.css"/>
+		<link rel="stylesheet" href="../../prettify/prettify.css" type="text/css"/>
+		<script type="text/javascript" src="../../scripts/jquery.js">/**/</script><script type="text/javascript" src="../../scripts/ddox.js">/**/</script>
+	</head>
+	<body onload="setupDdox();">
+		<nav id="main-nav">
+			<noscript>
+				<p style="color: red">The search functionality needs JavaScript enabled</p>
+			</noscript>
+			<div id="symbolSearchPane" style="display: none">
+				<form action="#" method="GET">
+					<input id="symbolSearch" type="text" name="q" placeholder="Search for symbols" autocomplete="off" onchange="performSymbolSearch(40);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
+				</form>
+				<ul id="symbolSearchResults" class="symbolList" style="display: none"></ul><script type="application/javascript" src="../../symbols.js"></script><script type="application/javascript">var symbolSearchRootDir = "../../";
+$('#symbolSearchPane').show();</script>
+			</div>
+			<ul class="tree-view">
+				<li class="tree-view ">
+					<div class="package ">
+						<a href="../../nwn.html">nwn</a>
+					</div>
+			<ul class="tree-view">
+				<li class="tree-view collapsed">
+					<div class="package ">
+						<a href="../../nwn/nwscript.html">nwscript</a>
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../nwn/nwscript/constants.html">constants</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/nwscript/extensions.html">extensions</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/nwscript/functions.html">functions</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/nwscript/resources.html">resources</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">
+						<a href="../../nwn/trn.html">trn</a>
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../nwn/trn/genericmesh.html">genericmesh</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/biowaredb.html">biowaredb</a>
+					</div>
+				</li>
+				<li>
+					<div class="module selected">
+						<a href="../../nwn/constants.html">constants</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/dds.html">dds</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/erf.html">erf</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/fastgff.html">fastgff</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/gff.html">gff</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/mdb.html">mdb</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/nwnserver.html">nwnserver</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/tlk.html">tlk</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/twoda.html">twoda</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/types.html">types</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">nwnlibd
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../nwnlibd/geometry.html">geometry</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwnlibd/orderedaa.html">orderedaa</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwnlibd/orderedjson.html">orderedjson</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwnlibd/parseutils.html">parseutils</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwnlibd/path.html">path</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwnlibd/wavefrontobj.html">wavefrontobj</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+			</ul>
+		</nav>
+		<div id="main-contents">
+			<h1>Enum ResourceType</h1><p>NWN resource type
+used in erf and bif file formats
+</p>
+			<div class="prototype">
+				<code class="lang-d">
+					<div class="single-prototype">
+			<span class="kwd">enum</span> <span class="typ">ResourceType</span>
+			 <span class="pun">:</span> <span class="typ">ushort</span> <span class="pun">{ ... }</span>
+					</div>
+				</code>
+			</div>
+			
+			<section><h2>Enum members</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Description</th>
+					</tr>
+					<tr>
+						<td id="are">
+							<code>are</code>
+						</td>
+						<td>BioWare Aurora Engine Area file. Contains information on what tiles are located in an area, as well as other static area properties that cannot change via scripting. For each .are file in a .mod, there must also be a corresponding .git and .gic file having the same ResRef.
+</td>
+					</tr>
+					<tr>
+						<td id="bak">
+							<code>bak</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="bbx">
+							<code>bbx</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="bfx">
+							<code>bfx</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="bic">
+							<code>bic</code>
+						</td>
+						<td>Character/Creature
+</td>
+					</tr>
+					<tr>
+						<td id="bif">
+							<code>bif</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="bik">
+							<code>bik</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="bmp">
+							<code>bmp</code>
+						</td>
+						<td>Windows BMP file
+</td>
+					</tr>
+					<tr>
+						<td id="bmu">
+							<code>bmu</code>
+						</td>
+						<td>MP3 or BMU audio file
+</td>
+					</tr>
+					<tr>
+						<td id="btc">
+							<code>btc</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="btd">
+							<code>btd</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="bte">
+							<code>bte</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="btg">
+							<code>btg</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="bti">
+							<code>bti</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="btm">
+							<code>btm</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="btp">
+							<code>btp</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="bts">
+							<code>bts</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="btt">
+							<code>btt</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="cam">
+							<code>cam</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="ccs">
+							<code>ccs</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="css">
+							<code>css</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="dds">
+							<code>dds</code>
+						</td>
+						<td>Compressed texture file
+</td>
+					</tr>
+					<tr>
+						<td id="dft">
+							<code>dft</code>
+						</td>
+						<td>Default Values file. Used by area properties dialog
+</td>
+					</tr>
+					<tr>
+						<td id="dlg">
+							<code>dlg</code>
+						</td>
+						<td>Conversation File
+</td>
+					</tr>
+					<tr>
+						<td id="dwk">
+							<code>dwk</code>
+						</td>
+						<td>Door walkmesh
+</td>
+					</tr>
+					<tr>
+						<td id="erf">
+							<code>erf</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="fac">
+							<code>fac</code>
+						</td>
+						<td>Faction File
+</td>
+					</tr>
+					<tr>
+						<td id="fnt">
+							<code>fnt</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="fourpc">
+							<code>fourpc</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="fxa">
+							<code>fxa</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="fxe">
+							<code>fxe</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="gff">
+							<code>gff</code>
+						</td>
+						<td>Generic File Format. Used when undesirable to create a new file extension for a resource, but the resource is a GFF. (Examples of GFFs include itp, utc, uti, ifo, are, git)
+</td>
+					</tr>
+					<tr>
+						<td id="gic">
+							<code>gic</code>
+						</td>
+						<td>Game Instance Comments. Comments on instances are not used by the game, only the toolset, so they are stored in a gic instead of in the git with the other instance properties.
+</td>
+					</tr>
+					<tr>
+						<td id="git">
+							<code>git</code>
+						</td>
+						<td>Game Instance File
+</td>
+					</tr>
+					<tr>
+						<td id="gr2">
+							<code>gr2</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="gui">
+							<code>gui</code>
+						</td>
+						<td>Graphical User Interface layout used by game
+</td>
+					</tr>
+					<tr>
+						<td id="hak">
+							<code>hak</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="ids">
+							<code>ids</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="ifo">
+							<code>ifo</code>
+						</td>
+						<td>Module Info File. See the IFO Format document.
+</td>
+					</tr>
+					<tr>
+						<td id="ifx">
+							<code>ifx</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="ini">
+							<code>ini</code>
+						</td>
+						<td>Windows INI file format
+</td>
+					</tr>
+					<tr>
+						<td id="invalid">
+							<code>invalid</code>
+						</td>
+						<td>Invalid resource type
+</td>
+					</tr>
+					<tr>
+						<td id="itp">
+							<code>itp</code>
+						</td>
+						<td>Tile/Blueprint Palette File
+</td>
+					</tr>
+					<tr>
+						<td id="jpg">
+							<code>jpg</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="jrl">
+							<code>jrl</code>
+						</td>
+						<td>Journal File
+</td>
+					</tr>
+					<tr>
+						<td id="key">
+							<code>key</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="lfx">
+							<code>lfx</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="ltr">
+							<code>ltr</code>
+						</td>
+						<td>Letter-combo probability info for name generation
+</td>
+					</tr>
+					<tr>
+						<td id="ltx">
+							<code>ltx</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="lua">
+							<code>lua</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="mda">
+							<code>mda</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="mdb">
+							<code>mdb</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="mdl">
+							<code>mdl</code>
+						</td>
+						<td>Aurora model
+</td>
+					</tr>
+					<tr>
+						<td id="mod">
+							<code>mod</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="mpg">
+							<code>mpg</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="mve">
+							<code>mve</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="ncs">
+							<code>ncs</code>
+						</td>
+						<td>NWScript Compiled Script
+</td>
+					</tr>
+					<tr>
+						<td id="ndb">
+							<code>ndb</code>
+						</td>
+						<td>Script Debugger File
+</td>
+					</tr>
+					<tr>
+						<td id="nss">
+							<code>nss</code>
+						</td>
+						<td>NWScript Source
+</td>
+					</tr>
+					<tr>
+						<td id="nwm">
+							<code>nwm</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="osc">
+							<code>osc</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="pfb">
+							<code>pfb</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="pfx">
+							<code>pfx</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="plh">
+							<code>plh</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="plt">
+							<code>plt</code>
+						</td>
+						<td>Bioware Packed Layered Texture, used for player character skins, allows for multiple color layers
+</td>
+					</tr>
+					<tr>
+						<td id="ptm">
+							<code>ptm</code>
+						</td>
+						<td>Plot Manager file/Plot Instance
+</td>
+					</tr>
+					<tr>
+						<td id="ptt">
+							<code>ptt</code>
+						</td>
+						<td>Plot Wizard Blueprint
+</td>
+					</tr>
+					<tr>
+						<td id="ptx">
+							<code>ptx</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="pwc">
+							<code>pwc</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="pwk">
+							<code>pwk</code>
+						</td>
+						<td>Placeable Object walkmesh
+</td>
+					</tr>
+					<tr>
+						<td id="res">
+							<code>res</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="ros">
+							<code>ros</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="rst">
+							<code>rst</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="sav">
+							<code>sav</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="scc">
+							<code>scc</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="sef">
+							<code>sef</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="set">
+							<code>set</code>
+						</td>
+						<td>BioWare Aurora Engine Tileset
+</td>
+					</tr>
+					<tr>
+						<td id="slt">
+							<code>slt</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="spt">
+							<code>spt</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="ssf">
+							<code>ssf</code>
+						</td>
+						<td>Sound Set File. See Sound Set File Format document
+</td>
+					</tr>
+					<tr>
+						<td id="tex">
+							<code>tex</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="tfx">
+							<code>tfx</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="tga">
+							<code>tga</code>
+						</td>
+						<td>TGA image format
+</td>
+					</tr>
+					<tr>
+						<td id="thg">
+							<code>thg</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="tlk">
+							<code>tlk</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="trn">
+							<code>trn</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="trx">
+							<code>trx</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="twoda">
+							<code>twoda</code>
+						</td>
+						<td>2-D Array (2DA)
+</td>
+					</tr>
+					<tr>
+						<td id="txi">
+							<code>txi</code>
+						</td>
+						<td>Extra Texture Info
+</td>
+					</tr>
+					<tr>
+						<td id="txt">
+							<code>txt</code>
+						</td>
+						<td>Text file
+</td>
+					</tr>
+					<tr>
+						<td id="uen">
+							<code>uen</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="ult">
+							<code>ult</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="upe">
+							<code>upe</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="usc">
+							<code>usc</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="utc">
+							<code>utc</code>
+						</td>
+						<td>Creature Blueprint
+</td>
+					</tr>
+					<tr>
+						<td id="utd">
+							<code>utd</code>
+						</td>
+						<td>Door Blueprint
+</td>
+					</tr>
+					<tr>
+						<td id="ute">
+							<code>ute</code>
+						</td>
+						<td>Encounter Blueprint
+</td>
+					</tr>
+					<tr>
+						<td id="utg">
+							<code>utg</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="uti">
+							<code>uti</code>
+						</td>
+						<td>Item Blueprint
+</td>
+					</tr>
+					<tr>
+						<td id="utm">
+							<code>utm</code>
+						</td>
+						<td>Store/Merchant Blueprint
+</td>
+					</tr>
+					<tr>
+						<td id="utp">
+							<code>utp</code>
+						</td>
+						<td>Placeable Object Blueprint
+</td>
+					</tr>
+					<tr>
+						<td id="utr">
+							<code>utr</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="uts">
+							<code>uts</code>
+						</td>
+						<td>Sound Blueprint
+</td>
+					</tr>
+					<tr>
+						<td id="utt">
+							<code>utt</code>
+						</td>
+						<td>Trigger Blueprint
+</td>
+					</tr>
+					<tr>
+						<td id="utw">
+							<code>utw</code>
+						</td>
+						<td>Waypoint Blueprint. See Waypoint GFF document.
+</td>
+					</tr>
+					<tr>
+						<td id="wav">
+							<code>wav</code>
+						</td>
+						<td>WAV sound file
+</td>
+					</tr>
+					<tr>
+						<td id="wfx">
+							<code>wfx</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="wlk">
+							<code>wlk</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="wmp">
+							<code>wmp</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="wok">
+							<code>wok</code>
+						</td>
+						<td>Walkmesh
+</td>
+					</tr>
+					<tr>
+						<td id="xml">
+							<code>xml</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td id="zip">
+							<code>zip</code>
+						</td>
+						<td></td>
+					</tr>
+				</table>
+			</section>
+			
+			<footer>
+				<table class="license-info">
+					<tr>
+						<th>Authors</th>
+						<td>
+							
+						</td>
+					</tr>
+					<tr>
+						<th>Copyright</th>
+						<td>
+							
+						</td>
+					</tr>
+					<tr>
+						<th>License</th>
+						<td>
+							
+						</td>
+					</tr>
+				</table>
+				<p class="faint">Generated using the DDOX documentation generator</p>
+			</footer>
+		</div>
+	</body>
+</html>

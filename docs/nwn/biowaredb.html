@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/>
+		<title>Module nwn.biowaredb</title>
+		<link rel="stylesheet" type="text/css" href="../styles/ddox.css"/>
+		<link rel="stylesheet" href="../prettify/prettify.css" type="text/css"/>
+		<script type="text/javascript" src="../scripts/jquery.js">/**/</script><script type="text/javascript" src="../scripts/ddox.js">/**/</script>
+	</head>
+	<body onload="setupDdox();">
+		<nav id="main-nav">
+			<noscript>
+				<p style="color: red">The search functionality needs JavaScript enabled</p>
+			</noscript>
+			<div id="symbolSearchPane" style="display: none">
+				<form action="#" method="GET">
+					<input id="symbolSearch" type="text" name="q" placeholder="Search for symbols" autocomplete="off" onchange="performSymbolSearch(40);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
+				</form>
+				<ul id="symbolSearchResults" class="symbolList" style="display: none"></ul><script type="application/javascript" src="../symbols.js"></script><script type="application/javascript">var symbolSearchRootDir = "../";
+$('#symbolSearchPane').show();</script>
+			</div>
+			<ul class="tree-view">
+				<li class="tree-view ">
+					<div class="package ">
+						<a href="../nwn.html">nwn</a>
+					</div>
+			<ul class="tree-view">
+				<li class="tree-view collapsed">
+					<div class="package ">
+						<a href="../nwn/nwscript.html">nwscript</a>
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../nwn/nwscript/constants.html">constants</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwn/nwscript/extensions.html">extensions</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwn/nwscript/functions.html">functions</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwn/nwscript/resources.html">resources</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">
+						<a href="../nwn/trn.html">trn</a>
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../nwn/trn/genericmesh.html">genericmesh</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li>
+					<div class="module selected">
+						<a href="../nwn/biowaredb.html">biowaredb</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwn/constants.html">constants</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwn/dds.html">dds</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwn/erf.html">erf</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwn/fastgff.html">fastgff</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwn/gff.html">gff</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwn/mdb.html">mdb</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwn/nwnserver.html">nwnserver</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwn/tlk.html">tlk</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwn/twoda.html">twoda</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwn/types.html">types</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">nwnlibd
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../nwnlibd/geometry.html">geometry</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwnlibd/orderedaa.html">orderedaa</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwnlibd/orderedjson.html">orderedjson</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwnlibd/parseutils.html">parseutils</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwnlibd/path.html">path</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwnlibd/wavefrontobj.html">wavefrontobj</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+			</ul>
+		</nav>
+		<div id="main-contents">
+			<h1>Module nwn.biowaredb</h1><p>Bioware campaign database (Foxpro db)
+</p>
+			<section><section><h2>Examples</h2>
+<pre class="code"><code class="lang-d"><span class="com">// Open ./yourdatabasename.dbf, ./yourdatabasename.cdx, ./yourdatabasename.fpt
+</span><span class="kwd">auto </span><span class="pln">db </span><span class="pun">= </span><span class="kwd">new <a href="../nwn/biowaredb/BiowareDB.html"></span><span class="typ">BiowareDB</span></a><span class="pun">(</span><span class="str">"./yourdatabasename"</span><span class="pun">);
+
+</span><span class="com">// Set a campaign variable associated to a character
+</span><span class="pln">db<wbr/></span><span class="pun">.</span><span class="pln">setVariableValue</span><span class="pun">(</span><span class="str">"YourAccount"</span><span class="pun">, </span><span class="str">"YourCharName"</span><span class="pun">, </span><span class="str">"TestFloat"</span><span class="pun">, </span><span class="lit">42.0f</span><span class="pun">);
+
+</span><span class="com">// Set a campaign variable associated with the module
+</span><span class="pln">db<wbr/></span><span class="pun">.</span><span class="pln">setVariableValue</span><span class="pun">(</span><span class="kwd">null</span><span class="pun">, </span><span class="kwd">null</span><span class="pun">, </span><span class="str">"TestVector"</span><span class="pun">, </span><span class="typ">NWVector</span><span class="pun">([</span><span class="lit">1.0f</span><span class="pun">, </span><span class="lit">2.0f</span><span class="pun">, </span><span class="lit">3.0f</span><span class="pun">]));
+
+</span><span class="com">// Retrieve variable information
+</span><span class="kwd">auto </span><span class="pln">var </span><span class="pun">= </span><span class="pln">db<wbr/></span><span class="pun">.</span><span class="pln">getVariable</span><span class="pun">(</span><span class="str">"YourAccount"</span><span class="pun">, </span><span class="str">"YourCharName"</span><span class="pun">, </span><span class="str">"TestFloat"</span><span class="pun">)<wbr/>.</span><span class="pln">get</span><span class="pun">();
+
+</span><span class="com">// Retrieve variable value using its index (fast)
+</span><span class="typ">float </span><span class="pln">f </span><span class="pun">= </span><span class="pln">db<wbr/></span><span class="pun">.</span><span class="pln">getVariableValue</span><span class="pun">!</span><span class="typ">NWFloat</span><span class="pun">(</span><span class="pln">var<wbr/></span><span class="pun">.</span><span class="pln">index</span><span class="pun">);
+
+</span><span class="com">// Retrieve variable value by searching it
+</span><span class="typ">NWVector </span><span class="pln">v </span><span class="pun">= </span><span class="pln">db<wbr/></span><span class="pun">.</span><span class="pln">getVariableValue</span><span class="pun">!</span><span class="typ">NWVector</span><span class="pun">(</span><span class="kwd">null</span><span class="pun">, </span><span class="kwd">null</span><span class="pun">, </span><span class="str">"TestVector"</span><span class="pun">)<wbr/>.</span><span class="pln">get</span><span class="pun">();
+
+</span><span class="com">// Iterate over all variables (using variable info)
+</span><span class="kwd">foreach</span><span class="pun">(</span><span class="pln">varinfo </span><span class="pun">; </span><span class="pln">db</span><span class="pun">){
+	</span><span class="kwd">if</span><span class="pun">(</span><span class="pln">varinfo<wbr/></span><span class="pun">.</span><span class="pln">deleted </span><span class="pun">== </span><span class="kwd">false</span><span class="pun">)
+		</span><span class="com">// Variable exists
+	</span><span class="pun">}
+	</span><span class="kwd">else</span><span class="pun">{
+		</span><span class="com">// Variable has been deleted, skip it
+		</span><span class="kwd">continue</span><span class="pun">;
+	}
+}
+
+</span><span class="com">// Save changes
+</span><span class="kwd">auto </span><span class="pln">serialized </span><span class="pun">= </span><span class="pln">db<wbr/></span><span class="pun">.</span><span class="pln">serialize</span><span class="pun">();
+</span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">file<wbr/></span><span class="pun">.</span><span class="pln">write</span><span class="pun">(</span><span class="str">"./yourdatabasename.dbf"</span><span class="pun">, </span><span class="pln">serialized<wbr/></span><span class="pun">.</span><span class="pln">dbf</span><span class="pun">);
+</span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">file<wbr/></span><span class="pun">.</span><span class="pln">write</span><span class="pun">(</span><span class="str">"./yourdatabasename.fpt"</span><span class="pun">, </span><span class="pln">serialized<wbr/></span><span class="pun">.</span><span class="pln">fpt</span><span class="pun">);
+</span></code></pre>
+</section>
+</section>
+			<section>
+				<h2>Classes</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="BiowareDB" class="public" href="../nwn/biowaredb/BiowareDB.html">BiowareDB</a>
+							</code>
+						</td>
+						<td>Bioware database (in FoxPro format, ie dbf, cdx and ftp files)
+</td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="BiowareDBException" class="public" href="../nwn/biowaredb/BiowareDBException.html">BiowareDBException</a>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+				</table>
+			</section>
+			<section>
+				<h2>Structs</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="PCID" class="public" href="../nwn/biowaredb/PCID.html">PCID</a>
+							</code>
+						</td>
+						<td>ID used by Bioware Database to 'uniquely' identify a specific character. Can be used as a char[32].
+</td>
+					</tr>
+				</table>
+			</section>
+			<section>
+				<h2>Aliases</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Type</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<a id="BinaryObject" class="public" href="../nwn/biowaredb/BinaryObject.html">
+								<code>BinaryObject</code>
+							</a>
+						</td>
+						<td>
+							<code class="prettyprint lang-d"><span class="typ">ubyte</span><span class="pun">[]</span></code>
+						</td>
+						<td>Type of the GFF raw data stored when using StoreCampaignObject
+</td>
+					</tr>
+				</table>
+			</section>
+			<footer>
+				<table class="license-info">
+					<tr>
+						<th>Authors</th>
+						<td>
+							
+						</td>
+					</tr>
+					<tr>
+						<th>Copyright</th>
+						<td>
+							
+						</td>
+					</tr>
+					<tr>
+						<th>License</th>
+						<td>
+							
+						</td>
+					</tr>
+				</table>
+				<p class="faint">Generated using the DDOX documentation generator</p>
+			</footer>
+		</div>
+	</body>
+</html>

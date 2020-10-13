@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/>
+		<title>Module nwn.nwscript.functions</title>
+		<link rel="stylesheet" type="text/css" href="../../styles/ddox.css"/>
+		<link rel="stylesheet" href="../../prettify/prettify.css" type="text/css"/>
+		<script type="text/javascript" src="../../scripts/jquery.js">/**/</script><script type="text/javascript" src="../../scripts/ddox.js">/**/</script>
+	</head>
+	<body onload="setupDdox();">
+		<nav id="main-nav">
+			<noscript>
+				<p style="color: red">The search functionality needs JavaScript enabled</p>
+			</noscript>
+			<div id="symbolSearchPane" style="display: none">
+				<form action="#" method="GET">
+					<input id="symbolSearch" type="text" name="q" placeholder="Search for symbols" autocomplete="off" onchange="performSymbolSearch(40);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
+				</form>
+				<ul id="symbolSearchResults" class="symbolList" style="display: none"></ul><script type="application/javascript" src="../../symbols.js"></script><script type="application/javascript">var symbolSearchRootDir = "../../";
+$('#symbolSearchPane').show();</script>
+			</div>
+			<ul class="tree-view">
+				<li class="tree-view ">
+					<div class="package ">
+						<a href="../../nwn.html">nwn</a>
+					</div>
+			<ul class="tree-view">
+				<li class="tree-view ">
+					<div class="package ">
+						<a href="../../nwn/nwscript.html">nwscript</a>
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../nwn/nwscript/constants.html">constants</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/nwscript/extensions.html">extensions</a>
+					</div>
+				</li>
+				<li>
+					<div class="module selected">
+						<a href="../../nwn/nwscript/functions.html">functions</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/nwscript/resources.html">resources</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">
+						<a href="../../nwn/trn.html">trn</a>
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../nwn/trn/genericmesh.html">genericmesh</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/biowaredb.html">biowaredb</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/constants.html">constants</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/dds.html">dds</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/erf.html">erf</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/fastgff.html">fastgff</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/gff.html">gff</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/mdb.html">mdb</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/nwnserver.html">nwnserver</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/tlk.html">tlk</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/twoda.html">twoda</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/types.html">types</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">nwnlibd
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../nwnlibd/geometry.html">geometry</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwnlibd/orderedaa.html">orderedaa</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwnlibd/orderedjson.html">orderedjson</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwnlibd/parseutils.html">parseutils</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwnlibd/path.html">path</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwnlibd/wavefrontobj.html">wavefrontobj</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+			</ul>
+		</nav>
+		<div id="main-contents">
+			<h1>Module nwn.nwscript.functions</h1><p>NWScript functions and types implemented in D
+</p>
+			<section></section>
+			<section>
+				<h2>Functions</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="AddItemProperty" class="public" href="../../nwn/nwscript/functions/AddItemProperty.html">AddItemProperty</a><span class="tableEntryAnnotation">(nDurationType, ipProperty, oItem, fDuration)</span>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="FloatToInt" class="public" href="../../nwn/nwscript/functions/FloatToInt.html">FloatToInt</a><span class="tableEntryAnnotation">(fFloat)</span>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="FloatToString" class="public" href="../../nwn/nwscript/functions/FloatToString.html">FloatToString</a><span class="tableEntryAnnotation">(fFloat, nWidth, nDecimals)</span>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="Get2DAString" class="public" href="../../nwn/nwscript/functions/Get2DAString.html">Get2DAString</a><span class="tableEntryAnnotation">(s2DA, sColumn, nRow)</span>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="GetBaseItemType" class="public" href="../../nwn/nwscript/functions/GetBaseItemType.html">GetBaseItemType</a><span class="tableEntryAnnotation">(oItem)</span>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="GetFirstItemProperty" class="public" href="../../nwn/nwscript/functions/GetFirstItemProperty.html">GetFirstItemProperty</a><span class="tableEntryAnnotation">(oItem)</span>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="GetFirstName" class="public" href="../../nwn/nwscript/functions/GetFirstName.html">GetFirstName</a><span class="tableEntryAnnotation">(objectGff)</span>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="GetIsItemPropertyValid" class="public" href="../../nwn/nwscript/functions/GetIsItemPropertyValid.html">GetIsItemPropertyValid</a><span class="tableEntryAnnotation">(ip)</span>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="GetItemPropertyCostTable" class="public" href="../../nwn/nwscript/functions/GetItemPropertyCostTable.html">GetItemPropertyCostTable</a><span class="tableEntryAnnotation">(iProp)</span>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="GetItemPropertyCostTableValue" class="public" href="../../nwn/nwscript/functions/GetItemPropertyCostTableValue.html">GetItemPropertyCostTableValue</a><span class="tableEntryAnnotation">(ip)</span>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="GetItemPropertyDurationType" class="public" href="../../nwn/nwscript/functions/GetItemPropertyDurationType.html">GetItemPropertyDurationType</a><span class="tableEntryAnnotation">(iprp)</span>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="GetItemPropertyParam1Value" class="public" href="../../nwn/nwscript/functions/GetItemPropertyParam1Value.html">GetItemPropertyParam1Value</a><span class="tableEntryAnnotation">(ip)</span>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="GetItemPropertySubType" class="public" href="../../nwn/nwscript/functions/GetItemPropertySubType.html">GetItemPropertySubType</a><span class="tableEntryAnnotation">(ip)</span>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="GetItemPropertyType" class="public" href="../../nwn/nwscript/functions/GetItemPropertyType.html">GetItemPropertyType</a><span class="tableEntryAnnotation">(ip)</span>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="GetLastName" class="public" href="../../nwn/nwscript/functions/GetLastName.html">GetLastName</a><span class="tableEntryAnnotation">(objectGff)</span>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="GetName" class="public" href="../../nwn/nwscript/functions/GetName.html">GetName</a><span class="tableEntryAnnotation">(objectGff)</span>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="GetNextItemProperty" class="public" href="../../nwn/nwscript/functions/GetNextItemProperty.html">GetNextItemProperty</a><span class="tableEntryAnnotation">(oItem)</span>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="IntToFloat" class="public" href="../../nwn/nwscript/functions/IntToFloat.html">IntToFloat</a><span class="tableEntryAnnotation">(nInteger)</span>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="IntToString" class="public" href="../../nwn/nwscript/functions/IntToString.html">IntToString</a><span class="tableEntryAnnotation">(nInteger)</span>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="RemoveItemProperty" class="public" href="../../nwn/nwscript/functions/RemoveItemProperty.html">RemoveItemProperty</a><span class="tableEntryAnnotation">(oItem, ipProperty)</span>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="SetFirstName" class="public" href="../../nwn/nwscript/functions/SetFirstName.html">SetFirstName</a><span class="tableEntryAnnotation">(objectGff, name)</span>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="SetLastName" class="public" href="../../nwn/nwscript/functions/SetLastName.html">SetLastName</a><span class="tableEntryAnnotation">(objectGff, name)</span>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="StringToFloat" class="public" href="../../nwn/nwscript/functions/StringToFloat.html">StringToFloat</a><span class="tableEntryAnnotation">(sNumber)</span>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="StringToInt" class="public" href="../../nwn/nwscript/functions/StringToInt.html">StringToInt</a><span class="tableEntryAnnotation">(sNumber)</span>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+				</table>
+			</section>
+			<section>
+				<h2>Manifest constants</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Type</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<a id="OBJECT_INVALID" class="public" href="../../nwn/nwscript/functions/OBJECT_INVALID.html">
+								<code>OBJECT_INVALID</code>
+							</a>
+						</td>
+						<td>
+						</td>
+						<td></td>
+					</tr>
+				</table>
+			</section>
+			<section>
+				<h2>Aliases</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Type</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<a id="DeleteLocalFloat" class="public" href="../../nwn/nwscript/functions/DeleteLocalFloat.html">
+								<code>DeleteLocalFloat</code>
+							</a>
+						</td>
+						<td>
+							<code class="prettyprint lang-d"><span class="typ">DeleteLocal</span>!NWFloat</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<a id="DeleteLocalInt" class="public" href="../../nwn/nwscript/functions/DeleteLocalInt.html">
+								<code>DeleteLocalInt</code>
+							</a>
+						</td>
+						<td>
+							<code class="prettyprint lang-d"><span class="typ">DeleteLocal</span>!NWInt</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<a id="DeleteLocalLocation" class="public" href="../../nwn/nwscript/functions/DeleteLocalLocation.html">
+								<code>DeleteLocalLocation</code>
+							</a>
+						</td>
+						<td>
+							<code class="prettyprint lang-d"><span class="typ">DeleteLocal</span>!NWLocation</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<a id="DeleteLocalObject" class="public" href="../../nwn/nwscript/functions/DeleteLocalObject.html">
+								<code>DeleteLocalObject</code>
+							</a>
+						</td>
+						<td>
+							<code class="prettyprint lang-d"><span class="typ">DeleteLocal</span>!NWObject</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<a id="DeleteLocalString" class="public" href="../../nwn/nwscript/functions/DeleteLocalString.html">
+								<code>DeleteLocalString</code>
+							</a>
+						</td>
+						<td>
+							<code class="prettyprint lang-d"><span class="typ">DeleteLocal</span>!NWString</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<a id="GetLocalFloat" class="public" href="../../nwn/nwscript/functions/GetLocalFloat.html">
+								<code>GetLocalFloat</code>
+							</a>
+						</td>
+						<td>
+							<code class="prettyprint lang-d"><span class="typ">GetLocal</span>!NWFloat</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<a id="GetLocalInt" class="public" href="../../nwn/nwscript/functions/GetLocalInt.html">
+								<code>GetLocalInt</code>
+							</a>
+						</td>
+						<td>
+							<code class="prettyprint lang-d"><span class="typ">GetLocal</span>!NWInt</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<a id="GetLocalObject" class="public" href="../../nwn/nwscript/functions/GetLocalObject.html">
+								<code>GetLocalObject</code>
+							</a>
+						</td>
+						<td>
+							<code class="prettyprint lang-d"><span class="typ">GetLocal</span>!NWObject</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<a id="GetLocalString" class="public" href="../../nwn/nwscript/functions/GetLocalString.html">
+								<code>GetLocalString</code>
+							</a>
+						</td>
+						<td>
+							<code class="prettyprint lang-d"><span class="typ">GetLocal</span>!NWString</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<a id="SetLocalFloat" class="public" href="../../nwn/nwscript/functions/SetLocalFloat.html">
+								<code>SetLocalFloat</code>
+							</a>
+						</td>
+						<td>
+							<code class="prettyprint lang-d"><span class="typ">SetLocal</span>!NWFloat</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<a id="SetLocalInt" class="public" href="../../nwn/nwscript/functions/SetLocalInt.html">
+								<code>SetLocalInt</code>
+							</a>
+						</td>
+						<td>
+							<code class="prettyprint lang-d"><span class="typ">SetLocal</span>!NWInt</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<a id="SetLocalObject" class="public" href="../../nwn/nwscript/functions/SetLocalObject.html">
+								<code>SetLocalObject</code>
+							</a>
+						</td>
+						<td>
+							<code class="prettyprint lang-d"><span class="typ">SetLocal</span>!NWObject</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<a id="SetLocalString" class="public" href="../../nwn/nwscript/functions/SetLocalString.html">
+								<code>SetLocalString</code>
+							</a>
+						</td>
+						<td>
+							<code class="prettyprint lang-d"><span class="typ">SetLocal</span>!NWString</code>
+						</td>
+						<td></td>
+					</tr>
+				</table>
+			</section>
+			<footer>
+				<table class="license-info">
+					<tr>
+						<th>Authors</th>
+						<td>
+							
+						</td>
+					</tr>
+					<tr>
+						<th>Copyright</th>
+						<td>
+							
+						</td>
+					</tr>
+					<tr>
+						<th>License</th>
+						<td>
+							
+						</td>
+					</tr>
+				</table>
+				<p class="faint">Generated using the DDOX documentation generator</p>
+			</footer>
+		</div>
+	</body>
+</html>

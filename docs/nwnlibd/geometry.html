@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/>
+		<title>Module nwnlibd.geometry</title>
+		<link rel="stylesheet" type="text/css" href="../styles/ddox.css"/>
+		<link rel="stylesheet" href="../prettify/prettify.css" type="text/css"/>
+		<script type="text/javascript" src="../scripts/jquery.js">/**/</script><script type="text/javascript" src="../scripts/ddox.js">/**/</script>
+	</head>
+	<body onload="setupDdox();">
+		<nav id="main-nav">
+			<noscript>
+				<p style="color: red">The search functionality needs JavaScript enabled</p>
+			</noscript>
+			<div id="symbolSearchPane" style="display: none">
+				<form action="#" method="GET">
+					<input id="symbolSearch" type="text" name="q" placeholder="Search for symbols" autocomplete="off" onchange="performSymbolSearch(40);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
+				</form>
+				<ul id="symbolSearchResults" class="symbolList" style="display: none"></ul><script type="application/javascript" src="../symbols.js"></script><script type="application/javascript">var symbolSearchRootDir = "../";
+$('#symbolSearchPane').show();</script>
+			</div>
+			<ul class="tree-view">
+				<li class="tree-view collapsed">
+					<div class="package ">
+						<a href="../nwn.html">nwn</a>
+					</div>
+			<ul class="tree-view">
+				<li class="tree-view collapsed">
+					<div class="package ">
+						<a href="../nwn/nwscript.html">nwscript</a>
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../nwn/nwscript/constants.html">constants</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwn/nwscript/extensions.html">extensions</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwn/nwscript/functions.html">functions</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwn/nwscript/resources.html">resources</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">
+						<a href="../nwn/trn.html">trn</a>
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../nwn/trn/genericmesh.html">genericmesh</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwn/biowaredb.html">biowaredb</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwn/constants.html">constants</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwn/dds.html">dds</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwn/erf.html">erf</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwn/fastgff.html">fastgff</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwn/gff.html">gff</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwn/mdb.html">mdb</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwn/nwnserver.html">nwnserver</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwn/tlk.html">tlk</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwn/twoda.html">twoda</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwn/types.html">types</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view ">
+					<div class="package ">nwnlibd
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module selected">
+						<a href="../nwnlibd/geometry.html">geometry</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwnlibd/orderedaa.html">orderedaa</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwnlibd/orderedjson.html">orderedjson</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwnlibd/parseutils.html">parseutils</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwnlibd/path.html">path</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwnlibd/wavefrontobj.html">wavefrontobj</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+			</ul>
+		</nav>
+		<div id="main-contents">
+			<h1>Module nwnlibd.geometry</h1><p></p>
+			<section></section>
+			<section>
+				<h2>Functions</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="distance" class="public" href="../nwnlibd/geometry/distance.html">distance</a><span class="tableEntryAnnotation">(line, point)</span>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="getAltitudeOnPlane" class="public" href="../nwnlibd/geometry/getAltitudeOnPlane.html">getAltitudeOnPlane</a><span class="tableEntryAnnotation">(triangle, point)</span>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="getAltitudeOnPlane" class="public" href="../nwnlibd/geometry/getAltitudeOnPlane.html">getAltitudeOnPlane</a><span class="tableEntryAnnotation">(normal, pointOnPlane, point)</span>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="getLineIntersection" class="public" href="../nwnlibd/geometry/getLineIntersection.html">getLineIntersection</a><span class="tableEntryAnnotation">(lineA, lineB)</span>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="getSegmentIntersection" class="public" href="../nwnlibd/geometry/getSegmentIntersection.html">getSegmentIntersection</a><span class="tableEntryAnnotation">(segA, segB)</span>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="isPointInsidePolygon" class="public" href="../nwnlibd/geometry/isPointInsidePolygon.html">isPointInsidePolygon</a><span class="tableEntryAnnotation">(point, polygon)</span>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="isPointLeftOfLine" class="public" href="../nwnlibd/geometry/isPointLeftOfLine.html">isPointLeftOfLine</a><span class="tableEntryAnnotation">(point, line)</span>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="isPolygonComplex" class="public" href="../nwnlibd/geometry/isPolygonComplex.html">isPolygonComplex</a><span class="tableEntryAnnotation">(polygon)</span>
+							</code>
+						</td>
+						<td>Returns true if the polygon is complex (self intersecting)
+Simple bruteforce method, O(n²) complexity
+</td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="isTriangleClockwise" class="public" href="../nwnlibd/geometry/isTriangleClockwise.html">isTriangleClockwise</a><span class="tableEntryAnnotation">(tri)</span>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="signedArea" class="public" href="../nwnlibd/geometry/signedArea.html">signedArea</a><span class="tableEntryAnnotation">(a, b, c)</span>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="toVec2f" class="public" href="../nwnlibd/geometry/toVec2f.html">toVec2f</a><span class="tableEntryAnnotation">(vector)</span>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="toVec3f" class="public" href="../nwnlibd/geometry/toVec3f.html">toVec3f</a><span class="tableEntryAnnotation">(vector)</span>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+				</table>
+			</section>
+			<section>
+				<h2>Structs</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="Chains" class="public" href="../nwnlibd/geometry/Chains.html">Chains</a>
+							</code>
+						</td>
+						<td>Useful for assembling a multi-vertex line from 2-point segments
+</td>
+					</tr>
+				</table>
+			</section>
+			<footer>
+				<table class="license-info">
+					<tr>
+						<th>Authors</th>
+						<td>
+							
+						</td>
+					</tr>
+					<tr>
+						<th>Copyright</th>
+						<td>
+							
+						</td>
+					</tr>
+					<tr>
+						<th>License</th>
+						<td>
+							
+						</td>
+					</tr>
+				</table>
+				<p class="faint">Generated using the DDOX documentation generator</p>
+			</footer>
+		</div>
+	</body>
+</html>

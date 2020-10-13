@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/>
+		<title>Function JSONValue.str</title>
+		<link rel="stylesheet" type="text/css" href="../../styles/ddox.css"/>
+		<link rel="stylesheet" href="../../prettify/prettify.css" type="text/css"/>
+		<script type="text/javascript" src="../../scripts/jquery.js">/**/</script><script type="text/javascript" src="../../scripts/ddox.js">/**/</script>
+	</head>
+	<body onload="setupDdox();">
+		<nav id="main-nav">
+			<noscript>
+				<p style="color: red">The search functionality needs JavaScript enabled</p>
+			</noscript>
+			<div id="symbolSearchPane" style="display: none">
+				<form action="#" method="GET">
+					<input id="symbolSearch" type="text" name="q" placeholder="Search for symbols" autocomplete="off" onchange="performSymbolSearch(40);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
+				</form>
+				<ul id="symbolSearchResults" class="symbolList" style="display: none"></ul><script type="application/javascript" src="../../symbols.js"></script><script type="application/javascript">var symbolSearchRootDir = "../../";
+$('#symbolSearchPane').show();</script>
+			</div>
+			<ul class="tree-view">
+				<li class="tree-view collapsed">
+					<div class="package ">
+						<a href="../../nwn.html">nwn</a>
+					</div>
+			<ul class="tree-view">
+				<li class="tree-view collapsed">
+					<div class="package ">
+						<a href="../../nwn/nwscript.html">nwscript</a>
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../nwn/nwscript/constants.html">constants</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/nwscript/extensions.html">extensions</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/nwscript/functions.html">functions</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/nwscript/resources.html">resources</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">
+						<a href="../../nwn/trn.html">trn</a>
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../nwn/trn/genericmesh.html">genericmesh</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/biowaredb.html">biowaredb</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/constants.html">constants</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/dds.html">dds</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/erf.html">erf</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/fastgff.html">fastgff</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/gff.html">gff</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/mdb.html">mdb</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/nwnserver.html">nwnserver</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/tlk.html">tlk</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/twoda.html">twoda</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/types.html">types</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view ">
+					<div class="package ">nwnlibd
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../nwnlibd/geometry.html">geometry</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwnlibd/orderedaa.html">orderedaa</a>
+					</div>
+				</li>
+				<li>
+					<div class="module selected">
+						<a href="../../nwnlibd/orderedjson.html">orderedjson</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwnlibd/parseutils.html">parseutils</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwnlibd/path.html">path</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwnlibd/wavefrontobj.html">wavefrontobj</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+			</ul>
+		</nav>
+		<div id="main-contents">
+			<h1>Function JSONValue.str</h1><p>Value getter/setter for <code class="lang-d"><a href="../../nwnlibd/orderedjson/JSON_TYPE.html#STRING"><span class="pln">JSON_TYPE<wbr/></span><span class="pun">.</span><span class="pln">STRING</span></a></code>.
+</p>
+			<div class="prototype">
+				<code class="lang-d">
+					<div class="single-prototype">
+			<span class="typ">string</span> <span class="pln">str</span><span class="pun">(</span><span class="pun">)</span><span class="pln"> </span><span class="kwd">pure @property @trusted const</span><span class="pun">;</span>
+			<br/>
+			<br/>
+			<span class="typ">string</span> <span class="pln">str</span>
+			<span class="pun">(</span>
+			<br/>
+			&nbsp;&nbsp;<span class="typ">string</span> <span class="pln">v</span>
+			<br/>
+			<span class="pun">)</span><span class="pln"> </span><span class="kwd">pure nothrow @property @nogc @safe</span><span class="pun">;</span>
+					</div>
+				</code>
+			</div>
+			
+			<section><h2>Throws</h2>
+<p><code class="lang-d"><a href="../../nwnlibd/orderedjson/JSONException.html"><span class="typ">JSONException</span></a></code> for read access if <code class="lang-d"><a href="../../nwnlibd/orderedjson/JSONValue.type.html"><span class="pln">type</span></a></code> is not
+ <code class="lang-d"><a href="../../nwnlibd/orderedjson/JSON_TYPE.html#STRING"><span class="pln">JSON_TYPE<wbr/></span><span class="pun">.</span><span class="pln">STRING</span></a></code>.
+</p>
+</section>
+<section><h2>Example</h2>
+
+<pre class="code"><code class="lang-d"><a href="../../nwnlibd/orderedjson/JSONValue.html"><span class="typ">JSONValue</span></a><span class="pln"> j </span><span class="pun">= [ </span><span class="str">"language"</span><span class="pun">: </span><span class="str">"D" </span><span class="pun">];
+
+</span><span class="com">// get value
+</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">j</span><span class="pun">[</span><span class="str">"language"</span><span class="pun">]<wbr/>.</span><span class="pln">str </span><span class="pun">== </span><span class="str">"D"</span><span class="pun">);
+
+</span><span class="com">// change existing key to new string
+</span><span class="pln">j</span><span class="pun">[</span><span class="str">"language"</span><span class="pun">]<wbr/>.</span><span class="pln">str </span><span class="pun">= </span><span class="str">"Perl"</span><span class="pun">;
+</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">j</span><span class="pun">[</span><span class="str">"language"</span><span class="pun">]<wbr/>.</span><span class="pln">str </span><span class="pun">== </span><span class="str">"Perl"</span><span class="pun">);
+
+</span></code></pre>
+</section>
+
+			<footer>
+				<table class="license-info">
+					<tr>
+						<th>Authors</th>
+						<td>
+							<p>Jeremie Pelletier, David Herberth
+</p>
+
+						</td>
+					</tr>
+					<tr>
+						<th>Copyright</th>
+						<td>
+							<p>Copyright Jeremie Pelletier 2008 - 2009.
+</p>
+
+						</td>
+					</tr>
+					<tr>
+						<th>License</th>
+						<td>
+							<p>www.boost.org/LICENSE_1_0.txt, Boost License 1.0.
+</p>
+
+						</td>
+					</tr>
+				</table>
+				<p class="faint">Generated using the DDOX documentation generator</p>
+			</footer>
+		</div>
+	</body>
+</html>

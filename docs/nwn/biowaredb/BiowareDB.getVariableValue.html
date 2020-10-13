@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/>
+		<title>BiowareDB.getVariableValue - multiple declarations</title>
+		<link rel="stylesheet" type="text/css" href="../../styles/ddox.css"/>
+		<link rel="stylesheet" href="../../prettify/prettify.css" type="text/css"/>
+		<script type="text/javascript" src="../../scripts/jquery.js">/**/</script><script type="text/javascript" src="../../scripts/ddox.js">/**/</script>
+	</head>
+	<body onload="setupDdox();">
+		<nav id="main-nav">
+			<noscript>
+				<p style="color: red">The search functionality needs JavaScript enabled</p>
+			</noscript>
+			<div id="symbolSearchPane" style="display: none">
+				<form action="#" method="GET">
+					<input id="symbolSearch" type="text" name="q" placeholder="Search for symbols" autocomplete="off" onchange="performSymbolSearch(40);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
+				</form>
+				<ul id="symbolSearchResults" class="symbolList" style="display: none"></ul><script type="application/javascript" src="../../symbols.js"></script><script type="application/javascript">var symbolSearchRootDir = "../../";
+$('#symbolSearchPane').show();</script>
+			</div>
+			<ul class="tree-view">
+				<li class="tree-view ">
+					<div class="package ">
+						<a href="../../nwn.html">nwn</a>
+					</div>
+			<ul class="tree-view">
+				<li class="tree-view collapsed">
+					<div class="package ">
+						<a href="../../nwn/nwscript.html">nwscript</a>
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../nwn/nwscript/constants.html">constants</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/nwscript/extensions.html">extensions</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/nwscript/functions.html">functions</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/nwscript/resources.html">resources</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">
+						<a href="../../nwn/trn.html">trn</a>
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../nwn/trn/genericmesh.html">genericmesh</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li>
+					<div class="module selected">
+						<a href="../../nwn/biowaredb.html">biowaredb</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/constants.html">constants</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/dds.html">dds</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/erf.html">erf</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/fastgff.html">fastgff</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/gff.html">gff</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/mdb.html">mdb</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/nwnserver.html">nwnserver</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/tlk.html">tlk</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/twoda.html">twoda</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/types.html">types</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">nwnlibd
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../nwnlibd/geometry.html">geometry</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwnlibd/orderedaa.html">orderedaa</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwnlibd/orderedjson.html">orderedjson</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwnlibd/parseutils.html">parseutils</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwnlibd/path.html">path</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwnlibd/wavefrontobj.html">wavefrontobj</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+			</ul>
+		</nav>
+		<div id="main-contents">
+			<h1>BiowareDB.getVariableValue - multiple declarations</h1>
+			<nav class="page-nav">
+				<ul>
+					<li>
+						<a href="#0">
+							Function <code>BiowareDB.getVariableValue</code>
+						</a>
+					</li>
+					<li>
+						<a href="#1">
+							Function <code>BiowareDB.getVariableValue</code>
+						</a>
+					</li>
+					<li>
+						<a href="#2">
+							Function <code>BiowareDB.getVariableValue</code>
+						</a>
+					</li>
+				</ul>
+			</nav><h2 id="0">Function BiowareDB.getVariableValue</h2><p>Get the variable value at <code class="lang-d"><a href="../../nwn/biowaredb/BiowareDB.getVariableValue.html#index"><span class="pln">index</span></a></code>
+</p>
+			<div class="prototype">
+				<code class="lang-d">
+					<div class="single-prototype">
+			<span class="kwd">const</span><span class="pun">(</span><span class="pln">T</span><span class="pun">)</span> <span class="pln">getVariableValue</span>(T)
+			<span class="pun">(</span>
+			<br/>
+			&nbsp;&nbsp;<span class="pln">size_t</span> <span class="pln">index</span>
+			<br/>
+			<span class="pun">)</span><span class="pln"> </span><span class="kwd">const</span>
+			<br/>
+			<span class="kwd">if</span> <span class="pun">(</span><span class="kwd">is</span><span class="pun">(</span><span class="pln">T </span><span class="pun">== </span><span class="typ">NWInt</span><span class="pun">) || </span><span class="kwd">is</span><span class="pun">(</span><span class="pln">T </span><span class="pun">== </span><span class="typ">NWFloat</span><span class="pun">) || </span><span class="kwd">is</span><span class="pun">(</span><span class="pln">T </span><span class="pun">== </span><span class="typ">NWString</span><span class="pun">) || </span><span class="kwd">is</span><span class="pun">(</span><span class="pln">T </span><span class="pun">== </span><span class="typ">NWVector</span><span class="pun">) || </span><span class="kwd">is</span><span class="pun">(</span><span class="pln">T </span><span class="pun">== </span><span class="typ">NWLocation</span><span class="pun">) || </span><span class="kwd">is</span><span class="pun">(</span><span class="pln">T </span><span class="pun">== </span><span class="typ">BinaryObject</span><span class="pun">)</span><span class="pun">);</span>
+					</div>
+				</code>
+			</div>
+			
+			<section><h3>Note</h3>
+<p>Can be used to retrieve deleted variable values.
+</p>
+</section>
+<section><h3>Parameters</h3>
+<table><col class="caption"><tr><th>Name</th><th>Description</th></tr>
+<tr><td id="T">T</td><td> Type of the variable. Must match the stored variable type.</td></tr>
+<tr><td id="index">index</td><td> Index of the variable in the table</td></tr>
+</table>
+</section>
+<section><h3>Returns</h3>
+<p>the variable value
+</p>
+</section>
+<section><h3>Throws</h3>
+<p>BiowareDBException if stored type != requested type
+</p>
+</section>
+<h2 id="1">Function BiowareDB.getVariableValue</h2><p>Search and return the value of a variable
+</p>
+			<div class="prototype">
+				<code class="lang-d">
+					<div class="single-prototype">
+			<span class="typ">Nullable</span>!(const(T)) <span class="pln">getVariableValue</span>(T)
+			<span class="pun">(</span>
+			<br/>
+			&nbsp;&nbsp;<span class="kwd">in </span><a href="../../nwn/biowaredb/PCID.html"><span class="pln">PCID</span></a> <span class="pln">pcid</span><span class="pun">,</span>
+			<br/>
+			&nbsp;&nbsp;<span class="kwd">in </span><span class="typ">string</span> <span class="pln">varName</span>
+			<br/>
+			<span class="pun">)</span><span class="pln"> </span><span class="kwd">const</span>
+			<br/>
+			<span class="kwd">if</span> <span class="pun">(</span><span class="kwd">is</span><span class="pun">(</span><span class="pln">T </span><span class="pun">== </span><span class="typ">NWInt</span><span class="pun">) || </span><span class="kwd">is</span><span class="pun">(</span><span class="pln">T </span><span class="pun">== </span><span class="typ">NWFloat</span><span class="pun">) || </span><span class="kwd">is</span><span class="pun">(</span><span class="pln">T </span><span class="pun">== </span><span class="typ">NWString</span><span class="pun">) || </span><span class="kwd">is</span><span class="pun">(</span><span class="pln">T </span><span class="pun">== </span><span class="typ">NWVector</span><span class="pun">) || </span><span class="kwd">is</span><span class="pun">(</span><span class="pln">T </span><span class="pun">== </span><span class="typ">NWLocation</span><span class="pun">) || </span><span class="kwd">is</span><span class="pun">(</span><span class="pln">T </span><span class="pun">== </span><span class="typ">BinaryObject</span><span class="pun">)</span><span class="pun">);</span>
+					</div>
+				</code>
+			</div>
+			<section><p>Expected O(1).
+</p>
+</section>
+
+			<section><h3>Parameters</h3>
+<table><col class="caption"><tr><th>Name</th><th>Description</th></tr>
+<tr><td id="T">T</td><td> Type of the variable. Must match the stored variable type.</td></tr>
+<tr><td id="pcid">pcid</td><td> player character identifier<br/>
+          Should be his account name concatenated with his character name<br/>
+          <code class="lang-d"><span class="kwd">null</span></code> for module variables</td></tr>
+<tr><td id="varName">varName</td><td> Campaign variable name</td></tr>
+</table>
+</section>
+<section><h3>Returns</h3>
+<p>the variable value, or null if not found
+</p>
+</section>
+<h2 id="2">Function BiowareDB.getVariableValue</h2><p>Search and return the value of a variable
+</p>
+			<div class="prototype">
+				<code class="lang-d">
+					<div class="single-prototype">
+			<span class="typ">Nullable</span>!(const(T)) <span class="pln">getVariableValue</span>(T)
+			<span class="pun">(</span>
+			<br/>
+			&nbsp;&nbsp;<span class="kwd">in </span><span class="typ">string</span> <span class="pln">account</span><span class="pun">,</span>
+			<br/>
+			&nbsp;&nbsp;<span class="kwd">in </span><span class="typ">string</span> <span class="pln">character</span><span class="pun">,</span>
+			<br/>
+			&nbsp;&nbsp;<span class="kwd">in </span><span class="typ">string</span> <span class="pln">varName</span>
+			<br/>
+			<span class="pun">)</span><span class="pln"> </span><span class="kwd">const</span>
+			<br/>
+			<span class="kwd">if</span> <span class="pun">(</span><span class="kwd">is</span><span class="pun">(</span><span class="pln">T </span><span class="pun">== </span><span class="typ">NWInt</span><span class="pun">) || </span><span class="kwd">is</span><span class="pun">(</span><span class="pln">T </span><span class="pun">== </span><span class="typ">NWFloat</span><span class="pun">) || </span><span class="kwd">is</span><span class="pun">(</span><span class="pln">T </span><span class="pun">== </span><span class="typ">NWString</span><span class="pun">) || </span><span class="kwd">is</span><span class="pun">(</span><span class="pln">T </span><span class="pun">== </span><span class="typ">NWVector</span><span class="pun">) || </span><span class="kwd">is</span><span class="pun">(</span><span class="pln">T </span><span class="pun">== </span><span class="typ">NWLocation</span><span class="pun">) || </span><span class="kwd">is</span><span class="pun">(</span><span class="pln">T </span><span class="pun">== </span><span class="typ">BinaryObject</span><span class="pun">)</span><span class="pun">);</span>
+					</div>
+				</code>
+			</div>
+			<section><p>Expected O(1).
+</p>
+</section>
+
+			<section><h3>Parameters</h3>
+<table><col class="caption"><tr><th>Name</th><th>Description</th></tr>
+<tr><td id="T">T</td><td> Type of the variable. Must match the stored variable type.</td></tr>
+<tr><td id="account">account</td><td> Player account name<br/>
+            <code class="lang-d"><span class="kwd">null</span></code> for module variables</td></tr>
+<tr><td id="character">character</td><td> Character name.<br/>
+            <code class="lang-d"><span class="kwd">null</span></code> for module variables
+</td></tr>
+<tr><td id="varName">varName</td><td> Campaign variable name</td></tr>
+</table>
+</section>
+<section><h3>Returns</h3>
+<p>the variable value, or null if not found
+</p>
+</section>
+
+			<footer>
+				<table class="license-info">
+					<tr>
+						<th>Authors</th>
+						<td>
+							
+						</td>
+					</tr>
+					<tr>
+						<th>Copyright</th>
+						<td>
+							
+						</td>
+					</tr>
+					<tr>
+						<th>License</th>
+						<td>
+							
+						</td>
+					</tr>
+				</table>
+				<p class="faint">Generated using the DDOX documentation generator</p>
+			</footer>
+		</div>
+	</body>
+</html>

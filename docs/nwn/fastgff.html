@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/>
+		<title>Module nwn.fastgff</title>
+		<link rel="stylesheet" type="text/css" href="../styles/ddox.css"/>
+		<link rel="stylesheet" href="../prettify/prettify.css" type="text/css"/>
+		<script type="text/javascript" src="../scripts/jquery.js">/**/</script><script type="text/javascript" src="../scripts/ddox.js">/**/</script>
+	</head>
+	<body onload="setupDdox();">
+		<nav id="main-nav">
+			<noscript>
+				<p style="color: red">The search functionality needs JavaScript enabled</p>
+			</noscript>
+			<div id="symbolSearchPane" style="display: none">
+				<form action="#" method="GET">
+					<input id="symbolSearch" type="text" name="q" placeholder="Search for symbols" autocomplete="off" onchange="performSymbolSearch(40);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
+				</form>
+				<ul id="symbolSearchResults" class="symbolList" style="display: none"></ul><script type="application/javascript" src="../symbols.js"></script><script type="application/javascript">var symbolSearchRootDir = "../";
+$('#symbolSearchPane').show();</script>
+			</div>
+			<ul class="tree-view">
+				<li class="tree-view ">
+					<div class="package ">
+						<a href="../nwn.html">nwn</a>
+					</div>
+			<ul class="tree-view">
+				<li class="tree-view collapsed">
+					<div class="package ">
+						<a href="../nwn/nwscript.html">nwscript</a>
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../nwn/nwscript/constants.html">constants</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwn/nwscript/extensions.html">extensions</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwn/nwscript/functions.html">functions</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwn/nwscript/resources.html">resources</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">
+						<a href="../nwn/trn.html">trn</a>
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../nwn/trn/genericmesh.html">genericmesh</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwn/biowaredb.html">biowaredb</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwn/constants.html">constants</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwn/dds.html">dds</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwn/erf.html">erf</a>
+					</div>
+				</li>
+				<li>
+					<div class="module selected">
+						<a href="../nwn/fastgff.html">fastgff</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwn/gff.html">gff</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwn/mdb.html">mdb</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwn/nwnserver.html">nwnserver</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwn/tlk.html">tlk</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwn/twoda.html">twoda</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwn/types.html">types</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">nwnlibd
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../nwnlibd/geometry.html">geometry</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwnlibd/orderedaa.html">orderedaa</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwnlibd/orderedjson.html">orderedjson</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwnlibd/parseutils.html">parseutils</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwnlibd/path.html">path</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwnlibd/wavefrontobj.html">wavefrontobj</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+			</ul>
+		</nav>
+		<div id="main-contents">
+			<h1>Module nwn.fastgff</h1><p>Experimental module that aims to provide faster and more memory efficient GFF file reading (and eventually writing)
+</p>
+			<section></section>
+			<section>
+				<h2>Functions</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="isSimpleType" class="public" href="../nwn/fastgff/isSimpleType.html">isSimpleType</a><span class="tableEntryAnnotation">(type)</span>
+							</code>
+						</td>
+						<td>A simple type can be stored inside the GffField value slot (32-bit or less)
+</td>
+					</tr>
+				</table>
+			</section>
+			<section>
+				<h2>Classes</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="FastGff" class="public" href="../nwn/fastgff/FastGff.html">FastGff</a>
+							</code>
+						</td>
+						<td>GFF file parser
+</td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="GffParseException" class="public" href="../nwn/fastgff/GffParseException.html">GffParseException</a>
+							</code>
+						</td>
+						<td>Parsing exception
+</td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="GffTypeException" class="public" href="../nwn/fastgff/GffTypeException.html">GffTypeException</a>
+							</code>
+						</td>
+						<td>Type mismatch exception
+</td>
+					</tr>
+				</table>
+			</section>
+			<section>
+				<h2>Structs</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="GffField" class="public" href="../nwn/fastgff/GffField.html">GffField</a>
+							</code>
+						</td>
+						<td>GFF generic value (used for <code class="lang-d"><a href="../nwn/fastgff/GffStruct.html"><span class="typ">GffStruct</span></a></code> children). This can be used as a Variant.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="GffList" class="public" href="../nwn/fastgff/GffList.html">GffList</a>
+							</code>
+						</td>
+						<td>GFF list value type (Array of GffStruct)
+</td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="GffLocString" class="public" href="../nwn/fastgff/GffLocString.html">GffLocString</a>
+							</code>
+						</td>
+						<td>GFF Localized string value type (strref with eventually a <code class="lang-d"><a href="../nwn/constants/Language.html" title="nwn.constants.Language"><span class="typ">Language</span></a></code> =&gt; <code class="lang-d"><span class="typ">string</span></code> map)
+</td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="GffResRef" class="public" href="../nwn/fastgff/GffResRef.html">GffResRef</a>
+							</code>
+						</td>
+						<td>GFF Resref value type (32 character string)
+</td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="GffStruct" class="public" href="../nwn/fastgff/GffStruct.html">GffStruct</a>
+							</code>
+						</td>
+						<td>GFF structure value type (<code class="lang-d"><span class="typ">string</span></code> =&gt; <code class="lang-d"><a href="../nwn/fastgff/GffField.html"><span class="typ">GffField</span></a></code> map)
+</td>
+					</tr>
+				</table>
+			</section>
+			<section>
+				<h2>Enums</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="GffType" class="public" href="../nwn/fastgff/GffType.html">GffType</a>
+							</code>
+						</td>
+						<td>Type of data owned by a <code class="lang-d"><a href="../nwn/fastgff/GffField.html"><span class="typ">GffField</span></a></code>
+</td>
+					</tr>
+				</table>
+			</section>
+			<section>
+				<h2>Templates</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="ToNative" class="public" href="../nwn/fastgff/ToNative.html">ToNative</a>
+							</code>
+						</td>
+						<td>Maps <code class="lang-d"><a href="../nwn/fastgff/GffType.html"><span class="typ">GffType</span></a></code> to native D type
+</td>
+					</tr>
+				</table>
+			</section>
+			<section>
+				<h2>Aliases</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Type</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<a id="GffByte" class="public" href="../nwn/fastgff/GffByte.html">
+								<code>GffByte</code>
+							</a>
+						</td>
+						<td>
+							<code class="prettyprint lang-d"><span class="typ">ubyte</span></code>
+						</td>
+						<td>Basic GFF value type
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="GffChar" class="public" href="../nwn/fastgff/GffChar.html">
+								<code>GffChar</code>
+							</a>
+						</td>
+						<td>
+							<code class="prettyprint lang-d"><span class="typ">byte</span></code>
+						</td>
+						<td>Basic GFF value type
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="GffDouble" class="public" href="../nwn/fastgff/GffDouble.html">
+								<code>GffDouble</code>
+							</a>
+						</td>
+						<td>
+							<code class="prettyprint lang-d"><span class="typ">double</span></code>
+						</td>
+						<td>Basic GFF value type
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="GffDWord" class="public" href="../nwn/fastgff/GffDWord.html">
+								<code>GffDWord</code>
+							</a>
+						</td>
+						<td>
+							<code class="prettyprint lang-d"><span class="typ">uint</span></code>
+						</td>
+						<td>Basic GFF value type
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="GffDWord64" class="public" href="../nwn/fastgff/GffDWord64.html">
+								<code>GffDWord64</code>
+							</a>
+						</td>
+						<td>
+							<code class="prettyprint lang-d"><span class="typ">ulong</span></code>
+						</td>
+						<td>Basic GFF value type
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="GffFloat" class="public" href="../nwn/fastgff/GffFloat.html">
+								<code>GffFloat</code>
+							</a>
+						</td>
+						<td>
+							<code class="prettyprint lang-d"><span class="typ">float</span></code>
+						</td>
+						<td>Basic GFF value type
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="GffInt" class="public" href="../nwn/fastgff/GffInt.html">
+								<code>GffInt</code>
+							</a>
+						</td>
+						<td>
+							<code class="prettyprint lang-d"><span class="typ">int</span></code>
+						</td>
+						<td>Basic GFF value type
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="GffInt64" class="public" href="../nwn/fastgff/GffInt64.html">
+								<code>GffInt64</code>
+							</a>
+						</td>
+						<td>
+							<code class="prettyprint lang-d"><span class="typ">long</span></code>
+						</td>
+						<td>Basic GFF value type
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="GffShort" class="public" href="../nwn/fastgff/GffShort.html">
+								<code>GffShort</code>
+							</a>
+						</td>
+						<td>
+							<code class="prettyprint lang-d"><span class="typ">short</span></code>
+						</td>
+						<td>Basic GFF value type
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="GffString" class="public" href="../nwn/fastgff/GffString.html">
+								<code>GffString</code>
+							</a>
+						</td>
+						<td>
+							<code class="prettyprint lang-d"><span class="typ">string</span></code>
+						</td>
+						<td>Basic GFF value type
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="GffVoid" class="public" href="../nwn/fastgff/GffVoid.html">
+								<code>GffVoid</code>
+							</a>
+						</td>
+						<td>
+							<code class="prettyprint lang-d"><span class="typ">ubyte</span><span class="pun">[]</span></code>
+						</td>
+						<td>Basic GFF value type
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="GffWord" class="public" href="../nwn/fastgff/GffWord.html">
+								<code>GffWord</code>
+							</a>
+						</td>
+						<td>
+							<code class="prettyprint lang-d"><span class="typ">ushort</span></code>
+						</td>
+						<td>Basic GFF value type
+</td>
+					</tr>
+				</table>
+			</section>
+			<footer>
+				<table class="license-info">
+					<tr>
+						<th>Authors</th>
+						<td>
+							
+						</td>
+					</tr>
+					<tr>
+						<th>Copyright</th>
+						<td>
+							
+						</td>
+					</tr>
+					<tr>
+						<th>License</th>
+						<td>
+							
+						</td>
+					</tr>
+				</table>
+				<p class="faint">Generated using the DDOX documentation generator</p>
+			</footer>
+		</div>
+	</body>
+</html>
