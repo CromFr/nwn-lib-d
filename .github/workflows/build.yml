@@ -116,6 +116,7 @@ jobs:
           source ~/dlang/activate
 
           dub build --build=ddox
+          rm docs/nwn/nwscript/constants/* #
 
           mkdir public/
           mv docs docs.json public/
