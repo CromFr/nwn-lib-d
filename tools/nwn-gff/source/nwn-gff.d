@@ -120,7 +120,7 @@ int main(string[] args){
 		auto gff = new FastGff(inputFile.readAll);
 
 		File outputFile = outputPath == "-" || outputPath is null ? stdout : File(outputPath, "w");
-		outputFile.rawWrite(gff.toPrettyString());
+		outputFile.writeln(gff.toPrettyString());
 		return 0;
 	}
 
@@ -426,7 +426,6 @@ int main(string[] args){
 	}
 
 
-
 	//Serialization
 	File outputFile = outputPath is null || outputPath == "-" ? stdout : File(outputPath, "w");
 	switch(outputFormat){
@@ -434,11 +433,11 @@ int main(string[] args){
 			outputFile.rawWrite(gff.serialize());
 			break;
 		case Format.pretty:
-			outputFile.rawWrite(gff.toPrettyString());
+			outputFile.writeln(gff.toPrettyString());
 			break;
 		case Format.json, Format.json_minified:
 			auto json = gff.toJson;
-			outputFile.rawWrite(outputFormat==Format.json? json.toPrettyString : json.toString);
+			outputFile.writeln(outputFormat==Format.json? json.toPrettyString : json.toString);
 			break;
 		default:
 			assert(0, outputFormat.to!string~" serialization not implemented");
