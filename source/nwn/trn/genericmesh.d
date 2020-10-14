@@ -1,3 +1,4 @@
+/// Generic 3d mesh representation
 module nwn.trn.genericmesh;
 
 import std.stdint;
@@ -16,7 +17,7 @@ import std.container.dlist;
 import nwnlibd.geometry;
 import gfm.math.vector;
 
-
+///
 struct GenericMesh {
 	vec3f[] vertices;
 
@@ -745,10 +746,10 @@ unittest{
 		auto mesh2 = GenericMesh.fromObj(File(file));
 
 		assert(mesh.vertices.length == mesh2.vertices.length);
-		foreach(i ; 0 .. mesh.vertices.length){
-			if(!equal!approxEqual(mesh.vertices[i][], mesh2.vertices[i][]))
-				writeln(mesh.vertices[i], "!=", mesh2.vertices[i]);
-		}
+		//foreach(i ; 0 .. mesh.vertices.length){
+		//	if(!equal!approxEqual(mesh.vertices[i][], mesh2.vertices[i][]))
+		//		writeln(mesh.vertices[i], "!=", mesh2.vertices[i]);
+		//}
 
 		assert(equal!((a,b)=>equal!approxEqual(a[], b[]))(mesh.vertices, mesh2.vertices));
 		assert(equal!((a,b)=>isPermutation(a.vertices[], b.vertices[]))(mesh.triangles, mesh2.triangles));

@@ -1,0 +1,15 @@
+name "nwn-gff"
+description "GFF file tool (bic, are, git, ut?, ifo, jrl, ...)"
+license "GPL-3.0"
+copyright "Copyright © 2020, Thibaut CHARLES"
+authors "Thibaut CHARLES (CromFr)"
+
+targetType "executable"
+mainSourceFile "source/nwn-gff.d"
+sourcePaths "source" "../common/"
+importPaths "source" "../common/"
+dependency "nwn-lib-d" path="../../"
+
+configuration "unittest" {
+	stringImportPaths "../../unittest"
+}

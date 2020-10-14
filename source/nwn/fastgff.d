@@ -1,5 +1,4 @@
-
-/// Experimental module that aims to provide faster and more memory efficient GFF file reading (and eventually writing)
+/// Faster and more memory efficient GFF file reading without writing support
 module nwn.fastgff;
 
 import std.exception: enforce, assertNotThrown;
@@ -7,7 +6,9 @@ import std.stdint;
 import std.stdio: writeln;
 import std.conv: to;
 import std.traits: EnumMembers;
-import std.string: stripRight;
+import std.string;
+import std.base64: Base64;
+debug import std.stdio;
 
 
 /// Parsing exception
@@ -133,20 +134,13 @@ struct GffLocString{
 
 	/// Get the string value without attempting to resolve strref using TLKs
 	string toString() const {
-		if(strref != uint32_t.max)
-			return "{{STRREF:"~strref.to!string~"}}";
-		else{
-			if(strings.length>0)
-				return strings.values[0];
-			return "{{INVALID_LOCSTRING}}";
-		}
+		return format!"{%d, %s}"(strref == strref.max ? -1 : cast(long)strref, strings);
 	}
 
-	import nwn.tlk: StrRefResolver, LanguageGender;
+	import nwn.tlk: StrRefResolver, LanguageGender, TlkOutOfBoundsException;
 	/// Get the string value using TLK tables if needed
 	string resolve(in StrRefResolver resolver) const{
 		if(strings.length > 0){
-
 			immutable preferedLang = resolver.standartTable.language * 2;
 			if(auto str = preferedLang in strings)
 				return *str;
@@ -160,10 +154,13 @@ struct GffLocString{
 		}
 
 		if(strref != strref.max){
-			return resolver[strref];
+			try return resolver[strref];
+			catch(TlkOutOfBoundsException){
+				return "invalid_strref";
+			}
 		}
 
-		return "{{INVALID_LOCSTRING}}";
+		return "";
 	}
 }
 /// Basic GFF value type
@@ -175,8 +172,8 @@ struct GffStruct{
 
 	@property{
 		/// Struct subtype ID
-		uint32_t structType() const{
-			return internal.type;
+		uint32_t id() const{
+			return internal.id;
 		}
 	}
 
@@ -209,11 +206,27 @@ struct GffStruct{
 
 
 	/// Serialize the struct and its children in a human-readable format
-	string toPrettyString(in string tab = null) const{
-		string ret;
-		ret ~= "(Struct "~(structType == structType.max? "-1" : structType.to!string)~")";
+	//string toPrettyString(in string tab = null) const{
+	//	string ret;
+	//	ret ~= "(Struct "~(structType == structType.max? "-1" : structType.to!string)~")";
+	//	foreach(field ; this){
+	//		ret ~= "\n" ~ field.toPrettyString(tab ~ "   | ");
+	//	}
+	//	return ret;
+	//}
+	/// Serialize the struct and its children in a human-readable format
+	string toPrettyString(string tabs = null) const {
+		string ret = format!"%s(Struct %s)"(tabs, id == id.max ? "-1" : id.to!string);
+		size_t i = 0;
 		foreach(field ; this){
-			ret ~= "\n" ~ field.toPrettyString(tab ~ "   | ");
+			const innerTabs = tabs ~ "|  ";
+			const type = (field.type != GffType.Struct && field.type != GffType.List) ? " (" ~ field.type.to!string ~ ")" : null;
+
+			ret ~= format!"\n%s├╴ %-16s = %s%s"(
+				tabs,
+				field.label, field.toPrettyString(innerTabs)[innerTabs.length .. $], type
+			);
+			i++;
 		}
 		return ret;
 	}
@@ -285,12 +298,25 @@ struct GffList{
 		}
 	}
 
+	///// Serialize the list and its children in a human-readable format
+	//string toPrettyString(in string tab = null) const {
+	//	string ret;
+	//	ret ~= "(List)";
+	//	foreach(index, gffstruct ; this){
+	//		ret ~= "\n" ~ tab ~ "   | " ~ gffstruct.toPrettyString(tab ~ "   | ");
+	//	}
+	//	return ret;
+	//}
 	/// Serialize the list and its children in a human-readable format
-	string toPrettyString(in string tab = null) const {
-		string ret;
-		ret ~= "(List)";
-		foreach(index, gffstruct ; this){
-			ret ~= "\n" ~ tab ~ "   | " ~ gffstruct.toPrettyString(tab ~ "   | ");
+	string toPrettyString(string tabs = null) const {
+		string ret = format!"%s(List)"(tabs);
+		foreach(i, child ; this){
+			auto innerTabs = tabs ~ "|  ";
+
+			ret ~= format!"\n%s├╴ %s"(
+				tabs,
+				child.toPrettyString(innerTabs)[innerTabs.length .. $]
+			);
 		}
 		return ret;
 	}
@@ -424,7 +450,6 @@ struct GffField{
 				static if(Type == Invalid)
 					assert(0, "Invalid type");
 				else static if(Type == Void){
-					import std.base64: Base64;
 					return Base64.encode(value.get!(ToNative!Type));
 				}
 				else static if(Type == Struct){
@@ -441,11 +466,9 @@ struct GffField{
 	}
 
 	/// Serialize the field and its children in a human-readable format
-	string toPrettyString(in string tab = null) const{
+	string toPrettyString(in string tabs = null) const{
 		import std.string;
-		string ret;
-
-		ret ~= tab ~ label.leftJustify(16) ~ ": ";
+		string ret = tabs;
 
 		typeswitch:
 		final switch(type) with(GffType){
@@ -454,22 +477,16 @@ struct GffField{
 				static if(Type == Invalid)
 					assert(0, "Invalid type");
 				else static if(Type == Void){
-					import std.base64: Base64;
-					ret ~= Base64.encode(value.get!(ToNative!Type));
-					break typeswitch;
+					return ret ~ Base64.encode(value.get!(ToNative!Type)).to!string;
 				}
 				else static if(Type == Struct || Type == List){
-					ret ~= value.get!(ToNative!Type).toPrettyString(tab);
-					return ret;//Do not append type
+					return value.get!(ToNative!Type).toPrettyString(tabs);
 				}
 				else{
-					ret ~= value.get!(ToNative!Type).to!string;
-					break typeswitch;
+					return ret ~ value.get!(ToNative!Type).to!string;
 				}
 			}
 		}
-		ret ~= " (" ~ type.to!string ~ ")";
-		return ret;
 	}
 
 
@@ -602,7 +619,7 @@ private:
 	}
 	align(1) struct Struct{
 		align(1):
-		uint32_t type;
+		uint32_t id;
 		uint32_t data_or_data_offset;
 		uint32_t field_count;
 	}
@@ -658,6 +675,12 @@ unittest{
 		assert(gff["Tintable"]["Tint"]["1"]["r"].get!GffByte == 253);
 
 		assertNotThrown(gff.toPrettyString());
+
+
+		// parity with nwn.gff.Gff
+		static import nwn.gff;
+		assert(new FastGff(krogarDataOrig).toPrettyString == new nwn.gff.Gff(krogarDataOrig).toPrettyString);
+		//assert(new FastGff(krogarDataOrig).toJson.toString == new nwn.gff.Gff(krogarDataOrig).toJson.toString);
 	}
 
 }

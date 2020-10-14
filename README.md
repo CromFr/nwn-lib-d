@@ -1,7 +1,7 @@
 # nwn-lib-d
 Multi-platform D library & tooling for handling Neverwinter Nights 1 & 2 resource files
 
-[![Build Status](https://travis-ci.org/CromFr/nwn-lib-d.svg?branch=master)](https://travis-ci.org/CromFr/nwn-lib-d)
+![nwn-lib-d](https://github.com/CromFr/nwn-lib-d/workflows/nwn-lib-d/badge.svg)
 [![codecov](https://codecov.io/gh/CromFr/nwn-lib-d/branch/master/graph/badge.svg)](https://codecov.io/gh/CromFr/nwn-lib-d)
 
 [![GitHub license](https://img.shields.io/badge/license-GPL%203.0-blue.svg)](https://raw.githubusercontent.com/CromFr/nwn-lib-d/master/LICENSE)
@@ -12,43 +12,40 @@ Multi-platform D library & tooling for handling Neverwinter Nights 1 & 2 resourc
 
 ### Command-line tools
 
-__[Download nwn-lib-d tools](https://cromfr.github.io/nwn-lib-d/)__
+nwn-lib-d tools are a set of command-line tools for manipulating Neverwinter
+Nights 2 files (and some NWN1 files). They are multi-platform (usable on Windows
+or GNU/Linux) and do not require the game to be installed.
+
+__[Download nwn-lib-d tools](https://github.com/CromFr/nwn-lib-d/releases)__
 
 - `nwn-gff`
   + Read / write GFF files (ifo, are, bic, uti, ...)
 
-    | Format | Parsing | Serialization | Comment |
-    |:------:|:-------:|:-------------:|---------|
-    |`gff`| :white_check_mark:| :white_check_mark:|NWN binary. Generated binary file match exactly official NWN2 files (needs to be tested with NWN1)|
-    |`json`| :white_check_mark:| :white_check_mark:|Json, compatible with [Niv nwn-lib](https://github.com/niv/nwn-lib)|
-    |`json_minified`|:white_check_mark:|:white_check_mark:|Same as `json` but minified|
-    |`pretty`|:x:| :white_check_mark:|Human-readable|
+    |      Format     |      Parsing       |   Serialization    |                                              Comment                                               |
+    | :-------------: | :----------------: | :----------------: | -------------------------------------------------------------------------------------------------- |
+    |      `gff`      | :white_check_mark: | :white_check_mark: | NWN binary. Generated binary file match exactly official NWN2 files (needs to be tested with NWN1) |
+    |      `json`     | :white_check_mark: | :white_check_mark: | Json, compatible with [Niv nwn-lib](https://github.com/niv/nwn-lib)                                |
+    | `json_minified` | :white_check_mark: | :white_check_mark: | Same as `json` but minified                                                                        |
+    |     `pretty`    |        :x:         | :white_check_mark: | Human-readable                                                                                     |
 
   + Pros
-    * Fast
-    * GFF nodes keeps original ordering
-    * Basic GFF modifications
-  + Cons
-    * Limited serialization targets
+    * Pretty fast
+    * GFF nodes keeps their original ordering, making diffs very consistent
+    * Automated GFF modifications (set / add / remove nodes)
 
 - `nwn-tlk`
   + Serialize TLK files to readable text.
 
-    | Format | Parsing | Serialization | Comment |
-    |:------:|:-------:|:-------------:|---------|
-    |`tlk`| :white_check_mark:| :white_check_mark:|NWN TLK binary format |
-    |`text`|:x:| :white_check_mark:|Human-readable|
+    | Format |      Parsing       |   Serialization    |        Comment        |
+    | :----: | :----------------: | :----------------: | --------------------- |
+    | `tlk`  | :white_check_mark: | :white_check_mark: | NWN TLK binary format |
+    | `text` |        :x:         | :white_check_mark: | Human-readable        |
 
 - `nwn-erf`
-  + Create, extract or view ERF files (hak, erf, mod) in a reproducible manner (same content => same checksum).
+  + Create, extract or view ERF files (hak, erf, mod, pwc) in a reproducible manner (same content => same checksum).
   + Pros
     * By default sets the ERF buildDate field to a 0 value, to create reproducible erf files.
-  + Cons
-    * No support for NWN1 ERF
-    * Not very memory efficient (all files are loaded to memory before the erf file is written)
-
-- `nwn-bdb`
-  + View/search Bioware/foxpro database content (dbf + ctx + fpt) using regular expressions.
+    * Memory efficient (files are streamed, not copied into memory)
 
 - `nwn-trn`
   + TRN/TRX experimental tool:
@@ -60,26 +57,32 @@ __[Download nwn-lib-d tools](https://cromfr.github.io/nwn-lib-d/)__
     * `aswm-export-fancy`: Export custom walkmesh data into a colored wavefront obj
     * `aswm-export`: Export walkable walkmesh into a wavefront obj
     * `aswm-import`: Import a wavefront obj as the walkmesh of an existing TRX file
-    * `bake`: Bake an area (placeables and walkmesh cutters not supported)
+    * `bake`: Bake an area (prototype, placeables and walkmesh cutters are not supported)
 
 - `nwn-srv`
   + Interact with NWN2 server:
     * Measure latency (ping)
     * Query server info and status
 
+- `nwn-bdb`
+  + View/search Bioware/foxpro database content (dbf + ctx + fpt) using regular expressions.
 
 
-### Library
+### D Library
 
 __[API reference](https://cromfr.github.io/nwn-lib-d/docs)__
 
-- GFF
-    + Read / Write / Modify
-- TLK
-    + Read only
-- 2DA
-    + Read only
-    + May refuse to parse official 2da when incorrect
+- Supported files:
+  + GFF (ifo, are, bic, uti, ...)
+  + TLK
+  + 2DA
+  + TRN (trn, trx)
+  + Foxpro databases (dbf + ctx + fpt)
+  + DDS (limited support)
+  + MDB (limited support)
+- Other features:
+  + NWN2Server querying
+  + Several NWScript functions re-implementations
 
 
 # Tips & tricks
@@ -139,7 +142,7 @@ __[API reference](https://cromfr.github.io/nwn-lib-d/docs)__
 # Build
 
 ### Requirements
-- dmd (D language compiler)
+- dmd or ldc2 (D language compiler)
 - dub (D build system)
 
 ### Build
@@ -147,9 +150,10 @@ __[API reference](https://cromfr.github.io/nwn-lib-d/docs)__
 # Build library
 dub build
 
-# Build nwn-gff tools
-dub build :nwn-gff
+# Build nwn-gff tool
+cd tools/nwn-gff
+dub build
 
 # Eventually you can append --build=release
-dub build :nwn-gff --build=release
+dub build --build=release
 ```

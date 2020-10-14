@@ -8,85 +8,16 @@ targetType "library"
 targetName "nwn-d"
 stringImportPaths "unittest"
 dependency "gfm:math" version="~>7.0.0"
+preBuildCommands `echo "/// nwn-lib-d version
+module nwn.ver;
+
+/// nwn-lib-d git version
+enum NWN_LIB_D_VERSION = \"$$(git describe --tags)\";
+" > source/nwn/ver.d`
+
 
 //x:ddoxTool "scod"
 x:ddoxFilterArgs "--min-protection=Protected"
-
-subPackage {
-	name "nwn-gff"
-	targetType "executable"
-	targetName "nwn-gff"
-	sourcePaths "source/" "tools/common/" "tools/nwn-gff/"
-	dependency "gfm:math" version="~>7.0.0"
-
-	configuration "application"
-	configuration "unittest" {
-		stringImportPaths "unittest"
-	}
-}
-subPackage {
-	name "nwn-erf"
-	targetType "executable"
-	targetName "nwn-erf"
-	sourcePaths "source/" "tools/common/" "tools/nwn-erf/"
-	dependency "gfm:math" version="~>7.0.0"
-
-	configuration "application"
-	configuration "unittest" {
-		stringImportPaths "unittest"
-	}
-}
-subPackage {
-	name "nwn-tlk"
-	targetType "executable"
-	targetName "nwn-tlk"
-	sourcePaths "source/" "tools/common/" "tools/nwn-tlk/"
-	dependency "gfm:math" version="~>7.0.0"
-
-	configuration "application"
-	configuration "unittest" {
-		stringImportPaths "unittest"
-	}
-}
-subPackage {
-	name "nwn-bdb"
-	targetType "executable"
-	targetName "nwn-bdb"
-	sourcePaths "source/" "tools/common/" "tools/nwn-bdb/"
-	dependency "gfm:math" version="~>7.0.0"
-
-	configuration "application"
-	configuration "unittest" {
-		stringImportPaths "unittest"
-	}
-}
-subPackage {
-	name "nwn-trn"
-	targetType "executable"
-	targetName "nwn-trn"
-	sourcePaths "source/" "tools/common/" "tools/nwn-trn/"
-	stringImportPaths "tools/nwn-trn/"
-	dependency "gfm:math" version="~>7.0.0"
-
-	configuration "application"
-	configuration "unittest" {
-		stringImportPaths "unittest"
-	}
-}
-subPackage {
-	name "nwn-srv"
-	targetType "executable"
-	targetName "nwn-srv"
-	sourcePaths "source/" "tools/common/" "tools/nwn-srv/"
-	dependency "gfm:math" version="~>7.0.0"
-
-	configuration "application"
-	configuration "unittest" {
-		stringImportPaths "unittest"
-	}
-}
-
-
 
 
 subPackage {

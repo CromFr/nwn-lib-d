@@ -28,7 +28,9 @@ class ErfValueSetException : Exception{
 	}
 }
 
+///
 alias NWN1ErfFile = ErfFile!(NwnVersion.NWN1);
+///
 alias NWN2ErfFile = ErfFile!(NwnVersion.NWN2);
 
 /// File stored in Erf class
@@ -90,7 +92,9 @@ struct ErfFile(NwnVersion NV){
 	Nullable!size_t expectedLength;
 }
 
+///
 alias NWN1Erf = Erf!(NwnVersion.NWN1);
+///
 alias NWN2Erf = Erf!(NwnVersion.NWN2);
 
 /// ERF file parsing (.erf, .hak, .mod files)

@@ -7,16 +7,19 @@ __test__*__
 *.o
 *.obj
 *.lst
+*.a
 
 *.sublime-workspace
 
-/nwn-bdb*
-/nwn-erf*
-/nwn-gff*
-/nwn-tlk*
-/nwn-trn*
-/nwn-srv*
+/tools/nwn-???/nwn-???
+/tools/nwn-???/nwn-???.exe
+/tools/nwn-???/nwn-???-test-*
+
+/nwn-lib-d-benchmark
+/nwn-lib-d-test-library
 *.exe
 *.lib
 libnwn-d.*
 
+# Generated with dub
+source/nwn/ver.d

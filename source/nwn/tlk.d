@@ -6,8 +6,6 @@ import std.string;
 import std.conv;
 import std.traits: EnumMembers;
 
-import nwn.gff : GffNode, GffType, gffTypeToNative;
-
 debug import std.stdio: writeln;
 version(unittest) import std.exception: assertThrown, assertNotThrown;
 
@@ -19,8 +17,10 @@ class TlkOutOfBoundsException : Exception{
 	}
 }
 
+/// String ref base type
 alias StrRef = uint32_t;
 
+/// Utility class to resolve string refs using two TLKs
 class StrRefResolver{
 	this(in Tlk standartTable, in Tlk userTable = null){
 		this.standartTable = standartTable;
@@ -39,44 +39,14 @@ class StrRefResolver{
 		return "unknown_strref_" ~ strref.to!string;
 	}
 
-	/// Resolves an ExoLocString GffNode to the appropriate language using the tlk tables and language ID
-	string opIndex(in GffNode node)const{
-		assert(node.type == GffType.ExoLocString, "Node '"~node.label~"' is not an ExoLocString");
-
-		if(node.exoLocStringContainer.strings.length > 0){
-
-			immutable preferedLang = standartTable.language * 2;
-			if(auto str = preferedLang in node.exoLocStringContainer.strings)
-				return *str;
-			if(auto str = preferedLang + 1 in node.exoLocStringContainer.strings)
-				return *str;
-
-			foreach(lang ; EnumMembers!LanguageGender){
-				if(auto str = lang in node.exoLocStringContainer.strings)
-					return *str;
-			}
-		}
-
-		if(node.exoLocStringContainer.strref != StrRef.max){
-			try return this[node.exoLocStringContainer.strref];
-			catch(TlkOutOfBoundsException){
-				return "invalid_strref";
-			}
-		}
-
-		return "";
-	}
-
 	const Tlk standartTable;
 	const Tlk userTable;
 }
 unittest{
-	immutable dialogTlk = cast(immutable ubyte[])import("dialog.tlk");
-	immutable userTlk = cast(immutable ubyte[])import("user.tlk");
-
-	auto strref = new StrRefResolver(
-		new Tlk(dialogTlk),
-		new Tlk(userTlk));
+	auto resolv = new StrRefResolver(
+		new Tlk(cast(immutable ubyte[])import("dialog.tlk")),
+		new Tlk(cast(immutable ubyte[])import("user.tlk"))
+	);
 
 	enum string lastLine =
 		 "Niveau(x) de lanceur de sorts : prêtre 1, paladin 1\n"
@@ -92,52 +62,35 @@ unittest{
 		~"\n"
 		~"Tous les trois niveaux effectifs de lanceur de sorts, vous gagnez un bonus de +1 à vos jets d'attaque et un bonus de +1 de dégâts magiques (minimum +1, maximum +3).";
 
-	assert(strref.standartTable.language == Language.French);
-	assert(strref[0] == "Bad Strref");
-	assert(strref[54] == lastLine);
-	assertThrown!TlkOutOfBoundsException(strref[55]);
+	assert(resolv.standartTable.language == Language.French);
+	assert(resolv[0] == "Bad Strref");
+	assert(resolv[54] == lastLine);
+	assertThrown!TlkOutOfBoundsException(resolv[55]);
 
-	assert(strref[Tlk.UserTlkIndexOffset + 0] == "Hello world");
-	assert(strref[Tlk.UserTlkIndexOffset + 1] == "Café liégeois");
-
-	auto node = GffNode(GffType.ExoLocString);
-	node = Tlk.UserTlkIndexOffset + 1;
-	node = [0:"male english", 1:"female english", 2:"male french"];
-
-	assert(strref[node] == "male french");
-
-	node = [0:"male english", 1:"female english"];
-	assert(strref[node] == "male english");
-
-	node = [4:"male german", 6:"female italian"];
-	assert(strref[node] == "male german");
-
-	node.exoLocStringContainer.strings.clear;
-	assert(strref[node] == "Café liégeois");
-
-	node = StrRef.max;
-	assert(strref[node] == "");
+	assert(resolv[Tlk.UserTlkIndexOffset + 0] == "Hello world");
+	assert(resolv[Tlk.UserTlkIndexOffset + 1] == "Café liégeois");
 }
 
-
+/// TLK (read only)
 class Tlk{
-
+	///
 	this(Language langId, immutable(char[4]) tlkVersion = "V3.0"){
 		header.file_type = "TLK ";
 		header.file_version = tlkVersion;
 	}
-
+	///
 	this(in string path){
 		import std.file: read;
 		this(cast(ubyte[])path.read());
 	}
-
+	///
 	this(in ubyte[] rawData){
 		header = *cast(TlkHeader*)rawData.ptr;
 		strData = (cast(TlkStringData[])rawData[TlkHeader.sizeof .. header.string_entries_offset]).dup();
 		strEntries = cast(char[])rawData[header.string_entries_offset .. $];
 	}
 
+	/// tlk[strref]
 	string opIndex(in StrRef strref) const{
 		assert(strref < UserTlkIndexOffset, "Tlk indexes must be lower than "~UserTlkIndexOffset.to!string);
 
@@ -148,10 +101,12 @@ class Tlk{
 		return cast(immutable)strEntries[data.offset_to_string .. data.offset_to_string + data.string_size];
 	}
 
+	/// Number of entries
 	@property size_t length() const{
 		return header.string_count;
 	}
 
+	/// foreach(text ; tlk)
 	int opApply(scope int delegate(in string) dlg) const{
 		int res = 0;
 		foreach(ref data ; strData){
@@ -160,58 +115,24 @@ class Tlk{
 		}
 		return res;
 	}
-	int opApply(scope int delegate(size_t, in string) dlg) const{
+	/// foreach(strref, text ; tlk)
+	int opApply(scope int delegate(StrRef, in string) dlg) const{
 		int res = 0;
 		foreach(i, ref data ; strData){
-			res = dlg(i, cast(immutable)strEntries[data.offset_to_string .. data.offset_to_string + data.string_size]);
+			res = dlg(cast(StrRef)i, cast(immutable)strEntries[data.offset_to_string .. data.offset_to_string + data.string_size]);
 			if(res != 0) break;
 		}
 		return res;
 	}
 
 	@property{
+		/// TLK language ID
 		Language language() const{
 			return cast(Language)(header.language_id);
 		}
 	}
 
-	immutable(ubyte[]) serialize() const{
-		return ((cast(ubyte*)&header)[0 .. TlkHeader.sizeof]
-		       ~(cast(ubyte[])strData)
-		       ~(cast(ubyte[])strEntries)).idup();
-	}
-
-
-
-	void opIndexAssign(string text, StrRef strref){
-
-		if(strref >= length){
-			header.string_count = strref + 1;
-			strData.length = header.string_count;
-		}
-
-		auto data = &strData[strref];
-		if(data.flags & StringFlag.TEXT_PRESENT && text.length <= data.string_size){
-			// Existing string
-			// Rewrite content in place
-			strEntries[data.offset_to_string .. data.offset_to_string + text.length] = text;
-		}
-		else{
-			// Append text at the end
-			data.flags = StringFlag.TEXT_PRESENT;
-			data.offset_to_string = strEntries.length.to!uint32_t;
-			data.sound_length = 0.0;
-
-			strEntries ~= text;
-		}
-		data.string_size = text.length.to!uint32_t;
-	}
-
-
-
-
 	enum UserTlkIndexOffset = 16777216;
-
 
 private:
 	TlkHeader header;

@@ -5,7 +5,8 @@ import std.traits;
 		import std.conv;
 
 /// Converts a static char array to string.
-/// The fixed char array may or may not be null terminated
+/// The static char array may or may not be null terminated
+pure @safe
 auto ref string charArrayToString(T)(in T str) if(isArray!T && isSomeChar!(ForeachType!T)){
 	import std.string: indexOf;
 	auto i = str.indexOf('\0');
@@ -14,6 +15,9 @@ auto ref string charArrayToString(T)(in T str) if(isArray!T && isSomeChar!(Forea
 	return str[0 .. $].idup();
 }
 
+/// Converts a string to a static char array.
+/// The static char array may or may not be null terminated
+pure @safe
 T stringToCharArray(T)(in string str) if(isStaticArray!T && isSomeChar!(ForeachType!T)){
 	T ret;
 
@@ -99,12 +103,30 @@ struct ChunkWriter{
 	ubyte[] data;
 
 	void put(T...)(in T chunks){
+		size_t i = data.length;
+
+		size_t addLen = 0;
 		static foreach(chunk ; chunks){
 			static if(isArray!(typeof(chunk)))
-				data ~= cast(ubyte[])chunk;
+				addLen += chunk.length * chunk[0].sizeof;
 			else
-				data ~= (cast(ubyte*)&chunk)[0..chunk.sizeof];
+				addLen += chunk.sizeof;
 		}
+		data.length += addLen;
+
+		foreach(chunk ; chunks){
+			static if(isArray!(typeof(chunk))){
+				const l = (cast(ubyte[])chunk).length;
+				data[i .. i + l] = cast(ubyte[])chunk;
+			}
+			else{
+				const l = chunk.sizeof;
+				data[i .. i + l] = (cast(ubyte*)&chunk)[0..l];
+			}
+			i += l;
+		}
+
+		assert(data.length == i);
 	}
 }
 

@@ -1011,7 +1011,7 @@ unittest{
 	assert(var.type == 'O');
 	import nwn.gff;
 	auto gff = new Gff(db.getVariableValue!BinaryObject(var.index));
-	assert(gff["LocalizedName"].as!(GffType.ExoLocString).strref == 162153);
+	assert(gff["LocalizedName"].get!GffLocString.strref == 162153);
 
 	var = db[7];
 	assert(var.deleted == true);

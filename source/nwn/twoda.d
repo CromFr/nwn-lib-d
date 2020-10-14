@@ -93,13 +93,13 @@ class TwoDA{
 		assert(colIndex < columnsCount, "Column is out of bounds");
 
 		static if(is(T == string)){
-			return this[line, colIndex];
+			return this[colIndex, line];
 		}
 		else {
-			if(this[line, colIndex] is null){
+			if(this[colIndex, line] is null){
 				return Nullable!T();
 			}
-			try return Nullable!T(this[line, colIndex].to!T);
+			try return Nullable!T(this[colIndex, line].to!T);
 			catch(ConvException e){
 				//Annotate conv exception
 				string colName;
@@ -122,8 +122,8 @@ class TwoDA{
 			return defaultValue;
 
 		if(auto colIndex = colName.toLower in header){
-			if(this[line, *colIndex] !is null){
-				try return this[line, *colIndex].to!T;
+			if(this[*colIndex, line] !is null){
+				try return this[*colIndex, line].to!T;
 				catch(ConvException){}
 			}
 		}
@@ -150,16 +150,17 @@ class TwoDA{
 		return colName.toLower in header;
 	}
 
-
-	// TODO: invert row and column, it makes more sense to do twoDA[column, row]
+	/// Get a specific cell value
 	/// Note: column 0 is the first named column (not the index column)
-	ref inout(string) opIndex(size_t row, size_t column) inout nothrow {
-		assert(column < columnsCount);
+	ref inout(string) opIndex(size_t column, size_t row) inout nothrow {
+		assert(column < columns, "column out of bounds");
+		assert(row < rows, "row out of bounds");
 		return valueList[row * columnsCount + column];
 	}
-	// TODO: invert row and column, it makes more sense to do twoDA[column, row]
-	ref inout(string) opIndex(size_t row, string column) inout nothrow {
-		return this[row, header[column]];
+	/// ditto
+	ref inout(string) opIndex(string column, size_t row) inout {
+		assert(column.toLower in header, "Column not found in header");
+		return this[header[column.toLower], row];
 	}
 
 
@@ -195,9 +196,14 @@ class TwoDA{
 		size_t rows() const nothrow {
 			return valueList.length / columnsCount;
 		}
+		/// Number of named columns in the 2da (i.e. without the index column)
+		size_t columns() const nothrow {
+			return columnsCount;
+		}
 	}
 
-	ubyte[] serialize() const{
+	/// Outputs 2da text content
+	ubyte[] serialize() const {
 		import std.algorithm: map, sort;
 		import std.array: array;
 		import std.string: leftJustify;
@@ -224,7 +230,7 @@ class TwoDA{
 
 		foreach(row ; 0 .. rows){
 			foreach(col ; 0 .. columnsCount){
-				auto value = this[row, col];
+				auto value = this[col, row];
 				if(value.length + 1 > columnsWidth[col + 1])
 					columnsWidth[col + 1] = value.length + 1;
 			}
@@ -241,7 +247,7 @@ class TwoDA{
 		foreach(row ; 0 .. rows){
 			ret ~= row.to!string.leftJustify(columnsWidth[0]);
 			foreach(col ; 0 .. columnsCount){
-				auto value = this[row, col];
+				auto value = this[col, row];
 				string serializedValue;
 				if(value is null || value.length == 0)
 					serializedValue = "****";
@@ -268,7 +274,7 @@ class TwoDA{
 		return cast(ubyte[])ret;
 	}
 
-	/// 2DA file name set during construction
+	/// Optional 2DA file name set during construction
 	immutable string fileName = null;
 private:
 	size_t[string] header;
@@ -336,7 +342,10 @@ unittest{
 	assert(twoda.fileVersion == "V2.0");
 	assertThrown!TwoDAValueException(twoda.fileVersion = "12345");
 
+	assert(twoda["Name", 0] == "POLYMORPH_TYPE_WEREWOLF");
 	assert(twoda.get("Name", 0) == "POLYMORPH_TYPE_WEREWOLF");
+	assert(twoda.get("name", 0) == "POLYMORPH_TYPE_WEREWOLF");
+
 	assert(twoda.get!int("RacialType", 0) == 23);
 	assert(twoda.get("EQUIPPED", 0) == null);
 	assert(twoda.get!int("MergeA", 13) == 1);
@@ -358,4 +367,8 @@ unittest{
 	assert(twoda.header == twodaReparsed.header);
 	assert(twoda.valueList == twodaReparsed.valueList);
 
+
+	twoda = new TwoDA(cast(immutable ubyte[])import("terrainmaterials.2da"));
+	assert(twoda["Material", 52] == "Stone");
+	assert(twoda.get("STR_REF", 56, 42) == 42);
 }

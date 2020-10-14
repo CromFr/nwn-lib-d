@@ -17,7 +17,7 @@ uint calcItemCost(ref GffStruct oItem)
 	// num3: chargeCost
 	// num4: unitPrice
 	// num5: finalPrice
-	const baseItemType = oItem["BaseItem"].as!(GffType.Int);
+	const baseItemType = oItem["BaseItem"].get!GffInt;
 
 	float malusCost = 0f;
 	float bonusCost = 0f;
@@ -28,9 +28,9 @@ uint calcItemCost(ref GffStruct oItem)
 	unitPrice += chargeCost;
 	unitPrice += 1000f * (bonusCost * bonusCost);
 	unitPrice -= 1000f * malusCost * malusCost;
-	unitPrice *= getTwoDA("baseitems").get("ItemMultiplier", baseItemType, 1f);
+	unitPrice *= getTwoDA("baseitems").get("itemmultiplier", baseItemType, 1f);
 
-	const stack = oItem["StackSize"].as!(GffType.Word);
+	const stack = oItem["StackSize"].get!GffWord;
 
 	int finalPrice = cast(int)(unitPrice) * (stack > 0 ? stack : 1);
 
@@ -46,30 +46,30 @@ uint calcItemCost(ref GffStruct oItem)
 unittest{
 	initTwoDAPaths(["unittest/2da"]);
 
-	auto item = new Gff(cast(ubyte[])import("test_cost_armor.uti")).as!(GffType.Struct);
+	auto item = new Gff(cast(ubyte[])import("test_cost_armor.uti")).root;
 	assert(calcItemCost(item) == 789_774);
 
-	item = new Gff(cast(ubyte[])import("test_cost_bow.uti")).as!(GffType.Struct);
+	item = new Gff(cast(ubyte[])import("test_cost_bow.uti")).root;
 	assert(calcItemCost(item) == 375_303);
 
 }
 
 /// Returns the item additional cost as defined in the blueprint, multiplied by the number of stacked items
 int getItemModifyCost(ref GffStruct oItem){
-	const stack = oItem["StackSize"].as!(GffType.Word);
+	const stack = oItem["StackSize"].get!GffWord;
 	return oItem["ModifyCost"].to!int * (stack > 0 ? stack : 1);
 }
 
 
 private uint getItemBaseCost(ref GffStruct oItem)
 {
-	const baseItemType = oItem["BaseItem"].as!(GffType.Int);
+	const baseItemType = oItem["BaseItem"].get!GffInt;
 	if(baseItemType != 16){// != OBJECT_TYPE_ARMOR
 		return getTwoDA("baseitems").get("basecost", baseItemType).to!uint;
 	}
 
 	auto armor2da = getTwoDA("armorrulestats");
-	const armorRulesType = oItem["ArmorRulesType"].as!(GffType.Byte);
+	const armorRulesType = oItem["ArmorRulesType"].get!GffByte;
 	if(armorRulesType < armor2da.rows){
 		return armor2da.get("cost", armorRulesType).to!uint;
 	}
@@ -97,22 +97,22 @@ private void getPropertiesCost(ref GffStruct oItem, out float bonusCost, out flo
 	float secondHighestCastSpellCost = 0f;
 	float totalCastSpellCost = 0f;
 
-	foreach(ref prop ; oItem["PropertiesList"].as!(GffType.List)){
-		auto ip = prop.as!(GffType.Struct).toNWItemproperty;
+	foreach(ref prop ; oItem["PropertiesList"].get!GffList){
+		auto ip = prop.toNWItemproperty;
 
 		float specialCostAdjust = 0f;
-		float fTypeCost = getTwoDA("itempropdef").get("Cost", ip.type, 0f);
+		float fTypeCost = getTwoDA("itempropdef").get("cost", ip.type, 0f);
 
 		float fSubTypeCost = 0.0;
-		string sSubTypeTable = getTwoDA("itempropdef").get("SubTypeResRef", ip.type);
+		string sSubTypeTable = getTwoDA("itempropdef").get("subtyperesref", ip.type);
 		if(sSubTypeTable !is null)
-			fSubTypeCost = getTwoDA(sSubTypeTable).get("Cost", ip.subType, 0f);
+			fSubTypeCost = getTwoDA(sSubTypeTable).get("cost", ip.subType, 0f);
 		float fCostValueCost = getCostValueCost(ip, specialCostAdjust);
 
 		if(ip.type == 15){
 			// CastSpell
 			float cost = (fTypeCost + fCostValueCost) * fSubTypeCost;
-			if (specialCostAdjust >= 1f && oItem["Charges"].as!(GffType.Byte) >= 1)
+			if (specialCostAdjust >= 1f && oItem["Charges"].get!GffByte >= 1)
 			{
 				cost = cost * oItem["Charges"].to!float / 50f;
 			}
@@ -138,10 +138,10 @@ private void getPropertiesCost(ref GffStruct oItem, out float bonusCost, out flo
 		}
 	}
 
-	foreach(ref red ; oItem["DmgReduction"].as!(GffType.List)){
+	foreach(ref red ; oItem["DmgReduction"].get!GffList){
 		auto damageRed2da = getTwoDA("iprp_damagereduction");
 
-		bonusCost += damageRed2da.get("Cost", red["DamageAmount"].as!(GffType.Int)).toNWFloat;
+		bonusCost += damageRed2da.get("Cost", red["DamageAmount"].get!GffInt).toNWFloat;
 	}
 
 	if (totalCastSpellCost > 0f)
@@ -229,10 +229,10 @@ string toPrettyString(in NWItemproperty ip){
 // Converts a GFF struct to an item property
 NWItemproperty toNWItemproperty(in gffTypeToNative!(GffType.Struct) node){
 	return NWItemproperty(
-		node["PropertyName"].as!(GffType.Word),
-		node["Subtype"].as!(GffType.Word),
-		node["CostValue"].as!(GffType.Word),
-		node["Param1Value"].as!(GffType.Byte),
+		node["PropertyName"].get!GffWord,
+		node["Subtype"].get!GffWord,
+		node["CostValue"].get!GffWord,
+		node["Param1Value"].get!GffByte,
 	);
 }
 
