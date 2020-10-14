@@ -44,7 +44,7 @@ int main(string[] args){
 		"k|output-format", "Output file format ("~EnumMembers!Format.stringof[6..$-1]~")", &outputFormat,
 		"s|set", "Set or add nodes in the GFF file. See section 'Setting nodes'.\nEx: 'DayNight.7.SkyDomeModel=my_sky_dome.tga'", &setValuesList,
 		"r|remove", "Removes a GFF node with the given node path. See section 'Node paths'.\nEx: 'DayNight.7.SkyDomeModel'", &removeValuesList,
-		"locale-clean", "Remove empty values from localized strings.\n", &cleanLocale,
+		"clean-locstr", "Remove empty values from localized strings.\n", &cleanLocale,
 		"version", "Print nwn-lib-d version and exit.\n", &printVersion,
 	);
 	if(res.helpWanted){
@@ -155,7 +155,8 @@ int main(string[] args){
 			auto col = nextName.lastIndexOf(':');
 			if(col >= 0){
 				targetType = compatStrToGffType(nextName[col + 1 .. $]);
-				enforce!GffPathException(targetType != GffType.Invalid, "Unknown GFF type string: " ~ nextName[col + 1 .. $]);
+				enforce!GffPathException(targetType != GffType.Invalid,
+					format!"Unknown GFF type string: %s. Allowed types are: byte char word short dword int dword64 int64 float double cexostr resref cexolocstr void struct list json"(nextName[col + 1 .. $]));
 				nextName = nextName[0 .. col];
 			}
 
@@ -183,24 +184,16 @@ int main(string[] args){
 				}
 				else if(write && targetType != GffType.Invalid){
 					// Insert new value
-					final switch(targetType) with(GffType) {
-						case Byte:      node = &((*gffStruct)[nextName] = GffValue(targetType)).get!GffByte(); break;
-						case Char:      node = &((*gffStruct)[nextName] = GffValue(targetType)).get!GffChar(); break;
-						case Word:      node = &((*gffStruct)[nextName] = GffValue(targetType)).get!GffWord(); break;
-						case Short:     node = &((*gffStruct)[nextName] = GffValue(targetType)).get!GffShort(); break;
-						case DWord:     node = &((*gffStruct)[nextName] = GffValue(targetType)).get!GffDWord(); break;
-						case Int:       node = &((*gffStruct)[nextName] = GffValue(targetType)).get!GffInt(); break;
-						case DWord64:   node = &((*gffStruct)[nextName] = GffValue(targetType)).get!GffDWord64(); break;
-						case Int64:     node = &((*gffStruct)[nextName] = GffValue(targetType)).get!GffInt64(); break;
-						case Float:     node = &((*gffStruct)[nextName] = GffValue(targetType)).get!GffFloat(); break;
-						case Double:    node = &((*gffStruct)[nextName] = GffValue(targetType)).get!GffDouble(); break;
-						case String:    node = &((*gffStruct)[nextName] = GffValue(targetType)).get!GffString(); break;
-						case ResRef:    node = &((*gffStruct)[nextName] = GffValue(targetType)).get!GffResRef(); break;
-						case LocString: node = &((*gffStruct)[nextName] = GffValue(targetType)).get!GffLocString(); break;
-						case Void:      node = &((*gffStruct)[nextName] = GffValue(targetType)).get!GffVoid(); break;
-						case Struct:    node = &((*gffStruct)[nextName] = GffValue(targetType)).get!GffStruct(); break;
-						case List:      node = &((*gffStruct)[nextName] = GffValue(targetType)).get!GffList(); break;
-						case Invalid: assert(0);
+					tswitch: final switch(targetType) {
+						static foreach(TYPE ; EnumMembers!GffType){
+							case TYPE:
+								static if(TYPE != GffType.Invalid){
+									node = &((*gffStruct)[nextName] = GffValue(targetType)).get!(gffTypeToNative!TYPE)();
+									break tswitch;
+								}
+								else
+									assert(0);
+						}
 					}
 					//node = &((*gffStruct)[nextName] = GffValue(targetType));
 
@@ -282,24 +275,16 @@ int main(string[] args){
 		auto gffNode = node[1];
 
 		if(valueIsJson){
-			final switch(gffType) with(GffType) {
-				case Byte:      (*cast(GffByte*)      gffNode) = GffValue(jsonValue).get!GffByte;      break;
-				case Char:      (*cast(GffChar*)      gffNode) = GffValue(jsonValue).get!GffChar;      break;
-				case Word:      (*cast(GffWord*)      gffNode) = GffValue(jsonValue).get!GffWord;      break;
-				case Short:     (*cast(GffShort*)     gffNode) = GffValue(jsonValue).get!GffShort;     break;
-				case DWord:     (*cast(GffDWord*)     gffNode) = GffValue(jsonValue).get!GffDWord;     break;
-				case Int:       (*cast(GffInt*)       gffNode) = GffValue(jsonValue).get!GffInt;       break;
-				case DWord64:   (*cast(GffDWord64*)   gffNode) = GffValue(jsonValue).get!GffDWord64;   break;
-				case Int64:     (*cast(GffInt64*)     gffNode) = GffValue(jsonValue).get!GffInt64;     break;
-				case Float:     (*cast(GffFloat*)     gffNode) = GffValue(jsonValue).get!GffFloat;     break;
-				case Double:    (*cast(GffDouble*)    gffNode) = GffValue(jsonValue).get!GffDouble;    break;
-				case String:    (*cast(GffString*)    gffNode) = GffValue(jsonValue).get!GffString;    break;
-				case ResRef:    (*cast(GffResRef*)    gffNode) = GffValue(jsonValue).get!GffResRef;    break;
-				case LocString: (*cast(GffLocString*) gffNode) = GffValue(jsonValue).get!GffLocString; break;
-				case Void:      (*cast(GffVoid*)      gffNode) = GffValue(jsonValue).get!GffVoid;      break;
-				case Struct:    (*cast(GffStruct*)    gffNode) = GffValue(jsonValue).get!GffStruct;    break;
-				case List:      (*cast(GffList*)      gffNode) = GffValue(jsonValue).get!GffList;      break;
-				case Invalid: assert(0);
+			tswitch: final switch(gffType){
+				static foreach(TYPE ; EnumMembers!GffType){
+					case TYPE:
+						static if(TYPE != GffType.Invalid){
+							(*cast(gffTypeToNative!TYPE*)gffNode) = GffValue(jsonValue).get!(gffTypeToNative!TYPE);
+							break tswitch;
+						}
+						else
+							assert(0);
+				}
 			}
 		}
 		else{
@@ -318,8 +303,8 @@ int main(string[] args){
 				case ResRef:    (*cast(GffResRef*)    gffNode) = value;                break;
 				case LocString: (*cast(GffLocString*) gffNode) = value;                break;
 				case Void:      (*cast(GffVoid*)      gffNode) = Base64.decode(value); break;
-				case Struct:    assert(0, "Use JSON format for setting value of type struct");
-				case List:      assert(0, "Use JSON format for setting value of type list");
+				case Struct:    throw new Exception("Use 'json' type for setting a value of type struct");
+				case List:      throw new Exception("Use 'json' type for setting a value of type list");
 				case Invalid:   assert(0);
 			}
 		}
@@ -508,6 +493,7 @@ unittest{
 
 	assertThrown(main(["nwn-gff"]));
 	assert(main(["nwn-gff","--help"])==0);
+	assert(main(["nwn-gff","--version"])==0);
 
 	// binary perfect read / serialization
 	immutable krogarFilePathDup = krogarFilePath~".dup.bic";
@@ -572,16 +558,21 @@ unittest{
 
 
 	// set struct / lists operations
+	assertThrown!GffPathException(main(["nwn-gff","-i",dogePath, "--set", `VarTable.$:notvalidtype=5`]));
 	std.file.write(dogePath, dogeData);
 	assert(main([
 		"nwn-gff","-i",dogePath, "-o",dogePathDup,
 		"--set", `VarTable.$:json={"type": "struct","value":{"Name":{"type":"cexostr","value":"tk_item_dropped"},"Type":{"type":"dword","value":1},"Value":{"type":"int","value":1}}}`,
-		"--set", `ModelScale.Yolo:int=42`
+		"--set", `ModelScale.Yolo:int=42`,
+		"--set", `DirtyLocStr:json={"type": "cexolocstr", "str_ref": 0, "value": {"0": "", "2": "hello", "3": ""}}`,
+		"--clean-locstr"
 	])==0);
+
 	gff = new Gff(dogePathDup);
 	assert(gff["VarTable"].get!GffList.length == 1);
 	assert(gff["VarTable"][0]["Name"].get!GffString == "tk_item_dropped");
 	assert(gff["VarTable"][0]["Type"].get!GffDWord == 1);
 	assert(gff["ModelScale"]["Yolo"].get!GffInt == 42);
+	assert(gff["DirtyLocStr"].get!GffLocString == GffLocString(0, [2: "hello"]));
 }
 

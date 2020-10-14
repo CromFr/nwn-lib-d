@@ -12,6 +12,7 @@ import std.algorithm;
 import std.array;
 import std.traits;
 import std.math;
+import std.meta;
 
 import nwnlibd.orderedaa;
 import nwnlibd.orderedjson;
@@ -73,6 +74,9 @@ enum GffType{
 	List      = 15  /// Array of other $(D GffNode)
 }
 
+/// List of all dlang types that can be stored in a GFF value
+alias GffNativeTypes = AliasSeq!(GffByte, GffChar, GffWord, GffShort, GffDWord, GffInt, GffDWord64, GffInt64, GffFloat, GffDouble, GffString, GffResRef, GffLocString, GffVoid, GffStruct, GffList, GffValue);
+
 /// Maps $(D GffType) to native D type
 template gffTypeToNative(GffType t){
 	import std.typecons: Tuple;
@@ -119,25 +123,18 @@ template nativeToGffType(T){
 
 /// returns true if T is implicitly convertible to a GFF storage type
 template isGffNativeType(T){
-	enum isGffNativeType =
-		   is(T: GffByte)
-		|| is(T: GffChar)
-		|| is(T: GffWord)
-		|| is(T: GffShort)
-		|| is(T: GffDWord)
-		|| is(T: GffInt)
-		|| is(T: GffDWord64)
-		|| is(T: GffInt64)
-		|| is(T: GffFloat)
-		|| is(T: GffDouble)
-		|| is(T: GffString)
-		|| is(T: GffResRef)
-		|| is(T: GffLocString)
-		|| is(T: GffVoid)
-		|| is(T: GffStruct)
-		|| is(T: GffList)
-		|| is(T: GffValue);
+	bool isGffNativeType(){
+		bool ret = false;
+		foreach(TYP ; GffNativeTypes){
+			static if(is(T: TYP)){
+				ret = true;
+				break;
+			}
+		}
+		return ret;
+	}
 }
+
 
 /// Converts a GFF type to a string compatible with niv tools
 string gffTypeToCompatStr(in GffType t){
