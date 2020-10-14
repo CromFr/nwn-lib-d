@@ -103,7 +103,7 @@ jobs:
           done
 
       - name: Upload bin artifacts
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v2
         with:
           name: "nwn-lib-d-tools-${{ matrix.platform }}-${{ matrix.arch }}"
           path: bin
@@ -122,12 +122,14 @@ jobs:
           mv docs docs.json public/
           cp .github/index.html public/
 
+          tar cfJ documentation.tar.xz public/
+
       - name: Upload documentation artifacts
         if: matrix.platform == 'linux-gnu' && matrix.arch == 'x86_64'
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v2
         with:
-          name: "documentation"
-          path: public/
+          name: "documentation.tar.xz"
+          path: documentation.tar.xz
 
 
   create_release:
@@ -208,16 +210,17 @@ jobs:
 
       - name: Download artifacts
         if: steps.rel_info.outputs.tag != ''
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v2
         with:
           name: "nwn-lib-d-tools-${{ matrix.platform }}-${{ matrix.arch }}"
+          path: "nwn-lib-d-tools"
 
       - name: Package artifacts
         if: steps.rel_info.outputs.tag != ''
         id: create_pkg
         run: |
           BASENAME="nwn-lib-d-tools-$(echo "${{ matrix.platform }}" | cut -d '-' -f 1)-${{ matrix.arch }}"
-          ARTIFACTS="nwn-lib-d-tools-${{ matrix.platform }}-${{ matrix.arch }}"
+          ARTIFACTS="nwn-lib-d-tools"
 
           if [[ "${{ matrix.platform }}" == windows-* ]]; then
             PKG="$BASENAME.zip"
@@ -254,16 +257,21 @@ jobs:
 
 
       # GH pages
-      - name: Download doc artifacts
+      - name: Download documentation artifact
         if: steps.rel_info.outputs.tag != '' && matrix.platform == 'linux-gnu' && matrix.arch == 'x86_64'
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v2
         with:
-          name: "documentation"
+          name: "documentation.tar.xz"
+
+      - name: Extract documentation
+        if: steps.rel_info.outputs.tag != '' && matrix.platform == 'linux-gnu' && matrix.arch == 'x86_64'
+        run: |
+          tar xf documentation.tar.xz
 
       - name: Deploy documentation
         if: steps.rel_info.outputs.tag != '' && matrix.platform == 'linux-gnu' && matrix.arch == 'x86_64'
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./documentation
+          publish_dir: ./public
 
