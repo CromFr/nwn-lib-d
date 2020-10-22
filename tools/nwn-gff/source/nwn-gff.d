@@ -10,7 +10,7 @@ import std.traits;
 import std.string;
 import std.exception: enforce;
 import std.base64: Base64;
-import std.algorithm: remove;
+import std.algorithm;
 import std.typecons: Tuple, Nullable, tuple;
 version(unittest) import std.exception: assertThrown, assertNotThrown;
 
@@ -30,10 +30,31 @@ class GffPathException : Exception{
 	}
 }
 
+template multilineStr(string s){
+	enum multilineStr = (){
+		auto lines = s.splitLines();
+		assert(lines[0].strip == "", "First line must be empty");
+		assert(lines.length > 1, "Not enough lines");
+
+		const tabLen = lines[1].length - lines[1].stripLeft.length;
+		const tab = lines[1][0 .. tabLen];
+
+		return lines[1 .. $]
+			.map!((l){
+				if(l.strip.length == 0)
+					return "";
+				assert(l[0 .. tabLen] == tab, "Tab mismatch on line '" ~ l ~ "'");
+				return l[tabLen .. $];
+			})
+			.join("\n");
+	}();
+}
+
 int main(string[] args){
 	string inputPath, outputPath;
 	Format inputFormat = Format.detect, outputFormat = Format.detect;
 	string[] setValuesList;
+	string[] setLocVars;
 	string[] removeValuesList;
 	bool cleanLocale = false;
 	bool printVersion = false;
@@ -45,45 +66,67 @@ int main(string[] args){
 		"s|set", "Set or add nodes in the GFF file. See section 'Setting nodes'.\nEx: 'DayNight.7.SkyDomeModel=my_sky_dome.tga'", &setValuesList,
 		"r|remove", "Removes a GFF node with the given node path. See section 'Node paths'.\nEx: 'DayNight.7.SkyDomeModel'", &removeValuesList,
 		"clean-locstr", "Remove empty values from localized strings.\n", &cleanLocale,
+		"set-locvar", "Sets the local variable to a specific value. ", &setLocVars,
 		"version", "Print nwn-lib-d version and exit.\n", &printVersion,
 	);
 	if(res.helpWanted){
 		improvedGetoptPrinter(
-			 "Parsing and serialization tool for GFF files like ifo, are, bic, uti, ...",
+			"Parsing and serialization tool for GFF files like ifo, are, bic, uti, ...",
 			res.options,
-			 "===== Setting nodes =====\n"
-			~"There are 3 ways to set a GFF value:\n"
-			~"\n"
-			~"--set <node_path>=<node_value>\n"
-			~"    Sets the value of an existing GFF node, without changing its type\n"
-			~"    Ex: --set 'ItemList.0.Tag=test-tag'\n"
-			~"--set <node_path>:<node_type>=<node_value>\n"
-			~"    Sets the value and type of a GFF node, creating it if does not exist.\n"
-			~"    Structs and Lists cannot be set using this technique.\n"
-			~"    Ex: --set 'ItemList.0.Tag:cexostr=test-tag'\n"
-			~"--set <node_path>:json=<json_value>\n"
-			~"    Sets the value and type of a GFF node using a JSON object.\n"
-			~"    Ex: --set 'ItemList.0.Tag:json={\"type\": \"cexostr\", \"value\": \"test-tag\"}'\n"
-			~"\n"
-			~"<node_path>    Dot-separated path to the node to set. See section 'Node paths'\n"
-			~"<node_type>    GFF type. Any of byte, char, word, short, dword, int, dword64, int64, float, double, cexostr, resref, cexolocstr, void, list, struct\n"
-			~"<node_value>   GFF value.\n"
-			~"               'void' values must be encoded in base64.\n"
-			~"               'cexolocstr' values can be either an integer (sets the resref) or a string (sets the english string).\n"
-			~"<json_value>   GFF JSON value, as represented in the json output format.\n"
-			~"               ex: {\"type\": \"struct\",\"value\":{\"Name\":{\"type\":\"cexostr\",\"value\":\"tk_item_dropped\"}}}\n"
-			~"\n"
-			~"\n"
-			~"===== Node paths =====\n"
-			~"A GFF node path is a succession of path elements separated by dots:\n"
-			~"ex: 'VarTable.2.Name', 'DayNight.7.SkyDomeModel', ...\n"
-			~"\n"
-			~"The path elements can be:\n"
-			~"- Any string: If the parent is a struct, will select the child value with a given label\n"
-			~"- Any integer: If the parent is a list, will select the Nth child struct\n"
-			~"- '$-42': If parent is a list, '$' is replaced by the list length, allowing to access last children of the list with '$-1'\n"
-			~"- '$': Will add a child at the end of the list"
-			);
+			multilineStr!`
+				===== Setting nodes =====
+				There are 3 ways to set a GFF value:
+
+				--set <node_path>=<node_value>
+				    Sets the value of an existing GFF node, without changing its type
+				    Ex: --set 'ItemList.0.Tag=test-tag'
+				--set <node_path>:<node_type>=<node_value>
+				    Sets the value and type of a GFF node, creating it if does not exist.
+				    Structs and Lists cannot be set using this technique.
+				    Ex: --set 'ItemList.0.Tag:cexostr=test-tag'
+				--set <node_path>:json=<json_value>
+				    Sets the value and type of a GFF node using a JSON object.
+				    Ex: --set 'ItemList.0.Tag:json={\"type\": \"cexostr\", \"value\": \"test-tag\"}'
+
+				<node_path>    Dot-separated path to the node to set. See section 'Node paths'.
+				<node_type>    GFF type. Any of byte, char, word, short, dword, int, dword64, int64, float, double, cexostr, resref, cexolocstr, void, list, struct
+				<node_value>   GFF value.
+				               'void' values must be encoded in base64.
+				               'cexolocstr' values can be either an integer (sets the resref) or a string (sets the english string).
+				<json_value>   GFF JSON value, as represented in the json output format.
+				               ex: {"type": "struct","value":{"Name":{"type":"cexostr","value":"tk_item_dropped"}}}
+
+
+				===== Setting local variables =====
+				You can set a local variable on the object with this syntax:
+
+				--set-locvar <var_name>:<var_type>=<value>
+
+				<var_name>  The local variable name
+				<var_type>  The local variable type. Only 'int', 'float', 'string' are supported.
+				<value>     The local variable value to set. It can be either:
+				            - A simple value like: 42, hello
+				            - A reference to a GFF node using this syntax: gff@<node_path>. See section 'Node paths'.
+				            Values are converted to var_type when necessary.
+
+				Examples:
+				--set-locvar nAnswer:int=42
+				--set-locvar nPVPRules:int=gff@PlayerVsPlayer
+				--set-locvar sDescription:string=gff@DescIdentified
+				--set-locvar sWeaponName:string=gff@Equip_ItemList.5.LocalizedName
+
+
+				===== Node paths =====
+				A GFF node path is a succession of path elements separated by dots:
+				ex: 'VarTable.2.Name', 'DayNight.7.SkyDomeModel', ...
+
+				The path elements can be:
+				- Any string: If the parent is a struct, will select the child value with a given label
+				- Any integer: If the parent is a list, will select the Nth child struct
+				- '$-42': If parent is a list, '$' is replaced by the list length, allowing to access last children of the list with '$-1'
+				- '$': Will add a child at the end of the list
+				`
+		);
 		return 0;
 	}
 	if(printVersion){
@@ -248,7 +291,8 @@ int main(string[] args){
 	//Modifications
 	foreach(setValue ; setValuesList){
 		auto eq = setValue.indexOf('=');
-		assert(eq >= 0, "--set value must contain a '=' character");
+		enforce(eq >= 0, "--set value must contain a '=' character");
+		enforce(eq + 1 < setValue.length, "No value provided for --set "~setValue);
 		string pathWithType = setValue[0 .. eq];
 
 		string[] path = pathWithType.split(".");
@@ -367,6 +411,105 @@ int main(string[] args){
 				break;
 			default:
 				throw new GffPathException(format!"Node %s of type %s cannot contain any children"(path[0 .. $ - 1].join("."), parentType));
+		}
+	}
+
+	// Set local vars
+	foreach(ref setlocvar ; setLocVars){
+		import nwn.nwscript.functions;
+
+		auto eq = setlocvar.indexOf('=');
+		enforce(eq >= 0, "--set-locvar value must contain a '=' character");
+		enforce(eq + 1 < setlocvar.length, "No value provided for --set-locvar "~setlocvar);
+		const varSpec = setlocvar[0 .. eq];
+		const valueSpec = setlocvar[eq + 1 .. $];
+
+		auto colon = varSpec.lastIndexOf(':');
+		enforce(colon >= 0 && colon + 1 < varSpec.length, "No variable type provided for --set-locvar "~setlocvar);
+		const varName = varSpec[0 .. colon];
+		const varType = varSpec[colon + 1 .. $];
+
+
+		if(valueSpec.length > 4 && valueSpec[0 .. 4] == "gff@"){
+			// Value is provided as a reference to a GFF node
+			const path = valueSpec[4 .. $].split(".");
+
+			auto node = getGffNode(path, false);
+			auto gffType = node[0];
+			auto gffNode = node[1];
+
+			switch(varType){
+				case "int":
+					NWInt value;
+					switch(gffType) with(GffType) {
+						case Byte:      value = (*cast(GffByte*)      gffNode).to!NWInt; break;
+						case Char:      value = (*cast(GffChar*)      gffNode).to!NWInt; break;
+						case Word:      value = (*cast(GffWord*)      gffNode).to!NWInt; break;
+						case Short:     value = (*cast(GffShort*)     gffNode).to!NWInt; break;
+						case DWord:     value = (*cast(GffDWord*)     gffNode).to!NWInt; break;
+						case Int:       value = (*cast(GffInt*)       gffNode).to!NWInt; break;
+						case DWord64:   value = (*cast(GffDWord64*)   gffNode).to!NWInt; break;
+						case Int64:     value = (*cast(GffInt64*)     gffNode).to!NWInt; break;
+						case Float:     value = (*cast(GffFloat*)     gffNode).to!NWInt; break;
+						case Double:    value = (*cast(GffDouble*)    gffNode).to!NWInt; break;
+						case String:    value = (*cast(GffString*)    gffNode).to!NWInt; break;
+						case ResRef:    value = (*cast(GffResRef*)    gffNode).to!string.to!NWInt; break;
+						case LocString: value = (*cast(GffLocString*) gffNode).to!string.to!NWInt; break;
+						default: throw new Exception(format!"Cannot convert %s of type %s to type int"(path.join("."), gffType));
+					}
+					SetLocalInt(gff.root, varName, value);
+					break;
+				case "float":
+					NWFloat value;
+					switch(gffType) with(GffType) {
+						case Byte:      value = (*cast(GffByte*)      gffNode).to!NWFloat; break;
+						case Char:      value = (*cast(GffChar*)      gffNode).to!NWFloat; break;
+						case Word:      value = (*cast(GffWord*)      gffNode).to!NWFloat; break;
+						case Short:     value = (*cast(GffShort*)     gffNode).to!NWFloat; break;
+						case DWord:     value = (*cast(GffDWord*)     gffNode).to!NWFloat; break;
+						case Int:       value = (*cast(GffInt*)       gffNode).to!NWFloat; break;
+						case DWord64:   value = (*cast(GffDWord64*)   gffNode).to!NWFloat; break;
+						case Int64:     value = (*cast(GffInt64*)     gffNode).to!NWFloat; break;
+						case Float:     value = (*cast(GffFloat*)     gffNode).to!NWFloat; break;
+						case Double:    value = (*cast(GffDouble*)    gffNode).to!NWFloat; break;
+						case String:    value = (*cast(GffString*)    gffNode).to!NWFloat; break;
+						case ResRef:    value = (*cast(GffResRef*)    gffNode).to!string.to!NWFloat; break;
+						case LocString: value = (*cast(GffLocString*) gffNode).to!string.to!NWFloat; break;
+						default: throw new Exception(format!"Cannot convert %s of type %s to type int"(path.join("."), gffType));
+					}
+					SetLocalFloat(gff.root, varName, value);
+					break;
+				case "string":
+					NWString value;
+					switch(gffType) with(GffType) {
+						case Byte:      value = (*cast(GffByte*)      gffNode).to!NWString; break;
+						case Char:      value = (*cast(GffChar*)      gffNode).to!NWString; break;
+						case Word:      value = (*cast(GffWord*)      gffNode).to!NWString; break;
+						case Short:     value = (*cast(GffShort*)     gffNode).to!NWString; break;
+						case DWord:     value = (*cast(GffDWord*)     gffNode).to!NWString; break;
+						case Int:       value = (*cast(GffInt*)       gffNode).to!NWString; break;
+						case DWord64:   value = (*cast(GffDWord64*)   gffNode).to!NWString; break;
+						case Int64:     value = (*cast(GffInt64*)     gffNode).to!NWString; break;
+						case Float:     value = (*cast(GffFloat*)     gffNode).to!NWString; break;
+						case Double:    value = (*cast(GffDouble*)    gffNode).to!NWString; break;
+						case String:    value = (*cast(GffString*)    gffNode).to!NWString; break;
+						case ResRef:    value = (*cast(GffResRef*)    gffNode).to!string.to!NWString; break;
+						case LocString: value = (*cast(GffLocString*) gffNode).to!string; break;
+						default: throw new Exception(format!"Cannot convert %s of type %s to type int"(path.join("."), gffType));
+					}
+					SetLocalString(gff.root, varName, value);
+					break;
+				default: throw new Exception(format!"Unhandled local variable type '%s'"(varType));
+			}
+		}
+		else{
+			// Value is provided as string
+			switch(varType){
+				case "int": SetLocalInt(gff.root, varName, valueSpec.to!NWInt); break;
+				case "float": SetLocalFloat(gff.root, varName, valueSpec.to!NWFloat); break;
+				case "string": SetLocalString(gff.root, varName, valueSpec.to!NWString); break;
+				default: throw new Exception(format!"Unhandled local variable type '%s'"(varType));
+			}
 		}
 	}
 
@@ -531,6 +674,12 @@ unittest{
 		"--set","Tag=tag_hello",
 		"--remove","LastName",
 		"--remove","FeatList.0",
+		"--set-locvar","nAnswer:int=42",
+		"--set-locvar","nSpawnHP:int=gff@CurrentHitPoints",
+		"--set-locvar","sFirstName:string=gff@FirstName",
+		"--set-locvar","sDescription:string=gff@Description",
+		"--set-locvar","nCR:int=gff@ChallengeRating",
+		"--set-locvar","fNaturalAC:float=gff@NaturalAC",
 		])==0);
 	auto gff = new Gff(dogePath~"modified.gff");
 	assert(gff["Subrace"].to!int == 1);
@@ -540,6 +689,14 @@ unittest{
 	assert(gff["Tag"].to!string == "tag_hello");
 	assert("LastName" !in gff);
 	assert(gff["FeatList"][0]["Feat"].get!GffWord == 354);
+
+	import nwn.nwscript.functions;
+	assert(GetLocalInt(gff.root, "nAnswer") == 42);
+	assert(GetLocalInt(gff.root, "nSpawnHP") == 13);
+	assert(GetLocalString(gff.root, "sDescription") == "Une indicible intelligence pétille dans ses yeux fous...\r\nWow...");
+	assert(GetLocalInt(gff.root, "nCR") == 100);
+	assert(GetLocalFloat(gff.root, "fNaturalAC") == 2f);
+	assert(GetLocalString(gff.root, "sFirstName") == "Hello");
 
 	// Type mismatch
 	assertThrown!GffPathException(main(["nwn-gff","-i",dogePath,"-o",dogePath~"modified.gff",

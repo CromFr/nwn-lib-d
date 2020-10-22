@@ -23,6 +23,16 @@ struct NWVector{
 
 	alias value this;
 
+	/// Get/set vector values
+	@property{
+		NWFloat x() const { return value[0]; }
+		void x(NWFloat rhs) { value[0] = rhs; }
+		NWFloat y() const { return value[1]; }
+		void y(NWFloat rhs) { value[1] = rhs; }
+		NWFloat z() const { return value[2]; }
+		void z(NWFloat rhs) { value[2] = rhs; }
+	}
+
 	string toString() const {
 		import std.format: format;
 		return format("[%f, %f, %f]", value[0], value[1], value[2]);
