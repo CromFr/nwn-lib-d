@@ -10,7 +10,6 @@ import std.string;
 import std.base64: Base64;
 debug import std.stdio;
 
-
 /// Parsing exception
 class GffParseException : Exception{
 	@safe pure nothrow this(string msg, string f=__FILE__, size_t l=__LINE__, Throwable t=null){
@@ -206,18 +205,8 @@ struct GffStruct{
 
 
 	/// Serialize the struct and its children in a human-readable format
-	//string toPrettyString(in string tab = null) const{
-	//	string ret;
-	//	ret ~= "(Struct "~(structType == structType.max? "-1" : structType.to!string)~")";
-	//	foreach(field ; this){
-	//		ret ~= "\n" ~ field.toPrettyString(tab ~ "   | ");
-	//	}
-	//	return ret;
-	//}
-	/// Serialize the struct and its children in a human-readable format
 	string toPrettyString(string tabs = null) const {
 		string ret = format!"%s(Struct %s)"(tabs, id == id.max ? "-1" : id.to!string);
-		size_t i = 0;
 		foreach(field ; this){
 			const innerTabs = tabs ~ "|  ";
 			const type = (field.type != GffType.Struct && field.type != GffType.List) ? " (" ~ field.type.to!string ~ ")" : null;
@@ -226,7 +215,6 @@ struct GffStruct{
 				tabs,
 				field.label, field.toPrettyString(innerTabs)[innerTabs.length .. $], type
 			);
-			i++;
 		}
 		return ret;
 	}
@@ -258,18 +246,18 @@ private:
 			auto fieldIndex = internal.data_or_data_offset;
 			return dlg(fieldIndex);
 		}
-		else{
-			int res = 0;
+		else if(internal.field_count > 1){
 			if(internal.data_or_data_offset != uint32_t.max){
 				auto fieldList = gff.getFieldList(internal.data_or_data_offset);
 				foreach(i ; 0 .. internal.field_count){
 					auto fieldIndex = fieldList[i];
-					if((res = dlg(fieldIndex)) != 0)
+					int res = dlg(fieldIndex);
+					if(res != 0)
 						return res;
 				}
 			}
-			return res;
 		}
+		return 0;
 	}
 
 }
@@ -298,15 +286,6 @@ struct GffList{
 		}
 	}
 
-	///// Serialize the list and its children in a human-readable format
-	//string toPrettyString(in string tab = null) const {
-	//	string ret;
-	//	ret ~= "(List)";
-	//	foreach(index, gffstruct ; this){
-	//		ret ~= "\n" ~ tab ~ "   | " ~ gffstruct.toPrettyString(tab ~ "   | ");
-	//	}
-	//	return ret;
-	//}
 	/// Serialize the list and its children in a human-readable format
 	string toPrettyString(string tabs = null) const {
 		string ret = format!"%s(List)"(tabs);
@@ -380,6 +359,12 @@ struct GffField{
 					else static if(isSimpleType(Type)){
 						return Value(*cast(ToNative!Type*)&internal.data_or_data_offset);
 					}
+					else static if(Type == Struct){
+						return const(Value)(cast(GffStruct)const(GffStruct)(gff, gff.getStruct(internal.data_or_data_offset)));
+					}
+					else static if(Type == List){
+						return const(Value)(cast(GffList)const(GffList)(gff, internal.data_or_data_offset));
+					}
 					else{
 						auto fieldData = gff.getFieldData(internal.data_or_data_offset);
 						static if(Type == DWord64 || Type == Int64 || Type == Double){
@@ -413,12 +398,6 @@ struct GffField{
 						else static if(Type == Void){
 							auto length = *cast(uint32_t*)fieldData;
 							return Value(fieldData[4 .. 4 + length].dup);
-						}
-						else static if(Type == Struct){
-							return const(Value)(cast(GffStruct)const(GffStruct)(gff, gff.getStruct(internal.data_or_data_offset)));
-						}
-						else static if(Type == List){
-							return const(Value)(cast(GffList)const(GffList)(gff, internal.data_or_data_offset));
 						}
 					}
 				}
@@ -622,12 +601,18 @@ private:
 		uint32_t id;
 		uint32_t data_or_data_offset;
 		uint32_t field_count;
+		debug string toString() const {
+			return format!"Struct(id=%d dodo=%d fc=%d)"(id, data_or_data_offset, field_count);
+		}
 	}
 	align(1) struct Field{
 		align(1):
 		GffType type;
 		uint32_t label_index;
 		uint32_t data_or_data_offset;
+		debug string toString() const {
+			return format!"Field(t=%s lblidx=%d dodo=%d)"(type.to!GffType, label_index, data_or_data_offset);
+		}
 	}
 	align(1) struct Label{
 		align(1):

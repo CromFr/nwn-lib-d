@@ -389,7 +389,7 @@ struct GffStruct {
 	/// Converts a GffStruct to a user-friendly string
 	string toPrettyString(string tabs = null) const {
 		string ret = format!"%s(Struct %s)"(tabs, id == id.max ? "-1" : id.to!string);
-		foreach(i, ref kv ; children.byKeyValue){
+		foreach(ref kv ; children.byKeyValue){
 			const innerTabs = tabs ~ "|  ";
 			const type = (kv.value.type != GffType.Struct && kv.value.type != GffType.List) ? " (" ~ kv.value.type.to!string ~ ")" : null;
 
@@ -887,7 +887,7 @@ private struct GffRawParser{
 		ret.id = s.id;
 
 		version(gff_verbose_parse){
-			stderr.writefln("%sParsing struct: id=%d %s",
+			stderr.writefln("%sParsing struct: index=%d %s",
 				gff_verbose_rtIndent, structIndex, *s
 			);
 			gff_verbose_rtIndent ~= "│ ";
@@ -898,7 +898,14 @@ private struct GffRawParser{
 
 			auto f = getRawField(fieldIndex);
 			const label = charArrayToString(getRawLabel(f.label_index).value);
+			version(gff_verbose_parse){
+				stderr.writefln("%s%d: %s ↴",
+					gff_verbose_rtIndent, 0, label
+				);
+				gff_verbose_rtIndent ~= "   ";
+			}
 			ret.dirtyAppendKeyValue(label, buildValue(fieldIndex));
+			version(gff_verbose_parse) gff_verbose_rtIndent = gff_verbose_rtIndent[0 .. $ - 3];
 		}
 		else if(s.field_count > 1){
 			auto fi = getRawFieldIndices(s.data_or_data_offset);
@@ -946,8 +953,8 @@ private struct GffRawParser{
 		auto f = getRawField(fieldIndex);
 
 		version(gff_verbose_parse){
-			stderr.writefln("%sParsing value: type=%s fieldIndex=%d",
-				gff_verbose_rtIndent, f.type.to!GffType, fieldIndex,
+			stderr.writefln("%sParsing value: type=%s fieldIndex=%d field=%s",
+				gff_verbose_rtIndent, f.type.to!GffType, fieldIndex, *f,
 			);
 			gff_verbose_rtIndent ~= "│ ";
 		}
