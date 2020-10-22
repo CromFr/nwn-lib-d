@@ -30,25 +30,6 @@ class GffPathException : Exception{
 	}
 }
 
-template multilineStr(string s){
-	enum multilineStr = (){
-		auto lines = s.splitLines();
-		assert(lines[0].strip == "", "First line must be empty");
-		assert(lines.length > 1, "Not enough lines");
-
-		const tabLen = lines[1].length - lines[1].stripLeft.length;
-		const tab = lines[1][0 .. tabLen];
-
-		return lines[1 .. $]
-			.map!((l){
-				if(l.strip.length == 0)
-					return "";
-				assert(l[0 .. tabLen] == tab, "Tab mismatch on line '" ~ l ~ "'");
-				return l[tabLen .. $];
-			})
-			.join("\n");
-	}();
-}
 
 int main(string[] args){
 	string inputPath, outputPath;
@@ -65,8 +46,8 @@ int main(string[] args){
 		"k|output-format", "Output file format ("~EnumMembers!Format.stringof[6..$-1]~")", &outputFormat,
 		"s|set", "Set or add nodes in the GFF file. See section 'Setting nodes'.\nEx: 'DayNight.7.SkyDomeModel=my_sky_dome.tga'", &setValuesList,
 		"r|remove", "Removes a GFF node with the given node path. See section 'Node paths'.\nEx: 'DayNight.7.SkyDomeModel'", &removeValuesList,
+		"set-locvar", "Set a local variable. See section 'Setting local variables'", &setLocVars,
 		"clean-locstr", "Remove empty values from localized strings.\n", &cleanLocale,
-		"set-locvar", "Sets the local variable to a specific value. ", &setLocVars,
 		"version", "Print nwn-lib-d version and exit.\n", &printVersion,
 	);
 	if(res.helpWanted){
@@ -74,7 +55,7 @@ int main(string[] args){
 			"Parsing and serialization tool for GFF files like ifo, are, bic, uti, ...",
 			res.options,
 			multilineStr!`
-				===== Setting nodes =====
+				===============|  Setting nodes  |===============
 				There are 3 ways to set a GFF value:
 
 				--set <node_path>=<node_value>
@@ -97,7 +78,7 @@ int main(string[] args){
 				               ex: {"type": "struct","value":{"Name":{"type":"cexostr","value":"tk_item_dropped"}}}
 
 
-				===== Setting local variables =====
+				===============|  Setting local variables  |===============
 				You can set a local variable on the object with this syntax:
 
 				--set-locvar <var_name>:<var_type>=<value>
@@ -116,7 +97,7 @@ int main(string[] args){
 				--set-locvar sWeaponName:string=gff@Equip_ItemList.5.LocalizedName
 
 
-				===== Node paths =====
+				===============|  Node paths  |===============
 				A GFF node path is a succession of path elements separated by dots:
 				ex: 'VarTable.2.Name', 'DayNight.7.SkyDomeModel', ...
 

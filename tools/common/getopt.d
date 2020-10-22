@@ -70,7 +70,12 @@ void improvedGetoptPrinter(string text, Option[] opt, string footer = null, int 
 
 		footer
 			.splitLines
-			.map!(a => a.smartWrap(width, null, " ").splitLines)
+			.map!((a) {
+				auto l = a.smartWrap(width, null, " ").splitLines;
+				if(l.length == 0)
+					l = [""];
+				return l;
+			})
 			.join
 			.each!((a){
 				writeln(a);
@@ -99,4 +104,29 @@ private string smartWrap(in string text, size_t width = 80, in string firstinden
 unittest{
 	assert("   hello".smartWrap() == "   hello");
 	assert("   hello world".smartWrap(8) == "   hello\n   world");
+	assert("\n".smartWrap(8) == "");
+	assert("\n\n".smartWrap(8) == "\n");
+	assert("   a\n\n   b".smartWrap(8) == "   a\n\n   b");
+}
+
+
+
+template multilineStr(string s){
+	enum multilineStr = (){
+		auto lines = s.splitLines();
+		assert(lines[0].strip == "", "First line must be empty");
+		assert(lines.length > 1, "Not enough lines");
+
+		const tabLen = lines[1].length - lines[1].stripLeft.length;
+		const tab = lines[1][0 .. tabLen];
+
+		return lines[1 .. $]
+			.map!((l){
+				if(l.strip.length == 0)
+					return "";
+				assert(l[0 .. tabLen] == tab, "Tab mismatch on line '" ~ l ~ "'");
+				return l[tabLen .. $];
+			})
+			.join("\n");
+	}();
 }
