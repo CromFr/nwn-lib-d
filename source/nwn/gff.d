@@ -260,9 +260,9 @@ struct GffLocString{
 
 	/// JSON to LocString
 	this(in nwnlibd.orderedjson.JSONValue json){
-		enforce!GffJsonParseException(json.type == JSON_TYPE.OBJECT, "json value " ~ json.toPrettyString ~ " is not an object");
+		enforce!GffJsonParseException(json.type == JSONType.object, "json value " ~ json.toPrettyString ~ " is not an object");
 		enforce!GffJsonParseException(json["type"].str == "cexolocstr", "json object "~ json.toPrettyString ~" is not a GffLocString");
-		enforce!GffJsonParseException(json["value"].type == JSON_TYPE.OBJECT, "json .value "~ json.toPrettyString ~" is not an object");
+		enforce!GffJsonParseException(json["value"].type == JSONType.object, "json .value "~ json.toPrettyString ~" is not an object");
 		strref = json["str_ref"].conv!uint32_t;
 		foreach(lang, text ; json["value"].object){
 			strings[lang.to!int32_t] = text.str;
@@ -404,9 +404,9 @@ struct GffStruct {
 
 	/// JSON to GffStruct
 	this(in nwnlibd.orderedjson.JSONValue json){
-		assert(json.type == JSON_TYPE.OBJECT, "json value " ~ json.toPrettyString ~ " is not an object");
+		assert(json.type == JSONType.object, "json value " ~ json.toPrettyString ~ " is not an object");
 		assert(json["type"].str == "struct", "json object "~ json.toPrettyString ~" is not a GffStruct");
-		assert(json["value"].type == JSON_TYPE.OBJECT, "json .value "~ json.toPrettyString ~" is not an object");
+		assert(json["value"].type == JSONType.object, "json .value "~ json.toPrettyString ~" is not an object");
 		if(auto structId = ("__struct_id" in json))
 			id = structId.conv!uint32_t;
 		foreach(ref label ; json["value"].objectKeyOrder){
@@ -460,9 +460,9 @@ struct GffList {
 
 	/// JSON to GffList
 	this(in nwnlibd.orderedjson.JSONValue json){
-		assert(json.type == JSON_TYPE.OBJECT, "json value " ~ json.toPrettyString ~ " is not an object");
+		assert(json.type == JSONType.object, "json value " ~ json.toPrettyString ~ " is not an object");
 		assert(json["type"].str == "list", "json object "~ json.toPrettyString ~" is not a GffList");
-		assert(json["value"].type == JSON_TYPE.ARRAY, "json .value "~ json.toPrettyString ~" is not an array");
+		assert(json["value"].type == JSONType.array, "json .value "~ json.toPrettyString ~" is not an array");
 		children.length = json["value"].array.length;
 		foreach(i, ref child ; json["value"].array){
 			children[i] = GffStruct(child);
@@ -603,7 +603,7 @@ struct GffValue {
 	/// Create a GffValue by parsing JSON.
 	/// JSON format should be like `{"type": "resref", "value": "hello world"}`
 	this(in nwnlibd.orderedjson.JSONValue json){
-		assert(json.type == JSON_TYPE.OBJECT, "json value " ~ json.toPrettyString ~ " is not an object");
+		assert(json.type == JSONType.object, "json value " ~ json.toPrettyString ~ " is not an object");
 		switch(json["type"].str.compatStrToGffType) with(GffType) {
 			case Byte:      value = json["value"].conv!GffByte;       break;
 			case Char:      value = json["value"].conv!GffChar;       break;

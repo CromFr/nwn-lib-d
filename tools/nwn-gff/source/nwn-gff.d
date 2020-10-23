@@ -288,7 +288,7 @@ int main(string[] args){
 				// set value is in JSON format
 				valueIsJson = true;
 				jsonValue = value.parseJSON;
-				enforce!GffPathException(jsonValue.type == JSON_TYPE.OBJECT, "JSON values must be an objects");
+				enforce!GffPathException(jsonValue.type == JSONType.object, "JSON values must be an objects");
 				enforce!GffPathException("type" in jsonValue, "JSON object must contain a \"type\" key");
 				const type = jsonValue["type"].str;
 				path[$ - 1] = path[$ - 1][0 .. col + 1] ~ type;
