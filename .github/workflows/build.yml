@@ -17,6 +17,15 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Dub cache
+        uses: actions/cache@v2
+        with:
+          path: ~/.dub
+          key: ${{ runner.os }}-dub-${{ hashFiles('**/dub.json') }}
+          restore-keys: |
+            ${{ runner.os }}-dub-
+
+
       # Setup
       - name: Install requirements
         run: |
