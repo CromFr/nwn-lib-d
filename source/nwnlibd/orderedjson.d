@@ -54,7 +54,9 @@ import std.traits;
     // list already exists, so .object optional
     jj["list"].array ~= JSONValue("D");
 
-    string jjStr = `{"language":"D","list":["a","b","c","D"],"rating":3.5}`;
+    //#################################################################################################################
+    string jjStr = `{"language":"D","rating":3.5,"list":["a","b","c","D"]}`;
+    //#################################################################################################################
     assert(jj.toString == jjStr);
 }
 
@@ -118,31 +120,7 @@ JSON value node
 struct JSONValue
 {
     //#################################################################################################################
-    //#################################################################################################################
-    //#################################################################################################################
     public string[] objectKeyOrder;
-
-    /// Utility added for nwn-lib-d
-    T conv(T)() const if(isIntegral!T || isFloatingPoint!T){
-        static if(isIntegral!T){
-            switch(type) with(JSONType){
-                case integer: return integer.to!T;
-                case uinteger: return uinteger.to!T;
-                default: throw new Exception("Type "~type~" cannot be converted to " ~ T.stringof);
-            }
-        }
-        else static if(isFloatingPoint!T){
-            switch(type) with(JSONType){
-                case integer: return integer.to!T;
-                case uinteger: return uinteger.to!T;
-                case float_: return floating.to!T;
-                default: throw new Exception("Type "~type~" cannot be converted to " ~ T.stringof);
-            }
-        }
-        else static assert(0);
-    }
-    //#################################################################################################################
-    //#################################################################################################################
     //#################################################################################################################
 
     import std.exception : enforce;
@@ -396,9 +374,11 @@ struct JSONValue
      * A convenience getter that returns this `JSONValue` as the specified D type.
      * Note: only numeric, `bool`, `string`, `JSONValue[string]` and `JSONValue[]` types are accepted
      * Throws: `JSONException` if `T` cannot hold the contents of this `JSONValue`
+     *         `ConvException` if there is a type overflow issue
      */
     @property inout(T) get(T)() inout const pure @safe
     {
+        import std.conv : to;
         static if (is(immutable T == immutable string))
         {
             return str;
@@ -421,13 +401,17 @@ struct JSONValue
                 throw new JSONException("JSONValue is not a number type");
             }
         }
-        else static if (__traits(isUnsigned, T))
+        else static if (isIntegral!T)
         {
-            return cast(T) uinteger;
-        }
-        else static if (isSigned!T)
-        {
-            return cast(T) integer;
+            switch (type)
+            {
+            case JSONType.uinteger:
+                return uinteger.to!T;
+            case JSONType.integer:
+                return integer.to!T;
+            default:
+                throw new JSONException("JSONValue is not a number type");
+            }
         }
         else
         {
@@ -448,6 +432,7 @@ struct JSONValue
     @safe unittest
     {
         import std.exception;
+        import std.conv;
         string s =
         `{
             "a": 123,
@@ -455,7 +440,9 @@ struct JSONValue
             "c": "text",
             "d": true,
             "e": [1, 2, 3],
-            "f": { "a": 1 }
+            "f": { "a": 1 },
+            "g": -45,
+            "h": ` ~ ulong.max.to!string ~ `,
          }`;
 
         struct a { }
@@ -463,16 +450,22 @@ struct JSONValue
         immutable json = parseJSON(s);
         assert(json["a"].get!double == 123.0);
         assert(json["a"].get!int == 123);
+        assert(json["a"].get!uint == 123);
         assert(json["b"].get!double == 3.1415);
-        assertThrown(json["b"].get!int);
+        assertThrown!JSONException(json["b"].get!int);
         assert(json["c"].get!string == "text");
         assert(json["d"].get!bool == true);
         assertNotThrown(json["e"].get!(JSONValue[]));
         assertNotThrown(json["f"].get!(JSONValue[string]));
         static assert(!__traits(compiles, json["a"].get!a));
-        assertThrown(json["e"].get!float);
-        assertThrown(json["d"].get!(JSONValue[string]));
-        assertThrown(json["f"].get!(JSONValue[]));
+        assertThrown!JSONException(json["e"].get!float);
+        assertThrown!JSONException(json["d"].get!(JSONValue[string]));
+        assertThrown!JSONException(json["f"].get!(JSONValue[]));
+        assert(json["g"].get!int == -45);
+        assertThrown!ConvException(json["g"].get!uint);
+        assert(json["h"].get!ulong == ulong.max);
+        assertThrown!ConvException(json["h"].get!uint);
+        assertNotThrown(json["h"].get!float);
     }
 
     private void assign(T)(T arg)
@@ -683,7 +676,10 @@ struct JSONValue
 
         aa[key] = value;
         //#################################################################################################################
-        this.objectKeyOrder ~= key;
+        if(this.objectKeyOrder.length > 0)
+            this.objectKeyOrder ~= key;
+        else
+            this.objectKeyOrder = aa.keys();
         //#################################################################################################################
         this.object = aa;
     }
@@ -1621,21 +1617,25 @@ if (isOutputRange!(Out,char))
                             toValue(member, indentLevel + 1);
                         }
                     }
-
-                    import std.algorithm.sorting : sort;
-                    // https://issues.dlang.org/show_bug.cgi?id=14439
-                    // auto names = obj.keys;  // aa.keys can't be called in @safe code
-                    auto names = new string[obj.length];
-                    size_t i = 0;
-                    foreach (k, v; obj)
-                    {
-                        names[i] = k;
-                        i++;
-                    }
                     //#################################################################################################################
+                    //import std.algorithm.sorting : sort;
+                    //// https://issues.dlang.org/show_bug.cgi?id=14439
+                    //// auto names = obj.keys;  // aa.keys can't be called in @safe code
+                    //auto names = new string[obj.length];
+                    //size_t i = 0;
+                    //foreach (k, v; obj)
+                    //{
+                    //    names[i] = k;
+                    //    i++;
+                    //}
                     //sort(names);
                     //emit(names);
-                    emit(value.objectKeyOrder);
+                    () @trusted {
+                        if(value.objectKeyOrder.length > 0)
+                            emit(value.objectKeyOrder);
+                        else
+                            emit(value.object.keys);
+                    }();
                     //#################################################################################################################
 
                     putEOL();

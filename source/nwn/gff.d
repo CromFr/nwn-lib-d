@@ -263,7 +263,7 @@ struct GffLocString{
 		enforce!GffJsonParseException(json.type == JSONType.object, "json value " ~ json.toPrettyString ~ " is not an object");
 		enforce!GffJsonParseException(json["type"].str == "cexolocstr", "json object "~ json.toPrettyString ~" is not a GffLocString");
 		enforce!GffJsonParseException(json["value"].type == JSONType.object, "json .value "~ json.toPrettyString ~" is not an object");
-		strref = json["str_ref"].conv!uint32_t;
+		strref = json["str_ref"].get!uint32_t;
 		foreach(lang, text ; json["value"].object){
 			strings[lang.to!int32_t] = text.str;
 		}
@@ -408,7 +408,7 @@ struct GffStruct {
 		assert(json["type"].str == "struct", "json object "~ json.toPrettyString ~" is not a GffStruct");
 		assert(json["value"].type == JSONType.object, "json .value "~ json.toPrettyString ~" is not an object");
 		if(auto structId = ("__struct_id" in json))
-			id = structId.conv!uint32_t;
+			id = structId.get!uint32_t;
 		foreach(ref label ; json["value"].objectKeyOrder){
 			children[label] = GffValue(json["value"][label]);
 		}
@@ -605,16 +605,16 @@ struct GffValue {
 	this(in nwnlibd.orderedjson.JSONValue json){
 		assert(json.type == JSONType.object, "json value " ~ json.toPrettyString ~ " is not an object");
 		switch(json["type"].str.compatStrToGffType) with(GffType) {
-			case Byte:      value = json["value"].conv!GffByte;       break;
-			case Char:      value = json["value"].conv!GffChar;       break;
-			case Word:      value = json["value"].conv!GffWord;       break;
-			case Short:     value = json["value"].conv!GffShort;      break;
-			case DWord:     value = json["value"].conv!GffDWord;      break;
-			case Int:       value = json["value"].conv!GffInt;        break;
-			case DWord64:   value = json["value"].conv!GffDWord64;    break;
-			case Int64:     value = json["value"].conv!GffInt64;      break;
-			case Float:     value = json["value"].conv!GffFloat;      break;
-			case Double:    value = json["value"].conv!GffDouble;     break;
+			case Byte:      value = cast(GffByte)json["value"].get!GffByte;       break;
+			case Char:      value = cast(GffChar)json["value"].get!GffChar;       break;
+			case Word:      value = cast(GffWord)json["value"].get!GffWord;       break;
+			case Short:     value = cast(GffShort)json["value"].get!GffShort;     break;
+			case DWord:     value = cast(GffDWord)json["value"].get!GffDWord;     break;
+			case Int:       value = cast(GffInt)json["value"].get!GffInt;         break;
+			case DWord64:   value = cast(GffDWord64)json["value"].get!GffDWord64; break;
+			case Int64:     value = cast(GffInt64)json["value"].get!GffInt64;     break;
+			case Float:     value = cast(GffFloat)json["value"].get!GffFloat;     break;
+			case Double:    value = cast(GffDouble)json["value"].get!GffDouble;   break;
 			case String:    value = json["value"].str;                break;
 			case ResRef:    value = GffResRef(json["value"].str);     break;
 			case LocString: value = GffLocString(json);               break;
