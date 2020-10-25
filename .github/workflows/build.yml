@@ -154,7 +154,7 @@ jobs:
           TAG=$(echo '${{ github.ref }}' | grep -oE '\bv[0-9]+\.[0-9]+\.[0-9]+(-rc[0-9]+)?$' || true)
           echo "::set-output name=tag::$TAG"
 
-          [[ "$TAG" =~ '-rc[0-9]+$' ]] && PRERELEASE=true || PRERELEASE=false
+          [[ "$TAG" =~ -rc[0-9]+$ ]] && PRERELEASE=true || PRERELEASE=false
           echo "::set-output name=prerelease::$PRERELEASE"
 
           if [[ "$TAG" != "" ]]; then
