@@ -179,6 +179,23 @@ jobs:
                 -XDELETE "https://api.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID"
           fi
 
+      - uses: actions/checkout@v2
+        if: steps.rel_info.outputs.tag != ''
+        with:
+          fetch-depth: 0
+
+      - name: Generate changelog
+        if: steps.rel_info.outputs.tag != ''
+        id: changelog
+        run: |
+          CHANGELOG=$(.github/workflows/gen-changelog.sh)
+          echo "$CHANGELOG"
+
+          CHANGELOG="${CHANGELOG//'%'/'%25'}"
+          CHANGELOG="${CHANGELOG//$'\n'/'%0A'}"
+          CHANGELOG="${CHANGELOG//$'\r'/'%0D'}"
+          echo "::set-output name=log::$CHANGELOG"
+
       - name: Create Release
         if: steps.rel_info.outputs.tag != ''
         uses: actions/create-release@v1
@@ -190,6 +207,8 @@ jobs:
           prerelease: ${{ steps.rel_info.outputs.prerelease }}
           body: |
             Automated release with GitHub Actions
+
+            ${{ steps.changelog.log }}
 
   release:
     name: Release if tagged
