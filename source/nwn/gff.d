@@ -80,7 +80,7 @@ alias GffNativeTypes = AliasSeq!(GffByte, GffChar, GffWord, GffShort, GffDWord, 
 /// Maps $(D GffType) to native D type
 template gffTypeToNative(GffType t){
 	import std.typecons: Tuple;
-	     static if(t==GffType.Invalid)   static assert(0, "No native type for GffType.Invalid");
+	static if     (t==GffType.Invalid)   static assert(0, "No native type for GffType.Invalid");
 	else static if(t==GffType.Byte)      alias gffTypeToNative = GffByte;
 	else static if(t==GffType.Char)      alias gffTypeToNative = GffChar;
 	else static if(t==GffType.Word)      alias gffTypeToNative = GffWord;
@@ -102,18 +102,18 @@ template gffTypeToNative(GffType t){
 /// Converts a native type $(D T) to the associated $(D GffType). Types must match exactly
 template nativeToGffType(T){
 	import std.typecons: Tuple;
-	     static if(is(T == Byte))         alias nativeToGffType = GffType.Byte;
-	else static if(is(T == Char))         alias nativeToGffType = GffType.Char;
-	else static if(is(T == Word))         alias nativeToGffType = GffType.Word;
-	else static if(is(T == Short))        alias nativeToGffType = GffType.Short;
-	else static if(is(T == DWord))        alias nativeToGffType = GffType.DWord;
-	else static if(is(T == Int))          alias nativeToGffType = GffType.Int;
-	else static if(is(T == DWord64))      alias nativeToGffType = GffType.DWord64;
-	else static if(is(T == Int64))        alias nativeToGffType = GffType.Int64;
-	else static if(is(T == Float))        alias nativeToGffType = GffType.Float;
-	else static if(is(T == Double))       alias nativeToGffType = GffType.Double;
+	static if     (is(T == GffByte))      alias nativeToGffType = GffType.Byte;
+	else static if(is(T == GffChar))      alias nativeToGffType = GffType.Char;
+	else static if(is(T == GffWord))      alias nativeToGffType = GffType.Word;
+	else static if(is(T == GffShort))     alias nativeToGffType = GffType.Short;
+	else static if(is(T == GffDWord))     alias nativeToGffType = GffType.DWord;
+	else static if(is(T == GffInt))       alias nativeToGffType = GffType.Int;
+	else static if(is(T == GffDWord64))   alias nativeToGffType = GffType.DWord64;
+	else static if(is(T == GffInt64))     alias nativeToGffType = GffType.Int64;
+	else static if(is(T == GffFloat))     alias nativeToGffType = GffType.Float;
+	else static if(is(T == GffDouble))    alias nativeToGffType = GffType.Double;
 	else static if(is(T == GffString))    alias nativeToGffType = GffType.String;
-	else static if(is(T == GffResref))    alias nativeToGffType = GffType.ResRef;
+	else static if(is(T == GffResRef))    alias nativeToGffType = GffType.ResRef;
 	else static if(is(T == GffLocString)) alias nativeToGffType = GffType.LocString;
 	else static if(is(T == GffVoid))      alias nativeToGffType = GffType.Void;
 	else static if(is(T == GffStruct))    alias nativeToGffType = GffType.Struct;
