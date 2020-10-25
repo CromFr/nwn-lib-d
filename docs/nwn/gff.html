@@ -62,6 +62,11 @@ $('#symbolSearchPane').show();</script>
 						<a href="../nwn/trn/genericmesh.html">genericmesh</a>
 					</div>
 				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwn/trn/trn.html">trn</a>
+					</div>
+				</li>
 			</ul>
 				</li>
 				<li>
@@ -119,6 +124,11 @@ $('#symbolSearchPane').show();</script>
 						<a href="../nwn/types.html">types</a>
 					</div>
 				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwn/ver.html">ver</a>
+					</div>
+				</li>
 			</ul>
 				</li>
 				<li class="tree-view collapsed">
@@ -164,6 +174,42 @@ $('#symbolSearchPane').show();</script>
 </p>
 			<section></section>
 			<section>
+				<h2>Functions</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="compatStrToGffType" class="public" href="../nwn/gff/compatStrToGffType.html">compatStrToGffType</a><span class="tableEntryAnnotation">(t)</span>
+							</code>
+						</td>
+						<td>Converts a string compatible with niv tools to a GFF type
+</td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="gffTypeToCompatStr" class="public" href="../nwn/gff/gffTypeToCompatStr.html">gffTypeToCompatStr</a><span class="tableEntryAnnotation">(t)</span>
+							</code>
+						</td>
+						<td>Converts a GFF type to a string compatible with niv tools
+</td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="isGffNativeType" class="public" href="../nwn/gff/isGffNativeType.html">isGffNativeType</a><span class="tableEntryAnnotation">()</span>
+							</code>
+						</td>
+						<td>returns true if T is implicitly convertible to a GFF storage type
+</td>
+					</tr>
+				</table>
+			</section>
+			<section>
 				<h2>Classes</h2>
 				<table>
 					<col class="caption"/>
@@ -176,7 +222,7 @@ $('#symbolSearchPane').show();</script>
 								<a id="Gff" class="public" href="../nwn/gff/Gff.html">Gff</a>
 							</code>
 						</td>
-						<td>Gff class for building complete <code class="lang-d"><a href="../nwn/gff/GffNode.html"><span class="typ">GffNode</span></a></code> from a file, binary data, json, ...
+						<td>Complete GFF file
 </td>
 					</tr>
 					<tr>
@@ -212,7 +258,7 @@ $('#symbolSearchPane').show();</script>
 								<a id="GffTypeException" class="public" href="../nwn/gff/GffTypeException.html">GffTypeException</a>
 							</code>
 						</td>
-						<td>Type mismatch (ex: trying to add a <code class="lang-d"><a href="../nwn/gff/GffNode.html"><span class="typ">GffNode</span></a></code> to a <code class="lang-d"><a href="../nwn/gff/GffType.html#Int"><span class="typ">GffType<wbr/></span><span class="pun">.</span><span class="typ">Int</span></a></code>)
+						<td>Type mismatch (ex: trying to add a <code class="lang-d"><span class="typ">GffNode</span></code> to a <code class="lang-d"><a href="../nwn/gff/GffType.html#Int"><span class="typ">GffType<wbr/></span><span class="pun">.</span><span class="typ">Int</span></a></code>)
 </td>
 					</tr>
 					<tr>
@@ -236,10 +282,46 @@ $('#symbolSearchPane').show();</script>
 					<tr>
 						<td>
 							<code>
-								<a id="GffNode" class="public" href="../nwn/gff/GffNode.html">GffNode</a>
+								<a id="GffList" class="public" href="../nwn/gff/GffList.html">GffList</a>
 							</code>
 						</td>
-						<td>Gff node containing data
+						<td>Gff type List ( <code class="lang-d"><a href="../nwn/gff/GffStruct.html"><span class="typ">GffStruct</span></a><span class="pun">[]</span></code> )
+</td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="GffLocString" class="public" href="../nwn/gff/GffLocString.html">GffLocString</a>
+							</code>
+						</td>
+						<td>Gff type LocString (TLK ID + translations)
+</td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="GffResRef" class="public" href="../nwn/gff/GffResRef.html">GffResRef</a>
+							</code>
+						</td>
+						<td>Gff type ResRef (32-char string)
+</td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="GffStruct" class="public" href="../nwn/gff/GffStruct.html">GffStruct</a>
+							</code>
+						</td>
+						<td>Gff type Struct ( <code class="lang-d"><a href="../nwn/gff/GffValue.html"><span class="typ">GffValue</span></a><span class="pun">[</span><span class="typ">string</span><span class="pun">]</span></code> )
+</td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="GffValue" class="public" href="../nwn/gff/GffValue.html">GffValue</a>
+							</code>
+						</td>
+						<td>GFF value that can contain any type of GFF node
 </td>
 					</tr>
 				</table>
@@ -257,7 +339,7 @@ $('#symbolSearchPane').show();</script>
 								<a id="GffType" class="public" href="../nwn/gff/GffType.html">GffType</a>
 							</code>
 						</td>
-						<td>Type of data owned by a <code class="lang-d"><a href="../nwn/gff/GffNode.html"><span class="typ">GffNode</span></a></code>
+						<td>Type of data owned by a <code class="lang-d"><span class="typ">GffNode</span></code>
 </td>
 					</tr>
 				</table>
@@ -344,28 +426,6 @@ $('#symbolSearchPane').show();</script>
 					</tr>
 					<tr>
 						<td>
-							<a id="GffExoLocString" class="public" href="../nwn/gff/GffExoLocString.html">
-								<code>GffExoLocString</code>
-							</a>
-						</td>
-						<td>
-							<code class="prettyprint lang-d"><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">typecons<wbr/></span><span class="pun">.</span><span class="typ">Tuple</span>!(uint,"strref",string[int],"strings")</code>
-						</td>
-						<td></td>
-					</tr>
-					<tr>
-						<td>
-							<a id="GffExoString" class="public" href="../nwn/gff/GffExoString.html">
-								<code>GffExoString</code>
-							</a>
-						</td>
-						<td>
-							<code class="prettyprint lang-d"><span class="typ">string</span></code>
-						</td>
-						<td></td>
-					</tr>
-					<tr>
-						<td>
 							<a id="GffFloat" class="public" href="../nwn/gff/GffFloat.html">
 								<code>GffFloat</code>
 							</a>
@@ -399,25 +459,15 @@ $('#symbolSearchPane').show();</script>
 					</tr>
 					<tr>
 						<td>
-							<a id="GffList" class="public" href="../nwn/gff/GffList.html">
-								<code>GffList</code>
+							<a id="GffNativeTypes" class="public" href="../nwn/gff/GffNativeTypes.html">
+								<code>GffNativeTypes</code>
 							</a>
 						</td>
 						<td>
-							<code class="prettyprint lang-d"><a href="../nwn/gff/GffNode.html"><span class="typ">GffNode</span></a><span class="pun">[]</span></code>
+							<code class="prettyprint lang-d"></code>
 						</td>
-						<td></td>
-					</tr>
-					<tr>
-						<td>
-							<a id="GffResRef" class="public" href="../nwn/gff/GffResRef.html">
-								<code>GffResRef</code>
-							</a>
-						</td>
-						<td>
-							<code class="prettyprint lang-d"><span class="typ">string</span></code>
-						</td>
-						<td></td>
+						<td>List of all dlang types that can be stored in a GFF value
+</td>
 					</tr>
 					<tr>
 						<td>
@@ -432,12 +482,12 @@ $('#symbolSearchPane').show();</script>
 					</tr>
 					<tr>
 						<td>
-							<a id="GffStruct" class="public" href="../nwn/gff/GffStruct.html">
-								<code>GffStruct</code>
+							<a id="GffString" class="public" href="../nwn/gff/GffString.html">
+								<code>GffString</code>
 							</a>
 						</td>
 						<td>
-							<code class="prettyprint lang-d"><a href="../nwnlibd/orderedaa/OrderedAA.html"><span class="typ">OrderedAA</span></a>!(string,nwn.gff.GffNode)</code>
+							<code class="prettyprint lang-d"><span class="typ">string</span></code>
 						</td>
 						<td></td>
 					</tr>
@@ -450,7 +500,8 @@ $('#symbolSearchPane').show();</script>
 						<td>
 							<code class="prettyprint lang-d"><span class="typ">ubyte</span><span class="pun">[]</span></code>
 						</td>
-						<td></td>
+						<td>Gff type Void ( <code class="lang-d"><span class="typ">ubyte</span><span class="pun">[]</span></code> )
+</td>
 					</tr>
 					<tr>
 						<td>

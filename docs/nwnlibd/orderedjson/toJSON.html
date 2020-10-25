@@ -62,6 +62,11 @@ $('#symbolSearchPane').show();</script>
 						<a href="../../nwn/trn/genericmesh.html">genericmesh</a>
 					</div>
 				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/trn/trn.html">trn</a>
+					</div>
+				</li>
 			</ul>
 				</li>
 				<li>
@@ -119,6 +124,11 @@ $('#symbolSearchPane').show();</script>
 						<a href="../../nwn/types.html">types</a>
 					</div>
 				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/ver.html">ver</a>
+					</div>
+				</li>
 			</ul>
 				</li>
 				<li class="tree-view ">
@@ -174,25 +184,7 @@ $('#symbolSearchPane').show();</script>
 						</a>
 					</li>
 				</ul>
-			</nav><h2 id="0">Function toJSON</h2><p></p>
-			<div class="prototype">
-				<code class="lang-d">
-					<div class="single-prototype">
-			<span class="kwd">deprecated </span><span class="typ">string</span> <span class="pln">toJSON</span>
-			<span class="pun">(</span>
-			<br/>
-			&nbsp;&nbsp;<span class="kwd">in </span><span class="kwd">const</span><span class="pun">(</span><a href="../../nwnlibd/orderedjson/JSONValue.html"><span class="typ">JSONValue</span></a><span class="pun">*</span><span class="pun">)</span> <span class="pln">root</span><span class="pun">,</span>
-			<br/>
-			&nbsp;&nbsp;<span class="kwd">in </span><span class="kwd">const</span><span class="pun">(</span><span class="typ">bool</span><span class="pun">)</span> <span class="pln">pretty</span> <span class="pun">=</span> <span class="kwd">false</span><span class="pun">,</span>
-			<br/>
-			&nbsp;&nbsp;<span class="kwd">in </span><span class="kwd">const</span><span class="pun">(</span><a href="../../nwnlibd/orderedjson/JSONOptions.html"><span class="typ">JSONOptions</span></a><span class="pun">)</span> <span class="pln">options</span> <span class="pun">=</span> <span class="kwd">cast</span><span class="pun">(</span><span class="typ">JSONOptions</span><span class="pun">)</span><span class="lit">0</span>
-			<br/>
-			<span class="pun">)</span><span class="pln"> </span><span class="kwd">@safe</span><span class="pun">;</span>
-					</div>
-				</code>
-			</div>
-			
-			<h2 id="1">Function toJSON</h2><p>Takes a tree of JSON values and returns the serialized string.
+			</nav><h2 id="0">Function toJSON</h2><p>Takes a tree of JSON values and returns the serialized string.
 </p>
 			<div class="prototype">
 				<code class="lang-d">
@@ -215,10 +207,32 @@ $('#symbolSearchPane').show();</script>
 
 <p>If <code class="lang-d"><a href="../../nwnlibd/orderedjson/toJSON.html#pretty"><span class="pln">pretty</span></a></code> is false no whitespaces are generated.
 If <code class="lang-d"><a href="../../nwnlibd/orderedjson/toJSON.html#pretty"><span class="pln">pretty</span></a></code> is true serialized string is formatted to be human-readable.
-Set the  flag is set in <code class="lang-d"><a href="../../nwnlibd/orderedjson/toJSON.html#options"><span class="pln">options</span></a></code> to encode NaN/Infinity as strings.
+Set the JSONOptions.specialFloatLiterals flag is set in <code class="lang-d"><a href="../../nwnlibd/orderedjson/toJSON.html#options"><span class="pln">options</span></a></code> to encode NaN/Infinity as strings.
 </p>
 </section>
 
+			<h2 id="1">Function toJSON</h2><p></p>
+			<div class="prototype">
+				<code class="lang-d">
+					<div class="single-prototype">
+			<span class="typ">void</span> <span class="pln">toJSON</span>(Out)
+			<span class="pun">(</span>
+			<br/>
+			&nbsp;&nbsp;<span class="kwd">auto ref </span><span class="typ">Out</span> <span class="pln">json</span><span class="pun">,</span>
+			<br/>
+			&nbsp;&nbsp;<span class="kwd">const ref </span><a href="../../nwnlibd/orderedjson/JSONValue.html"><span class="typ">JSONValue</span></a> <span class="pln">root</span><span class="pun">,</span>
+			<br/>
+			&nbsp;&nbsp;<span class="kwd">in </span><span class="typ">bool</span> <span class="pln">pretty</span> <span class="pun">=</span> <span class="kwd">false</span><span class="pun">,</span>
+			<br/>
+			&nbsp;&nbsp;<span class="kwd">in </span><a href="../../nwnlibd/orderedjson/JSONOptions.html"><span class="typ">JSONOptions</span></a> <span class="pln">options</span> <span class="pun">=</span> <span class="typ">JSONOptions<wbr/></span><span class="pun">.</span><span class="pln">none</span>
+			<br/>
+			<span class="pun">)</span>
+			<br/>
+			<span class="kwd">if</span> <span class="pun">(</span><span class="pln">isOutputRange</span><span class="pun">!(</span><span class="typ">Out</span><span class="pun">, </span><span class="typ">char</span><span class="pun">)</span><span class="pun">);</span>
+					</div>
+				</code>
+			</div>
+			
 			
 			<footer>
 				<table class="license-info">

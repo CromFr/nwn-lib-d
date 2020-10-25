@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/>
+		<title>Module nwn.trn.trn</title>
+		<link rel="stylesheet" type="text/css" href="../../styles/ddox.css"/>
+		<link rel="stylesheet" href="../../prettify/prettify.css" type="text/css"/>
+		<script type="text/javascript" src="../../scripts/jquery.js">/**/</script><script type="text/javascript" src="../../scripts/ddox.js">/**/</script>
+	</head>
+	<body onload="setupDdox();">
+		<nav id="main-nav">
+			<noscript>
+				<p style="color: red">The search functionality needs JavaScript enabled</p>
+			</noscript>
+			<div id="symbolSearchPane" style="display: none">
+				<form action="#" method="GET">
+					<input id="symbolSearch" type="text" name="q" placeholder="Search for symbols" autocomplete="off" onchange="performSymbolSearch(40);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
+				</form>
+				<ul id="symbolSearchResults" class="symbolList" style="display: none"></ul><script type="application/javascript" src="../../symbols.js"></script><script type="application/javascript">var symbolSearchRootDir = "../../";
+$('#symbolSearchPane').show();</script>
+			</div>
+			<ul class="tree-view">
+				<li class="tree-view ">
+					<div class="package ">
+						<a href="../../nwn.html">nwn</a>
+					</div>
+			<ul class="tree-view">
+				<li class="tree-view collapsed">
+					<div class="package ">
+						<a href="../../nwn/nwscript.html">nwscript</a>
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../nwn/nwscript/constants.html">constants</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/nwscript/extensions.html">extensions</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/nwscript/functions.html">functions</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/nwscript/resources.html">resources</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view ">
+					<div class="package ">
+						<a href="../../nwn/trn.html">trn</a>
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../nwn/trn/genericmesh.html">genericmesh</a>
+					</div>
+				</li>
+				<li>
+					<div class="module selected">
+						<a href="../../nwn/trn/trn.html">trn</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/biowaredb.html">biowaredb</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/constants.html">constants</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/dds.html">dds</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/erf.html">erf</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/fastgff.html">fastgff</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/gff.html">gff</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/mdb.html">mdb</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/nwnserver.html">nwnserver</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/tlk.html">tlk</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/twoda.html">twoda</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/types.html">types</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/ver.html">ver</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">nwnlibd
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../nwnlibd/geometry.html">geometry</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwnlibd/orderedaa.html">orderedaa</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwnlibd/orderedjson.html">orderedjson</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwnlibd/parseutils.html">parseutils</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwnlibd/path.html">path</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwnlibd/wavefrontobj.html">wavefrontobj</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+			</ul>
+		</nav>
+		<div id="main-contents">
+			<h1>Module nwn.trn.trn</h1><p>Terrain (trn, trx)
+</p>
+			<section></section>
+			<section>
+				<h2>Functions</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="toTrnPacketStr" class="public" href="../../nwn/trn/trn/toTrnPacketStr.html">toTrnPacketStr</a><span class="tableEntryAnnotation">(type)</span>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="toTrnPacketType" class="public" href="../../nwn/trn/trn/toTrnPacketType.html">toTrnPacketType</a><span class="tableEntryAnnotation">(str, nwnVersion)</span>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+				</table>
+			</section>
+			<section>
+				<h2>Classes</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="ASWMInvalidValueException" class="public" href="../../nwn/trn/trn/ASWMInvalidValueException.html">ASWMInvalidValueException</a>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="Trn" class="public" href="../../nwn/trn/trn/Trn.html">Trn</a>
+							</code>
+						</td>
+						<td>TRN / TRX file parsing
+</td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="TrnInvalidValueException" class="public" href="../../nwn/trn/trn/TrnInvalidValueException.html">TrnInvalidValueException</a>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="TrnParseException" class="public" href="../../nwn/trn/trn/TrnParseException.html">TrnParseException</a>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="TrnTypeException" class="public" href="../../nwn/trn/trn/TrnTypeException.html">TrnTypeException</a>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="TrnValueSetException" class="public" href="../../nwn/trn/trn/TrnValueSetException.html">TrnValueSetException</a>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="TRRNInvalidValueException" class="public" href="../../nwn/trn/trn/TRRNInvalidValueException.html">TRRNInvalidValueException</a>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="WATRInvalidValueException" class="public" href="../../nwn/trn/trn/WATRInvalidValueException.html">WATRInvalidValueException</a>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+				</table>
+			</section>
+			<section>
+				<h2>Structs</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="TrnNWN2MegatilePayload" class="public" href="../../nwn/trn/trn/TrnNWN2MegatilePayload.html">TrnNWN2MegatilePayload</a>
+							</code>
+						</td>
+						<td>Megatile information
+</td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="TrnNWN2TerrainDimPayload" class="public" href="../../nwn/trn/trn/TrnNWN2TerrainDimPayload.html">TrnNWN2TerrainDimPayload</a>
+							</code>
+						</td>
+						<td>Terrain dimensions
+</td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="TrnNWN2WalkmeshPayload" class="public" href="../../nwn/trn/trn/TrnNWN2WalkmeshPayload.html">TrnNWN2WalkmeshPayload</a>
+							</code>
+						</td>
+						<td>Compressed walkmesh (only contained inside TRX files)
+</td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="TrnNWN2WaterPayload" class="public" href="../../nwn/trn/trn/TrnNWN2WaterPayload.html">TrnNWN2WaterPayload</a>
+							</code>
+						</td>
+						<td>Water information
+</td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="TrnPacket" class="public" href="../../nwn/trn/trn/TrnPacket.html">TrnPacket</a>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+				</table>
+			</section>
+			<section>
+				<h2>Enums</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="TrnPacketType" class="public" href="../../nwn/trn/trn/TrnPacketType.html">TrnPacketType</a>
+							</code>
+						</td>
+						<td>Type of a packet's payload
+</td>
+					</tr>
+				</table>
+			</section>
+			<section>
+				<h2>Aliases</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Type</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<a id="TrnPacketPayloadToType" class="public" href="../../nwn/trn/trn/TrnPacketPayloadToType.html">
+								<code>TrnPacketPayloadToType</code>
+							</a>
+						</td>
+						<td>
+							<code class="prettyprint lang-d"><span class="typ">TrnPacketType<wbr/></span><span class="pun">.</span><span class="pln">NWN2_TRWH</span></code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<a id="TrnPacketTypeToPayload" class="public" href="../../nwn/trn/trn/TrnPacketTypeToPayload.html">
+								<code>TrnPacketTypeToPayload</code>
+							</a>
+						</td>
+						<td>
+							<code class="prettyprint lang-d"><a href="../../nwn/trn/trn/TrnNWN2TerrainDimPayload.html"><span class="typ">TrnNWN2TerrainDimPayload</span></a></code>
+						</td>
+						<td></td>
+					</tr>
+				</table>
+			</section>
+			<footer>
+				<table class="license-info">
+					<tr>
+						<th>Authors</th>
+						<td>
+							
+						</td>
+					</tr>
+					<tr>
+						<th>Copyright</th>
+						<td>
+							
+						</td>
+					</tr>
+					<tr>
+						<th>License</th>
+						<td>
+							
+						</td>
+					</tr>
+				</table>
+				<p class="faint">Generated using the DDOX documentation generator</p>
+			</footer>
+		</div>
+	</body>
+</html>

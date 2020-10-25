@@ -5,8 +5,12 @@
 	<title>nwn-lib-d downloads</title>
 	<link rel="stylesheet" href="./docs/styles/ddox.css">
 	<style>
+		.title{
+			text-align: center;
+			font-size: 3em;
+			padding: 0;
+		}
 		.flex-container {
-			height: 100%;
 			display: flex;
 			flex-wrap: wrap;
 			align-content: flex-start;
@@ -16,9 +20,8 @@
 			margin: 1em;
 			max-width: 400px;
 			flex-grow: 1;
-			font-size: 1.1em;
 			background-color: rgba(0,0,0,0.05);
-			padding: 1.5em;
+			padding: 1em;
 			border-radius: 0.5em;
 
 			display: flex;
@@ -31,132 +34,118 @@
 			font-size: 1em;
 			width: 100%;
 		}
+		.flex-container>div h2 {
+			margin: 0 1em;
+		}
 
 	</style>
 </head>
 <body>
 	<nav id="main-nav">
 		<ul class="tree-view">
-			<li><a href="#">Downloads</a></li>
+			<li><a href="https://github.com/CromFr/nwn-lib-d/releases">Downloads</a></li>
 			<li><a href="docs/">API reference</a></li>
 			<li><a href="https://github.com/CromFr/nwn-lib-d">Source code</a></li>
 		</ul>
 	</nav>
 	<div id="main-contents">
-		<h1>nwn-lib-d tools</h1>
+		<h1 class="title">nwn-lib-d</h1>
+
+		<h1>Tools</h1>
+		<div>
+			<p>
+				nwn-lib-d tools are a set of command-line tools for manipulating Neverwinter Nights 2 files (and some NWN1 files). They are multi-platform (usable on Windows or GNU/Linux) and do not require the game to be installed.
+			</p>
+			<p>
+				<strong>The tools can be downloaded on the <a href="https://github.com/CromFr/nwn-lib-d/releases">Github release page</a>.</strong><br/>
+				More information on the tools can be found in the <a href="https://github.com/CromFr/nwn-lib-d#features">project's readme</a>.
+			</p>
+		</div>
 
 		<div class="flex-container">
 			<div>
-				<h1>nwn-gff</h1>
+				<h2>nwn-gff</h2>
 				<p>
-					Serialize / deserialize GFF files (bic, utc, jrl, ...).
+					GFF file tool (bic, utc, jrl, ...)
 				</p>
 				<ul>
-					<li>Dump GFF content</li>
-					<li>Quickly serialize/deserialize to JSON</li>
-					<li>Modify GFF fields</li>
-					<li>Same serialization algorithm as NWN2 game engine</li>
-					<li>Suited for git diff</li>
+					<li>Convert to text or JSON</li>
+					<li>Edit GFF tree</li>
+					<li>Set local variables</li>
+					<li>Remove empty localizations</li>
 				</ul>
-				<table>
-					<tr><th>Version</th> <th>Platform</th>       <th>Link</th></tr>
-					<tr><td>master</td>  <td>Windows x86</td>    <td><a href="bin/nwn-gff.win-x86" download="nwn-gff.exe">Download</a></td></tr>
-					<tr><td>master</td>  <td>Windows x86_64</td> <td><a href="bin/nwn-gff.win-x86_64" download="nwn-gff.exe">Download</a></td></tr>
-					<tr><td>master</td>  <td>Linux x86</td>      <td><a href="bin/nwn-gff.linux-x86" download="nwn-gff">Download</a></td></tr>
-					<tr><td>master</td>  <td>Linux x86_64</td>   <td><a href="bin/nwn-gff.linux-x86_64" download="nwn-gff">Download</a></td></tr>
-				</table>
 			</div>
 
 			<div>
-				<h1>nwn-tlk</h1>
+				<h2>nwn-tlk</h2>
 				<p>
-					Serialize TLK files to readable text.
+					TLK file tool
 				</p>
 				<ul>
-					<li>Dump TLK content to text</li>
-					<li>Suited for git diff</li>
+					<li>Dump to readable text</li>
 				</ul>
-				<table>
-					<tr><th>Version</th> <th>Platform</th>       <th>Link</th></tr>
-					<tr><td>master</td>  <td>Windows x86</td>    <td><a href="bin/nwn-tlk.win-x86" download="nwn-tlk.exe">Download</a></td></tr>
-					<tr><td>master</td>  <td>Windows x86_64</td> <td><a href="bin/nwn-tlk.win-x86_64" download="nwn-tlk.exe">Download</a></td></tr>
-					<tr><td>master</td>  <td>Linux x86</td>      <td><a href="bin/nwn-tlk.linux-x86" download="nwn-tlk">Download</a></td></tr>
-					<tr><td>master</td>  <td>Linux x86_64</td>   <td><a href="bin/nwn-tlk.linux-x86_64" download="nwn-tlk">Download</a></td></tr>
-				</table>
 			</div>
 
 			<div>
-				<h1>nwn-erf</h1>
+				<h2>nwn-erf</h2>
 				<p>
-					Create, extract or view ERF files (hak, erf, mod).
+					ERF file tool (hak, erf, mod, pwc)
 				</p>
 				<ul>
-					<li>Create reproducible HAKs (the date field is set to 1900-01-01 by default)</li>
-					<li>Dump HAK metadata</li>
+					<li>Create or extract ERF containers</li>
+					<li>Set ERF date for reproducible haks</li>
 				</ul>
-				<table>
-					<tr><th>Version</th> <th>Platform</th>       <th>Link</th></tr>
-					<tr><td>master</td>  <td>Windows x86</td>    <td><a href="bin/nwn-erf.win-x86" download="nwn-erf.exe">Download</a></td></tr>
-					<tr><td>master</td>  <td>Windows x86_64</td> <td><a href="bin/nwn-erf.win-x86_64" download="nwn-erf.exe">Download</a></td></tr>
-					<tr><td>master</td>  <td>Linux x86</td>      <td><a href="bin/nwn-erf.linux-x86" download="nwn-erf">Download</a></td></tr>
-					<tr><td>master</td>  <td>Linux x86_64</td>   <td><a href="bin/nwn-erf.linux-x86_64" download="nwn-erf">Download</a></td></tr>
-				</table>
 			</div>
 
 			<div>
-				<h1>nwn-bdb</h1>
+				<h2>nwn-trn</h2>
 				<p>
-					View/search Bioware/foxpro database content (dbf + ctx + fpt) using regular expressions.
+					TRN file tool (trx, trn)
 				</p>
 				<ul>
-					<li>Find deleted campaign variables</li>
-					<li>Coloured output (ANSI colours)</li>
+					<li>Export / import terrain data (3D mesh, textures, ...)</li>
+					<li>Dump walkmesh data</li>
+					<li>Prototype area baking tool</li>
 				</ul>
-				<table>
-					<tr><th>Version</th> <th>Platform</th>       <th>Link</th></tr>
-					<tr><td>master</td>  <td>Windows x86</td>    <td><a href="bin/nwn-bdb.win-x86" download="nwn-bdb.exe">Download</a></td></tr>
-					<tr><td>master</td>  <td>Windows x86_64</td> <td><a href="bin/nwn-bdb.win-x86_64" download="nwn-bdb.exe">Download</a></td></tr>
-					<tr><td>master</td>  <td>Linux x86</td>      <td><a href="bin/nwn-bdb.linux-x86" download="nwn-bdb">Download</a></td></tr>
-					<tr><td>master</td>  <td>Linux x86_64</td>   <td><a href="bin/nwn-bdb.linux-x86_64" download="nwn-bdb">Download</a></td></tr>
-				</table>
 			</div>
 
 			<div>
-				<h1>nwn-trn</h1>
+				<h2>nwn-srv</h2>
 				<p>
-					TRN/TRX terrain, water, walkmesh import/export and bake tool
+					Server requesting tool
 				</p>
 				<ul>
-					<li>Reduce TRX file size</li>
-					<li>Import/Export content to Wavefront OBJ and DDS files</li>
-					<li>Experimental walkmesh baking tool (placeables and walkmesh cutters not supported)</li>
+					<li>Ping server</li>
+					<li>Request information (player count, module, etc.)</li>
 				</ul>
-				<table>
-					<tr><th>Version</th> <th>Platform</th>       <th>Link</th></tr>
-					<tr><td>master</td>  <td>Windows x86</td>    <td><a href="bin/nwn-trn.win-x86" download="nwn-trn.exe">Download</a></td></tr>
-					<tr><td>master</td>  <td>Windows x86_64</td> <td><a href="bin/nwn-trn.win-x86_64" download="nwn-trn.exe">Download</a></td></tr>
-					<tr><td>master</td>  <td>Linux x86</td>      <td><a href="bin/nwn-trn.linux-x86" download="nwn-trn">Download</a></td></tr>
-					<tr><td>master</td>  <td>Linux x86_64</td>   <td><a href="bin/nwn-trn.linux-x86_64" download="nwn-trn">Download</a></td></tr>
-				</table>
 			</div>
 
 			<div>
-				<h1>nwn-srv</h1>
+				<h2>nwn-bdb</h2>
 				<p>
-					Send requests to NWN2 servers
+					Foxpro / campaign database tool (dbf + ctx + fpt)
 				</p>
 				<ul>
-					<li>Measure latency (ping)</li>
-					<li>Query server info and status</li>
+					<li>View / search database</li>
 				</ul>
-				<table>
-					<tr><th>Version</th> <th>Platform</th>       <th>Link</th></tr>
-					<tr><td>master</td>  <td>Windows x86</td>    <td><a href="bin/nwn-srv.win-x86" download="nwn-srv.exe">Download</a></td></tr>
-					<tr><td>master</td>  <td>Windows x86_64</td> <td><a href="bin/nwn-srv.win-x86_64" download="nwn-srv.exe">Download</a></td></tr>
-					<tr><td>master</td>  <td>Linux x86</td>      <td><a href="bin/nwn-srv.linux-x86" download="nwn-srv">Download</a></td></tr>
-					<tr><td>master</td>  <td>Linux x86_64</td>   <td><a href="bin/nwn-srv.linux-x86_64" download="nwn-srv">Download</a></td></tr>
-				</table>
 			</div>
+		</div>
+		<h1>Library</h1>
+		<div>
+			<p>
+				nwn-lib-d is also a library written in D, <a href="docs/">documented here</a>.
+			</p>
+			<p>
+				You can add the library as a dependency in your dub config file:
+				<pre>
+// dub.sdl
+dependency "nwn-lib-d" version="~>1.0.0"</pre>
+			<pre>
+// dub.json
+"dependencies": {
+	"nwn-lib-d": "~>1.0.0"
+},</pre>
+			</p>
 		</div>
 	</div>
 </body>

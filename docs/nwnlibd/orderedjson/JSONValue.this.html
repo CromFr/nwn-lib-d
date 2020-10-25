@@ -62,6 +62,11 @@ $('#symbolSearchPane').show();</script>
 						<a href="../../nwn/trn/genericmesh.html">genericmesh</a>
 					</div>
 				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/trn/trn.html">trn</a>
+					</div>
+				</li>
 			</ul>
 				</li>
 				<li>
@@ -119,6 +124,11 @@ $('#symbolSearchPane').show();</script>
 						<a href="../../nwn/types.html">types</a>
 					</div>
 				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/ver.html">ver</a>
+					</div>
+				</li>
 			</ul>
 				</li>
 				<li class="tree-view ">
@@ -162,8 +172,8 @@ $('#symbolSearchPane').show();</script>
 		<div id="main-contents">
 			<h1>Function JSONValue.this</h1><p>Constructor for <code class="lang-d"><a href="../../nwnlibd/orderedjson/JSONValue.html"><span class="typ">JSONValue</span></a></code>. If <code class="lang-d"><a href="../../nwnlibd/orderedjson/JSONValue.this.html#arg"><span class="pln">arg</span></a></code> is a <code class="lang-d"><a href="../../nwnlibd/orderedjson/JSONValue.html"><span class="typ">JSONValue</span></a></code>
  its value and type will be copied to the new <code class="lang-d"><a href="../../nwnlibd/orderedjson/JSONValue.html"><span class="typ">JSONValue</span></a></code>.
- Note that this is a shallow copy: if type is <code class="lang-d"><a href="../../nwnlibd/orderedjson/JSON_TYPE.html#OBJECT"><span class="pln">JSON_TYPE<wbr/></span><span class="pun">.</span><span class="pln">OBJECT</span></a></code>
- or <code class="lang-d"><a href="../../nwnlibd/orderedjson/JSON_TYPE.html#ARRAY"><span class="pln">JSON_TYPE<wbr/></span><span class="pun">.</span><span class="pln">ARRAY</span></a></code> then only the reference to the data will
+ Note that this is a shallow copy: if type is <code class="lang-d"><a href="../../nwnlibd/orderedjson/JSONType.html#object"><span class="typ">JSONType<wbr/></span><span class="pun">.</span><span class="pln">object</span></a></code>
+ or <code class="lang-d"><a href="../../nwnlibd/orderedjson/JSONType.html#array"><span class="typ">JSONType<wbr/></span><span class="pun">.</span><span class="pln">array</span></a></code> then only the reference to the data will
  be copied.
  Otherwise, <code class="lang-d"><a href="../../nwnlibd/orderedjson/JSONValue.this.html#arg"><span class="pln">arg</span></a></code> must be implicitly convertible to one of the
  following types: <code class="lang-d"><span class="kwd">typeof</span><span class="pun">(</span><span class="kwd">null</span><span class="pun">)</span></code>, <code class="lang-d"><span class="typ">string</span></code>, <code class="lang-d"><span class="typ">ulong</span></code>,
@@ -210,10 +220,10 @@ $('#symbolSearchPane').show();</script>
 </span><span class="pln">j </span><span class="pun">= <a href="../../nwnlibd/orderedjson/JSONValue.html"></span><span class="typ">JSONValue</span></a><span class="pun">(</span><span class="lit">42</span><span class="pun">);
 
 </span><span class="pln">j </span><span class="pun">= <a href="../../nwnlibd/orderedjson/JSONValue.html"></span><span class="typ">JSONValue</span></a><span class="pun">( [</span><span class="lit">1</span><span class="pun">, </span><span class="lit">2</span><span class="pun">, </span><span class="lit">3</span><span class="pun">] );
-</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">j<wbr/></span><span class="pun">.</span><span class="pln">type </span><span class="pun">== <a href="../../nwnlibd/orderedjson/JSON_TYPE.html#ARRAY"></span><span class="pln">JSON_TYPE<wbr/></span><span class="pun">.</span><span class="pln">ARRAY</span></a><span class="pun">);
+</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">j<wbr/></span><span class="pun">.</span><span class="pln">type </span><span class="pun">== <a href="../../nwnlibd/orderedjson/JSONType.html#array"></span><span class="typ">JSONType<wbr/></span><span class="pun">.</span><span class="pln">array</span></a><span class="pun">);
 
 </span><span class="pln">j </span><span class="pun">= <a href="../../nwnlibd/orderedjson/JSONValue.html"></span><span class="typ">JSONValue</span></a><span class="pun">( [</span><span class="str">"language"</span><span class="pun">: </span><span class="str">"D"</span><span class="pun">] );
-</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">j<wbr/></span><span class="pun">.</span><span class="pln">type </span><span class="pun">== <a href="../../nwnlibd/orderedjson/JSON_TYPE.html#OBJECT"></span><span class="pln">JSON_TYPE<wbr/></span><span class="pun">.</span><span class="pln">OBJECT</span></a><span class="pun">);
+</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">j<wbr/></span><span class="pun">.</span><span class="pln">type </span><span class="pun">== <a href="../../nwnlibd/orderedjson/JSONType.html#object"></span><span class="typ">JSONType<wbr/></span><span class="pun">.</span><span class="pln">object</span></a><span class="pun">);
 
 </span></code></pre>
 </section>

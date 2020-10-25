@@ -62,6 +62,11 @@ $('#symbolSearchPane').show();</script>
 						<a href="../../nwn/trn/genericmesh.html">genericmesh</a>
 					</div>
 				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/trn/trn.html">trn</a>
+					</div>
+				</li>
 			</ul>
 				</li>
 				<li>
@@ -117,6 +122,11 @@ $('#symbolSearchPane').show();</script>
 				<li>
 					<div class="module ">
 						<a href="../../nwn/types.html">types</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/ver.html">ver</a>
 					</div>
 				</li>
 			</ul>
@@ -209,7 +219,7 @@ $('#symbolSearchPane').show();</script>
 						<td>
 							<a href="../../nwn/twoda/TwoDA.fileName.html" class="public"><code>fileName</code></a>
 						</td>
-						<td class="typecol"><code class="prettyprint lang-d"><span class="kwd">immutable</span><span class="pun">(</span><span class="typ">char</span><span class="pun">[]</span><span class="pun">)</span></code></td><td>2DA file name set during construction
+						<td class="typecol"><code class="prettyprint lang-d"><span class="kwd">immutable</span><span class="pun">(</span><span class="typ">char</span><span class="pun">[]</span><span class="pun">)</span></code></td><td>Optional 2DA file name set during construction
 </td>
 					</tr>
 				</table>
@@ -219,6 +229,13 @@ $('#symbolSearchPane').show();</script>
 					<col class="caption"/>
 					<tr>
 						<th>Name</th><th>Type</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../nwn/twoda/TwoDA.columns.html" class="public property"><code>columns</code></a><span class="tableEntryAnnotation">[get]</span>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">ulong</span></code></td><td>Number of named columns in the 2da (i.e. without the index column)
+</td>
 					</tr>
 					<tr>
 						<td>
@@ -306,18 +323,10 @@ Max width: 4 chars
 							<a href="../../nwn/twoda/TwoDA.opIndex.html" class="public">
 								<code>opIndex</code>
 							</a>
-							<span class="tableEntryAnnotation">(row, column)</span>
+							<span class="tableEntryAnnotation">(column, row)</span>
 						</td>
-						<td></td>
-					</tr>
-					<tr>
-						<td>
-							<a href="../../nwn/twoda/TwoDA.opIndex.html" class="public">
-								<code>opIndex</code>
-							</a>
-							<span class="tableEntryAnnotation">(row, column)</span>
-						</td>
-						<td></td>
+						<td>Get a specific cell value
+</td>
 					</tr>
 					<tr>
 						<td>
@@ -326,7 +335,8 @@ Max width: 4 chars
 							</a>
 							<span class="tableEntryAnnotation">()</span>
 						</td>
-						<td></td>
+						<td>Outputs 2da text content
+</td>
 					</tr>
 				</table>
 			</section>

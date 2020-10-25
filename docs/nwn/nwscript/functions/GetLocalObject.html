@@ -62,6 +62,11 @@ $('#symbolSearchPane').show();</script>
 						<a href="../../../nwn/trn/genericmesh.html">genericmesh</a>
 					</div>
 				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwn/trn/trn.html">trn</a>
+					</div>
+				</li>
 			</ul>
 				</li>
 				<li>
@@ -119,6 +124,11 @@ $('#symbolSearchPane').show();</script>
 						<a href="../../../nwn/types.html">types</a>
 					</div>
 				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwn/ver.html">ver</a>
+					</div>
+				</li>
 			</ul>
 				</li>
 				<li class="tree-view collapsed">
@@ -174,7 +184,7 @@ $('#symbolSearchPane').show();</script>
 
 <pre class="code"><code class="lang-d"><span class="kwd">import </span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">math</span><span class="pun">;
 </span><span class="kwd">immutable </span><span class="pln">dogeUtc </span><span class="pun">= </span><span class="kwd">cast</span><span class="pun">(</span><span class="kwd">immutable </span><span class="typ">ubyte</span><span class="pun">[])</span><span class="kwd">import</span><span class="pun">(</span><span class="str">"doge.utc"</span><span class="pun">);
-</span><span class="kwd">auto </span><span class="pln">obj </span><span class="pun">= </span><span class="kwd">new </span><span class="typ">Gff</span><span class="pun">(</span><span class="pln">dogeUtc</span><span class="pun">)<wbr/>.</span><span class="pln">as</span><span class="pun">!(</span><span class="typ">GffType<wbr/></span><span class="pun">.</span><span class="typ">Struct</span><span class="pun">);
+</span><span class="kwd">auto </span><span class="pln">obj </span><span class="pun">= </span><span class="kwd">new </span><span class="typ">Gff</span><span class="pun">(</span><span class="pln">dogeUtc</span><span class="pun">)<wbr/>.</span><span class="pln">root</span><span class="pun">;
 
 <a href="../../../nwn/nwscript/functions/SetLocalInt.html"></span><span class="typ">SetLocalInt</span></a><span class="pun">(</span><span class="pln">obj</span><span class="pun">, </span><span class="str">"TestInt"</span><span class="pun">, </span><span class="lit">5</span><span class="pun">);
 <a href="../../../nwn/nwscript/functions/SetLocalFloat.html"></span><span class="typ">SetLocalFloat</span></a><span class="pun">(</span><span class="pln">obj</span><span class="pun">, </span><span class="str">"TestFloat"</span><span class="pun">, </span><span class="lit">5.3</span><span class="pun">);

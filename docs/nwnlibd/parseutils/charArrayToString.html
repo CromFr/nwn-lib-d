@@ -62,6 +62,11 @@ $('#symbolSearchPane').show();</script>
 						<a href="../../nwn/trn/genericmesh.html">genericmesh</a>
 					</div>
 				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/trn/trn.html">trn</a>
+					</div>
+				</li>
 			</ul>
 				</li>
 				<li>
@@ -119,6 +124,11 @@ $('#symbolSearchPane').show();</script>
 						<a href="../../nwn/types.html">types</a>
 					</div>
 				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/ver.html">ver</a>
+					</div>
+				</li>
 			</ul>
 				</li>
 				<li class="tree-view ">
@@ -161,7 +171,7 @@ $('#symbolSearchPane').show();</script>
 		</nav>
 		<div id="main-contents">
 			<h1>Function charArrayToString</h1><p>Converts a static char array to string.
-The fixed char array may or may not be null terminated
+The static char array may or may not be null terminated
 </p>
 			<div class="prototype">
 				<code class="lang-d">
@@ -171,7 +181,7 @@ The fixed char array may or may not be null terminated
 			<br/>
 			&nbsp;&nbsp;<span class="kwd">in </span><span class="pln">T</span> <span class="pln">str</span>
 			<br/>
-			<span class="pun">)</span>
+			<span class="pun">)</span><span class="pln"> </span><span class="kwd">pure @safe</span>
 			<br/>
 			<span class="kwd">if</span> <span class="pun">(</span><span class="pln">isArray</span><span class="pun">!</span><span class="pln">T </span><span class="pun">&amp;&amp; </span><span class="pln">isSomeChar</span><span class="pun">!(</span><span class="typ">ForeachType</span><span class="pun">!</span><span class="pln">T</span><span class="pun">)</span><span class="pun">);</span>
 					</div>

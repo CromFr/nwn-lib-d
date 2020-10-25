@@ -62,6 +62,11 @@ $('#symbolSearchPane').show();</script>
 						<a href="../nwn/trn/genericmesh.html">genericmesh</a>
 					</div>
 				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwn/trn/trn.html">trn</a>
+					</div>
+				</li>
 			</ul>
 				</li>
 				<li>
@@ -119,6 +124,11 @@ $('#symbolSearchPane').show();</script>
 						<a href="../nwn/types.html">types</a>
 					</div>
 				</li>
+				<li>
+					<div class="module ">
+						<a href="../nwn/ver.html">ver</a>
+					</div>
+				</li>
 			</ul>
 				</li>
 				<li class="tree-view ">
@@ -164,7 +174,7 @@ $('#symbolSearchPane').show();</script>
 </p><section></section>
 
 			<section><section><h2>References</h2>
-<p><a href="http://json.org/">http://json.org/</a>
+<p><a href="http://json.org/">http://json.org/</a>, <a href="http://seriot.ch/parsing_json.html">http://seriot.ch/parsing_json.html</a>
 </p>
 </section>
 <section><h2>Example</h2>
@@ -183,7 +193,7 @@ $('#symbolSearchPane').show();</script>
 </span><span class="typ">long </span><span class="pln">x</span><span class="pun">;
 </span><span class="kwd">if </span><span class="pun">(</span><span class="kwd">const</span><span class="pun">(<a href="../nwnlibd/orderedjson/JSONValue.html"></span><span class="typ">JSONValue</span></a><span class="pun">)* </span><span class="pln">code </span><span class="pun">= </span><span class="str">"code" </span><span class="kwd">in </span><span class="pln">j</span><span class="pun">)
 {
-    </span><span class="kwd">if </span><span class="pun">(</span><span class="pln">code<wbr/></span><span class="pun">.</span><span class="pln">type</span><span class="pun">() == <a href="../nwnlibd/orderedjson/JSON_TYPE.html#INTEGER"></span><span class="pln">JSON_TYPE<wbr/></span><span class="pun">.</span><span class="pln">INTEGER</span></a><span class="pun">)
+    </span><span class="kwd">if </span><span class="pun">(</span><span class="pln">code<wbr/></span><span class="pun">.</span><span class="pln">type</span><span class="pun">() == <a href="../nwnlibd/orderedjson/JSONType.html#integer"></span><span class="typ">JSONType<wbr/></span><span class="pun">.</span><span class="pln">integer</span></a><span class="pun">)
         </span><span class="pln">x </span><span class="pun">= </span><span class="pln">code<wbr/></span><span class="pun">.</span><span class="pln">integer</span><span class="pun">;
     </span><span class="kwd">else
         </span><span class="pln">x </span><span class="pun">= </span><span class="pln">to</span><span class="pun">!</span><span class="typ">int</span><span class="pun">(</span><span class="pln">code<wbr/></span><span class="pun">.</span><span class="pln">str</span><span class="pun">);
@@ -198,8 +208,10 @@ $('#symbolSearchPane').show();</script>
 </span><span class="com">// list already exists, so .object optional
 </span><span class="pln">jj</span><span class="pun">[</span><span class="str">"list"</span><span class="pun">]<wbr/>.</span><span class="pln">array </span><span class="pun">~= <a href="../nwnlibd/orderedjson/JSONValue.html"></span><span class="typ">JSONValue</span></a><span class="pun">(</span><span class="str">"D"</span><span class="pun">);
 
-</span><span class="typ">string </span><span class="pln">jjStr </span><span class="pun">= </span><span class="str">`{"language":"D","list":["a","b","c","D"],"rating":3.5}`</span><span class="pun">;
-</span><span class="com">//assert(jj.toString == jjStr);
+</span><span class="com">//#################################################################################################################
+</span><span class="typ">string </span><span class="pln">jjStr </span><span class="pun">= </span><span class="str">`{"language":"D","rating":3.5,"list":["a","b","c","D"]}`</span><span class="pun">;
+</span><span class="com">//#################################################################################################################
+</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">jj<wbr/></span><span class="pun">.</span><span class="pln">toString </span><span class="pun">== </span><span class="pln">jjStr</span><span class="pun">);
 </span></code></pre>
 </section>
 </section>
@@ -234,16 +246,16 @@ $('#symbolSearchPane').show();</script>
 								<a id="toJSON" class="public" href="../nwnlibd/orderedjson/toJSON.html">toJSON</a><span class="tableEntryAnnotation">(root, pretty, options)</span>
 							</code>
 						</td>
-						<td></td>
+						<td>Takes a tree of JSON values and returns the serialized string.
+</td>
 					</tr>
 					<tr>
 						<td>
 							<code>
-								<a id="toJSON" class="public" href="../nwnlibd/orderedjson/toJSON.html">toJSON</a><span class="tableEntryAnnotation">(root, pretty, options)</span>
+								<a id="toJSON" class="public" href="../nwnlibd/orderedjson/toJSON.html">toJSON</a><span class="tableEntryAnnotation">(json, root, pretty, options)</span>
 							</code>
 						</td>
-						<td>Takes a tree of JSON values and returns the serialized string.
-</td>
+						<td></td>
 					</tr>
 				</table>
 			</section>
@@ -293,15 +305,6 @@ $('#symbolSearchPane').show();</script>
 					<tr>
 						<td>
 							<code>
-								<a id="JSON_TYPE" class="public" href="../nwnlibd/orderedjson/JSON_TYPE.html">JSON_TYPE</a>
-							</code>
-						</td>
-						<td>JSON type enumeration
-</td>
-					</tr>
-					<tr>
-						<td>
-							<code>
 								<a id="JSONFloatLiteral" class="public" href="../nwnlibd/orderedjson/JSONFloatLiteral.html">JSONFloatLiteral</a>
 							</code>
 						</td>
@@ -316,6 +319,35 @@ $('#symbolSearchPane').show();</script>
 						</td>
 						<td>Flags that control how json is encoded and parsed.
 </td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="JSONType" class="public" href="../nwnlibd/orderedjson/JSONType.html">JSONType</a>
+							</code>
+						</td>
+						<td>JSON type enumeration
+</td>
+					</tr>
+				</table>
+			</section>
+			<section>
+				<h2>Aliases</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Type</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<a id="JSON_TYPE" class="public" href="../nwnlibd/orderedjson/JSON_TYPE.html">
+								<code>JSON_TYPE</code>
+							</a>
+						</td>
+						<td>
+							<code class="prettyprint lang-d"><a href="../nwnlibd/orderedjson/JSONType.html"><span class="typ">JSONType</span></a></code>
+						</td>
+						<td></td>
 					</tr>
 				</table>
 			</section>

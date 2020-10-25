@@ -62,6 +62,11 @@ $('#symbolSearchPane').show();</script>
 						<a href="../../nwn/trn/genericmesh.html">genericmesh</a>
 					</div>
 				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/trn/trn.html">trn</a>
+					</div>
+				</li>
 			</ul>
 				</li>
 				<li>
@@ -119,6 +124,11 @@ $('#symbolSearchPane').show();</script>
 						<a href="../../nwn/types.html">types</a>
 					</div>
 				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/ver.html">ver</a>
+					</div>
+				</li>
 			</ul>
 				</li>
 				<li class="tree-view ">
@@ -160,12 +170,12 @@ $('#symbolSearchPane').show();</script>
 			</ul>
 		</nav>
 		<div id="main-contents">
-			<h1>Function JSONValue.type</h1><p>Returns the JSON_TYPE of the value stored in this structure.
+			<h1>Function JSONValue.type</h1><p>Returns the JSONType of the value stored in this structure.
 </p>
 			<div class="prototype">
 				<code class="lang-d">
 					<div class="single-prototype">
-			<a href="../../nwnlibd/orderedjson/JSON_TYPE.html"><span class="pln">JSON_TYPE</span></a> <span class="pln">type</span><span class="pun">(</span><span class="pun">)</span><span class="pln"> </span><span class="kwd">pure nothrow @property @nogc @safe const</span><span class="pun">;</span>
+			<a href="../../nwnlibd/orderedjson/JSONType.html"><span class="typ">JSONType</span></a> <span class="pln">type</span><span class="pun">(</span><span class="pun">)</span><span class="pln"> </span><span class="kwd">pure nothrow @property @nogc @safe const</span><span class="pun">;</span>
 					</div>
 				</code>
 			</div>
@@ -174,8 +184,8 @@ $('#symbolSearchPane').show();</script>
 
 <pre class="code"><code class="lang-d"><span class="typ">string </span><span class="pln">s </span><span class="pun">= </span><span class="str">"{ \"language\": \"D\" }"</span><span class="pun">;
 <a href="../../nwnlibd/orderedjson/JSONValue.html"></span><span class="typ">JSONValue</span></a><span class="pln"> j </span><span class="pun">= <a href="../../nwnlibd/orderedjson/parseJSON.html"></span><span class="pln">parseJSON</span></a><span class="pun">(</span><span class="pln">s</span><span class="pun">);
-</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">j<wbr/></span><span class="pun">.</span><span class="pln">type </span><span class="pun">== <a href="../../nwnlibd/orderedjson/JSON_TYPE.html#OBJECT"></span><span class="pln">JSON_TYPE<wbr/></span><span class="pun">.</span><span class="pln">OBJECT</span></a><span class="pun">);
-</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">j</span><span class="pun">[</span><span class="str">"language"</span><span class="pun">]<wbr/>.</span><span class="pln">type </span><span class="pun">== <a href="../../nwnlibd/orderedjson/JSON_TYPE.html#STRING"></span><span class="pln">JSON_TYPE<wbr/></span><span class="pun">.</span><span class="pln">STRING</span></a><span class="pun">);
+</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">j<wbr/></span><span class="pun">.</span><span class="pln">type </span><span class="pun">== <a href="../../nwnlibd/orderedjson/JSONType.html#object"></span><span class="typ">JSONType<wbr/></span><span class="pun">.</span><span class="pln">object</span></a><span class="pun">);
+</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">j</span><span class="pun">[</span><span class="str">"language"</span><span class="pun">]<wbr/>.</span><span class="pln">type </span><span class="pun">== <a href="../../nwnlibd/orderedjson/JSONType.html#string"></span><span class="typ">JSONType<wbr/></span><span class="pun">.</span><span class="typ">string</span></a><span class="pun">);
 
 </span></code></pre>
 </section>

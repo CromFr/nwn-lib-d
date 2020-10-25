@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/>
+		<title>Struct TrnNWN2WalkmeshPayload</title>
+		<link rel="stylesheet" type="text/css" href="../../../styles/ddox.css"/>
+		<link rel="stylesheet" href="../../../prettify/prettify.css" type="text/css"/>
+		<script type="text/javascript" src="../../../scripts/jquery.js">/**/</script><script type="text/javascript" src="../../../scripts/ddox.js">/**/</script>
+	</head>
+	<body onload="setupDdox();">
+		<nav id="main-nav">
+			<noscript>
+				<p style="color: red">The search functionality needs JavaScript enabled</p>
+			</noscript>
+			<div id="symbolSearchPane" style="display: none">
+				<form action="#" method="GET">
+					<input id="symbolSearch" type="text" name="q" placeholder="Search for symbols" autocomplete="off" onchange="performSymbolSearch(40);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
+				</form>
+				<ul id="symbolSearchResults" class="symbolList" style="display: none"></ul><script type="application/javascript" src="../../../symbols.js"></script><script type="application/javascript">var symbolSearchRootDir = "../../../";
+$('#symbolSearchPane').show();</script>
+			</div>
+			<ul class="tree-view">
+				<li class="tree-view ">
+					<div class="package ">
+						<a href="../../../nwn.html">nwn</a>
+					</div>
+			<ul class="tree-view">
+				<li class="tree-view collapsed">
+					<div class="package ">
+						<a href="../../../nwn/nwscript.html">nwscript</a>
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../../nwn/nwscript/constants.html">constants</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwn/nwscript/extensions.html">extensions</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwn/nwscript/functions.html">functions</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwn/nwscript/resources.html">resources</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view ">
+					<div class="package ">
+						<a href="../../../nwn/trn.html">trn</a>
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../../nwn/trn/genericmesh.html">genericmesh</a>
+					</div>
+				</li>
+				<li>
+					<div class="module selected">
+						<a href="../../../nwn/trn/trn.html">trn</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwn/biowaredb.html">biowaredb</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwn/constants.html">constants</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwn/dds.html">dds</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwn/erf.html">erf</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwn/fastgff.html">fastgff</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwn/gff.html">gff</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwn/mdb.html">mdb</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwn/nwnserver.html">nwnserver</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwn/tlk.html">tlk</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwn/twoda.html">twoda</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwn/types.html">types</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwn/ver.html">ver</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">nwnlibd
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../../nwnlibd/geometry.html">geometry</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwnlibd/orderedaa.html">orderedaa</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwnlibd/orderedjson.html">orderedjson</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwnlibd/parseutils.html">parseutils</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwnlibd/path.html">path</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwnlibd/wavefrontobj.html">wavefrontobj</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+			</ul>
+		</nav>
+		<div id="main-contents">
+			<h1>Struct TrnNWN2WalkmeshPayload</h1><p>Compressed walkmesh (only contained inside TRX files)
+</p>
+			<div class="prototype">
+				<code class="lang-d">
+					<div class="single-prototype">
+			<span class="kwd">struct</span> <span class="typ">TrnNWN2WalkmeshPayload</span>
+			<span class="pun">;</span>
+					</div>
+				</code>
+			</div>
+			
+			<section><h2>Constructors</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WalkmeshPayload.this.html" class="public">
+								<code>this</code>
+							</a>
+							<span class="tableEntryAnnotation">(payload)</span>
+						</td>
+						<td>Build packet with raw data
+</td>
+					</tr>
+				</table>
+			</section>
+			<section><h2>Fields</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Type</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WalkmeshPayload.edges.html" class="public"><code>edges</code></a>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><a href="../../../nwn/trn/trn/TrnNWN2WalkmeshPayload.Edge.html"><span class="typ">TrnNWN2WalkmeshPayload<wbr/></span><span class="pun">.<wbr/></span><span class="typ">Edge</span></a><span class="pun">[]</span></code></td><td></td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WalkmeshPayload.header.html" class="public"><code>header</code></a>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><a href="../../../nwn/trn/trn/TrnNWN2WalkmeshPayload.Header.html"><span class="typ">TrnNWN2WalkmeshPayload<wbr/></span><span class="pun">.<wbr/></span><span class="typ">Header</span></a></code></td><td>ASWM packet header
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WalkmeshPayload.islands.html" class="public"><code>islands</code></a>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><a href="../../../nwn/trn/trn/TrnNWN2WalkmeshPayload.Island.html"><span class="typ">TrnNWN2WalkmeshPayload<wbr/></span><span class="pun">.<wbr/></span><span class="typ">Island</span></a><span class="pun">[]</span></code></td><td>Islands list. See <code class="lang-d"><a href="../../../nwn/trn/trn/TrnNWN2WalkmeshPayload.Island.html"><span class="typ">Island</span></a></code>
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WalkmeshPayload.islands_path_nodes.html" class="public"><code>islands_path_nodes</code></a>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><a href="../../../nwn/trn/trn/TrnNWN2WalkmeshPayload.IslandPathNode.html"><span class="typ">TrnNWN2WalkmeshPayload<wbr/></span><span class="pun">.<wbr/></span><span class="typ">IslandPathNode</span></a><span class="pun">[]</span></code></td><td></td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WalkmeshPayload.tiles.html" class="public"><code>tiles</code></a>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><a href="../../../nwn/trn/trn/TrnNWN2WalkmeshPayload.Tile.html"><span class="typ">TrnNWN2WalkmeshPayload<wbr/></span><span class="pun">.<wbr/></span><span class="typ">Tile</span></a><span class="pun">[]</span></code></td><td>Map tile list
+Non border tiles have <code class="lang-d"><span class="pln">header<wbr/></span><span class="pun">.</span><span class="pln">vertices_count </span><span class="pun">&gt; </span><span class="lit">0 </span><span class="pun">|| </span><span class="pln">header<wbr/></span><span class="pun">.</span><span class="pln">edges_count </span><span class="pun">&gt; </span><span class="lit">0 </span><span class="pun">|| </span><span class="pln">header<wbr/></span><span class="pun">.</span><span class="pln">triangles_count </span><span class="pun">&gt; </span><span class="lit">0</span></code>
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WalkmeshPayload.tiles_border_size.html" class="public"><code>tiles_border_size</code></a>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">uint</span></code></td><td>Width of the map borders in tiles (8 means that 8 tiles will be removed on each side)
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WalkmeshPayload.tiles_flags.html" class="public"><code>tiles_flags</code></a>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">uint</span></code></td><td>Always 31 in TRX files, 15 in TRN files
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WalkmeshPayload.tiles_grid_height.html" class="public"><code>tiles_grid_height</code></a>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">uint</span></code></td><td>Number of tiles along Y axis
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WalkmeshPayload.tiles_grid_width.html" class="public"><code>tiles_grid_width</code></a>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">uint</span></code></td><td>Number of tiles along X axis
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WalkmeshPayload.tiles_width.html" class="public"><code>tiles_width</code></a>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">float</span></code></td><td>Width in meters of a terrain tile (most likely to be 10.0)
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WalkmeshPayload.triangles.html" class="public"><code>triangles</code></a>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><a href="../../../nwn/trn/trn/TrnNWN2WalkmeshPayload.Triangle.html"><span class="typ">TrnNWN2WalkmeshPayload<wbr/></span><span class="pun">.<wbr/></span><span class="typ">Triangle</span></a><span class="pun">[]</span></code></td><td></td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WalkmeshPayload.vertices.html" class="public"><code>vertices</code></a>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><a href="../../../nwn/trn/trn/TrnNWN2WalkmeshPayload.Vertex.html"><span class="typ">TrnNWN2WalkmeshPayload<wbr/></span><span class="pun">.<wbr/></span><span class="typ">Vertex</span></a><span class="pun">[]</span></code></td><td></td>
+					</tr>
+				</table>
+			</section>
+			<section><h2>Methods</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WalkmeshPayload.bake.html" class="public">
+								<code>bake</code>
+							</a>
+							<span class="tableEntryAnnotation">(removeBorders)</span>
+						</td>
+						<td>Bake the existing walkmesh by re-creating tiles, islands, path tables, ...
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WalkmeshPayload.buildEdges.html" class="public">
+								<code>buildEdges</code>
+							</a>
+							<span class="tableEntryAnnotation">()</span>
+						</td>
+						<td>Rebuilds edge data by going through every triangle / vertices
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WalkmeshPayload.dump.html" class="public">
+								<code>dump</code>
+							</a>
+							<span class="tableEntryAnnotation">()</span>
+						</td>
+						<td>Dump trn data as text
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WalkmeshPayload.findIslandsPath.html" class="public">
+								<code>findIslandsPath</code>
+							</a>
+							<span class="tableEntryAnnotation">(fromIslandIndex, toIslandIndex)</span>
+						</td>
+						<td>Calculate the fastest route between two islands. The area need to be baked, as it uses existing path tables.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WalkmeshPayload.removeTriangles.html" class="public">
+								<code>removeTriangles</code>
+							</a>
+							<span class="tableEntryAnnotation">(removeFunc)</span>
+						</td>
+						<td>Removes triangles from the mesh, and removes unused vertices and edges accordingly.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WalkmeshPayload.serialize.html" class="public">
+								<code>serialize</code>
+							</a>
+							<span class="tableEntryAnnotation">()</span>
+						</td>
+						<td>Serialize TRN packet data
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WalkmeshPayload.serializeUncompressed.html" class="public">
+								<code>serializeUncompressed</code>
+							</a>
+							<span class="tableEntryAnnotation">()</span>
+						</td>
+						<td>Serialize the aswm data without compressing it. Useful for debugging raw data.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WalkmeshPayload.setFootstepSounds.html" class="public">
+								<code>setFootstepSounds</code>
+							</a>
+							<span class="tableEntryAnnotation">(trrnPackets, textureFlags)</span>
+						</td>
+						<td>Set the footstep sound flags for each triangle of the walkmesh
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WalkmeshPayload.setFootstepSounds.html" class="public">
+								<code>setFootstepSounds</code>
+							</a>
+							<span class="tableEntryAnnotation">(trrnPackets, terrainmaterials)</span>
+						</td>
+						<td>ditto
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WalkmeshPayload.setGenericMesh.html" class="public">
+								<code>setGenericMesh</code>
+							</a>
+							<span class="tableEntryAnnotation">(mesh)</span>
+						</td>
+						<td>Set 3d mesh geometry
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WalkmeshPayload.toGenericMesh.html" class="public">
+								<code>toGenericMesh</code>
+							</a>
+							<span class="tableEntryAnnotation">(triangleFlags)</span>
+						</td>
+						<td>Converts terrain mesh data to a more generic format.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WalkmeshPayload.translateIndices.html" class="public">
+								<code>translateIndices</code>
+							</a>
+							<span class="tableEntryAnnotation">(triTransTable, edgeTransTable, vertTransTable)</span>
+						</td>
+						<td>Translate triangle / edge / vertex indices stored in mesh data.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WalkmeshPayload.validate.html" class="public">
+								<code>validate</code>
+							</a>
+							<span class="tableEntryAnnotation">(strict)</span>
+						</td>
+						<td>Check if the ASWM contains legit data
+</td>
+					</tr>
+				</table>
+			</section>
+			<section><h2>Inner structs</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WalkmeshPayload.Edge.html" class="public">
+								<code>Edge</code>
+							</a>
+						</td>
+						<td>Edge between two triangles
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WalkmeshPayload.Header.html" class="public">
+								<code>Header</code>
+							</a>
+						</td>
+						<td>ASWM packet header
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WalkmeshPayload.Island.html" class="public">
+								<code>Island</code>
+							</a>
+						</td>
+						<td>Tile or fraction of a tile used for pathfinding through large distances.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WalkmeshPayload.IslandPathNode.html" class="public">
+								<code>IslandPathNode</code>
+							</a>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WalkmeshPayload.Tile.html" class="public">
+								<code>Tile</code>
+							</a>
+						</td>
+						<td>Tile with its path table
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WalkmeshPayload.Triangle.html" class="public">
+								<code>Triangle</code>
+							</a>
+						</td>
+						<td>Mesh Triangle + pre-calculated data + metadata
+</td>
+					</tr>
+				</table>
+			</section>
+			<section><h2>Unions</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WalkmeshPayload.Vertex.html" class="public">
+								<code>Vertex</code>
+							</a>
+						</td>
+						<td></td>
+					</tr>
+				</table>
+			</section>
+			
+			<footer>
+				<table class="license-info">
+					<tr>
+						<th>Authors</th>
+						<td>
+							
+						</td>
+					</tr>
+					<tr>
+						<th>Copyright</th>
+						<td>
+							
+						</td>
+					</tr>
+					<tr>
+						<th>License</th>
+						<td>
+							
+						</td>
+					</tr>
+				</table>
+				<p class="faint">Generated using the DDOX documentation generator</p>
+			</footer>
+		</div>
+	</body>
+</html>

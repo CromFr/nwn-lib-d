@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/>
+		<title>Struct TrnNWN2WalkmeshPayload.Tile</title>
+		<link rel="stylesheet" type="text/css" href="../../../styles/ddox.css"/>
+		<link rel="stylesheet" href="../../../prettify/prettify.css" type="text/css"/>
+		<script type="text/javascript" src="../../../scripts/jquery.js">/**/</script><script type="text/javascript" src="../../../scripts/ddox.js">/**/</script>
+	</head>
+	<body onload="setupDdox();">
+		<nav id="main-nav">
+			<noscript>
+				<p style="color: red">The search functionality needs JavaScript enabled</p>
+			</noscript>
+			<div id="symbolSearchPane" style="display: none">
+				<form action="#" method="GET">
+					<input id="symbolSearch" type="text" name="q" placeholder="Search for symbols" autocomplete="off" onchange="performSymbolSearch(40);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
+				</form>
+				<ul id="symbolSearchResults" class="symbolList" style="display: none"></ul><script type="application/javascript" src="../../../symbols.js"></script><script type="application/javascript">var symbolSearchRootDir = "../../../";
+$('#symbolSearchPane').show();</script>
+			</div>
+			<ul class="tree-view">
+				<li class="tree-view ">
+					<div class="package ">
+						<a href="../../../nwn.html">nwn</a>
+					</div>
+			<ul class="tree-view">
+				<li class="tree-view collapsed">
+					<div class="package ">
+						<a href="../../../nwn/nwscript.html">nwscript</a>
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../../nwn/nwscript/constants.html">constants</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwn/nwscript/extensions.html">extensions</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwn/nwscript/functions.html">functions</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwn/nwscript/resources.html">resources</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view ">
+					<div class="package ">
+						<a href="../../../nwn/trn.html">trn</a>
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../../nwn/trn/genericmesh.html">genericmesh</a>
+					</div>
+				</li>
+				<li>
+					<div class="module selected">
+						<a href="../../../nwn/trn/trn.html">trn</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwn/biowaredb.html">biowaredb</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwn/constants.html">constants</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwn/dds.html">dds</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwn/erf.html">erf</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwn/fastgff.html">fastgff</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwn/gff.html">gff</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwn/mdb.html">mdb</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwn/nwnserver.html">nwnserver</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwn/tlk.html">tlk</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwn/twoda.html">twoda</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwn/types.html">types</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwn/ver.html">ver</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">nwnlibd
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../../nwnlibd/geometry.html">geometry</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwnlibd/orderedaa.html">orderedaa</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwnlibd/orderedjson.html">orderedjson</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwnlibd/parseutils.html">parseutils</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwnlibd/path.html">path</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwnlibd/wavefrontobj.html">wavefrontobj</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+			</ul>
+		</nav>
+		<div id="main-contents">
+			<h1>Struct TrnNWN2WalkmeshPayload.Tile</h1><p>Tile with its path table
+</p>
+			<div class="prototype">
+				<code class="lang-d">
+					<div class="single-prototype">
+			<span class="kwd">struct</span> <span class="typ">Tile</span>
+			<span class="pun">;</span>
+					</div>
+				</code>
+			</div>
+			
+			<section><h2>Fields</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Type</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WalkmeshPayload.Tile.edges.html" class="public"><code>edges</code></a>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><a href="../../../nwn/trn/trn/TrnNWN2WalkmeshPayload.Edge.html"><span class="typ">TrnNWN2WalkmeshPayload<wbr/></span><span class="pun">.<wbr/></span><span class="typ">Edge</span></a><span class="pun">[]</span></code></td><td>Only used if <code class="lang-d"><span class="pln">header<wbr/></span><span class="pun">.</span><span class="pln">owns_data </span><span class="pun">== </span><span class="kwd">true</span></code>
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WalkmeshPayload.Tile.header.html" class="public"><code>header</code></a>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><a href="../../../nwn/trn/trn/TrnNWN2WalkmeshPayload.Tile.Header.html"><span class="typ">TrnNWN2WalkmeshPayload<wbr/></span><span class="pun">.<wbr/></span><span class="typ">Tile<wbr/></span><span class="pun">.<wbr/></span><span class="typ">Header</span></a></code></td><td></td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WalkmeshPayload.Tile.path_table.html" class="public"><code>path_table</code></a>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><a href="../../../nwn/trn/trn/TrnNWN2WalkmeshPayload.Tile.PathTable.html"><span class="typ">TrnNWN2WalkmeshPayload<wbr/></span><span class="pun">.<wbr/></span><span class="typ">Tile<wbr/></span><span class="pun">.<wbr/></span><span class="typ">PathTable</span></a></code></td><td></td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WalkmeshPayload.Tile.vertices.html" class="public"><code>vertices</code></a>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><a href="../../../nwn/trn/trn/TrnNWN2WalkmeshPayload.Vertex.html"><span class="typ">TrnNWN2WalkmeshPayload<wbr/></span><span class="pun">.<wbr/></span><span class="typ">Vertex</span></a><span class="pun">[]</span></code></td><td>Only used if <code class="lang-d"><span class="pln">header<wbr/></span><span class="pun">.</span><span class="pln">owns_data </span><span class="pun">== </span><span class="kwd">true</span></code>
+</td>
+					</tr>
+				</table>
+			</section>
+			<section><h2>Methods</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WalkmeshPayload.Tile.dump.html" class="public">
+								<code>dump</code>
+							</a>
+							<span class="tableEntryAnnotation">()</span>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WalkmeshPayload.Tile.findPath.html" class="public">
+								<code>findPath</code>
+							</a>
+							<span class="tableEntryAnnotation">(fromGTriIndex, toGTriIndex)</span>
+						</td>
+						<td>Calculate the fastest route between two triangles of a tile. The tile need to be baked, as it uses existing path tables.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WalkmeshPayload.Tile.getPathNode.html" class="public">
+								<code>getPathNode</code>
+							</a>
+							<span class="tableEntryAnnotation">(fromGTriIndex, toGTriIndex)</span>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WalkmeshPayload.Tile.validate.html" class="public">
+								<code>validate</code>
+							</a>
+							<span class="tableEntryAnnotation">(aswm, tileIndex, strict)</span>
+						</td>
+						<td>Check a single tile. You should use <code class="lang-d"><a href="../../../nwn/trn/trn/TrnNWN2WalkmeshPayload.validate.html"><span class="typ">TrnNWN2WalkmeshPayload<wbr/></span><span class="pun">.</span><span class="pln">validate</span></a><span class="pun">()</span></code> instead
+</td>
+					</tr>
+				</table>
+			</section>
+			<section><h2>Inner structs</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WalkmeshPayload.Tile.Header.html" class="public">
+								<code>Header</code>
+							</a>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WalkmeshPayload.Tile.PathTable.html" class="public">
+								<code>PathTable</code>
+							</a>
+						</td>
+						<td>Tile pathing information
+</td>
+					</tr>
+				</table>
+			</section>
+			
+			<footer>
+				<table class="license-info">
+					<tr>
+						<th>Authors</th>
+						<td>
+							
+						</td>
+					</tr>
+					<tr>
+						<th>Copyright</th>
+						<td>
+							
+						</td>
+					</tr>
+					<tr>
+						<th>License</th>
+						<td>
+							
+						</td>
+					</tr>
+				</table>
+				<p class="faint">Generated using the DDOX documentation generator</p>
+			</footer>
+		</div>
+	</body>
+</html>

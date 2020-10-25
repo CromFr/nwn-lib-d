@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/>
+		<title>Struct TrnNWN2WaterPayload</title>
+		<link rel="stylesheet" type="text/css" href="../../../styles/ddox.css"/>
+		<link rel="stylesheet" href="../../../prettify/prettify.css" type="text/css"/>
+		<script type="text/javascript" src="../../../scripts/jquery.js">/**/</script><script type="text/javascript" src="../../../scripts/ddox.js">/**/</script>
+	</head>
+	<body onload="setupDdox();">
+		<nav id="main-nav">
+			<noscript>
+				<p style="color: red">The search functionality needs JavaScript enabled</p>
+			</noscript>
+			<div id="symbolSearchPane" style="display: none">
+				<form action="#" method="GET">
+					<input id="symbolSearch" type="text" name="q" placeholder="Search for symbols" autocomplete="off" onchange="performSymbolSearch(40);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
+				</form>
+				<ul id="symbolSearchResults" class="symbolList" style="display: none"></ul><script type="application/javascript" src="../../../symbols.js"></script><script type="application/javascript">var symbolSearchRootDir = "../../../";
+$('#symbolSearchPane').show();</script>
+			</div>
+			<ul class="tree-view">
+				<li class="tree-view ">
+					<div class="package ">
+						<a href="../../../nwn.html">nwn</a>
+					</div>
+			<ul class="tree-view">
+				<li class="tree-view collapsed">
+					<div class="package ">
+						<a href="../../../nwn/nwscript.html">nwscript</a>
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../../nwn/nwscript/constants.html">constants</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwn/nwscript/extensions.html">extensions</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwn/nwscript/functions.html">functions</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwn/nwscript/resources.html">resources</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view ">
+					<div class="package ">
+						<a href="../../../nwn/trn.html">trn</a>
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../../nwn/trn/genericmesh.html">genericmesh</a>
+					</div>
+				</li>
+				<li>
+					<div class="module selected">
+						<a href="../../../nwn/trn/trn.html">trn</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwn/biowaredb.html">biowaredb</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwn/constants.html">constants</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwn/dds.html">dds</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwn/erf.html">erf</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwn/fastgff.html">fastgff</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwn/gff.html">gff</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwn/mdb.html">mdb</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwn/nwnserver.html">nwnserver</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwn/tlk.html">tlk</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwn/twoda.html">twoda</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwn/types.html">types</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwn/ver.html">ver</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">nwnlibd
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../../nwnlibd/geometry.html">geometry</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwnlibd/orderedaa.html">orderedaa</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwnlibd/orderedjson.html">orderedjson</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwnlibd/parseutils.html">parseutils</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwnlibd/path.html">path</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../nwnlibd/wavefrontobj.html">wavefrontobj</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+			</ul>
+		</nav>
+		<div id="main-contents">
+			<h1>Struct TrnNWN2WaterPayload</h1><p>Water information
+</p>
+			<div class="prototype">
+				<code class="lang-d">
+					<div class="single-prototype">
+			<span class="kwd">struct</span> <span class="typ">TrnNWN2WaterPayload</span>
+			<span class="pun">;</span>
+					</div>
+				</code>
+			</div>
+			
+			<section><h2>Constructors</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WaterPayload.this.html" class="public">
+								<code>this</code>
+							</a>
+							<span class="tableEntryAnnotation">(payload)</span>
+						</td>
+						<td>Build packet with raw data
+</td>
+					</tr>
+				</table>
+			</section>
+			<section><h2>Fields</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Type</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WaterPayload.color.html" class="public"><code>color</code></a>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">float</span><span class="pun">[</span><span class="lit">3</span><span class="pun">]</span></code></td><td>R,G,B
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WaterPayload.dds.html" class="public"><code>dds</code></a>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">ubyte</span><span class="pun">[]</span></code></td><td>DDS bitmap
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WaterPayload.megatile_position.html" class="public"><code>megatile_position</code></a>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">uint</span><span class="pun">[</span><span class="lit">2</span><span class="pun">]</span></code></td><td>Position of the associated megatile in the terrain
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WaterPayload.name.html" class="public"><code>name</code></a>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">char</span><span class="pun">[</span><span class="lit">32</span><span class="pun">]</span></code></td><td>WATR name.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WaterPayload.reflect_bias.html" class="public"><code>reflect_bias</code></a>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">float</span></code></td><td>Reflection bias
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WaterPayload.reflect_power.html" class="public"><code>reflect_power</code></a>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">float</span></code></td><td>Reflection power
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WaterPayload.ripple.html" class="public"><code>ripple</code></a>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">float</span><span class="pun">[</span><span class="lit">2</span><span class="pun">]</span></code></td><td>Ripples
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WaterPayload.smoothness.html" class="public"><code>smoothness</code></a>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">float</span></code></td><td>Smoothness
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WaterPayload.specular_cofficient.html" class="public"><code>specular_cofficient</code></a>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">float</span></code></td><td>Specular map coefficient
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WaterPayload.specular_power.html" class="public"><code>specular_power</code></a>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">float</span></code></td><td>Specular map power
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WaterPayload.textures.html" class="public"><code>textures</code></a>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><a href="../../../nwn/trn/trn/TrnNWN2WaterPayload.Texture.html"><span class="typ">TrnNWN2WaterPayload<wbr/></span><span class="pun">.<wbr/></span><span class="typ">Texture</span></a><span class="pun">[</span><span class="lit">3</span><span class="pun">]</span></code></td><td>Water textures
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WaterPayload.triangles.html" class="public"><code>triangles</code></a>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><a href="../../../nwn/trn/trn/TrnNWN2WaterPayload.Triangle.html"><span class="typ">TrnNWN2WaterPayload<wbr/></span><span class="pun">.<wbr/></span><span class="typ">Triangle</span></a><span class="pun">[]</span></code></td><td>Walkmesh grid triangles positions.
+Each uint16_t an index in <code class="lang-d"><a href="../../../nwn/trn/trn/TrnNWN2WaterPayload.vertices.html"><span class="pln">vertices</span></a></code> corresponding to a triangle vertex
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WaterPayload.triangles_flags.html" class="public"><code>triangles_flags</code></a>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">uint</span><span class="pun">[]</span></code></td><td>0 = has water, 1 = no water
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WaterPayload.unknown.html" class="public"><code>unknown</code></a>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">ubyte</span><span class="pun">[</span><span class="lit">96</span><span class="pun">]</span></code></td><td></td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WaterPayload.uv_offset.html" class="public"><code>uv_offset</code></a>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">float</span><span class="pun">[</span><span class="lit">2</span><span class="pun">]</span></code></td><td>x,y offset in water-space &lt;=&gt; megatile_coordinates/8
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WaterPayload.vertices.html" class="public"><code>vertices</code></a>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><a href="../../../nwn/trn/trn/TrnNWN2WaterPayload.Vertex.html"><span class="typ">TrnNWN2WaterPayload<wbr/></span><span class="pun">.<wbr/></span><span class="typ">Vertex</span></a><span class="pun">[]</span></code></td><td></td>
+					</tr>
+				</table>
+			</section>
+			<section><h2>Methods</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WaterPayload.dump.html" class="public">
+								<code>dump</code>
+							</a>
+							<span class="tableEntryAnnotation">()</span>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WaterPayload.serialize.html" class="public">
+								<code>serialize</code>
+							</a>
+							<span class="tableEntryAnnotation">()</span>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WaterPayload.validate.html" class="public">
+								<code>validate</code>
+							</a>
+							<span class="tableEntryAnnotation">()</span>
+						</td>
+						<td></td>
+					</tr>
+				</table>
+			</section>
+			<section><h2>Inner structs</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WaterPayload.Texture.html" class="public">
+								<code>Texture</code>
+							</a>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WaterPayload.Triangle.html" class="public">
+								<code>Triangle</code>
+							</a>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../nwn/trn/trn/TrnNWN2WaterPayload.Vertex.html" class="public">
+								<code>Vertex</code>
+							</a>
+						</td>
+						<td></td>
+					</tr>
+				</table>
+			</section>
+			
+			<footer>
+				<table class="license-info">
+					<tr>
+						<th>Authors</th>
+						<td>
+							
+						</td>
+					</tr>
+					<tr>
+						<th>Copyright</th>
+						<td>
+							
+						</td>
+					</tr>
+					<tr>
+						<th>License</th>
+						<td>
+							
+						</td>
+					</tr>
+				</table>
+				<p class="faint">Generated using the DDOX documentation generator</p>
+			</footer>
+		</div>
+	</body>
+</html>

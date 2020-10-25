@@ -62,6 +62,11 @@ $('#symbolSearchPane').show();</script>
 						<a href="../../nwn/trn/genericmesh.html">genericmesh</a>
 					</div>
 				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/trn/trn.html">trn</a>
+					</div>
+				</li>
 			</ul>
 				</li>
 				<li>
@@ -117,6 +122,11 @@ $('#symbolSearchPane').show();</script>
 				<li>
 					<div class="module ">
 						<a href="../../nwn/types.html">types</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/ver.html">ver</a>
 					</div>
 				</li>
 			</ul>
@@ -186,8 +196,8 @@ $('#symbolSearchPane').show();</script>
 						</td>
 						<td>Constructor for <code class="lang-d"><a href="../../nwnlibd/orderedjson/JSONValue.html"><span class="typ">JSONValue</span></a></code>. If <code class="lang-d"><a href="../../nwnlibd/orderedjson/JSONValue.this.html#arg"><span class="pln">arg</span></a></code> is a <code class="lang-d"><a href="../../nwnlibd/orderedjson/JSONValue.html"><span class="typ">JSONValue</span></a></code>
  its value and type will be copied to the new <code class="lang-d"><a href="../../nwnlibd/orderedjson/JSONValue.html"><span class="typ">JSONValue</span></a></code>.
- Note that this is a shallow copy: if type is <code class="lang-d"><a href="../../nwnlibd/orderedjson/JSON_TYPE.html#OBJECT"><span class="pln">JSON_TYPE<wbr/></span><span class="pun">.</span><span class="pln">OBJECT</span></a></code>
- or <code class="lang-d"><a href="../../nwnlibd/orderedjson/JSON_TYPE.html#ARRAY"><span class="pln">JSON_TYPE<wbr/></span><span class="pun">.</span><span class="pln">ARRAY</span></a></code> then only the reference to the data will
+ Note that this is a shallow copy: if type is <code class="lang-d"><a href="../../nwnlibd/orderedjson/JSONType.html#object"><span class="typ">JSONType<wbr/></span><span class="pun">.</span><span class="pln">object</span></a></code>
+ or <code class="lang-d"><a href="../../nwnlibd/orderedjson/JSONType.html#array"><span class="typ">JSONType<wbr/></span><span class="pun">.</span><span class="pln">array</span></a></code> then only the reference to the data will
  be copied.
  Otherwise, <code class="lang-d"><a href="../../nwnlibd/orderedjson/JSONValue.this.html#arg"><span class="pln">arg</span></a></code> must be implicitly convertible to one of the
  following types: <code class="lang-d"><span class="kwd">typeof</span><span class="pun">(</span><span class="kwd">null</span><span class="pun">)</span></code>, <code class="lang-d"><span class="typ">string</span></code>, <code class="lang-d"><span class="typ">ulong</span></code>,
@@ -222,51 +232,78 @@ $('#symbolSearchPane').show();</script>
 						<td>
 							<a href="../../nwnlibd/orderedjson/JSONValue.array.html" class="public property"><code>array</code></a><span class="tableEntryAnnotation">[get, set]</span>
 						</td>
-						<td class="typecol"><code class="prettyprint lang-d"><span class="kwd">inout</span><span class="pun">(</span><a href="../../nwnlibd/orderedjson/JSONValue.html"><span class="typ">JSONValue</span></a><span class="pun">[]</span><span class="pun">)</span></code></td><td>Value getter/setter for <code class="lang-d"><a href="../../nwnlibd/orderedjson/JSON_TYPE.html#ARRAY"><span class="pln">JSON_TYPE<wbr/></span><span class="pun">.</span><span class="pln">ARRAY</span></a></code>.
+						<td class="typecol"><code class="prettyprint lang-d"><span class="kwd">inout</span><span class="pun">(</span><a href="../../nwnlibd/orderedjson/JSONValue.html"><span class="typ">JSONValue</span></a><span class="pun">[]</span><span class="pun">)</span></code></td><td>Value getter/setter for <code class="lang-d"><a href="../../nwnlibd/orderedjson/JSONType.html#array"><span class="typ">JSONType<wbr/></span><span class="pun">.</span><span class="pln">array</span></a></code>.
 </td>
 					</tr>
 					<tr>
 						<td>
 							<a href="../../nwnlibd/orderedjson/JSONValue.arrayNoRef.html" class="public property"><code>arrayNoRef</code></a><span class="tableEntryAnnotation">[get]</span>
 						</td>
-						<td class="typecol"><code class="prettyprint lang-d"><span class="kwd">inout</span><span class="pun">(</span><a href="../../nwnlibd/orderedjson/JSONValue.html"><span class="typ">JSONValue</span></a><span class="pun">[]</span><span class="pun">)</span></code></td><td>Value getter for <code class="lang-d"><a href="../../nwnlibd/orderedjson/JSON_TYPE.html#ARRAY"><span class="pln">JSON_TYPE<wbr/></span><span class="pun">.</span><span class="pln">ARRAY</span></a></code>.
+						<td class="typecol"><code class="prettyprint lang-d"><span class="kwd">inout</span><span class="pun">(</span><a href="../../nwnlibd/orderedjson/JSONValue.html"><span class="typ">JSONValue</span></a><span class="pun">[]</span><span class="pun">)</span></code></td><td>Value getter for <code class="lang-d"><a href="../../nwnlibd/orderedjson/JSONType.html#array"><span class="typ">JSONType<wbr/></span><span class="pun">.</span><span class="pln">array</span></a></code>.
  Unlike <code class="lang-d"><a href="../../nwnlibd/orderedjson/JSONValue.array.html"><span class="pln">array</span></a></code>, this retrieves the array by value and can be used in @safe code.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../nwnlibd/orderedjson/JSONValue.boolean.html" class="public property"><code>boolean</code></a><span class="tableEntryAnnotation">[get, set]</span>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">bool</span></code></td><td>Value getter/setter for boolean stored in JSON.
 </td>
 					</tr>
 					<tr>
 						<td>
 							<a href="../../nwnlibd/orderedjson/JSONValue.floating.html" class="public property"><code>floating</code></a><span class="tableEntryAnnotation">[get, set]</span>
 						</td>
-						<td class="typecol"><code class="prettyprint lang-d"><span class="kwd">inout</span><span class="pun">(</span><span class="typ">double</span><span class="pun">)</span></code></td><td>Value getter/setter for <code class="lang-d"><a href="../../nwnlibd/orderedjson/JSON_TYPE.html#FLOAT"><span class="pln">JSON_TYPE<wbr/></span><span class="pun">.</span><span class="pln">FLOAT</span></a></code>. Note that despite
+						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">double</span></code></td><td>Value getter/setter for <code class="lang-d"><a href="../../nwnlibd/orderedjson/JSONType.html#float_"><span class="typ">JSONType<wbr/></span><span class="pun">.</span><span class="pln">float_</span></a></code>. Note that despite
  the name, this is a <b>64</b>-bit <code class="lang-d"><span class="typ">double</span></code>, not a 32-bit <code class="lang-d"><span class="typ">float</span></code>.
 </td>
 					</tr>
 					<tr>
 						<td>
+							<a href="../../nwnlibd/orderedjson/JSONValue.get.html" class="public property"><code>get</code></a><span class="tableEntryAnnotation">[get]</span>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><span class="kwd">inout</span><span class="pun">(</span><span class="pln">T</span><span class="pun">)</span></code></td><td>Generic type value getter
+ A convenience getter that returns this <code class="lang-d"><a href="../../nwnlibd/orderedjson/JSONValue.html"><span class="typ">JSONValue</span></a></code> as the specified D type.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../nwnlibd/orderedjson/JSONValue.get.html" class="public property"><code>get</code></a><span class="tableEntryAnnotation">[get]</span>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><span class="kwd">inout</span><span class="pun">(</span><span class="pln">T</span><span class="pun">)</span></code></td><td></td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../nwnlibd/orderedjson/JSONValue.get.html" class="public property"><code>get</code></a><span class="tableEntryAnnotation">[get]</span>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><span class="kwd">inout</span><span class="pun">(</span><span class="pln">T</span><span class="pun">)</span></code></td><td></td>
+					</tr>
+					<tr>
+						<td>
 							<a href="../../nwnlibd/orderedjson/JSONValue.integer.html" class="public property"><code>integer</code></a><span class="tableEntryAnnotation">[get, set]</span>
 						</td>
-						<td class="typecol"><code class="prettyprint lang-d"><span class="kwd">inout</span><span class="pun">(</span><span class="typ">long</span><span class="pun">)</span></code></td><td>Value getter/setter for <code class="lang-d"><a href="../../nwnlibd/orderedjson/JSON_TYPE.html#INTEGER"><span class="pln">JSON_TYPE<wbr/></span><span class="pun">.</span><span class="pln">INTEGER</span></a></code>.
+						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">long</span></code></td><td>Value getter/setter for <code class="lang-d"><a href="../../nwnlibd/orderedjson/JSONType.html#integer"><span class="typ">JSONType<wbr/></span><span class="pun">.</span><span class="pln">integer</span></a></code>.
 </td>
 					</tr>
 					<tr>
 						<td>
 							<a href="../../nwnlibd/orderedjson/JSONValue.isNull.html" class="public property"><code>isNull</code></a><span class="tableEntryAnnotation">[get]</span>
 						</td>
-						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">bool</span></code></td><td>Test whether the type is <code class="lang-d"><a href="../../nwnlibd/orderedjson/JSON_TYPE.html#NULL"><span class="pln">JSON_TYPE<wbr/></span><span class="pun">.</span><span class="pln">NULL</span></a></code>
+						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">bool</span></code></td><td>Test whether the type is <code class="lang-d"><a href="../../nwnlibd/orderedjson/JSONType.html#null_"><span class="typ">JSONType<wbr/></span><span class="pun">.</span><span class="pln">null_</span></a></code>
 </td>
 					</tr>
 					<tr>
 						<td>
 							<a href="../../nwnlibd/orderedjson/JSONValue.object.html" class="public property"><code>object</code></a><span class="tableEntryAnnotation">[get, set]</span>
 						</td>
-						<td class="typecol"><code class="prettyprint lang-d"><span class="kwd">inout</span><span class="pun">(</span><a href="../../nwnlibd/orderedjson/JSONValue.html"><span class="typ">JSONValue</span></a><span class="pun">[</span><span class="typ">string</span><span class="pun">]</span><span class="pun">)</span></code></td><td>Value getter/setter for <code class="lang-d"><a href="../../nwnlibd/orderedjson/JSON_TYPE.html#OBJECT"><span class="pln">JSON_TYPE<wbr/></span><span class="pun">.</span><span class="pln">OBJECT</span></a></code>.
+						<td class="typecol"><code class="prettyprint lang-d"><span class="kwd">inout</span><span class="pun">(</span><a href="../../nwnlibd/orderedjson/JSONValue.html"><span class="typ">JSONValue</span></a><span class="pun">[</span><span class="typ">string</span><span class="pun">]</span><span class="pun">)</span></code></td><td>Value getter/setter for <code class="lang-d"><a href="../../nwnlibd/orderedjson/JSONType.html#object"><span class="typ">JSONType<wbr/></span><span class="pun">.</span><span class="pln">object</span></a></code>.
 </td>
 					</tr>
 					<tr>
 						<td>
 							<a href="../../nwnlibd/orderedjson/JSONValue.objectNoRef.html" class="public property"><code>objectNoRef</code></a><span class="tableEntryAnnotation">[get]</span>
 						</td>
-						<td class="typecol"><code class="prettyprint lang-d"><span class="kwd">inout</span><span class="pun">(</span><a href="../../nwnlibd/orderedjson/JSONValue.html"><span class="typ">JSONValue</span></a><span class="pun">[</span><span class="typ">string</span><span class="pun">]</span><span class="pun">)</span></code></td><td>Value getter for <code class="lang-d"><a href="../../nwnlibd/orderedjson/JSON_TYPE.html#OBJECT"><span class="pln">JSON_TYPE<wbr/></span><span class="pun">.</span><span class="pln">OBJECT</span></a></code>.
+						<td class="typecol"><code class="prettyprint lang-d"><span class="kwd">inout</span><span class="pun">(</span><a href="../../nwnlibd/orderedjson/JSONValue.html"><span class="typ">JSONValue</span></a><span class="pun">[</span><span class="typ">string</span><span class="pun">]</span><span class="pun">)</span></code></td><td>Value getter for <code class="lang-d"><a href="../../nwnlibd/orderedjson/JSONType.html#object"><span class="typ">JSONType<wbr/></span><span class="pun">.</span><span class="pln">object</span></a></code>.
  Unlike <code class="lang-d"><a href="../../nwnlibd/orderedjson/JSONValue.object.html"><span class="pln">object</span></a></code>, this retrieves the object by value and can be used in @safe code.
 </td>
 					</tr>
@@ -274,21 +311,21 @@ $('#symbolSearchPane').show();</script>
 						<td>
 							<a href="../../nwnlibd/orderedjson/JSONValue.str.html" class="public property"><code>str</code></a><span class="tableEntryAnnotation">[get, set]</span>
 						</td>
-						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">string</span></code></td><td>Value getter/setter for <code class="lang-d"><a href="../../nwnlibd/orderedjson/JSON_TYPE.html#STRING"><span class="pln">JSON_TYPE<wbr/></span><span class="pun">.</span><span class="pln">STRING</span></a></code>.
+						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">string</span></code></td><td>Value getter/setter for <code class="lang-d"><a href="../../nwnlibd/orderedjson/JSONType.html#string"><span class="typ">JSONType<wbr/></span><span class="pun">.</span><span class="typ">string</span></a></code>.
 </td>
 					</tr>
 					<tr>
 						<td>
 							<a href="../../nwnlibd/orderedjson/JSONValue.type.html" class="public property"><code>type</code></a><span class="tableEntryAnnotation">[get]</span>
 						</td>
-						<td class="typecol"><code class="prettyprint lang-d"><a href="../../nwnlibd/orderedjson/JSON_TYPE.html"><span class="pln">JSON_TYPE</span></a></code></td><td>Returns the JSON_TYPE of the value stored in this structure.
+						<td class="typecol"><code class="prettyprint lang-d"><a href="../../nwnlibd/orderedjson/JSONType.html"><span class="typ">JSONType</span></a></code></td><td>Returns the JSONType of the value stored in this structure.
 </td>
 					</tr>
 					<tr>
 						<td>
 							<a href="../../nwnlibd/orderedjson/JSONValue.uinteger.html" class="public property"><code>uinteger</code></a><span class="tableEntryAnnotation">[get, set]</span>
 						</td>
-						<td class="typecol"><code class="prettyprint lang-d"><span class="kwd">inout</span><span class="pun">(</span><span class="typ">ulong</span><span class="pun">)</span></code></td><td>Value getter/setter for <code class="lang-d"><a href="../../nwnlibd/orderedjson/JSON_TYPE.html#UINTEGER"><span class="pln">JSON_TYPE<wbr/></span><span class="pun">.</span><span class="pln">UINTEGER</span></a></code>.
+						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">ulong</span></code></td><td>Value getter/setter for <code class="lang-d"><a href="../../nwnlibd/orderedjson/JSONType.html#uinteger"><span class="typ">JSONType<wbr/></span><span class="pun">.</span><span class="pln">uinteger</span></a></code>.
 </td>
 					</tr>
 				</table>
@@ -427,6 +464,15 @@ $('#symbolSearchPane').show();</script>
 							<a href="../../nwnlibd/orderedjson/JSONValue.toPrettyString.html" class="public">
 								<code>toPrettyString</code>
 							</a>
+							<span class="tableEntryAnnotation">(sink, options)</span>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../nwnlibd/orderedjson/JSONValue.toPrettyString.html" class="public">
+								<code>toPrettyString</code>
+							</a>
 							<span class="tableEntryAnnotation">(options)</span>
 						</td>
 						<td>Implicitly calls <code class="lang-d"><a href="../../nwnlibd/orderedjson/toJSON.html"><span class="pln">toJSON</span></a></code> on this JSONValue, like <code class="lang-d"><a href="../../nwnlibd/orderedjson/JSONValue.toString.html"><span class="pln">toString</span></a></code>, but
@@ -442,6 +488,15 @@ $('#symbolSearchPane').show();</script>
 						</td>
 						<td>Implicitly calls <code class="lang-d"><a href="../../nwnlibd/orderedjson/toJSON.html"><span class="pln">toJSON</span></a></code> on this JSONValue.
 </td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../nwnlibd/orderedjson/JSONValue.toString.html" class="public">
+								<code>toString</code>
+							</a>
+							<span class="tableEntryAnnotation">(sink, options)</span>
+						</td>
+						<td></td>
 					</tr>
 				</table>
 			</section>

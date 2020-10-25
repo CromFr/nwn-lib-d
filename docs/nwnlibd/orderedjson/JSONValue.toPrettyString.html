@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta charset="UTF-8"/>
-		<title>Function JSONValue.toPrettyString</title>
+		<title>JSONValue.toPrettyString - multiple declarations</title>
 		<link rel="stylesheet" type="text/css" href="../../styles/ddox.css"/>
 		<link rel="stylesheet" href="../../prettify/prettify.css" type="text/css"/>
 		<script type="text/javascript" src="../../scripts/jquery.js">/**/</script><script type="text/javascript" src="../../scripts/ddox.js">/**/</script>
@@ -62,6 +62,11 @@ $('#symbolSearchPane').show();</script>
 						<a href="../../nwn/trn/genericmesh.html">genericmesh</a>
 					</div>
 				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/trn/trn.html">trn</a>
+					</div>
+				</li>
 			</ul>
 				</li>
 				<li>
@@ -119,6 +124,11 @@ $('#symbolSearchPane').show();</script>
 						<a href="../../nwn/types.html">types</a>
 					</div>
 				</li>
+				<li>
+					<div class="module ">
+						<a href="../../nwn/ver.html">ver</a>
+					</div>
+				</li>
 			</ul>
 				</li>
 				<li class="tree-view ">
@@ -160,7 +170,37 @@ $('#symbolSearchPane').show();</script>
 			</ul>
 		</nav>
 		<div id="main-contents">
-			<h1>Function JSONValue.toPrettyString</h1><p>Implicitly calls <code class="lang-d"><a href="../../nwnlibd/orderedjson/toJSON.html"><span class="pln">toJSON</span></a></code> on this JSONValue, like <code class="lang-d"><a href="../../nwnlibd/orderedjson/JSONValue.toString.html"><span class="pln">toString</span></a></code>, but
+			<h1>JSONValue.toPrettyString - multiple declarations</h1>
+			<nav class="page-nav">
+				<ul>
+					<li>
+						<a href="#0">
+							Function <code>JSONValue.toPrettyString</code>
+						</a>
+					</li>
+					<li>
+						<a href="#1">
+							Function <code>JSONValue.toPrettyString</code>
+						</a>
+					</li>
+				</ul>
+			</nav><h2 id="0">Function JSONValue.toPrettyString</h2><p></p>
+			<div class="prototype">
+				<code class="lang-d">
+					<div class="single-prototype">
+			<span class="typ">void</span> <span class="pln">toPrettyString</span>(Out)
+			<span class="pun">(</span>
+			<br/>
+			&nbsp;&nbsp;<span class="typ">Out</span> <span class="pln">sink</span><span class="pun">,</span>
+			<br/>
+			&nbsp;&nbsp;<span class="kwd">in </span><a href="../../nwnlibd/orderedjson/JSONOptions.html"><span class="typ">JSONOptions</span></a> <span class="pln">options</span> <span class="pun">=</span> <span class="typ">JSONOptions<wbr/></span><span class="pun">.</span><span class="pln">none</span>
+			<br/>
+			<span class="pun">)</span><span class="pln"> </span><span class="kwd">const</span><span class="pun">;</span>
+					</div>
+				</code>
+			</div>
+			
+			<h2 id="1">Function JSONValue.toPrettyString</h2><p>Implicitly calls <code class="lang-d"><a href="../../nwnlibd/orderedjson/toJSON.html"><span class="pln">toJSON</span></a></code> on this JSONValue, like <code class="lang-d"><a href="../../nwnlibd/orderedjson/JSONValue.toString.html"><span class="pln">toString</span></a></code>, but
  also passes <i>true</i> as <i>pretty</i> argument.
 </p>
 			<div class="prototype">
