@@ -219,7 +219,7 @@ struct GffResRef {
 
 
 	auto ref opAssign(in string _value){
-		value = _value;
+		return value = _value;
 	}
 private:
 	char[32] data;
