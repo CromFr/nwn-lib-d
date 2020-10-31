@@ -72,6 +72,8 @@ class TwoDA{
 
 				default:
 					//Data
+					if(line.length == 0)
+						continue; // TODO: check if empty lines should be skipped inside 2da rows
 					auto data = extractRowData(line);
 					if(data.length < columnsCount + 1){
 						auto oldLength = data.length;
@@ -371,4 +373,10 @@ unittest{
 	twoda = new TwoDA(cast(immutable ubyte[])import("terrainmaterials.2da"));
 	assert(twoda["Material", 52] == "Stone");
 	assert(twoda.get("STR_REF", 56, 42) == 42);
+
+	twoda = new TwoDA(cast(immutable ubyte[])import("exptable.2da"));
+	assert(twoda.get!ulong("XP", 0).get == 0);
+	assert(twoda.get!ulong("XP", 1).get == 1000);
+	assert(twoda.get!ulong("XP", 10).get == 55000);
+	assert(twoda.get!ulong("XP", 100, 42) == 42);
 }
