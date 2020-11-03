@@ -5,6 +5,7 @@ import std.conv: to, ConvException;
 import std.math;
 
 import nwn.gff;
+static import nwn.fastgff;
 import nwn.types;
 import nwn.nwscript.resources;
 
@@ -227,7 +228,7 @@ string toPrettyString(in NWItemproperty ip){
 }
 
 // Converts a GFF struct to an item property
-NWItemproperty toNWItemproperty(in gffTypeToNative!(GffType.Struct) node){
+NWItemproperty toNWItemproperty(ST)(in ST node) if(is(ST: GffStruct) || is(ST: nwn.fastgff.GffStruct)) {
 	return NWItemproperty(
 		node["PropertyName"].get!GffWord,
 		node["Subtype"].get!GffWord,
