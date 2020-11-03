@@ -767,7 +767,7 @@ unittest{
 
 	alias WMCutter = vec2f[];
 	WMCutter[] wmCutters;
-	foreach(_, trigger ; git["TriggerList"].get!GffList){
+	foreach(trigger ; git["TriggerList"].get!GffList){
 
 		if(trigger["Type"].get!GffInt == 3){
 			// Walkmesh cutter
@@ -776,7 +776,7 @@ unittest{
 			auto pos = [trigger["XPosition"].get!GffFloat, trigger["YPosition"].get!GffFloat];
 
 			// what about: XOrientation YOrientation ZOrientation ?
-			foreach(_, point ; trigger["Geometry"].get!GffList){
+			foreach(point ; trigger["Geometry"].get!GffList){
 				cutter ~= vec2f(
 					point["PointX"].get!GffFloat + pos[0],
 					point["PointY"].get!GffFloat + pos[1],

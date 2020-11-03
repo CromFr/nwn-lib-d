@@ -578,7 +578,7 @@ struct GffValue {
 	}
 
 	/// Converts the stored value into the given type
-	auto to(T)() const {
+	T to(T)() const {
 		final switch(type) with(GffType) {
 			case Byte:      static if(__traits(compiles, get!GffByte.to!T))      return get!GffByte.to!T;      else break;
 			case Char:      static if(__traits(compiles, get!GffChar.to!T))      return get!GffChar.to!T;      else break;

@@ -5,9 +5,11 @@ import std.stdint;
 import std.array;
 import std.string;
 import std.conv: to;
+import std.meta;
 
 import nwn.tlk;
-import nwn.gff;
+static import nwn.gff;
+static import nwn.fastgff;
 import nwn.twoda;
 import nwn.nwscript.constants;
 import nwn.nwscript.resources;
@@ -21,23 +23,25 @@ enum OBJECT_INVALID = NWObject.max;
 
 
 ///
-NWString GetName(ref GffStruct objectGff){
+NWString GetName(ST)(ref ST objectGff) if(isGffStruct!ST) {
+	mixin(ImportGffLib!ST);
 	scope resolv = getStrRefResolver();
-	if("FirstName" in objectGff){
-		auto firstName = objectGff["FirstName"].get!GffLocString.resolve(resolv);
+	if(auto fname = "FirstName" in objectGff){
+		auto firstName = fname.get!GffLocString.resolve(resolv);
 		auto lastName = objectGff["LastName"].get!GffLocString.resolve(resolv);
 		if(lastName != "")
 			return [firstName, lastName].join(" ");
 		return firstName;
 	}
-	if("LocalizedName" in objectGff)
-		return objectGff["LocalizedName"].get!GffLocString.resolve(resolv);
-	else if("LocName" in objectGff)
-		return objectGff["LocName"].get!GffLocString.resolve(resolv);
+	if(auto localizedName = "LocalizedName" in objectGff)
+		return localizedName.get!GffLocString.resolve(resolv);
+	else if(auto locName = "LocName" in objectGff)
+		return locName.get!GffLocString.resolve(resolv);
 	return "";
 }
 ///
-NWString GetFirstName(ref GffStruct objectGff){
+NWString GetFirstName(ST)(ref ST objectGff) if(isGffStruct!ST) {
+	mixin(ImportGffLib!ST);
 	if("FirstName" in objectGff)
 		return objectGff["FirstName"].get!GffLocString.resolve(getStrRefResolver());
 	else if("LocalizedName" in objectGff)
@@ -45,14 +49,16 @@ NWString GetFirstName(ref GffStruct objectGff){
 	return "";
 }
 ///
-NWString GetLastName(ref GffStruct objectGff){
+NWString GetLastName(ST)(ref ST objectGff) if(isGffStruct!ST) {
+	mixin(ImportGffLib!ST);
 	if("LastName" in objectGff)
 		return objectGff["LastName"].get!GffLocString.resolve(getStrRefResolver());
 	return "";
 }
 
 ///
-void SetFirstName(ref GffStruct objectGff, in NWString name){
+void SetFirstName(ref nwn.gff.GffStruct objectGff, in NWString name){
+	import nwn.gff;
 	int32_t language = getStrRefResolver().standartTable.language;
 	if("FirstName" in objectGff)
 		objectGff["FirstName"].get!GffLocString.strings = [language * 2: name];
@@ -61,7 +67,8 @@ void SetFirstName(ref GffStruct objectGff, in NWString name){
 	else assert(0, "No FirstName GFF field");
 }
 ///
-void SetLastName(ref GffStruct objectGff, in NWString name){
+void SetLastName(ref nwn.gff.GffStruct objectGff, in NWString name){
+	import nwn.gff;
 	assert("LastName" in objectGff, "No LastName GFF field");
 	int32_t language = 0;
 	if(getStrRefResolver() !is null)
@@ -71,7 +78,6 @@ void SetLastName(ref GffStruct objectGff, in NWString name){
 
 unittest{
 	immutable dogeUtc = cast(immutable ubyte[])import("doge.utc");
-	auto obj = new Gff(dogeUtc).root;
 
 	immutable dialogTlk = cast(immutable ubyte[])import("dialog.tlk");
 	immutable userTlk = cast(immutable ubyte[])import("user.tlk");
@@ -80,15 +86,24 @@ unittest{
 		new Tlk(userTlk)
 	));
 
-	assert(GetName(obj) == "Doge");
+	{
+		auto obj = new nwn.gff.Gff(dogeUtc).root;
 
-	SetFirstName(obj, "Sir doge");
-	assert(GetName(obj) == "Sir doge");
+		assert(GetName(obj) == "Doge");
 
-	SetLastName(obj, "the mighty");
-	assert(GetName(obj) == "Sir doge the mighty");
-	assert(GetFirstName(obj) == "Sir doge");
-	assert(GetLastName(obj) == "the mighty");
+		SetFirstName(obj, "Sir doge");
+		assert(GetName(obj) == "Sir doge");
+
+		SetLastName(obj, "the mighty");
+		assert(GetName(obj) == "Sir doge the mighty");
+		assert(GetFirstName(obj) == "Sir doge");
+		assert(GetLastName(obj) == "the mighty");
+	}
+	{
+		auto obj = new nwn.fastgff.FastGff(dogeUtc).root;
+		assert(GetName(obj) == "Doge");
+	}
+
 }
 
 
@@ -109,7 +124,8 @@ private template TypeToNWTypeConst(T){
 }
 
 
-private void SetLocal(T)(ref GffStruct oObject, NWString sVarName, T value){
+private void SetLocal(T)(ref nwn.gff.GffStruct oObject, NWString sVarName, T value){
+	import nwn.gff;
 	if("VarTable" in oObject){
 		foreach(ref var ; oObject["VarTable"].get!GffList){
 			// TODO: check behaviour when setting two variables with the same name and different types
@@ -129,7 +145,7 @@ private void SetLocal(T)(ref GffStruct oObject, NWString sVarName, T value){
 		oObject["VarTable"] = GffList();
 	}
 
-	auto var = GffStruct();
+	auto var = nwn.gff.GffStruct();
 	var["Name"] = sVarName;
 	var["Type"] = GffDWord(TypeToNWTypeConst!T);
 	static if     (is(T == NWInt))       var["Value"] = GffInt(value);
@@ -154,9 +170,10 @@ alias SetLocalObject = SetLocal!NWObject;
 //alias SetLocalLocation = SetLocal!NWLocation;
 
 
-private T GetLocal(T)(ref GffStruct oObject, NWString sVarName){
+private T GetLocal(T, ST)(ref ST oObject, NWString sVarName) if(isGffStruct!ST) {
+	mixin(ImportGffLib!ST);
 	if("VarTable" in oObject){
-		foreach(ref var ; oObject["VarTable"].get!GffList){
+		foreach(var ; oObject["VarTable"].get!GffList){
 			if(var["Name"].get!GffString == sVarName && var["Type"].get!GffDWord == TypeToNWTypeConst!T){
 				static if     (is(T == NWInt))       return var["Value"].get!GffInt;
 				else static if(is(T == NWFloat))     return var["Value"].get!GffFloat;
@@ -170,13 +187,13 @@ private T GetLocal(T)(ref GffStruct oObject, NWString sVarName){
 	return NWInitValue!T;
 }
 ///
-alias GetLocalInt = GetLocal!NWInt;
+NWInt GetLocalInt(ST)(ref ST oObject, NWString sVarName){ return GetLocal!NWInt(oObject, sVarName); };
 ///
-alias GetLocalFloat = GetLocal!NWFloat;
+NWFloat GetLocalFloat(ST)(ref ST oObject, NWString sVarName){ return GetLocal!NWFloat(oObject, sVarName); };
 ///
-alias GetLocalString = GetLocal!NWString;
+NWString GetLocalString(ST)(ref ST oObject, NWString sVarName){ return GetLocal!NWString(oObject, sVarName); };
 ///
-alias GetLocalObject = GetLocal!NWObject;
+NWObject GetLocalObject(ST)(ref ST oObject, NWString sVarName){ return GetLocal!NWObject(oObject, sVarName); };
 ///
 //alias GetLocalLocation = GetLocal!NWLocation;
 
@@ -184,27 +201,34 @@ alias GetLocalObject = GetLocal!NWObject;
 unittest{
 	import std.math;
 	immutable dogeUtc = cast(immutable ubyte[])import("doge.utc");
-	auto obj = new Gff(dogeUtc).root;
+	{
+		auto obj = new nwn.gff.Gff(dogeUtc).root;
 
-	SetLocalInt(obj, "TestInt", 5);
-	SetLocalFloat(obj, "TestFloat", 5.3);
-	SetLocalString(obj, "TestString", "Hello");
+		SetLocalInt(obj, "TestInt", 5);
+		SetLocalFloat(obj, "TestFloat", 5.3);
+		SetLocalString(obj, "TestString", "Hello");
 
-	assert(GetLocalInt(obj, "TestInt") == 5);
+		assert(GetLocalInt(obj, "TestInt") == 5);
 
-	assert(approxEqual(GetLocalFloat(obj, "TestFloat"), 5.3f));
-	assert(GetLocalString(obj, "TestString") == "Hello");
-	assert(GetLocalString(obj, "yolooo") == "");
-	assert(GetLocalObject(obj, "TestInt") == OBJECT_INVALID);
+		assert(approxEqual(GetLocalFloat(obj, "TestFloat"), 5.3f));
+		assert(GetLocalString(obj, "TestString") == "Hello");
+		assert(GetLocalString(obj, "yolooo") == "");
+		assert(GetLocalObject(obj, "TestInt") == OBJECT_INVALID);
 
-	DeleteLocalInt(obj, "TestString");
-	assert(GetLocalString(obj, "TestString") == "Hello");
-	DeleteLocalString(obj, "TestString");
-	assert(GetLocalString(obj, "TestString") == "");
+		DeleteLocalInt(obj, "TestString");
+		assert(GetLocalString(obj, "TestString") == "Hello");
+		DeleteLocalString(obj, "TestString");
+		assert(GetLocalString(obj, "TestString") == "");
+	}
+	{
+		auto obj = new nwn.fastgff.FastGff(dogeUtc).root;
+		assert(GetLocalInt(obj, "aaabbb") == 0);
+	}
 
 }
 
-private void DeleteLocal(T)(ref GffStruct oObject, NWString sVarName){
+private void DeleteLocal(T)(ref nwn.gff.GffStruct oObject, NWString sVarName){
+	import nwn.gff;
 	import std.algorithm: remove;
 	if("VarTable" in oObject){
 		foreach(i, ref var ; oObject["VarTable"].get!GffList){
@@ -246,14 +270,21 @@ NWInt GetItemPropertyParam1Value(NWItemproperty ip){
 }
 
 
+private static nwn.gff.GffStruct[] currentGetItemPropertyRangeGff;
+private static const(nwn.fastgff.GffStruct)[] currentGetItemPropertyRangeFastGff;
 
-private static GffStruct[] currentGetItemPropertyRange;
 ///
-NWItemproperty GetFirstItemProperty(ref GffStruct oItem){
-	if("PropertiesList" !in oItem)
-		return NWInitValue!NWItemproperty;
+NWItemproperty GetFirstItemProperty(ST)(ref ST oItem) if(isGffStruct!ST) {
+	mixin(ImportGffLib!ST);
+	static if(is(ST: nwn.gff.GffStruct))
+		alias currentGetItemPropertyRange = currentGetItemPropertyRangeGff;
+	else
+		alias currentGetItemPropertyRange = currentGetItemPropertyRangeFastGff;
 
-	currentGetItemPropertyRange = oItem["PropertiesList"].get!GffList;
+	if(auto val = "PropertiesList" in oItem)
+		currentGetItemPropertyRange = val.get!GffList;
+	else
+		return NWInitValue!NWItemproperty;
 
 	if(currentGetItemPropertyRange.empty)
 		return NWInitValue!NWItemproperty;
@@ -262,7 +293,13 @@ NWItemproperty GetFirstItemProperty(ref GffStruct oItem){
 }
 
 ///
-NWItemproperty GetNextItemProperty(ref GffStruct oItem){
+NWItemproperty GetNextItemProperty(ST)(ref ST oItem) if(isGffStruct!ST) {
+	mixin(ImportGffLib!ST);
+	static if(is(ST: nwn.gff.GffStruct))
+		alias currentGetItemPropertyRange = currentGetItemPropertyRangeGff;
+	else
+		alias currentGetItemPropertyRange = currentGetItemPropertyRangeFastGff;
+
 	if(currentGetItemPropertyRange.empty)
 		return NWInitValue!NWItemproperty;
 
@@ -276,31 +313,37 @@ NWItemproperty GetNextItemProperty(ref GffStruct oItem){
 
 unittest{
 	immutable itemData = cast(immutable ubyte[])import("ceinturedeschevaliersquidisentni.uti");
-	auto item = new Gff(itemData).root;
 
-	size_t index = 0;
-	auto ip = GetFirstItemProperty(item);
-	while(GetIsItemPropertyValid(ip)){
-		assert(ip == item["PropertiesList"][index].toNWItemproperty, "Mismatch on ip " ~ index.to!string);
-		index++;
-		ip = GetNextItemProperty(item);
+	foreach(GFF ; AliasSeq!(nwn.gff.Gff, nwn.fastgff.FastGff)){
+		auto item = new GFF(itemData).root;
+
+		size_t index = 0;
+		auto ip = GetFirstItemProperty(item);
+		while(GetIsItemPropertyValid(ip)){
+			assert(ip == item["PropertiesList"][index].toNWItemproperty, "Mismatch on ip " ~ index.to!string);
+			index++;
+			ip = GetNextItemProperty(item);
+		}
+		assert(index == 2);
 	}
 }
 
 ///
-NWInt GetBaseItemType(in GffStruct oItem){
+NWInt GetBaseItemType(ST)(in ST oItem) if(isGffStruct!ST) {
+	mixin(ImportGffLib!ST);
 	return oItem["BaseItem"].to!NWInt;
 }
 
 ///
-void AddItemProperty(NWInt nDurationType, NWItemproperty ipProperty, ref GffStruct oItem, NWFloat fDuration=0.0f){
+void AddItemProperty(NWInt nDurationType, NWItemproperty ipProperty, ref nwn.gff.GffStruct oItem, NWFloat fDuration=0.0f){
+	import nwn.gff;
 	assert(nDurationType == DURATION_TYPE_PERMANENT, "Only permanent is supported");
 	if("PropertiesList" !in oItem){
 		oItem["PropertiesList"] = GffList();
 	}
 
-	static GffStruct buildPropStruct(in NWItemproperty iprp){
-		GffStruct ret;
+	static nwn.gff.GffStruct buildPropStruct(in NWItemproperty iprp){
+		nwn.gff.GffStruct ret;
 		with(ret){
 			assert(iprp.type < getTwoDA("itempropdef").rows);
 
@@ -348,7 +391,8 @@ void AddItemProperty(NWInt nDurationType, NWItemproperty ipProperty, ref GffStru
 }
 
 ///
-void RemoveItemProperty(ref GffStruct oItem, NWItemproperty ipProperty){
+void RemoveItemProperty(ref nwn.gff.GffStruct oItem, NWItemproperty ipProperty){
+	import nwn.gff;
 	import std.algorithm;
 
 	auto subTypeTable = getTwoDA("itempropdef").get("SubTypeResRef", ipProperty.type);
@@ -374,6 +418,7 @@ void RemoveItemProperty(ref GffStruct oItem, NWItemproperty ipProperty){
 }
 
 unittest{
+	import nwn.gff;
 	immutable itemData = cast(immutable ubyte[])import("ceinturedeschevaliersquidisentni.uti");
 	auto item = new Gff(itemData).root;
 

@@ -7,6 +7,7 @@ import std.stdio: writeln;
 import std.conv: to;
 import std.traits: EnumMembers;
 import std.string;
+import std.range.primitives;
 import std.base64: Base64;
 debug import std.stdio;
 
@@ -191,16 +192,33 @@ struct GffStruct{
 		});
 	}
 
+	/// Return type for `"key" in gffStruct`. Behaves like a pointer.
+	static struct NullableField {
+		bool isNull = true;
+		GffField value;
+
+		//alias isNull this;
+		bool opCast(T: bool)() const {
+			return !isNull;
+		}
+
+		alias value this;
+		GffField opUnary(string op: "*")() const {
+			assert(!isNull, "NullableField is null");
+			return value;
+		}
+	}
+
 	/// Allows `"value" in this`
-	Nullable!(const(GffField)) opBinaryRight(string op : "in")(string label) const
+	const(NullableField) opBinaryRight(string op : "in")(string label) const
 	{
 		if(gff is null)
-			return Nullable!(const(GffField))();
+			return NullableField();
 
 		if(auto fieldIndex = label in index)
-			return Nullable!(const(GffField))(const(GffField)(gff, gff.getField(*fieldIndex)));
+			return const(NullableField)(false, const(GffField)(gff, gff.getField(*fieldIndex)));
 
-		return Nullable!(const(GffField))();
+		return NullableField();
 	}
 
 
@@ -263,35 +281,43 @@ private:
 }
 /// GFF list value type (Array of GffStruct)
 struct GffList{
-
 	/// Get nth child GffStruct
-	const(GffStruct) opIndex(uint32_t index) const{
+	const(GffStruct) opIndex(size_t index) const{
 		assert(gff !is null && index < length, "Out of bound");
-		auto gffstruct = gff.getStructList(listOffset)[index + 1];
-		return const(GffStruct)(gff, gff.getStruct(gffstruct));
+		return const(GffStruct)(gff, gff.getStruct(structIndexList[index]));
 	}
 
-	/// Allows `foreach(index, gffStruct ; this)`
-	int opApply(scope int delegate(size_t index, in GffStruct child) dlg) const{
-		return _opApply(delegate(index, uint32_t structIndex){
-			auto gffstruct = gff.getStruct(structIndex);
-			return dlg(index, const(GffStruct)(gff, gffstruct));
-		});
+	/// Number of children elements
+	@property
+	size_t length() const{
+		return listLength;
 	}
 
-	@property{
-		/// Number of children elements
-		size_t length() const{
-			return listLength;
+	///
+	@property
+	bool empty() const{
+		return listLength == 0;
+	}
+
+	/// Converts the GffLIst into a list of GffStruct
+	@property const(GffStruct)[] children() const {
+		//auto ret = new GffStruct[listLength];
+		const(GffStruct)[] ret;
+		foreach(i ; 0 .. listLength){
+			ret ~= const(GffStruct)(gff, gff.getStruct(structIndexList[i]));
+			//ret[i] = const(GffStruct)(gff, gff.getStruct(structIndexList[i]));
 		}
+		return ret;
 	}
+	///
+	alias children this;
+
 
 	/// Serialize the list and its children in a human-readable format
 	string toPrettyString(string tabs = null) const {
 		string ret = format!"%s(List)"(tabs);
-		foreach(i, child ; this){
+		foreach(child ; this){
 			auto innerTabs = tabs ~ "|  ";
-
 			ret ~= format!"\n%s├╴ %s"(
 				tabs,
 				child.toPrettyString(innerTabs)[innerTabs.length .. $]
@@ -303,28 +329,17 @@ struct GffList{
 package:
 	this(inout(FastGff) gff, uint32_t listOffset) inout{
 		this.gff = gff;
-		this.listOffset = listOffset;
 
-		listLength = gff.getStructList(listOffset)[0];
+		auto list = gff.getStructList(listOffset);
+		this.listLength = list[0];
+		this.structIndexList = &(list[1]);
 	}
 
 
 private:
 	FastGff gff = null;
-	uint32_t listOffset = -1;
+	uint32_t* structIndexList;
 	uint32_t listLength;
-
-	int _opApply(scope int delegate(size_t index, uint32_t structIndex) dlg) const{
-		int res = 0;
-		if(gff !is null){
-			auto list = gff.getStructList(listOffset);
-			foreach(i ; 0 .. length){
-				if((res = dlg(i, list[i + 1])) != 0)
-					return res;
-			}
-		}
-		return res;
-	}
 }
 
 
@@ -349,7 +364,7 @@ struct GffField{
 		}
 
 		/// Get the value as a Variant
-		const(Value) value() const{
+		Value value() const{
 
 			final switch(type) with(GffType){
 				foreach(Type ; EnumMembers!GffType){
@@ -416,7 +431,7 @@ struct GffField{
 	}
 
 	/// Shorthand for getting child field assuming this field is a `GffList`
-	const(GffStruct) opIndex(in uint32_t index) const{
+	const(GffStruct) opIndex(in size_t index) const{
 		return value.get!GffList[index];
 	}
 
@@ -466,6 +481,29 @@ struct GffField{
 				}
 			}
 		}
+	}
+
+	T to(T)() const {
+		final switch(type) with(GffType) {
+			case Byte:      static if(__traits(compiles, value.get!GffByte.to!T))      return value.get!GffByte.to!T;      else break;
+			case Char:      static if(__traits(compiles, value.get!GffChar.to!T))      return value.get!GffChar.to!T;      else break;
+			case Word:      static if(__traits(compiles, value.get!GffWord.to!T))      return value.get!GffWord.to!T;      else break;
+			case Short:     static if(__traits(compiles, value.get!GffShort.to!T))     return value.get!GffShort.to!T;     else break;
+			case DWord:     static if(__traits(compiles, value.get!GffDWord.to!T))     return value.get!GffDWord.to!T;     else break;
+			case Int:       static if(__traits(compiles, value.get!GffInt.to!T))       return value.get!GffInt.to!T;       else break;
+			case DWord64:   static if(__traits(compiles, value.get!GffDWord64.to!T))   return value.get!GffDWord64.to!T;   else break;
+			case Int64:     static if(__traits(compiles, value.get!GffInt64.to!T))     return value.get!GffInt64.to!T;     else break;
+			case Float:     static if(__traits(compiles, value.get!GffFloat.to!T))     return value.get!GffFloat.to!T;     else break;
+			case Double:    static if(__traits(compiles, value.get!GffDouble.to!T))    return value.get!GffDouble.to!T;    else break;
+			case String:    static if(__traits(compiles, value.get!GffString.to!T))    return value.get!GffString.to!T;    else break;
+			case ResRef:    static if(__traits(compiles, value.get!GffResRef.to!T))    return value.get!GffResRef.to!T;    else break;
+			case LocString: static if(__traits(compiles, value.get!GffLocString.to!T)) return value.get!GffLocString.to!T; else break;
+			case Void:      static if(__traits(compiles, value.get!GffVoid.to!T))      return value.get!GffVoid.to!T;      else break;
+			case Struct:    static if(__traits(compiles, value.get!GffStruct.to!T))    return value.get!GffStruct.to!T;    else break;
+			case List:      static if(__traits(compiles, value.get!GffList.to!T))      return value.get!GffList.to!T;      else break;
+			case Invalid:   assert(0, "No type set");
+		}
+		assert(0, format!"Cannot convert GFFType %s to %s"(type, T.stringof));
 	}
 
 

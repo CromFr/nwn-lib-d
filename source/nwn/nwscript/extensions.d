@@ -3,15 +3,28 @@ module nwn.nwscript.extensions;
 
 import std.conv: to, ConvException;
 import std.math;
+import std.meta;
+import std.traits;
 
-import nwn.gff;
+static import nwn.gff;
 static import nwn.fastgff;
 import nwn.types;
 import nwn.nwscript.resources;
 
+
+/// Checks if T is either a nwn.gff.GffStruct or a nwn.fastgff.GffStruct
+template isGffStruct(T){
+	enum isGffStruct = is(T: nwn.gff.GffStruct) || is(T: const(nwn.fastgff.GffStruct));
+}
+
+/// Imports either nwn.gff or nwn.fastgff, that provide T
+package template ImportGffLib(T){
+	enum ImportGffLib = "import " ~ moduleName!T ~ ";";
+}
+
 /// Calculate an item cost, without taking into account its additional cost
-uint calcItemCost(ref GffStruct oItem)
-{
+uint calcItemCost(ST)(ref ST oItem) if(isGffStruct!ST) {
+	mixin(ImportGffLib!ST);
 	// GetItemCost
 	// num: malusCost
 	// num2: bonusCost
@@ -45,25 +58,29 @@ uint calcItemCost(ref GffStruct oItem)
 }
 
 unittest{
+	import std.meta;
 	initTwoDAPaths(["unittest/2da"]);
 
-	auto item = new Gff(cast(ubyte[])import("test_cost_armor.uti")).root;
-	assert(calcItemCost(item) == 789_774);
+	foreach(GFF ; AliasSeq!(nwn.gff.Gff, nwn.fastgff.FastGff)){
+		auto item = new GFF(cast(ubyte[])import("test_cost_armor.uti")).root;
+		assert(calcItemCost(item) == 789_774);
 
-	item = new Gff(cast(ubyte[])import("test_cost_bow.uti")).root;
-	assert(calcItemCost(item) == 375_303);
+		auto item2 = new GFF(cast(ubyte[])import("test_cost_bow.uti")).root;
+		assert(calcItemCost(item2) == 375_303);
+	}
 
 }
 
 /// Returns the item additional cost as defined in the blueprint, multiplied by the number of stacked items
-int getItemModifyCost(ref GffStruct oItem){
+int getItemModifyCost(ST)(ref ST oItem) if(isGffStruct!ST) {
+	mixin(ImportGffLib!ST);
 	const stack = oItem["StackSize"].get!GffWord;
 	return oItem["ModifyCost"].to!int * (stack > 0 ? stack : 1);
 }
 
 
-private uint getItemBaseCost(ref GffStruct oItem)
-{
+private uint getItemBaseCost(ST)(ref ST oItem) if(isGffStruct!ST) {
+	mixin(ImportGffLib!ST);
 	const baseItemType = oItem["BaseItem"].get!GffInt;
 	if(baseItemType != 16){// != OBJECT_TYPE_ARMOR
 		return getTwoDA("baseitems").get("basecost", baseItemType).to!uint;
@@ -77,7 +94,8 @@ private uint getItemBaseCost(ref GffStruct oItem)
 	return 0;
 }
 
-private void getPropertiesCost(ref GffStruct oItem, out float bonusCost, out float malusCost, out float spellChargeCost){
+private void getPropertiesCost(ST)(ref ST oItem, out float bonusCost, out float malusCost, out float spellChargeCost) if(isGffStruct!ST) {
+	mixin(ImportGffLib!ST);
 	// A_2: bonusCost
 	// A_3: malusCost
 	// A_4: spellChargeCost
@@ -203,7 +221,7 @@ private float getCostValueCost(NWItemproperty ip, out float specialCostAdjust){
 
 
 
-// Converts an NWItemproperty into a user friendly string
+// Converts an NWItemproperty into a developer-friendly string (without TLK translations)
 string toPrettyString(in NWItemproperty ip){
 	immutable propNameLabel = getTwoDA("itempropdef").get("Label", ip.type);
 
@@ -227,8 +245,50 @@ string toPrettyString(in NWItemproperty ip){
 		~(costValueLabel is null? null : "("~costValueLabel~")");
 }
 
+/// Converts an itemproperty into its in-game description
+string toGameString(in NWItemproperty ip){
+	const resolv = getStrRefResolver();
+	const props2DA = getTwoDA("itempropdef");
+	const costTable2DA = getTwoDA("iprp_costtable");
+	const paramTable2DA = getTwoDA("iprp_paramtable");
+
+	string propName;
+	string subType;
+	string costValue;
+	string paramValue;
+
+	propName = resolv[props2DA.get("GameStrRef", ip.type, 0)];
+
+	string subTypeTable = props2DA.get("SubTypeResRef", ip.type, "");
+	if(subTypeTable != ""){
+		int strref = getTwoDA(subTypeTable).get("Name", ip.subType, 0);
+		if(strref > 0)
+			subType = resolv[strref];
+	}
+	string costValueTableId = props2DA.get("CostTableResRef", ip.type, "");
+	if(costValueTableId != ""){
+		string costValueTable = costTable2DA.get("Name", costValueTableId.to!int);
+		int strref = getTwoDA(costValueTable).get("Name", ip.costValue, 0);
+		if(strref > 0)
+			costValue = resolv[strref];
+	}
+
+	string paramTableId = props2DA.get("Param1ResRef", ip.type);
+	if(paramTableId != ""){
+		string paramTable = paramTable2DA.get("TableResRef", paramTableId.to!int);
+		int strref = getTwoDA(paramTable).get("Name", ip.p1, 0);
+		if(strref > 0)
+			paramValue = resolv[strref];
+	}
+	return propName
+		~ (subType !is null ? " " ~ subType : null)
+		~ (costValue !is null ? " " ~ costValue : null)
+		~ (paramValue !is null ? " " ~ paramValue : null);
+}
+
 // Converts a GFF struct to an item property
-NWItemproperty toNWItemproperty(ST)(in ST node) if(is(ST: GffStruct) || is(ST: nwn.fastgff.GffStruct)) {
+NWItemproperty toNWItemproperty(ST)(in ST node) if(isGffStruct!ST) {
+	mixin(ImportGffLib!ST);
 	return NWItemproperty(
 		node["PropertyName"].get!GffWord,
 		node["Subtype"].get!GffWord,
