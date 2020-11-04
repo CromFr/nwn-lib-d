@@ -300,6 +300,8 @@ struct GffLocString{
 				return *str;
 			if(auto str = preferedLang + 1 in strings)
 				return *str;
+			if(auto str = -2 in strings) // SetFirstName sets the -2 language
+				return *str;
 
 			foreach(lang ; EnumMembers!LanguageGender){
 				if(auto str = lang in strings)
