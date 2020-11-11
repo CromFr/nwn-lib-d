@@ -4,6 +4,9 @@ module nwn.twoda;
 import std.string;
 import std.conv: to, ConvException;
 import std.typecons: Nullable;
+import std.exception: enforce;
+import std.algorithm;
+import std.uni;
 debug import std.stdio: writeln;
 version(unittest) import std.exception: assertThrown, assertNotThrown;
 
@@ -47,33 +50,47 @@ class TwoDA{
 	this(in ubyte[] rawData, in string name=null){
 		fileName = name;
 
+		enum State{
+			header, defaults, columns, data
+		}
+		auto state = State.header;
+
 		foreach(lineIndex, line ; (cast(string)rawData).splitLines){
-			switch(lineIndex){
-				case 0:
+			if(state != State.header && line.all!isWhite)
+				continue;// Skip empty lines
+
+			final switch(state){
+				case State.header:
 					//Header
+					enforce!TwoDAParseException(line.length >= 8, "First line is too short");
 					fileType = line[0..4].stripRight;
 					fileVersion = line[4..8].stripRight;
+					state = State.defaults;
 					break;
 
-				case 1:
-					//TODO: handle default definition?
-					// line is: "DEFAULT: somevalue"
-					// somevalue is returned if the row does not exist
-					break;
+				case State.defaults:
+					if(line.length >= 8 && line[0 .. 8].toUpper == "DEFAULT:"){
+						//TODO: handle default definition?
+						// line is: "DEFAULT: somevalue"
+						// somevalue is returned if the row does not exist
+						break;
+					}
 
-				case 2:
+					state = State.columns;
+					goto case;//fallthrough
+
+				case State.columns:
 					//Column name definition
 					foreach(index, title ; extractRowData(line)){
 						header[title.toLower] = index;
 					}
 					header.rehash();
 					columnsCount = header.length;
+					state = State.data;
 					break;
 
-				default:
+				case State.data:
 					//Data
-					if(line.length == 0)
-						continue; // TODO: check if empty lines should be skipped inside 2da rows
 					auto data = extractRowData(line);
 					if(data.length < columnsCount + 1){
 						auto oldLength = data.length;
@@ -85,6 +102,157 @@ class TwoDA{
 					break;
 			}
 		}
+	}
+
+	private this(){}
+
+	/// Recover a damaged 2DA file
+	static auto recover(string filepath){
+		import std.file: readFile=read;
+		import std.path: baseName;
+		return recover(cast(ubyte[])filepath.readFile, filepath.baseName);
+	}
+	/// ditto
+	static auto recover(in ubyte[] rawData, in string name=null){
+
+		static struct Ret {
+			TwoDA twoDA;
+			static struct Error {
+				string type;
+				size_t line;
+				string msg;
+			}
+			Error[] errors;
+		}
+		auto ret = Ret(new TwoDA);
+		with(ret.twoDA){
+			fileName = name;
+
+			string[] columns;
+
+			enum State{
+				header, defaults, columns, data
+			}
+			auto state = State.header;
+
+			size_t currentIndex = 0;
+			size_t prevLineIndex = size_t.max;
+			foreach(iLine, line ; (cast(string)rawData).splitLines){
+				if(state != State.header && line.all!isWhite)
+					continue;// Skip empty lines
+
+				final switch(state){
+					case State.header:
+						//Header
+						if(line.length >= 8){
+							fileType = line[0..4].stripRight;
+							fileVersion = line[4..8].stripRight;
+						}
+						else{
+							ret.errors ~= Ret.Error(
+								"Error", iLine + 1,
+								"Bad first line: Should be 8 characters with file type and file version (e.g. '2DA V2.0')"
+							);
+							fileType = "2DA ";
+							fileVersion = "V2.0";
+						}
+						state = State.defaults;
+						break;
+
+					case State.defaults:
+						if(line.length >= 8 && line[0 .. 8].toUpper == "DEFAULT:"){
+							//TODO: handle default definition?
+							// line is: "DEFAULT: somevalue"
+							// somevalue must be returned if the row does not exist
+							// However it doesn't appear to be used in NWN2
+							break;
+						}
+
+						state = State.columns;
+						goto case;//fallthrough
+
+					case State.columns:
+						//Column name definition
+						columns = extractRowData(line);
+						foreach(index, title ; columns){
+							header[title.toLower] = index;
+						}
+						header.rehash();
+						columnsCount = header.length;
+						if(columnsCount == 0){
+							ret.errors ~= Ret.Error(
+								"Error", iLine + 1,
+								"No columns"
+							);
+							return ret;
+						}
+						state = State.data;
+						break;
+
+					case State.data:
+						//Data
+						auto data = extractRowData(line);
+
+						if(data.length == 0){
+							ret.errors ~= Ret.Error(
+								"Notice", iLine + 1,
+								"Empty line"
+							);
+							continue;
+						}
+
+						size_t writtenIndex;
+						try writtenIndex = data[0].to!size_t;
+						catch(ConvException e){
+							ret.errors ~= Ret.Error(
+								"Error", iLine + 1,
+								format!"Invalid line index: '%s' is not a positive integer"(data[0])
+							);
+						}
+
+						if(writtenIndex != currentIndex){
+							ret.errors ~= Ret.Error(
+								"Warning", iLine + 1,
+								prevLineIndex != size_t.max ?
+									format!"Line index mismatch: Written line index is %d, while previous index was %d. If kept as is, the line effective index will be %d."(writtenIndex, currentIndex - 1, rows)
+									: format!"Line index mismatch: First written line index is %d instead of 0. If kept as is, the line effective index will be %d."(writtenIndex, rows)
+							);
+							currentIndex = writtenIndex;
+						}
+						prevLineIndex = currentIndex;
+						currentIndex++;
+
+						if(data.length != columnsCount + 1){
+							ret.errors ~= Ret.Error(
+								"Error", iLine + 1,
+								format!"Bad number of columns: Line has %d columns instead of %d"(data.length, columnsCount + 1)
+							);
+						}
+
+						foreach(i, field ; data){
+							if(field.length > 0 && field != "****" && field.all!"a == '*'"){
+								ret.errors ~= Ret.Error(
+									"Notice", iLine + 1,
+									i < columns.length ?
+										format!"Bad null field: Column '%s' has %d stars instead of 4"(columns[i], field.length)
+										: format!"Bad null field: Column number %d has %d stars instead of 4"(i, field.length)
+								);
+							}
+						}
+
+						if(data.length < columnsCount + 1){
+							auto oldLength = data.length;
+							data.length = columnsCount + 1;
+							data[oldLength .. $] = null;
+						}
+
+						valueList ~= data[1 .. 1 + columnsCount];
+						break;
+				}
+			}
+
+		}
+		return ret;
 	}
 
 	/// Get a value in the 2da, converted to T.
@@ -165,6 +333,15 @@ class TwoDA{
 		return this[header[column.toLower], row];
 	}
 
+	// Get row
+	const(string[]) opIndex(size_t i) const {
+		return valueList[i * columnsCount .. (i + 1) * columnsCount];
+	}
+	// Set row
+	void opIndexAssign(in string[] value, size_t i){
+		valueList[i * columnsCount .. (i + 1) * columnsCount] = value;
+	}
+
 
 	@property{
 		/// File type (should always be "2DA")
@@ -196,8 +373,15 @@ class TwoDA{
 	@property{
 		/// Number of rows in the 2da
 		size_t rows() const nothrow {
+			if(columnsCount == 0)
+				return 0;
 			return valueList.length / columnsCount;
 		}
+		/// Resize the 2da table
+		void rows(size_t rowsCount) nothrow {
+			valueList.length = columnsCount * rowsCount;
+		}
+
 		/// Number of named columns in the 2da (i.e. without the index column)
 		size_t columns() const nothrow {
 			return columnsCount;
@@ -276,15 +460,8 @@ class TwoDA{
 		return cast(ubyte[])ret;
 	}
 
-	/// Optional 2DA file name set during construction
-	immutable string fileName = null;
-private:
-	size_t[string] header;
-	size_t columnsCount;
-	string[] valueList;
-
-	auto ref extractRowData(in string line){
-		import std.uni;
+	/// Parse a 2DA row
+	static string[] extractRowData(in string line){
 		string[] ret;
 
 		enum State{
@@ -312,7 +489,7 @@ private:
 
 				case State.Field:
 					if(c.isWhite){
-						if(fieldBuf=="****")
+						if(fieldBuf.length > 0 && fieldBuf.all!"a == '*'")
 							ret ~= null;
 						else
 							ret ~= fieldBuf;
@@ -334,6 +511,13 @@ private:
 		}
 		return ret;
 	}
+
+	/// Optional 2DA file name set during construction
+	string fileName = null;
+private:
+	size_t[string] header;
+	size_t columnsCount;
+	string[] valueList;
 }
 unittest{
 	immutable polymorphTwoDA = cast(immutable ubyte[])import("polymorph.2da");

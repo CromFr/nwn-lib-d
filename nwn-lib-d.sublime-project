@@ -30,6 +30,15 @@
 					"shell_cmd": "dub test -b unittest-cov",
 				},
 				{
+					"name": "nwn-2da",
+					"working_dir": "${project_path}/tools/nwn-2da",
+				},
+				{
+					"name": "nwn-2da - Unittests",
+					"working_dir": "${project_path}/tools/nwn-2da",
+					"shell_cmd": "dub test",
+				},
+				{
 					"name": "nwn-bdb",
 					"working_dir": "${project_path}/tools/nwn-bdb",
 				},

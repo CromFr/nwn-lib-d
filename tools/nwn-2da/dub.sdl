@@ -1,0 +1,15 @@
+name "nwn-2da"
+description "Check and merge 2da files"
+license "GPL-3.0"
+copyright "Copyright © 2020, Thibaut CHARLES"
+authors "Thibaut CHARLES (CromFr)"
+
+targetType "executable"
+mainSourceFile "source/nwn-2da.d"
+sourcePaths "source" "../common/"
+importPaths "source" "../common/"
+dependency "nwn-lib-d" path="../../"
+
+configuration "unittest" {
+	stringImportPaths "../../unittest"
+}

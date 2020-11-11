@@ -1,0 +1,15 @@
+.dub
+docs.json
+__dummy.html
+docs/
+/nwn-2da
+nwn-2da.so
+nwn-2da.dylib
+nwn-2da.dll
+nwn-2da.a
+nwn-2da.lib
+nwn-2da-test-*
+*.exe
+*.o
+*.obj
+*.lst
