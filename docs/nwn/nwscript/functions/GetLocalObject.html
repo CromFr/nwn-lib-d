@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta charset="UTF-8"/>
-		<title>Alias GetLocalObject</title>
+		<title>Function GetLocalObject</title>
 		<link rel="stylesheet" type="text/css" href="../../../styles/ddox.css"/>
 		<link rel="stylesheet" href="../../../prettify/prettify.css" type="text/css"/>
 		<script type="text/javascript" src="../../../scripts/jquery.js">/**/</script><script type="text/javascript" src="../../../scripts/ddox.js">/**/</script>
@@ -170,12 +170,18 @@ $('#symbolSearchPane').show();</script>
 			</ul>
 		</nav>
 		<div id="main-contents">
-			<h1>Alias GetLocalObject</h1><p></p>
+			<h1>Function GetLocalObject</h1><p></p>
 			<div class="prototype">
 				<code class="lang-d">
 					<div class="single-prototype">
-			<span class="kwd">alias</span> <span class="pln">GetLocalObject</span>
-			 <span class="pun">=</span> <span class="typ">GetLocal</span>!NWObject<span class="pun">;</span>
+			<a href="../../../nwn/types/NWObject.html"><span class="typ">NWObject</span></a> <span class="pln">GetLocalObject</span>(ST)
+			<span class="pun">(</span>
+			<br/>
+			&nbsp;&nbsp;<span class="kwd">ref </span><span class="pln">ST</span> <span class="pln">oObject</span><span class="pun">,</span>
+			<br/>
+			&nbsp;&nbsp;<a href="../../../nwn/types/NWString.html"><span class="typ">NWString</span></a> <span class="pln">sVarName</span>
+			<br/>
+			<span class="pun">)</span><span class="pun">;</span>
 					</div>
 				</code>
 			</div>
@@ -184,23 +190,29 @@ $('#symbolSearchPane').show();</script>
 
 <pre class="code"><code class="lang-d"><span class="kwd">import </span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">math</span><span class="pun">;
 </span><span class="kwd">immutable </span><span class="pln">dogeUtc </span><span class="pun">= </span><span class="kwd">cast</span><span class="pun">(</span><span class="kwd">immutable </span><span class="typ">ubyte</span><span class="pun">[])</span><span class="kwd">import</span><span class="pun">(</span><span class="str">"doge.utc"</span><span class="pun">);
-</span><span class="kwd">auto </span><span class="pln">obj </span><span class="pun">= </span><span class="kwd">new </span><span class="typ">Gff</span><span class="pun">(</span><span class="pln">dogeUtc</span><span class="pun">)<wbr/>.</span><span class="pln">root</span><span class="pun">;
+{
+	</span><span class="kwd">auto </span><span class="pln">obj </span><span class="pun">= </span><span class="kwd">new <a href="../../../nwn/gff/Gff.html" title="nwn.gff.Gff"></span><span class="typ">Gff</span></a><span class="pun">(</span><span class="pln">dogeUtc</span><span class="pun">)<wbr/>.</span><span class="pln">root</span><span class="pun">;
 
-<a href="../../../nwn/nwscript/functions/SetLocalInt.html"></span><span class="typ">SetLocalInt</span></a><span class="pun">(</span><span class="pln">obj</span><span class="pun">, </span><span class="str">"TestInt"</span><span class="pun">, </span><span class="lit">5</span><span class="pun">);
-<a href="../../../nwn/nwscript/functions/SetLocalFloat.html"></span><span class="typ">SetLocalFloat</span></a><span class="pun">(</span><span class="pln">obj</span><span class="pun">, </span><span class="str">"TestFloat"</span><span class="pun">, </span><span class="lit">5.3</span><span class="pun">);
-<a href="../../../nwn/nwscript/functions/SetLocalString.html"></span><span class="typ">SetLocalString</span></a><span class="pun">(</span><span class="pln">obj</span><span class="pun">, </span><span class="str">"TestString"</span><span class="pun">, </span><span class="str">"Hello"</span><span class="pun">);
+	<a href="../../../nwn/nwscript/functions/SetLocalInt.html"></span><span class="typ">SetLocalInt</span></a><span class="pun">(</span><span class="pln">obj</span><span class="pun">, </span><span class="str">"TestInt"</span><span class="pun">, </span><span class="lit">5</span><span class="pun">);
+	<a href="../../../nwn/nwscript/functions/SetLocalFloat.html"></span><span class="typ">SetLocalFloat</span></a><span class="pun">(</span><span class="pln">obj</span><span class="pun">, </span><span class="str">"TestFloat"</span><span class="pun">, </span><span class="lit">5.3</span><span class="pun">);
+	<a href="../../../nwn/nwscript/functions/SetLocalString.html"></span><span class="typ">SetLocalString</span></a><span class="pun">(</span><span class="pln">obj</span><span class="pun">, </span><span class="str">"TestString"</span><span class="pun">, </span><span class="str">"Hello"</span><span class="pun">);
 
-</span><span class="kwd">assert</span><span class="pun">(<a href="../../../nwn/nwscript/functions/GetLocalInt.html"></span><span class="typ">GetLocalInt</span></a><span class="pun">(</span><span class="pln">obj</span><span class="pun">, </span><span class="str">"TestInt"</span><span class="pun">) == </span><span class="lit">5</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(<a href="../../../nwn/nwscript/functions/GetLocalInt.html"></span><span class="typ">GetLocalInt</span></a><span class="pun">(</span><span class="pln">obj</span><span class="pun">, </span><span class="str">"TestInt"</span><span class="pun">) == </span><span class="lit">5</span><span class="pun">);
 
-</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">approxEqual</span><span class="pun">(<a href="../../../nwn/nwscript/functions/GetLocalFloat.html"></span><span class="typ">GetLocalFloat</span></a><span class="pun">(</span><span class="pln">obj</span><span class="pun">, </span><span class="str">"TestFloat"</span><span class="pun">), </span><span class="lit">5.3f</span><span class="pun">));
-</span><span class="kwd">assert</span><span class="pun">(<a href="../../../nwn/nwscript/functions/GetLocalString.html"></span><span class="typ">GetLocalString</span></a><span class="pun">(</span><span class="pln">obj</span><span class="pun">, </span><span class="str">"TestString"</span><span class="pun">) == </span><span class="str">"Hello"</span><span class="pun">);
-</span><span class="kwd">assert</span><span class="pun">(<a href="../../../nwn/nwscript/functions/GetLocalString.html"></span><span class="typ">GetLocalString</span></a><span class="pun">(</span><span class="pln">obj</span><span class="pun">, </span><span class="str">"yolooo"</span><span class="pun">) == </span><span class="str">""</span><span class="pun">);
-</span><span class="kwd">assert</span><span class="pun">(</span><span class="typ">GetLocalObject</span><span class="pun">(</span><span class="pln">obj</span><span class="pun">, </span><span class="str">"TestInt"</span><span class="pun">) == <a href="../../../nwn/nwscript/functions/OBJECT_INVALID.html"></span><span class="pln">OBJECT_INVALID</span></a><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">approxEqual</span><span class="pun">(<a href="../../../nwn/nwscript/functions/GetLocalFloat.html"></span><span class="typ">GetLocalFloat</span></a><span class="pun">(</span><span class="pln">obj</span><span class="pun">, </span><span class="str">"TestFloat"</span><span class="pun">), </span><span class="lit">5.3f</span><span class="pun">));
+	</span><span class="kwd">assert</span><span class="pun">(<a href="../../../nwn/nwscript/functions/GetLocalString.html"></span><span class="typ">GetLocalString</span></a><span class="pun">(</span><span class="pln">obj</span><span class="pun">, </span><span class="str">"TestString"</span><span class="pun">) == </span><span class="str">"Hello"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(<a href="../../../nwn/nwscript/functions/GetLocalString.html"></span><span class="typ">GetLocalString</span></a><span class="pun">(</span><span class="pln">obj</span><span class="pun">, </span><span class="str">"yolooo"</span><span class="pun">) == </span><span class="str">""</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(</span><span class="typ">GetLocalObject</span><span class="pun">(</span><span class="pln">obj</span><span class="pun">, </span><span class="str">"TestInt"</span><span class="pun">) == <a href="../../../nwn/nwscript/functions/OBJECT_INVALID.html"></span><span class="pln">OBJECT_INVALID</span></a><span class="pun">);
 
-<a href="../../../nwn/nwscript/functions/DeleteLocalInt.html"></span><span class="typ">DeleteLocalInt</span></a><span class="pun">(</span><span class="pln">obj</span><span class="pun">, </span><span class="str">"TestString"</span><span class="pun">);
-</span><span class="kwd">assert</span><span class="pun">(<a href="../../../nwn/nwscript/functions/GetLocalString.html"></span><span class="typ">GetLocalString</span></a><span class="pun">(</span><span class="pln">obj</span><span class="pun">, </span><span class="str">"TestString"</span><span class="pun">) == </span><span class="str">"Hello"</span><span class="pun">);
-<a href="../../../nwn/nwscript/functions/DeleteLocalString.html"></span><span class="typ">DeleteLocalString</span></a><span class="pun">(</span><span class="pln">obj</span><span class="pun">, </span><span class="str">"TestString"</span><span class="pun">);
-</span><span class="kwd">assert</span><span class="pun">(<a href="../../../nwn/nwscript/functions/GetLocalString.html"></span><span class="typ">GetLocalString</span></a><span class="pun">(</span><span class="pln">obj</span><span class="pun">, </span><span class="str">"TestString"</span><span class="pun">) == </span><span class="str">""</span><span class="pun">);
+	<a href="../../../nwn/nwscript/functions/DeleteLocalInt.html"></span><span class="typ">DeleteLocalInt</span></a><span class="pun">(</span><span class="pln">obj</span><span class="pun">, </span><span class="str">"TestString"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(<a href="../../../nwn/nwscript/functions/GetLocalString.html"></span><span class="typ">GetLocalString</span></a><span class="pun">(</span><span class="pln">obj</span><span class="pun">, </span><span class="str">"TestString"</span><span class="pun">) == </span><span class="str">"Hello"</span><span class="pun">);
+	<a href="../../../nwn/nwscript/functions/DeleteLocalString.html"></span><span class="typ">DeleteLocalString</span></a><span class="pun">(</span><span class="pln">obj</span><span class="pun">, </span><span class="str">"TestString"</span><span class="pun">);
+	</span><span class="kwd">assert</span><span class="pun">(<a href="../../../nwn/nwscript/functions/GetLocalString.html"></span><span class="typ">GetLocalString</span></a><span class="pun">(</span><span class="pln">obj</span><span class="pun">, </span><span class="str">"TestString"</span><span class="pun">) == </span><span class="str">""</span><span class="pun">);
+}
+{
+	</span><span class="kwd">auto </span><span class="pln">obj </span><span class="pun">= </span><span class="kwd">new <a href="../../../nwn/fastgff/FastGff.html" title="nwn.fastgff.FastGff"></span><span class="typ">FastGff</span></a><span class="pun">(</span><span class="pln">dogeUtc</span><span class="pun">)<wbr/>.</span><span class="pln">root</span><span class="pun">;
+	</span><span class="kwd">assert</span><span class="pun">(<a href="../../../nwn/nwscript/functions/GetLocalInt.html"></span><span class="typ">GetLocalInt</span></a><span class="pun">(</span><span class="pln">obj</span><span class="pun">, </span><span class="str">"aaabbb"</span><span class="pun">) == </span><span class="lit">0</span><span class="pun">);
+}
 
 </span></code></pre>
 </section>

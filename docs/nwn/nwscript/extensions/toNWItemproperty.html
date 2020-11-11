@@ -174,12 +174,14 @@ $('#symbolSearchPane').show();</script>
 			<div class="prototype">
 				<code class="lang-d">
 					<div class="single-prototype">
-			<a href="../../../nwn/types/NWItemproperty.html"><span class="typ">NWItemproperty</span></a> <span class="pln">toNWItemproperty</span>
+			<a href="../../../nwn/types/NWItemproperty.html"><span class="typ">NWItemproperty</span></a> <span class="pln">toNWItemproperty</span>(ST)
 			<span class="pun">(</span>
 			<br/>
-			&nbsp;&nbsp;<span class="kwd">in </span><span class="kwd">const</span><span class="pun">(</span><a href="../../../nwn/gff/GffStruct.html"><span class="typ">GffStruct</span></a><span class="pun">)</span> <span class="pln">node</span>
+			&nbsp;&nbsp;<span class="kwd">in </span><span class="pln">ST</span> <span class="pln">node</span>
 			<br/>
-			<span class="pun">)</span><span class="pun">;</span>
+			<span class="pun">)</span>
+			<br/>
+			<span class="kwd">if</span> <span class="pun">(</span><span class="pln">isGffStruct</span><span class="pun">!</span><span class="pln">ST</span><span class="pun">);</span>
 					</div>
 				</code>
 			</div>

@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta charset="UTF-8"/>
-		<title>Function GetFirstItemProperty</title>
+		<title>Enum member isGffStruct</title>
 		<link rel="stylesheet" type="text/css" href="../../../styles/ddox.css"/>
 		<link rel="stylesheet" href="../../../prettify/prettify.css" type="text/css"/>
 		<script type="text/javascript" src="../../../scripts/jquery.js">/**/</script><script type="text/javascript" src="../../../scripts/ddox.js">/**/</script>
@@ -36,12 +36,12 @@ $('#symbolSearchPane').show();</script>
 					</div>
 				</li>
 				<li>
-					<div class="module ">
+					<div class="module selected">
 						<a href="../../../nwn/nwscript/extensions.html">extensions</a>
 					</div>
 				</li>
 				<li>
-					<div class="module selected">
+					<div class="module ">
 						<a href="../../../nwn/nwscript/functions.html">functions</a>
 					</div>
 				</li>
@@ -170,18 +170,13 @@ $('#symbolSearchPane').show();</script>
 			</ul>
 		</nav>
 		<div id="main-contents">
-			<h1>Function GetFirstItemProperty</h1><p></p>
+			<h1>Enum member isGffStruct</h1><p>Checks if T is either a nwn.gff.GffStruct or a nwn.fastgff.GffStruct
+</p>
 			<div class="prototype">
 				<code class="lang-d">
 					<div class="single-prototype">
-			<a href="../../../nwn/types/NWItemproperty.html"><span class="typ">NWItemproperty</span></a> <span class="pln">GetFirstItemProperty</span>(ST)
-			<span class="pun">(</span>
-			<br/>
-			&nbsp;&nbsp;<span class="kwd">ref </span><span class="pln">ST</span> <span class="pln">oItem</span>
-			<br/>
-			<span class="pun">)</span>
-			<br/>
-			<span class="kwd">if</span> <span class="pun">(</span><span class="pln">isGffStruct</span><span class="pun">!</span><span class="pln">ST</span><span class="pun">);</span>
+			<span class="kwd">enum</span> <span class="pln">isGffStruct</span>(T)
+			 <span class="pun">=</span> <span class="kwd">is</span><span class="pun">(</span><span class="pln">T </span><span class="pun">: </span><span class="pln">nwn<wbr/></span><span class="pun">.</span><span class="pln">gff<wbr/></span><span class="pun">.</span><span class="typ">GffStruct</span><span class="pun">) || </span><span class="kwd">is</span><span class="pun">(</span><span class="pln">T </span><span class="pun">: </span><span class="kwd">const</span><span class="pun">(</span><span class="pln">nwn<wbr/></span><span class="pun">.</span><span class="pln">fastgff<wbr/></span><span class="pun">.</span><span class="typ">GffStruct</span><span class="pun">))</span><span class="pun">;</span>
 					</div>
 				</code>
 			</div>

@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta charset="UTF-8"/>
-		<title>Struct GffList</title>
+		<title>Struct GffStruct.NullableField</title>
 		<link rel="stylesheet" type="text/css" href="../../styles/ddox.css"/>
 		<link rel="stylesheet" href="../../prettify/prettify.css" type="text/css"/>
 		<script type="text/javascript" src="../../scripts/jquery.js">/**/</script><script type="text/javascript" src="../../scripts/ddox.js">/**/</script>
@@ -170,18 +170,18 @@ $('#symbolSearchPane').show();</script>
 			</ul>
 		</nav>
 		<div id="main-contents">
-			<h1>Struct GffList</h1><p>GFF list value type (Array of GffStruct)
+			<h1>Struct GffStruct.NullableField</h1><p>Return type for <code class="lang-d"><span class="str">"key" </span><span class="kwd">in </span><span class="pln">gffStruct</span></code>. Behaves like a pointer.
 </p>
 			<div class="prototype">
 				<code class="lang-d">
 					<div class="single-prototype">
-			<span class="kwd">struct</span> <span class="typ">GffList</span>
+			<span class="kwd">struct</span> <span class="typ">NullableField</span>
 			<span class="pun">;</span>
 					</div>
 				</code>
 			</div>
 			
-			<section><h2>Properties</h2>
+			<section><h2>Fields</h2>
 				<table>
 					<col class="caption"/>
 					<tr>
@@ -189,23 +189,15 @@ $('#symbolSearchPane').show();</script>
 					</tr>
 					<tr>
 						<td>
-							<a href="../../nwn/fastgff/GffList.children.html" class="public property"><code>children</code></a><span class="tableEntryAnnotation">[get]</span>
-						</td>
-						<td class="typecol"><code class="prettyprint lang-d"><span class="kwd">const</span><span class="pun">(</span><a href="../../nwn/fastgff/GffStruct.html"><span class="typ">GffStruct</span></a><span class="pun">)</span><span class="pun">[]</span></code></td><td>Converts the GffLIst into a list of GffStruct
-</td>
-					</tr>
-					<tr>
-						<td>
-							<a href="../../nwn/fastgff/GffList.empty.html" class="public property"><code>empty</code></a><span class="tableEntryAnnotation">[get]</span>
+							<a href="../../nwn/fastgff/GffStruct.NullableField.isNull.html" class="public"><code>isNull</code></a>
 						</td>
 						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">bool</span></code></td><td></td>
 					</tr>
 					<tr>
 						<td>
-							<a href="../../nwn/fastgff/GffList.length.html" class="public property"><code>length</code></a><span class="tableEntryAnnotation">[get]</span>
+							<a href="../../nwn/fastgff/GffStruct.NullableField.value.html" class="public"><code>value</code></a>
 						</td>
-						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">ulong</span></code></td><td>Number of children elements
-</td>
+						<td class="typecol"><code class="prettyprint lang-d"><a href="../../nwn/fastgff/GffField.html"><span class="typ">GffField</span></a></code></td><td></td>
 					</tr>
 				</table>
 			</section>
@@ -217,23 +209,21 @@ $('#symbolSearchPane').show();</script>
 					</tr>
 					<tr>
 						<td>
-							<a href="../../nwn/fastgff/GffList.opIndex.html" class="public">
-								<code>opIndex</code>
+							<a href="../../nwn/fastgff/GffStruct.NullableField.opCast.html" class="public">
+								<code>opCast</code>
 							</a>
-							<span class="tableEntryAnnotation">(index)</span>
+							<span class="tableEntryAnnotation">()</span>
 						</td>
-						<td>Get nth child GffStruct
-</td>
+						<td></td>
 					</tr>
 					<tr>
 						<td>
-							<a href="../../nwn/fastgff/GffList.toPrettyString.html" class="public">
-								<code>toPrettyString</code>
+							<a href="../../nwn/fastgff/GffStruct.NullableField.opUnary.html" class="public">
+								<code>opUnary</code>
 							</a>
-							<span class="tableEntryAnnotation">(tabs)</span>
+							<span class="tableEntryAnnotation">()</span>
 						</td>
-						<td>Serialize the list and its children in a human-readable format
-</td>
+						<td></td>
 					</tr>
 				</table>
 			</section>

@@ -219,7 +219,7 @@ $('#symbolSearchPane').show();</script>
 						<td>
 							<a href="../../nwn/twoda/TwoDA.fileName.html" class="public"><code>fileName</code></a>
 						</td>
-						<td class="typecol"><code class="prettyprint lang-d"><span class="kwd">immutable</span><span class="pun">(</span><span class="typ">char</span><span class="pun">[]</span><span class="pun">)</span></code></td><td>Optional 2DA file name set during construction
+						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">string</span></code></td><td>Optional 2DA file name set during construction
 </td>
 					</tr>
 				</table>
@@ -260,6 +260,13 @@ Max width: 4 chars
 						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">ulong</span></code></td><td>Number of rows in the 2da
 </td>
 					</tr>
+					<tr>
+						<td>
+							<a href="../../nwn/twoda/TwoDA.rows.html" class="public property"><code>rows</code></a><span class="tableEntryAnnotation">[set]</span>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">ulong</span></code></td><td>Resize the 2da table
+</td>
+					</tr>
 				</table>
 			</section>
 			<section><h2>Methods</h2>
@@ -276,6 +283,16 @@ Max width: 4 chars
 							<span class="tableEntryAnnotation">(colName)</span>
 						</td>
 						<td>Get the index of a column by its name, for faster access
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../nwn/twoda/TwoDA.extractRowData.html" class="public">
+								<code>extractRowData</code>
+							</a>
+							<span class="tableEntryAnnotation">(line)</span>
+						</td>
+						<td>Parse a 2DA row
 </td>
 					</tr>
 					<tr>
@@ -326,6 +343,34 @@ Max width: 4 chars
 							<span class="tableEntryAnnotation">(column, row)</span>
 						</td>
 						<td>Get a specific cell value
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../nwn/twoda/TwoDA.opIndex.html" class="public">
+								<code>opIndex</code>
+							</a>
+							<span class="tableEntryAnnotation">(i)</span>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../nwn/twoda/TwoDA.opIndexAssign.html" class="public">
+								<code>opIndexAssign</code>
+							</a>
+							<span class="tableEntryAnnotation">(value, i)</span>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../nwn/twoda/TwoDA.recover.html" class="public">
+								<code>recover</code>
+							</a>
+							<span class="tableEntryAnnotation">(filepath)</span>
+						</td>
+						<td>Recover a damaged 2DA file
 </td>
 					</tr>
 					<tr>

@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta charset="UTF-8"/>
-		<title>Function GffList.opApply</title>
+		<title>Function TwoDA.extractRowData</title>
 		<link rel="stylesheet" type="text/css" href="../../styles/ddox.css"/>
 		<link rel="stylesheet" href="../../prettify/prettify.css" type="text/css"/>
 		<script type="text/javascript" src="../../scripts/jquery.js">/**/</script><script type="text/javascript" src="../../scripts/ddox.js">/**/</script>
@@ -90,7 +90,7 @@ $('#symbolSearchPane').show();</script>
 					</div>
 				</li>
 				<li>
-					<div class="module selected">
+					<div class="module ">
 						<a href="../../nwn/fastgff.html">fastgff</a>
 					</div>
 				</li>
@@ -115,7 +115,7 @@ $('#symbolSearchPane').show();</script>
 					</div>
 				</li>
 				<li>
-					<div class="module ">
+					<div class="module selected">
 						<a href="../../nwn/twoda.html">twoda</a>
 					</div>
 				</li>
@@ -170,17 +170,17 @@ $('#symbolSearchPane').show();</script>
 			</ul>
 		</nav>
 		<div id="main-contents">
-			<h1>Function GffList.opApply</h1><p>Allows <code class="lang-d"><span class="kwd">foreach</span><span class="pun">(</span><span class="pln">index</span><span class="pun">, </span><span class="pln">gffStruct </span><span class="pun">; </span><span class="kwd">this</span><span class="pun">)</span></code>
+			<h1>Function TwoDA.extractRowData</h1><p>Parse a 2DA row
 </p>
 			<div class="prototype">
 				<code class="lang-d">
 					<div class="single-prototype">
-			<span class="typ">int</span> <span class="pln">opApply</span>
+			<span class="kwd">static </span><span class="typ">string</span><span class="pun">[]</span> <span class="pln">extractRowData</span>
 			<span class="pun">(</span>
 			<br/>
-			&nbsp;&nbsp;<span class="kwd">scope </span><span class="typ">int</span> <span class="kwd">delegate</span><span class="pun">(</span><span class="typ">ulong</span><span class="pun">, </span><span class="kwd">in</span> <a href="../../nwn/fastgff/GffStruct.html"><span class="typ">GffStruct</span></a><span class="pun">)</span> <span class="pln">dlg</span>
+			&nbsp;&nbsp;<span class="kwd">in </span><span class="kwd">const</span><span class="pun">(</span><span class="typ">string</span><span class="pun">)</span> <span class="pln">line</span>
 			<br/>
-			<span class="pun">)</span><span class="pln"> </span><span class="kwd">const</span><span class="pun">;</span>
+			<span class="pun">)</span><span class="pun">;</span>
 					</div>
 				</code>
 			</div>

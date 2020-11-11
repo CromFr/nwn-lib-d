@@ -6934,6 +6934,8 @@
 <url><loc>http://127.0.0.1/nwn/nwscript/extensions.html</loc></url>
 <url><loc>http://127.0.0.1/nwn/nwscript/extensions/calcItemCost.html</loc></url>
 <url><loc>http://127.0.0.1/nwn/nwscript/extensions/getItemModifyCost.html</loc></url>
+<url><loc>http://127.0.0.1/nwn/nwscript/extensions/isGffStruct.html</loc></url>
+<url><loc>http://127.0.0.1/nwn/nwscript/extensions/toGameString.html</loc></url>
 <url><loc>http://127.0.0.1/nwn/nwscript/extensions/toNWFloat.html</loc></url>
 <url><loc>http://127.0.0.1/nwn/nwscript/extensions/toNWInt.html</loc></url>
 <url><loc>http://127.0.0.1/nwn/nwscript/extensions/toNWItemproperty.html</loc></url>
@@ -7371,6 +7373,7 @@
 <url><loc>http://127.0.0.1/nwn/fastgff/GffField.label.html</loc></url>
 <url><loc>http://127.0.0.1/nwn/fastgff/GffField.opIndex.html</loc></url>
 <url><loc>http://127.0.0.1/nwn/fastgff/GffField.opIndex.html</loc></url>
+<url><loc>http://127.0.0.1/nwn/fastgff/GffField.to.html</loc></url>
 <url><loc>http://127.0.0.1/nwn/fastgff/GffField.toPrettyString.html</loc></url>
 <url><loc>http://127.0.0.1/nwn/fastgff/GffField.toString.html</loc></url>
 <url><loc>http://127.0.0.1/nwn/fastgff/GffField.type.html</loc></url>
@@ -7380,8 +7383,9 @@
 <url><loc>http://127.0.0.1/nwn/fastgff/GffInt.html</loc></url>
 <url><loc>http://127.0.0.1/nwn/fastgff/GffInt64.html</loc></url>
 <url><loc>http://127.0.0.1/nwn/fastgff/GffList.html</loc></url>
+<url><loc>http://127.0.0.1/nwn/fastgff/GffList.children.html</loc></url>
+<url><loc>http://127.0.0.1/nwn/fastgff/GffList.empty.html</loc></url>
 <url><loc>http://127.0.0.1/nwn/fastgff/GffList.length.html</loc></url>
-<url><loc>http://127.0.0.1/nwn/fastgff/GffList.opApply.html</loc></url>
 <url><loc>http://127.0.0.1/nwn/fastgff/GffList.opIndex.html</loc></url>
 <url><loc>http://127.0.0.1/nwn/fastgff/GffList.toPrettyString.html</loc></url>
 <url><loc>http://127.0.0.1/nwn/fastgff/GffLocString.html</loc></url>
@@ -7398,6 +7402,11 @@
 <url><loc>http://127.0.0.1/nwn/fastgff/GffString.html</loc></url>
 <url><loc>http://127.0.0.1/nwn/fastgff/GffStruct.html</loc></url>
 <url><loc>http://127.0.0.1/nwn/fastgff/GffStruct.id.html</loc></url>
+<url><loc>http://127.0.0.1/nwn/fastgff/GffStruct.NullableField.html</loc></url>
+<url><loc>http://127.0.0.1/nwn/fastgff/GffStruct.NullableField.isNull.html</loc></url>
+<url><loc>http://127.0.0.1/nwn/fastgff/GffStruct.NullableField.opCast.html</loc></url>
+<url><loc>http://127.0.0.1/nwn/fastgff/GffStruct.NullableField.opUnary.html</loc></url>
+<url><loc>http://127.0.0.1/nwn/fastgff/GffStruct.NullableField.value.html</loc></url>
 <url><loc>http://127.0.0.1/nwn/fastgff/GffStruct.opApply.html</loc></url>
 <url><loc>http://127.0.0.1/nwn/fastgff/GffStruct.opBinaryRight.html</loc></url>
 <url><loc>http://127.0.0.1/nwn/fastgff/GffStruct.opIndex.html</loc></url>
@@ -7600,6 +7609,7 @@
 <url><loc>http://127.0.0.1/nwn/twoda/TwoDA.html</loc></url>
 <url><loc>http://127.0.0.1/nwn/twoda/TwoDA.columnIndex.html</loc></url>
 <url><loc>http://127.0.0.1/nwn/twoda/TwoDA.columns.html</loc></url>
+<url><loc>http://127.0.0.1/nwn/twoda/TwoDA.extractRowData.html</loc></url>
 <url><loc>http://127.0.0.1/nwn/twoda/TwoDA.fileName.html</loc></url>
 <url><loc>http://127.0.0.1/nwn/twoda/TwoDA.fileType.html</loc></url>
 <url><loc>http://127.0.0.1/nwn/twoda/TwoDA.fileType.html</loc></url>
@@ -7611,6 +7621,11 @@
 <url><loc>http://127.0.0.1/nwn/twoda/TwoDA.opBinaryRight.html</loc></url>
 <url><loc>http://127.0.0.1/nwn/twoda/TwoDA.opIndex.html</loc></url>
 <url><loc>http://127.0.0.1/nwn/twoda/TwoDA.opIndex.html</loc></url>
+<url><loc>http://127.0.0.1/nwn/twoda/TwoDA.opIndex.html</loc></url>
+<url><loc>http://127.0.0.1/nwn/twoda/TwoDA.opIndexAssign.html</loc></url>
+<url><loc>http://127.0.0.1/nwn/twoda/TwoDA.recover.html</loc></url>
+<url><loc>http://127.0.0.1/nwn/twoda/TwoDA.recover.html</loc></url>
+<url><loc>http://127.0.0.1/nwn/twoda/TwoDA.rows.html</loc></url>
 <url><loc>http://127.0.0.1/nwn/twoda/TwoDA.rows.html</loc></url>
 <url><loc>http://127.0.0.1/nwn/twoda/TwoDA.serialize.html</loc></url>
 <url><loc>http://127.0.0.1/nwn/twoda/TwoDA.this.html</loc></url>
