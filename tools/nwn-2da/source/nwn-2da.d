@@ -17,6 +17,8 @@ void usage(in string cmd){
 	writeln();
 	writeln("Commands");
 	writeln("  check: Parse the 2da and print found issues");
+	writeln("  normalize: Fix issues and re-format 2DA files");
+	writeln("  merge: Merge 2da rows together");
 }
 
 int main(string[] args)
