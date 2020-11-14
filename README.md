@@ -41,6 +41,11 @@ __[Download nwn-lib-d tools](https://github.com/CromFr/nwn-lib-d/releases)__
     | `tlk`  | :white_check_mark: | :white_check_mark: | NWN TLK binary format |
     | `text` |        :x:         | :white_check_mark: | Human-readable        |
 
+- `nwn-2da`
+  + Check 2DA format
+  + Re-format / fix issues
+  + Merge rows into an existing 2DA
+
 - `nwn-erf`
   + Create, extract or view ERF files (hak, erf, mod, pwc) in a reproducible manner (same content => same checksum).
   + Pros
