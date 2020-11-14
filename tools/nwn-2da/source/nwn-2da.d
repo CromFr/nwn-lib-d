@@ -104,7 +104,7 @@ int main(string[] args)
 			string[] ranges;
 			bool nonInteractive = false;
 			auto res = getopt(args,
-				"range", "Merge a specific range. Format is: <from>:<to>. Can be provided multiple times.", &ranges,
+				"range", "Merge a specific range. Format is: <from>-<to>. Can be provided multiple times.", &ranges,
 				"y|yes", "Overwrite existing data without asking", &nonInteractive,
 			);
 			if(res.helpWanted){
@@ -132,6 +132,23 @@ int main(string[] args)
 						`
 				);
 				return 0;
+			}
+			size_t[2][] parsedRanges = ranges.map!((a){
+					auto s = a.split('-');
+					enforce(s.length == 2, "Bad range '" ~ a ~ "', must be <from>-<to>. Ex: 12-32");
+					auto r = s.map!(to!size_t).array;
+					enforce(r[0] <= r[1], "Invalid range '" ~ a ~ "'");
+					return cast(size_t[2])r[0 .. 2];
+				})
+				.array;
+			bool isInRange(size_t targetIndex){
+				if(parsedRanges.length == 0)
+					return true;
+				foreach(r ; parsedRanges){
+					if(r[0] <= targetIndex && targetIndex <= r[1])
+						return true;
+				}
+				return false;
 			}
 
 			enforce(args.length == 3, "Need a target and source 2da");
@@ -172,6 +189,9 @@ int main(string[] args)
 				targetTwoDA.rows = maxIndex + 1;
 
 			foreach(i, rowIndex ; sourceRowsIndices){
+				if(!isInRange(rowIndex))
+					continue;
+
 				auto targetRow = targetTwoDA[rowIndex];
 				auto sourceRow = sourceRowsData[i];
 				if(targetRow == sourceRow)
@@ -300,9 +320,28 @@ unittest {
 	assert(res.get("Label", 20) == "NewRow");
 
 
+	// Insert a range
+	std.file.write(targetPath, import("2da/iprp_ammocost.2da"));
+	std.file.write(sourcePath, multilineStr!`
+		2DAMV1.0
+		5  Scale-mod        4 3   -4  25 300 50   179905 111250 5438   Medium
+		6  Banded-mod       6 1   -6  35 350 250  1733   111251 5439   Heavy
+		7  Half-Plate-mod   7 0   -7  40 500 600  1734   111252 5440   Heavy
+		8  Full-Plate-mod   8 1   -6  35 500 1500 1736   111253 5441   Heavy
+		9  Light_Shield-mod 1 100 -1  5  50  9    2287   179    5443   None
+		10 Heavy_Shield-mod 2 100 -2  15 100 20   2286   1550   5458   None
+		11 Tower_Shield-mod 4 2   -10 50 450 30   1717   1551   5459   None
+		12 Hide-mod         3 4   -3  20 250 15   179882 179878 179886 Medium
+		`
+	);
+	assert(main(["nwn-2da","merge",targetPath,sourcePath,"--range=6-7","--range=10-11"])==0);
+	res = new TwoDA(targetPath);
+	assert(res.get("Label", 5) == "Scale");
+	assert(res.get("Label", 6) == "Banded-mod");
+	assert(res.get("Label", 7) == "Half-Plate-mod");
+	assert(res.get("Label", 8) == "Full-Plate");
+	assert(res.get("Label", 9) == "Light_Shield");
+	assert(res.get("Label", 10) == "Heavy_Shield-mod");
+	assert(res.get("Label", 11) == "Tower_Shield-mod");
+	assert(res.get("Label", 12) == "Hide");
 }
-
-
-		//24	Masterwork_Padded	5	8	0	5	100	155	185853	185841	5432	Light
-		//45	Better_TowerShield	5	2	-9	50	450	180	186060	186063	186066	None
-		//50	Best_TowerShield	6	4	-7	40	225	1030	162068	162178	186069	None
