@@ -81,24 +81,24 @@ class TwoDA{
 
 				case State.columns:
 					//Column name definition
-					foreach(index, title ; extractRowData(line)){
-						header[title.toLower] = index;
+					columnList = extractRowData(line);
+					foreach(index, colName ; columnList){
+						columnLookup[colName.toLower] = index;
 					}
-					header.rehash();
-					columnsCount = header.length;
+					columnLookup.rehash();
 					state = State.data;
 					break;
 
 				case State.data:
 					//Data
 					auto data = extractRowData(line);
-					if(data.length < columnsCount + 1){
+					if(data.length < columnList.length + 1){
 						auto oldLength = data.length;
-						data.length = columnsCount + 1;
+						data.length = columnList.length + 1;
 						data[oldLength .. $] = null;
 					}
 
-					valueList ~= data[1 .. 1 + columnsCount];
+					valueList ~= data[1 .. 1 + columnList.length];
 					break;
 			}
 		}
@@ -173,13 +173,12 @@ class TwoDA{
 
 					case State.columns:
 						//Column name definition
-						columns = extractRowData(line);
-						foreach(index, title ; columns){
-							header[title.toLower] = index;
+						columnList = extractRowData(line);
+						foreach(index, colName ; columnList){
+							columnLookup[colName.toLower] = index;
 						}
-						header.rehash();
-						columnsCount = header.length;
-						if(columnsCount == 0){
+						columnLookup.rehash();
+						if(columnList.length == 0){
 							ret.errors ~= Ret.Error(
 								"Error", iLine + 1,
 								"No columns"
@@ -222,10 +221,10 @@ class TwoDA{
 						prevLineIndex = currentIndex;
 						currentIndex++;
 
-						if(data.length != columnsCount + 1){
+						if(data.length != columnList.length + 1){
 							ret.errors ~= Ret.Error(
 								"Error", iLine + 1,
-								format!"Bad number of columns: Line has %d columns instead of %d"(data.length, columnsCount + 1)
+								format!"Bad number of columns: Line has %d columns instead of %d"(data.length, columnList.length + 1)
 							);
 						}
 
@@ -240,13 +239,13 @@ class TwoDA{
 							}
 						}
 
-						if(data.length < columnsCount + 1){
+						if(data.length < columnList.length + 1){
 							auto oldLength = data.length;
-							data.length = columnsCount + 1;
+							data.length = columnList.length + 1;
 							data[oldLength .. $] = null;
 						}
 
-						valueList ~= data[1 .. 1 + columnsCount];
+						valueList ~= data[1 .. 1 + columnList.length];
 						break;
 				}
 			}
@@ -260,7 +259,7 @@ class TwoDA{
 	/// Throws: `std.conv.ConvException` if the conversion into T fails
 	auto ref get(T = string)(in size_t colIndex, in size_t line) const {
 		assert(line < rows, "Line is out of bounds");
-		assert(colIndex < columnsCount, "Column is out of bounds");
+		assert(colIndex < columnList.length, "Column is out of bounds");
 
 		static if(is(T == string)){
 			return this[colIndex, line];
@@ -273,13 +272,11 @@ class TwoDA{
 			catch(ConvException e){
 				//Annotate conv exception
 				string colName;
-				foreach(ref name, index ; header){
-					if(index == colIndex){
-						colName = name;
-						break;
-					}
-				}
-				e.msg ~= " ("~fileName~": column: "~colIndex.to!string~", line: "~line.to!string~")";
+
+				if(colIndex < columnList.length)
+					colName = columnList[colIndex];
+
+				e.msg ~= " ("~fileName~": column: "~(colName !is null ? colName : colIndex.to!string)~", line: "~line.to!string~")";
 				throw e;
 			}
 		}
@@ -291,7 +288,7 @@ class TwoDA{
 		if(line >= rows)
 			return defaultValue;
 
-		if(auto colIndex = colName.toLower in header){
+		if(auto colIndex = colName.toLower in columnLookup){
 			if(this[*colIndex, line] !is null){
 				try return this[*colIndex, line].to!T;
 				catch(ConvException){}
@@ -309,7 +306,7 @@ class TwoDA{
 
 	/// Get the index of a column by its name, for faster access
 	size_t columnIndex(in string colName) const {
-		if(auto colIndex = colName.toLower in header){
+		if(auto colIndex = colName.toLower in columnLookup){
 			return *colIndex;
 		}
 		throw new TwoDAColumnNotFoundException("Column '"~colName~"' not found");
@@ -317,7 +314,7 @@ class TwoDA{
 
 	/// Check if a column exists in the 2da, and returns a pointer to its index
 	const(size_t*) opBinaryRight(string op: "in")(in string colName) const {
-		return colName.toLower in header;
+		return colName.toLower in columnLookup;
 	}
 
 	/// Get a specific cell value
@@ -325,21 +322,21 @@ class TwoDA{
 	ref inout(string) opIndex(size_t column, size_t row) inout nothrow {
 		assert(column < columns, "column out of bounds");
 		assert(row < rows, "row out of bounds");
-		return valueList[row * columnsCount + column];
+		return valueList[row * columnList.length + column];
 	}
 	/// ditto
 	ref inout(string) opIndex(string column, size_t row) inout {
-		assert(column.toLower in header, "Column not found in header");
-		return this[header[column.toLower], row];
+		assert(column.toLower in columnLookup, "Column not found");
+		return this[columnLookup[column.toLower], row];
 	}
 
 	// Get row
 	const(string[]) opIndex(size_t i) const {
-		return valueList[i * columnsCount .. (i + 1) * columnsCount];
+		return valueList[i * columnList.length .. (i + 1) * columnList.length];
 	}
 	// Set row
 	void opIndexAssign(in string[] value, size_t i){
-		valueList[i * columnsCount .. (i + 1) * columnsCount] = value;
+		valueList[i * columnList.length .. (i + 1) * columnList.length] = value;
 	}
 
 
@@ -373,18 +370,18 @@ class TwoDA{
 	@property{
 		/// Number of rows in the 2da
 		size_t rows() const nothrow {
-			if(columnsCount == 0)
+			if(columnList.length == 0)
 				return 0;
-			return valueList.length / columnsCount;
+			return valueList.length / columnList.length;
 		}
 		/// Resize the 2da table
 		void rows(size_t rowsCount) nothrow {
-			valueList.length = columnsCount * rowsCount;
+			valueList.length = columnList.length * rowsCount;
 		}
 
 		/// Number of named columns in the 2da (i.e. without the index column)
 		size_t columns() const nothrow {
-			return columnsCount;
+			return columnList.length;
 		}
 	}
 
@@ -407,15 +404,12 @@ class TwoDA{
 		import std.math: log10, floor;
 		size_t[] columnsWidth =
 			(cast(int)log10(rows)+2)
-			~(header
-				.byKeyValue
-				.array
-				.sort!((a, b) => a.value < b.value)
-				.map!(a => (a.key.length < 4 ? 4 : a.key.length) + 1)
+			~(columnList
+				.map!(a => (a.length < 4 ? 4 : a.length) + 1)
 				.array);
 
 		foreach(row ; 0 .. rows){
-			foreach(col ; 0 .. columnsCount){
+			foreach(col ; 0 .. columnList.length){
 				auto value = this[col, row];
 				if(value.length + 1 > columnsWidth[col + 1])
 					columnsWidth[col + 1] = value.length + 1;
@@ -424,16 +418,16 @@ class TwoDA{
 
 		//Column names
 		ret ~= "".leftJustify(columnsWidth[0]);
-		foreach(ref kv ; header.byKeyValue.array.sort!((a,b)=>a.value<b.value)){
-			ret ~= kv.key.leftJustify(columnsWidth[kv.value+1]);
+		foreach(i, ref colName ; columnList){
+			ret ~= colName.leftJustify(columnsWidth[i + 1]);
 		}
 		ret ~= "\n";
 
 		//Data
-		foreach(row ; 0 .. rows){
-			ret ~= row.to!string.leftJustify(columnsWidth[0]);
-			foreach(col ; 0 .. columnsCount){
-				auto value = this[col, row];
+		foreach(rowIndex ; 0 .. rows){
+			ret ~= rowIndex.to!string.leftJustify(columnsWidth[0]);
+			foreach(colIndex ; 0 .. columnList.length){
+				auto value = this[colIndex, rowIndex];
 				string serializedValue;
 				if(value is null || value.length == 0)
 					serializedValue = "****";
@@ -447,10 +441,10 @@ class TwoDA{
 						serializedValue = value;
 				}
 
-				if(col == columnsCount - 1)
+				if(colIndex == columnList.length - 1)
 					ret ~= serializedValue;
 				else
-					ret ~= serializedValue.leftJustify(columnsWidth[col + 1]);
+					ret ~= serializedValue.leftJustify(columnsWidth[colIndex + 1]);
 
 
 			}
@@ -515,8 +509,8 @@ class TwoDA{
 	/// Optional 2DA file name set during construction
 	string fileName = null;
 private:
-	size_t[string] header;
-	size_t columnsCount;
+	string[] columnList;
+	size_t[string] columnLookup;
 	string[] valueList;
 }
 unittest{
@@ -550,7 +544,7 @@ unittest{
 	auto twodaSerialized = twoda.serialize();
 	auto twodaReparsed = new TwoDA(twodaSerialized);
 
-	assert(twoda.header == twodaReparsed.header);
+	assert(twoda.columnList == twodaReparsed.columnList);
 	assert(twoda.valueList == twodaReparsed.valueList);
 
 
