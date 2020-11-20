@@ -88037,7 +88037,7 @@
 						"name": "recover",
 						"deco": "FIAhIAyaZS3nwn5twoda5TwoDA7recoverFIQBiIQBjZ3Ret",
 						"endchar": 2,
-						"endline": 256,
+						"endline": 255,
 						"comment": "ditto\n"
 					},
 					{
@@ -88048,7 +88048,7 @@
 								"name": "T"
 							}
 						],
-						"line": 261,
+						"line": 260,
 						"kind": "template",
 						"char": 11,
 						"members": [
@@ -88072,13 +88072,13 @@
 										"name": "line"
 									}
 								],
-								"line": 261,
+								"line": 260,
 								"kind": "function",
 								"char": 11,
 								"name": "get",
 								"type": "const ref (in size_t colIndex, in size_t line)",
 								"endchar": 2,
-								"endline": 286
+								"endline": 283
 							}
 						],
 						"name": "get",
@@ -88092,7 +88092,7 @@
 								"name": "T"
 							}
 						],
-						"line": 290,
+						"line": 287,
 						"kind": "template",
 						"char": 4,
 						"members": [
@@ -88117,13 +88117,13 @@
 										"name": "defaultValue"
 									}
 								],
-								"line": 290,
+								"line": 287,
 								"kind": "function",
 								"char": 4,
 								"name": "get",
 								"type": "const T(in string colName, in size_t line, T defaultValue)",
 								"endchar": 2,
-								"endline": 301
+								"endline": 298
 							}
 						],
 						"name": "get",
@@ -88137,7 +88137,7 @@
 								"name": "T"
 							}
 						],
-						"line": 305,
+						"line": 302,
 						"kind": "template",
 						"char": 11,
 						"members": [
@@ -88161,13 +88161,13 @@
 										"name": "line"
 									}
 								],
-								"line": 305,
+								"line": 302,
 								"kind": "function",
 								"char": 11,
 								"name": "get",
 								"type": "const ref (in string colName, in size_t line)",
 								"endchar": 2,
-								"endline": 307
+								"endline": 304
 							}
 						],
 						"name": "get",
@@ -88183,14 +88183,14 @@
 								"name": "colName"
 							}
 						],
-						"line": 311,
+						"line": 308,
 						"kind": "function",
 						"originalType": "const size_t(in string colName)",
 						"char": 9,
 						"name": "columnIndex",
 						"deco": "xFIAyaZm",
 						"endchar": 2,
-						"endline": 316,
+						"endline": 313,
 						"comment": "Get the index of a column by its name, for faster access\n"
 					},
 					{
@@ -88202,7 +88202,7 @@
 								"name": "op"
 							}
 						],
-						"line": 319,
+						"line": 316,
 						"kind": "template",
 						"char": 17,
 						"members": [
@@ -88216,13 +88216,13 @@
 										"name": "colName"
 									}
 								],
-								"line": 319,
+								"line": 316,
 								"kind": "function",
 								"char": 17,
 								"name": "opBinaryRight",
 								"type": "const const(size_t*)(in string colName)",
 								"endchar": 2,
-								"endline": 321
+								"endline": 318
 							}
 						],
 						"name": "opBinaryRight",
@@ -88239,14 +88239,14 @@
 								"name": "row"
 							}
 						],
-						"line": 325,
+						"line": 322,
 						"kind": "function",
 						"originalType": "inout nothrow ref inout(string)(size_t column, size_t row)",
 						"char": 20,
 						"name": "opIndex",
 						"deco": "NgFNbNcmmZNgAya",
 						"endchar": 2,
-						"endline": 329,
+						"endline": 326,
 						"comment": "Get a specific cell value\nNote: column 0 is the first named column (not the index column)\n"
 					},
 					{
@@ -88260,14 +88260,14 @@
 								"name": "row"
 							}
 						],
-						"line": 331,
+						"line": 328,
 						"kind": "function",
 						"originalType": "inout ref inout(string)(string column, size_t row)",
 						"char": 20,
 						"name": "opIndex",
 						"deco": "NgFNcAyamZNgAya",
 						"endchar": 2,
-						"endline": 334,
+						"endline": 331,
 						"comment": "ditto\n"
 					},
 					{
@@ -88277,14 +88277,14 @@
 								"name": "i"
 							}
 						],
-						"line": 337,
+						"line": 334,
 						"kind": "function",
 						"originalType": "const const(string[])(size_t i)",
 						"char": 18,
 						"name": "opIndex",
 						"deco": "xFmZxAAya",
 						"endchar": 2,
-						"endline": 339
+						"endline": 336
 					},
 					{
 						"parameters": [
@@ -88300,23 +88300,23 @@
 								"name": "i"
 							}
 						],
-						"line": 341,
+						"line": 338,
 						"kind": "function",
 						"originalType": "void(in string[] value, size_t i)",
 						"char": 7,
 						"name": "opIndexAssign",
 						"deco": "FIAAyamZv",
 						"endchar": 2,
-						"endline": 343
+						"endline": 341
 					},
 					{
-						"line": 349,
+						"line": 347,
 						"kind": "function",
 						"char": 10,
 						"name": "fileType",
 						"deco": "xFNdZAya",
 						"endchar": 44,
-						"endline": 349,
+						"endline": 347,
 						"comment": "File type (should always be \"2DA\")\nMax width: 4 chars\n"
 					},
 					{
@@ -88326,23 +88326,23 @@
 								"name": "value"
 							}
 						],
-						"line": 351,
+						"line": 349,
 						"kind": "function",
 						"char": 8,
 						"name": "fileType",
 						"deco": "FNdAyaZv",
 						"endchar": 3,
-						"endline": 355,
+						"endline": 353,
 						"comment": "ditto\n"
 					},
 					{
-						"line": 361,
+						"line": 359,
 						"kind": "function",
 						"char": 10,
 						"name": "fileVersion",
 						"deco": "xFNdZAya",
 						"endchar": 50,
-						"endline": 361,
+						"endline": 359,
 						"comment": "File version (should always be \"V2.0\")\nMax width: 4 chars\n"
 					},
 					{
@@ -88352,24 +88352,24 @@
 								"name": "value"
 							}
 						],
-						"line": 363,
+						"line": 361,
 						"kind": "function",
 						"char": 8,
 						"name": "fileVersion",
 						"deco": "FNdAyaZv",
 						"endchar": 3,
-						"endline": 367,
+						"endline": 365,
 						"comment": "ditto\n"
 					},
 					{
-						"line": 375,
+						"line": 373,
 						"kind": "function",
 						"originalType": "const nothrow @property size_t()",
 						"char": 10,
 						"name": "rows",
 						"deco": "xFNbNdZm",
 						"endchar": 3,
-						"endline": 379,
+						"endline": 377,
 						"comment": "Number of rows in the 2da\n"
 					},
 					{
@@ -88379,35 +88379,35 @@
 								"name": "rowsCount"
 							}
 						],
-						"line": 381,
+						"line": 379,
 						"kind": "function",
 						"originalType": "nothrow @property void(size_t rowsCount)",
 						"char": 8,
 						"name": "rows",
 						"deco": "FNbNdmZv",
 						"endchar": 3,
-						"endline": 383,
+						"endline": 381,
 						"comment": "Resize the 2da table\n"
 					},
 					{
-						"line": 386,
+						"line": 384,
 						"kind": "function",
 						"originalType": "const nothrow @property size_t()",
 						"char": 10,
 						"name": "columns",
 						"deco": "xFNbNdZm",
 						"endchar": 3,
-						"endline": 388,
+						"endline": 386,
 						"comment": "Number of named columns in the 2da (i.e. without the index column)\n"
 					},
 					{
-						"line": 392,
+						"line": 390,
 						"kind": "function",
 						"char": 10,
 						"name": "serialize",
 						"deco": "xFZAh",
 						"endchar": 2,
-						"endline": 461,
+						"endline": 456,
 						"comment": "Outputs 2da text content\n"
 					},
 					{
@@ -88423,17 +88423,17 @@
 								"name": "line"
 							}
 						],
-						"line": 464,
+						"line": 459,
 						"kind": "function",
 						"char": 18,
 						"name": "extractRowData",
 						"deco": "FIAyaZAAya",
 						"endchar": 2,
-						"endline": 513,
+						"endline": 508,
 						"comment": "Parse a 2DA row\n"
 					},
 					{
-						"line": 516,
+						"line": 511,
 						"kind": "variable",
 						"char": 9,
 						"name": "fileName",
@@ -88764,7 +88764,7 @@
 				"char": 6,
 				"name": "NWN_LIB_D_VERSION",
 				"deco": "Aya",
-				"init": "\"v1.0.0-rc2\"",
+				"init": "\"v1.0.0-rc3\"",
 				"comment": "nwn-lib-d git version\n"
 			}
 		],
