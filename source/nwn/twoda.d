@@ -336,6 +336,7 @@ class TwoDA{
 	}
 	// Set row
 	void opIndexAssign(in string[] value, size_t i){
+		assert(value.length == columnList.length, format!"value has %d columns instead of %d"(value.length, columnList.length));
 		valueList[i * columnList.length .. (i + 1) * columnList.length] = value;
 	}
 

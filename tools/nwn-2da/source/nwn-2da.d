@@ -21,7 +21,9 @@ void usage(in string cmd){
 	writeln("  merge: Merge 2da rows together");
 }
 
-int main(string[] args)
+// Hack for having a full stacktrace when unittest fails (otherwise it stops the stacktrace at main())
+int main(string[] args){return _main(args);}
+int _main(string[] args)
 {
 	if(args.any!(a => a == "--version")){
 		import nwn.ver: NWN_LIB_D_VERSION;
@@ -244,10 +246,10 @@ unittest {
 	scope(exit) stdout = stdout_;
 
 
-	assertThrown(main(["nwn-2da"]));
-	assert(main(["nwn-2da","--help"])==0);
-	assert(main(["nwn-2da","--version"])==0);
-	assert(main(["nwn-2da","yolo"]) != 0);
+	assertThrown(_main(["nwn-2da"]));
+	assert(_main(["nwn-2da","--help"])==0);
+	assert(_main(["nwn-2da","--version"])==0);
+	assert(_main(["nwn-2da","yolo"]) != 0);
 
 	immutable targetPath = buildPath(tempDir, "unittest-nwn-lib-d-"~__MODULE__~".target.2da");
 	scope(success) std.file.remove(targetPath);
@@ -256,21 +258,21 @@ unittest {
 
 
 	// Checking (most errors are not checked here)
-	assert(main(["nwn-2da","check","--help"])==0);
+	assert(_main(["nwn-2da","check","--help"])==0);
 	stdout.reopen(null, "w");
 	std.file.write(targetPath, import("2da/armorrulestats.2da"));
-	assert(main(["nwn-2da","check",targetPath]) == 1);
+	assert(_main(["nwn-2da","check",targetPath]) == 1);
 	stdout.flush();
 	assert(tmpOut.readText.splitLines.length == 2);
 
 	// Normalize
-	assert(main(["nwn-2da","normalize","--help"])==0);
+	assert(_main(["nwn-2da","normalize","--help"])==0);
 	std.file.write(targetPath, import("2da/armorrulestats.2da"));
-	assert(main(["nwn-2da","normalize",targetPath]) == 0);
-	assert(main(["nwn-2da","check",targetPath]) == 0);
+	assert(_main(["nwn-2da","normalize",targetPath]) == 0);
+	assert(_main(["nwn-2da","check",targetPath]) == 0);
 
 	// Merging
-	assert(main(["nwn-2da","merge","--help"])==0);
+	assert(_main(["nwn-2da","merge","--help"])==0);
 
 	auto origTwoDA = new TwoDA(cast(ubyte[])import("2da/iprp_ammocost.2da"));
 
@@ -281,7 +283,7 @@ unittest {
 		3	1633	1d6Cold	4	NW_WAMMAR005	NW_WAMMBO001	NW_WAMMBU006
 		`
 	);
-	assert(main(["nwn-2da","merge",targetPath,sourcePath])==0);
+	assert(_main(["nwn-2da","merge",targetPath,sourcePath])==0);
 	auto res = new TwoDA(targetPath);
 	foreach(i ; 0 .. origTwoDA.rows)
 		assert(res[i] == origTwoDA[i], i.to!string);
@@ -293,7 +295,7 @@ unittest {
 		7	200888	Modified	7	nx1_arrow03	nx1_bolt03	nx1_bullet03
 		`
 	);
-	assert(main(["nwn-2da","merge","-y",targetPath,sourcePath])==0);
+	assert(_main(["nwn-2da","merge","-y",targetPath,sourcePath])==0);
 	res = new TwoDA(targetPath);
 	assert(res.get("Label", 7) == "Modified");
 
@@ -304,7 +306,7 @@ unittest {
 		20	1000	NewRow	10	nx1_arrow03	nx1_bolt03	nx1_bullet03
 		`
 	);
-	assert(main(["nwn-2da","merge",targetPath,sourcePath])==0);
+	assert(_main(["nwn-2da","merge",targetPath,sourcePath])==0);
 	res = new TwoDA(targetPath);
 	assert(res.get("Label", 20) == "NewRow");
 
@@ -315,13 +317,13 @@ unittest {
 		20	1000	NewRow	10	nx1_arrow03	nx1_bolt03	nx1_bullet03
 		`
 	);
-	assert(main(["nwn-2da","merge",targetPath,sourcePath])==0);
+	assert(_main(["nwn-2da","merge",targetPath,sourcePath])==0);
 	res = new TwoDA(targetPath);
 	assert(res.get("Label", 20) == "NewRow");
 
 
 	// Insert a range
-	std.file.write(targetPath, import("2da/iprp_ammocost.2da"));
+	std.file.write(targetPath, import("2da/armorrulestats.2da"));
 	std.file.write(sourcePath, multilineStr!`
 		2DAMV1.0
 		5  Scale-mod        4 3   -4  25 300 50   179905 111250 5438   Medium
@@ -334,7 +336,7 @@ unittest {
 		12 Hide-mod         3 4   -3  20 250 15   179882 179878 179886 Medium
 		`
 	);
-	assert(main(["nwn-2da","merge",targetPath,sourcePath,"--range=6-7","--range=10-11"])==0);
+	assert(_main(["nwn-2da","merge","-y",targetPath,sourcePath,"--range=6-7","--range=10-11","--range=14-15","--range=100-101"])==0);
 	res = new TwoDA(targetPath);
 	assert(res.get("Label", 5) == "Scale");
 	assert(res.get("Label", 6) == "Banded-mod");
@@ -344,4 +346,7 @@ unittest {
 	assert(res.get("Label", 10) == "Heavy_Shield-mod");
 	assert(res.get("Label", 11) == "Tower_Shield-mod");
 	assert(res.get("Label", 12) == "Hide");
+	assert(res.get("Label", 13) == "Chainmail");
+	assert(res.get("Label", 14) == "Breastplate");
+	assert(res.rows == 47);
 }
