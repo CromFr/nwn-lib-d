@@ -41,6 +41,7 @@ void usage(in string cmd){
 	writeln("  info: Print TRN and packets header information");
 	writeln("  bake: Bake an area (replacement for builtin nwn2toolset bake tool)");
 	writeln("  check: Performs several checks on the TRN packets data");
+	writeln("  optimize: Reduce the TRX file size for client or server usage (uses aswm-strip)");
 	writeln("  trrn-export: Export the terrain mesh, textures and grass");
 	writeln("  trrn-import: Import a terrain mesh, textures and grass into an existing TRN/TRX file");
 	writeln("  watr-export: Export water mesh");
@@ -190,6 +191,94 @@ int main(string[] args){
 				}
 			}
 			break;
+
+		case "optimize":{
+			bool inPlace = false;
+			bool quiet = false;
+			bool server = false;
+			string targetPath = null;
+
+			auto res = getopt(args,
+				"in-place|i", "Provide this flag to overwrite the provided TRX file", &inPlace,
+				"output|o", "Output file or directory. Mandatory if --in-place is not provided.", &targetPath,
+				"server", "Optimize for server usage (Optimize for client if not provided).", &server,
+				"quiet|q", "Do not display statistics", &quiet,
+				);
+			if(res.helpWanted){
+				improvedGetoptPrinter(
+					"Reduce TRX file size by removing unnecessary data, like non-walkable triangle pathing information.\n"
+					"If optimized for server, it will also remove water, terrain textures & mesh.\n"
+					~"Usage: "~args[0].baseName~" "~command~" map.trx -o optimized_map.trx\n"
+					~"       "~args[0].baseName~" "~command~" -i map.trx",
+					res.options);
+				return 0;
+			}
+			enforce(args.length > 1, "No input file provided");
+
+			if(inPlace){
+				enforce(targetPath is null, "You cannot use --in-place with --output");
+				enforce(args.length >= 2, "No input file");
+			}
+			else{
+				enforce(args.length <=2, "Too many input files provided");
+				if(targetPath is null)
+					targetPath = ".";
+			}
+
+			foreach(file ; args[1 .. $]){
+
+				auto data = cast(ubyte[])file.read();
+				auto trn = new Trn(data);
+				size_t initLen = data.length;
+
+				// Remove unneeded packets
+				if(server){
+					typeof(trn.packets) newPackets;
+					foreach(i, ref packet ; trn.packets){
+						final switch(packet.type){
+							case TrnPacketType.NWN2_TRRN:
+							case TrnPacketType.NWN2_WATR:
+								break;
+							case TrnPacketType.NWN2_TRWH:
+							case TrnPacketType.NWN2_ASWM:
+								newPackets ~= packet;
+								break;
+						}
+					}
+					trn.packets = newPackets;
+				}
+
+				// Optimize ASWM
+				foreach(ref TrnNWN2WalkmeshPayload aswm ; trn){
+					import aswmstrip: stripASWM;
+					stripASWM(aswm, quiet);
+					aswm.validate();
+				}
+
+				auto finalData = trn.serialize();
+				if(!quiet){
+					writefln("File size: %dB => %dB (stripped %.2f%%)",
+						initLen, finalData.length, 100 - finalData.length * 100.0 / initLen
+					);
+				}
+
+				string outPath;
+				if(inPlace)
+					outPath = file;
+				else{
+					if(targetPath.exists && targetPath.isDir)
+						outPath = buildPath(targetPath, file.baseName);
+					else
+						outPath = targetPath;
+				}
+
+				std.file.write(outPath, finalData);
+			}
+
+
+
+		}
+		break;
 
 		case "aswm-strip":{
 			bool inPlace = false;
@@ -589,14 +678,14 @@ int main(string[] args){
 				// Extract all walkmesh cutters data
 				alias WMCutter = vec2f[];
 				WMCutter[] wmCutters;
-				foreach(_, trigger ; git["TriggerList"].get!GffList){
+				foreach(trigger ; git["TriggerList"].get!GffList){
 					if(trigger["Type"].get!GffInt == 3){
 						// Walkmesh cutter
 						auto start = [trigger["XPosition"].get!GffFloat, trigger["YPosition"].get!GffFloat];
 
 						// what about: XOrientation YOrientation ZOrientation ?
 						WMCutter cutter;
-						foreach(_, point ; trigger["Geometry"].get!GffList){
+						foreach(point ; trigger["Geometry"].get!GffList){
 							cutter ~= vec2f(
 								start[0] + point["PointX"].get!GffFloat,
 								start[1] + point["PointY"].get!GffFloat,
