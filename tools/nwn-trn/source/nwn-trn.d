@@ -207,7 +207,7 @@ int main(string[] args){
 			if(res.helpWanted){
 				improvedGetoptPrinter(
 					"Reduce TRX file size by removing unnecessary data, like non-walkable triangle pathing information.\n"
-					"If optimized for server, it will also remove water, terrain textures & mesh.\n"
+					~"If optimized for server, it will also remove water, terrain textures & mesh.\n"
 					~"Usage: "~args[0].baseName~" "~command~" map.trx -o optimized_map.trx\n"
 					~"       "~args[0].baseName~" "~command~" -i map.trx",
 					res.options);
