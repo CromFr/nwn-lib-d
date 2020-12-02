@@ -2,7 +2,7 @@
 module nwnlibd.parseutils;
 
 import std.traits;
-		import std.conv;
+import std.conv;
 
 /// Converts a static char array to string.
 /// The static char array may or may not be null terminated
@@ -148,4 +148,23 @@ template DebugPrintStruct(){
 		}
 		return ret ~ ")";
 	}
+}
+
+/// Prints an integer as being a combination of bit flags
+string flagsToString(ENUM, VAL)(in VAL value) if(is(ENUM == enum) && isIntegral!VAL) {
+	import std.string: format;
+	string ret;
+	VAL accu = 0;
+	foreach(FLAG ; EnumMembers!ENUM){
+		if(value && FLAG == FLAG){
+			ret ~= (ret is null ? null : "|") ~ FLAG.to!string;
+			accu |= FLAG;
+		}
+	}
+	if(accu != value){
+		ret ~= (ret is null ? null : "|") ~ format!"0b%b"(accu ^ value);
+	}
+	if(ret is null)
+		ret = "None";
+	return ret;
 }
