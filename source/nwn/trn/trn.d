@@ -312,7 +312,7 @@ private:
 
 
 
-/// Terrain dimensions
+/// Terrain dimensions (TRWH)
 struct TrnNWN2TerrainDimPayload{
 	uint32_t width;/// Width in megatiles
 	uint32_t height;/// Height in megatiles
@@ -333,7 +333,7 @@ struct TrnNWN2TerrainDimPayload{
 	}
 }
 
-/// Megatile information
+/// Megatile information (TRRN)
 struct TrnNWN2MegatilePayload{
 	char[128] name;///name of the terrain
 	///
@@ -470,6 +470,11 @@ struct TrnNWN2MegatilePayload{
 		catch(Exception e)
 			throw new TRRNInvalidValueException("dds_b is invalid or format is not supported", __FILE__, __LINE__, e);
 
+		foreach(vi, v ; vertices){
+			enforce!TRRNInvalidValueException(v.position[].all!"!a.isNaN",
+				format!"vertices[%d] has an invalid position: %s"(vi, v));
+		}
+
 		immutable vtxLen = vertices.length;
 		foreach(ti, ref t ; triangles){
 			foreach(vi, v ; t.vertices)
@@ -479,7 +484,7 @@ struct TrnNWN2MegatilePayload{
 	}
 }
 
-/// Water information
+/// Water information (WATR)
 struct TrnNWN2WaterPayload{
 	/// WATR name.
 	///
@@ -507,8 +512,8 @@ struct TrnNWN2WaterPayload{
 	static align(1) struct Vertex{
 		static assert(this.sizeof == 28);
 		float[3] position;/// x y z
-		float[2] uv_0;/// XY5
-		float[2] uv_1;/// XY1
+		float[2] uvx5;/// XY5 (set to XY1 * 5.0)
+		float[2] uv;/// XY1
 	}
 	///
 	Vertex[] vertices;
@@ -543,6 +548,7 @@ struct TrnNWN2WaterPayload{
 
 		immutable vertices_length  = data.read!uint32_t;
 		immutable triangles_length = data.read!uint32_t;
+		assert(data.read_ptr == 328);
 
 		vertices = data.readArray!Vertex(vertices_length).dup;
 		triangles = data.readArray!Triangle(triangles_length).dup;
@@ -600,6 +606,11 @@ struct TrnNWN2WaterPayload{
 		enforce!WATRInvalidValueException(triangles.length == triangles_flags.length,
 			format!"triangles.length (=%d) must match triangles_flags.length (=%d)"(triangles.length, triangles_flags.length));
 
+		foreach(vi, v ; vertices){
+			enforce!WATRInvalidValueException(v.position[].all!"!a.isNaN",
+				format!"vertices[%d] has an invalid position: %s"(vi, v));
+		}
+
 		immutable vtxLen = vertices.length;
 		foreach(ti, ref t ; triangles){
 			foreach(vi, v ; t.vertices)
@@ -652,7 +663,7 @@ struct TrnNWN2WaterPayload{
 	}
 }
 
-/// Compressed walkmesh (only contained inside TRX files)
+/// Compressed walkmesh (only contained inside TRX files) (ASWM)
 struct TrnNWN2WalkmeshPayload{
 
 	/// ASWM packet header
@@ -1362,6 +1373,12 @@ struct TrnNWN2WalkmeshPayload{
 		immutable edgeLen = edges.length;
 		immutable triLen = triangles.length;
 		immutable islLen = islands.length;
+
+		// Vertices
+		foreach(vi, v ; vertices){
+			enforce!ASWMInvalidValueException(v.position[].all!"!a.isNaN",
+				format!"vertices[%d] has an invalid position: %s"(vi, v));
+		}
 
 		// Edges
 		foreach(iedge, ref edge ; edges){

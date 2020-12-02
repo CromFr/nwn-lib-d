@@ -19,12 +19,14 @@ import std.exception;
 import std.random: uniform;
 import std.format;
 import std.math;
+import std.parallelism;
 
 import nwnlibd.path;
 import nwnlibd.parseutils;
 import nwnlibd.geometry;
 import tools.common.getopt;
 import nwn.trn;
+import nwn.dds;
 import gfm.math.vector;
 
 class ArgException : Exception{
@@ -41,7 +43,7 @@ void usage(in string cmd){
 	writeln("  info: Print TRN and packets header information");
 	writeln("  bake: Bake an area (replacement for builtin nwn2toolset bake tool)");
 	writeln("  check: Performs several checks on the TRN packets data");
-	writeln("  optimize: Reduce the TRX file size for client or server usage (uses aswm-strip)");
+	writeln("  optimize: Reduce the TRX file size for client or server usage");
 	writeln("  trrn-export: Export the terrain mesh, textures and grass");
 	writeln("  trrn-import: Import a terrain mesh, textures and grass into an existing TRN/TRX file");
 	writeln("  watr-export: Export water mesh");
@@ -197,12 +199,16 @@ int main(string[] args){
 			bool quiet = false;
 			bool server = false;
 			string targetPath = null;
+			uint threads = 0;
+			float roundBound = float.nan;
 
 			auto res = getopt(args,
 				"in-place|i", "Provide this flag to overwrite the provided TRX file", &inPlace,
 				"output|o", "Output file or directory. Mandatory if --in-place is not provided.", &targetPath,
 				"server", "Optimize for server usage (Optimize for client if not provided).", &server,
 				"quiet|q", "Do not display statistics", &quiet,
+				"round", "Round floating point values, to enhance compressibility. Set to 0.02 to round to the nearest multiple of 0.02.", &roundBound,
+				"j", "Threads to use. Default to the number of available threads on this machine.", &threads,
 				);
 			if(res.helpWanted){
 				improvedGetoptPrinter(
@@ -210,7 +216,30 @@ int main(string[] args){
 					~"If optimized for server, it will also remove water, terrain textures & mesh.\n"
 					~"Usage: "~args[0].baseName~" "~command~" map.trx -o optimized_map.trx\n"
 					~"       "~args[0].baseName~" "~command~" -i map.trx",
-					res.options);
+					res.options,
+					multilineStr!"
+						Optimization details:
+						- TRWH (area size):
+						  + Zero-out ID field
+						- TRRN (terrain mesh & grass):
+						  + Zero-out megatile name and grass patch names
+						  + Clean trailing garbage in texture names and grass patch names
+						- WATR (water mesh):
+						  + Zero-out megatile name and padding
+						  + Reduce the triangles count to 2 per megatile (only if the water is planar)
+						- ASWM (walk mesh):
+						  + Zero-out megatile name, tile names and island padding
+						  + Remove triangles that are not walkable, and their associated data (using aswm-strip)
+
+						Server optimization details:
+						- All the above optimizations
+						- Remove TRRN and WATR data (keeping only TRWH and ASWM)
+
+						Notes:
+						You shouldn't optimize TRN files, as these files are only used by the toolset
+						and it may not work very well with certain optimizations (for example, you
+						won't be able to extend water planes after the optimization).
+					");
 				return 0;
 			}
 			enforce(args.length > 1, "No input file provided");
@@ -225,8 +254,14 @@ int main(string[] args){
 					targetPath = ".";
 			}
 
-			foreach(file ; args[1 .. $]){
+			if(threads > 0)
+				defaultPoolThreads = threads;
 
+			float roundFloat(in float f){
+				return round(f / roundBound) * roundBound;
+			}
+
+			foreach(file ; args[1 .. $].parallel){
 				auto data = cast(ubyte[])file.read();
 				auto trn = new Trn(data);
 				size_t initLen = data.length;
@@ -248,17 +283,162 @@ int main(string[] args){
 					trn.packets = newPackets;
 				}
 
-				// Optimize ASWM
-				foreach(ref TrnNWN2WalkmeshPayload aswm ; trn){
-					import aswmstrip: stripASWM;
-					stripASWM(aswm, quiet);
-					aswm.validate();
+				// Clean garbage in fields (uninitialized memory written that was written to the file)
+				foreach(ref packet ; trn.packets){
+					final switch(packet.type){
+						case TrnPacketType.NWN2_TRWH:
+							packet.as!TrnNWN2TerrainDimPayload.id = 0;
+							break;
+						case TrnPacketType.NWN2_TRRN:
+							with(packet.as!TrnNWN2MegatilePayload){
+								// Zero out trailing / useless data
+								name[] = 0;
+
+								foreach(ref t ; textures)
+									t.name = t.name.charArrayToString.stringToCharArray!(typeof(t.name));
+
+								foreach(ref g ; grass){
+									g.name[] = 0;
+									g.texture = g.texture.charArrayToString.stringToCharArray!(typeof(g.texture));
+								}
+
+
+								if(!roundBound.isNaN){
+									foreach(ref v ; vertices){
+										v.position.each!((ref f){f = roundFloat(f);});
+										v.normal.each!((ref f){f = roundFloat(f);});
+										v.weights.each!((ref f){f = roundFloat(f);});
+									}
+								}
+
+								validate();
+							}
+							break;
+
+						case TrnPacketType.NWN2_WATR:
+							with(packet.as!TrnNWN2WaterPayload){
+								// Zero out trailing / useless data
+								name[] = 0;
+								unknown[] = 0;
+
+								// If planar water mesh, simplify the mesh
+								float altitude = vertices[0].position[2];
+								bool isPlanar = vertices.all!(v => v.position[2] == altitude);
+
+								if(isPlanar){
+									import gfm.math.box;
+									auto waterMask = Dds(dds).toBitmap!(ubyte);
+
+									// Build bounding box of water pixels
+									box2f aabb;
+									foreach(y ; 0 .. waterMask.height){
+										foreach(x ; 0 .. waterMask.width){
+											if(waterMask[x, y] == ubyte.max){
+												box2f pixBox = box2f(vec2f(x, y), vec2f(x + 1, y + 1));
+
+												if(aabb.min.x.isNaN)
+													aabb = pixBox;
+												else if(!aabb.contains(pixBox))
+													aabb = aabb.expand(pixBox);
+											}
+										}
+									}
+
+									if(aabb.min.x.isNaN){
+										vertices.length = 0;
+										triangles.length = 0;
+										triangles_flags[] = 0;
+									}
+									else{
+										// Move / resize bounding box to match megatile size & position
+										const offset = vec2f(megatile_position[0], megatile_position[1]) * 40f;
+										aabb.min = aabb.min * 40f / 128f + offset;
+										aabb.max = aabb.max * 40f / 128f + offset;
+
+										// 4 corners of the aabb
+										float[3] a = [aabb.min.x, aabb.min.y, altitude];
+										float[3] b = [aabb.max.x, aabb.min.y, altitude];
+										float[3] c = [aabb.max.x, aabb.max.y, altitude];
+										float[3] d = [aabb.min.x, aabb.max.y, altitude];
+
+										vertices = [
+											TrnNWN2WaterPayload.Vertex(a),
+											TrnNWN2WaterPayload.Vertex(b),
+											TrnNWN2WaterPayload.Vertex(c),
+											TrnNWN2WaterPayload.Vertex(d),
+										];
+										// calculate texture coordinates
+										vertices.each!((ref v){
+											v.uv = [(v.position[0] - offset.x) / 40.0, (v.position[1] - offset.y) / 40.0];
+											v.uvx5 = v.uv[] * 5.0;
+										});
+										triangles = [
+											TrnNWN2WaterPayload.Triangle([1, 3, 0]),
+											TrnNWN2WaterPayload.Triangle([2, 3, 1]),
+										];
+										triangles_flags = [0, 0];
+									}
+								}
+
+
+								if(!roundBound.isNaN){
+									foreach(ref v ; vertices){
+										v.position.each!((ref f){f = roundFloat(f);});
+										v.uvx5.each!((ref f){f = roundFloat(f);});
+										v.uv.each!((ref f){f = roundFloat(f);});
+									}
+								}
+
+								validate();
+							}
+							break;
+						case TrnPacketType.NWN2_ASWM:
+							import aswmstrip: stripASWM;
+							stripASWM(packet.as!TrnNWN2WalkmeshPayload, true);
+
+							with(packet.as!TrnNWN2WalkmeshPayload){
+								// Zero out trailing / useless data
+								header.name[] = 0;
+
+								header.unknownB = 0;
+
+								foreach(ref t ; tiles)
+									t.header.name[] = 0;
+
+								foreach(ref ipn ; islands_path_nodes)
+									ipn._padding = 0;
+
+								if(!roundBound.isNaN){
+									foreach(ref v ; vertices){
+										v.position.each!((ref f){f = roundFloat(f);});
+									}
+									foreach(ref t ; triangles){
+										t.center.each!((ref f){f = roundFloat(f);});
+										t.normal.each!((ref f){f = roundFloat(f);});
+										t.dot_product = roundFloat(t.dot_product);
+									}
+									foreach(ref tile ; tiles){
+										foreach(ref v ; tile.vertices){
+											v.position.each!((ref f){f = roundFloat(f);});
+										}
+									}
+									foreach(ref i ; islands){
+										i.header.center.position.each!((ref f){f = roundFloat(f);});
+										i.adjacent_islands_dist.each!((ref f){f = roundFloat(f);});
+									}
+									islands_path_nodes.each!((ref ipn){ipn.weight = roundFloat(ipn.weight);});
+								}
+
+								validate();
+							}
+							break;
+					}
 				}
 
 				auto finalData = trn.serialize();
 				if(!quiet){
-					writefln("File size: %dB => %dB (stripped %.2f%%)",
-						initLen, finalData.length, 100 - finalData.length * 100.0 / initLen
+					writefln("%-32s File size: %9dB => %9dB (stripped %.2f%%)",
+						file.baseName.stripExtension, initLen, finalData.length, 100 - finalData.length * 100.0 / initLen
 					);
 				}
 
@@ -579,7 +759,6 @@ int main(string[] args){
 
 
 		case "bake":{
-			import std.parallelism;
 			// import nwn.gff;
 
 			string targetPath = null;
@@ -1146,13 +1325,13 @@ int main(string[] args){
 
 				foreach(ref v ; watr.vertices){
 					wfobj.vertices ~= WavefrontObj.WFVertex(vec3f(v.position));
-					wfobj.textCoords ~= vec2f(v.uv_1);
+					wfobj.textCoords ~= vec2f(v.uv);
 				}
 
 				auto grp = WavefrontObj.WFGroup();
 				foreach(ti, ref triangle ; watr.triangles){
-					if(watr.triangles_flags[ti] == 1)
-						continue;// don't export triangles without water
+					//if(watr.triangles_flags[ti] == 1)
+					//	continue;// don't export triangles without water
 
 					auto v = triangle.vertices.to!(size_t[]);
 					v[] += vi;
@@ -1285,12 +1464,13 @@ int main(string[] args){
 						}
 					}
 
+					if(watr.triangles.length < watr.triangles_flags.length)
+						watr.triangles_flags[watr.triangles.length - 1] = 0;
 					watr.triangles ~= TrnNWN2WaterPayload.Triangle(
 						t.vertices
 							.map!(a => vtxTransTable[a])
 							.array[0 .. 3]
 					);
-					watr.triangles_flags ~= 0;
 				}
 
 				// DDS
