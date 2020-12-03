@@ -1273,9 +1273,11 @@ int main(string[] args){
 
 			string outFolder = ".";
 			bool noTextures = false;
+			bool exportAll = false;
 			auto res = getopt(args,
 				"output|o", "Output directory where to write the OBJ, JSON and DDS files. Default: '.'", &outFolder,
 				"no-textures", "Do not output texture data (DDS alpha maps & config)", &noTextures,
+				"all", "Export all triangles, including those without water", &exportAll,
 				);
 
 			if(res.helpWanted){
@@ -1336,21 +1338,26 @@ int main(string[] args){
 					wfobj.textCoords ~= vec2f(v.uv);
 				}
 
-				auto grp = WavefrontObj.WFGroup();
+				auto grpWater = WavefrontObj.WFGroup();
+				auto grpNoWater = WavefrontObj.WFGroup();
 				foreach(ti, ref triangle ; watr.triangles){
-					//if(watr.triangles_flags[ti] == 1)
-					//	continue;// don't export triangles without water
+					if(!exportAll && watr.triangles_flags[ti] == 1)
+						continue;// don't export triangles without water
 
-					auto v = triangle.vertices.to!(size_t[]);
-					v[] += vi;
-					auto vt = triangle.vertices.to!(size_t[]);
-					vt[] += vti;
+					WavefrontObj.WFFace face;
+					face.vertices = triangle.vertices.to!(size_t[]);
+					face.vertices[] += vi;
+					face.textCoords = triangle.vertices.to!(size_t[]);
+					face.textCoords.get[] += vti;
 
-					grp.faces ~= WavefrontObj.WFFace(
-						v,
-						Nullable!(size_t[])(vt));
+					if(watr.triangles_flags[ti] == 0)
+						grpWater.faces ~= face;
+					else
+						grpNoWater.faces ~= face;
 				}
-				wfobj.objects[name] = WavefrontObj.WFObject([null: grp]);
+				wfobj.objects[name] = WavefrontObj.WFObject([null: grpWater]);
+				if(exportAll)
+					wfobj.objects[name ~ "-nowater"] = WavefrontObj.WFObject([null: grpNoWater]);
 
 
 				// Alpha bitmap
