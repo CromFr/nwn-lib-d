@@ -140,9 +140,9 @@ int main(string[] args){
 						writeln("packet[", i, "].aswm_version: ", p.header.aswm_version.format!"0x%02x");
 						writeln("packet[", i, "].name: ", p.header.name.charArrayToString.toSafeString);
 						writeln("packet[", i, "].owns_data: ", p.header.owns_data);
-						writeln("packet[", i, "].vertices_count: ", p.header.vertices_count);
-						writeln("packet[", i, "].edges_count: ", p.header.edges_count);
-						writeln("packet[", i, "].triangles_count: ", p.header.triangles_count);
+						writeln("packet[", i, "].vertices_count: ", p.vertices.length);
+						writeln("packet[", i, "].edges_count: ", p.edges.length);
+						writeln("packet[", i, "].triangles_count: ", p.triangles.length);
 						break;
 				}
 			}
@@ -185,9 +185,8 @@ int main(string[] args){
 									break;
 							}
 						}
-						catch(Exception e){
-							writefln!"Error in %s on packet[%d] of type %s: %s"(file, i, packet.type, e);
-							break;
+						catch(TrnInvalidValueException e){
+							writefln!"Error in %s on packet[%d] of type %s: %s"(file, i, packet.type, e.msg);
 						}
 					}
 				}
@@ -212,8 +211,8 @@ int main(string[] args){
 				);
 			if(res.helpWanted){
 				improvedGetoptPrinter(
-					"Reduce TRX file size by removing unnecessary data, like non-walkable triangle pathing information.\n"
-					~"If optimized for server, it will also remove water, terrain textures & mesh.\n"
+					"Optimize TRN/TRX files to improve file size, compressibility and game/server memory usage.\n"
+					~"\n"
 					~"Usage: "~args[0].baseName~" "~command~" map.trx -o optimized_map.trx\n"
 					~"       "~args[0].baseName~" "~command~" -i map.trx",
 					res.options,
@@ -283,6 +282,15 @@ int main(string[] args){
 					trn.packets = newPackets;
 				}
 
+				// Size of a megatile
+				// 9.0 for interior areas, 40.0 for exterior areas
+				float megatileSize = 9.0;
+				foreach(ref TrnNWN2MegatilePayload packet ; trn){
+					megatileSize = 40.0;
+					break;
+				}
+
+
 				// Clean garbage in fields (uninitialized memory written that was written to the file)
 				foreach(ref packet ; trn.packets){
 					final switch(packet.type){
@@ -351,9 +359,9 @@ int main(string[] args){
 									}
 									else{
 										// Move / resize bounding box to match megatile size & position
-										const offset = vec2f(megatile_position[0], megatile_position[1]) * 40f;
-										aabb.min = aabb.min * 40f / 128f + offset;
-										aabb.max = aabb.max * 40f / 128f + offset;
+										const offset = vec2f(megatile_position[0], megatile_position[1]) * megatileSize;
+										aabb.min = aabb.min * megatileSize / 128f + offset;
+										aabb.max = aabb.max * megatileSize / 128f + offset;
 
 										// 4 corners of the aabb
 										float[3] a = [aabb.min.x, aabb.min.y, altitude];
@@ -369,7 +377,7 @@ int main(string[] args){
 										];
 										// calculate texture coordinates
 										vertices.each!((ref v){
-											v.uv = [(v.position[0] - offset.x) / 40.0, (v.position[1] - offset.y) / 40.0];
+											v.uv = [(v.position[0] - offset.x) / megatileSize, (v.position[1] - offset.y) / megatileSize];
 											v.uvx5 = v.uv[] * 5.0;
 										});
 										triangles = [

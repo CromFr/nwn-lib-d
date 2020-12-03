@@ -139,6 +139,12 @@ struct TrnPacket{
 		}
 	}
 
+	///
+	this(T)(in T packet)
+	if(is(T: TrnNWN2TerrainDimPayload) || is(T: TrnNWN2MegatilePayload) || is(T: TrnNWN2WaterPayload) || is(T: TrnNWN2WalkmeshPayload)){
+		this(TrnPacketPayloadToType!T, packet.serialize());
+	}
+
 	@property{
 		///
 		TrnPacketType type()const{return m_type;}
@@ -157,7 +163,7 @@ struct TrnPacket{
 	}
 
 	/// Serialize a single TRN packet
-	ubyte[] serialize(){
+	ubyte[] serialize() const {
 		final switch(type) with(TrnPacketType){
 			static foreach(TYPE ; EnumMembers!TrnPacketType){
 				case TYPE:
@@ -221,7 +227,7 @@ class Trn{
 	}
 
 	///
-	ubyte[] serialize(){
+	ubyte[] serialize() const {
 
 		auto header = Header(
 			m_nwnVersion.dup[0..4],
@@ -326,7 +332,7 @@ struct TrnNWN2TerrainDimPayload{
 	}
 
 	///
-	ubyte[] serialize(){
+	ubyte[] serialize() const {
 		ChunkWriter cw;
 		cw.put(width, height, id);
 		return cw.data;
@@ -417,7 +423,7 @@ struct TrnNWN2MegatilePayload{
 	}
 
 	///
-	ubyte[] serialize(){
+	ubyte[] serialize() const {
 		ChunkWriter cw;
 		cw.put(name);
 		foreach(ref texture ; textures)
@@ -595,7 +601,7 @@ struct TrnNWN2WaterPayload{
 	}
 
 	///
-	void validate() const {
+	void validate(bool strict = false) const {
 		import nwn.dds;
 
 		// TODO: can't parse this kind of DDS atm
@@ -616,6 +622,13 @@ struct TrnNWN2WaterPayload{
 			foreach(vi, v ; t.vertices)
 				enforce!WATRInvalidValueException(v < vtxLen,
 					format!"triangles[%d].vertices[%d] = %d is out of bounds [0;%d["(ti, vi, v, vtxLen));
+		}
+
+		if(strict){
+			foreach(i, f ; triangles_flags){
+				enforce!WATRInvalidValueException(f == 0 || f == 1,
+					format!"triangles_flags[%d]: Unknown flag value: %b"(i, f));
+			}
 		}
 	}
 
@@ -676,9 +689,9 @@ struct TrnNWN2WalkmeshPayload{
 		char[32] name;
 		/// Always true
 		bool owns_data;
-		uint32_t vertices_count;
-		uint32_t edges_count;
-		uint32_t triangles_count;
+		private uint32_t vertices_count;
+		private uint32_t edges_count;
+		private uint32_t triangles_count;
 		uint32_t unknownB;
 	}
 	/// ditto
@@ -965,7 +978,7 @@ struct TrnNWN2WalkmeshPayload{
 				flags = wmdata.read!(typeof(flags));
 			}
 		}
-		private void serialize(ref ChunkWriter uncompData){
+		private void serialize(ref ChunkWriter uncompData) const {
 
 			uncompData.put(
 				header,
@@ -976,15 +989,16 @@ struct TrnNWN2WalkmeshPayload{
 
 			with(path_table){
 				// Update header
-				header._local_to_node_length = local_to_node.length.to!uint32_t;
-				header._node_to_local_length = node_to_local.length.to!ubyte;
+				PathTable.Header updatedHeader = header;
+				updatedHeader._local_to_node_length = local_to_node.length.to!uint32_t;
+				updatedHeader._node_to_local_length = node_to_local.length.to!ubyte;
 
 				assert(nodes.length == node_to_local.length ^^ 2, "Bad number of path table nodes");
 				assert(local_to_node.length == tcount, "local_to_node length should match header.triangles_count");
 
 				// serialize
 				uncompData.put(
-					header,
+					updatedHeader,
 					local_to_node,
 					node_to_local,
 					nodes,
@@ -1186,7 +1200,7 @@ struct TrnNWN2WalkmeshPayload{
 			immutable exitLen = wmdata.read!uint32_t;
 			exit_triangles = wmdata.readArray!uint32_t(exitLen).dup;
 		}
-		private void serialize(ref ChunkWriter uncompData){
+		private void serialize(ref ChunkWriter uncompData) const {
 			uncompData.put(
 				header,
 				cast(uint32_t)adjacent_islands.length,
@@ -1305,7 +1319,7 @@ struct TrnNWN2WalkmeshPayload{
 	/**
 	Serialize TRN packet data
 	*/
-	ubyte[] serialize(){
+	ubyte[] serialize() const {
 		auto uncompData = serializeUncompressed();
 
 		import std.zlib: compress;
@@ -1323,18 +1337,19 @@ struct TrnNWN2WalkmeshPayload{
 	/**
 	Serialize the aswm data without compressing it. Useful for debugging raw data.
 	*/
-	ubyte[] serializeUncompressed(){
+	ubyte[] serializeUncompressed() const {
 		//update header values
-		header.aswm_version = 0x6c; // Only 0x6c serialization is supported
-		header.owns_data = true;
-		header.vertices_count  = vertices.length.to!uint32_t;
-		header.edges_count = edges.length.to!uint32_t;
-		header.triangles_count = triangles.length.to!uint32_t;
+		Header updatedHeader = header;
+		updatedHeader.aswm_version = 0x6c; // Only 0x6c serialization is supported
+		updatedHeader.owns_data = true;
+		updatedHeader.vertices_count  = vertices.length.to!uint32_t;
+		updatedHeader.edges_count = edges.length.to!uint32_t;
+		updatedHeader.triangles_count = triangles.length.to!uint32_t;
 
 		//build uncompressed data
 		ChunkWriter uncompData;
 		uncompData.put(
-			header,
+			updatedHeader,
 			vertices,
 			edges,
 			triangles,
