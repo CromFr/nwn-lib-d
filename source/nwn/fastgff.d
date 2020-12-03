@@ -609,7 +609,8 @@ private:
 
 
 
-	align(1) struct Header{
+	static align(1) struct Header{
+		static assert(this.sizeof == 56);
 		align(1):
 		char[4]  file_type;
 		char[4]  file_version;
@@ -636,7 +637,8 @@ private:
 			      ~"  list_indices: "~list_indices_offset.to!string~" ("~list_indices_count.to!string~")\n";
 		}
 	}
-	align(1) struct Struct{
+	static align(1) struct Struct{
+		static assert(this.sizeof == 12);
 		align(1):
 		uint32_t id;
 		uint32_t data_or_data_offset;
@@ -645,7 +647,8 @@ private:
 			return format!"Struct(id=%d dodo=%d fc=%d)"(id, data_or_data_offset, field_count);
 		}
 	}
-	align(1) struct Field{
+	static align(1) struct Field{
+		static assert(this.sizeof == 12);
 		align(1):
 		GffType type;
 		uint32_t label_index;
@@ -654,7 +657,8 @@ private:
 			return format!"Field(t=%s lblidx=%d dodo=%d)"(type.to!GffType, label_index, data_or_data_offset);
 		}
 	}
-	align(1) struct Label{
+	static align(1) struct Label{
+		static assert(this.sizeof == 16);
 		align(1):
 		char[16] value;
 		string toString() const{
