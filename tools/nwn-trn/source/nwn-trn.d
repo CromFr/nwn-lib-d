@@ -1601,6 +1601,7 @@ int main(string[] args){
 				// Vertices & triangles
 				watr.vertices.length = 0;
 				watr.triangles.length = 0;
+				watr.triangles_flags.length = 0;
 
 				uint16_t[size_t] vtxTransTable;
 				auto triangles = o.groups
@@ -1626,13 +1627,12 @@ int main(string[] args){
 						}
 					}
 
-					if(watr.triangles.length < watr.triangles_flags.length)
-						watr.triangles_flags[watr.triangles.length - 1] = 0;
 					watr.triangles ~= TrnNWN2WaterPayload.Triangle(
 						t.vertices
 							.map!(a => vtxTransTable[a])
 							.array[0 .. 3]
 					);
+					watr.triangles_flags ~= 0;
 				}
 
 				// DDS
