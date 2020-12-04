@@ -28,6 +28,7 @@ import tools.common.getopt;
 import nwn.trn;
 import nwn.dds;
 import gfm.math.vector;
+import gfm.math.box;
 
 class ArgException : Exception{
 	@safe pure nothrow this(string msg, string f=__FILE__, size_t l=__LINE__, Throwable t=null){
@@ -46,6 +47,7 @@ void usage(in string cmd){
 	writeln("  optimize: Reduce the TRX file size for client or server usage");
 	writeln("  trrn-export: Export the terrain mesh, textures and grass");
 	writeln("  trrn-import: Import a terrain mesh, textures and grass into an existing TRN/TRX file");
+	writeln("  trrn-uv-remap: Recalculate terrain UV coordinates (using different algorithms)");
 	writeln("  watr-export: Export water mesh");
 	writeln("  watr-import: Import a water mesh into an existing TRN/TRX file");
 	writeln("  aswm-strip: Optimize TRX file size");
@@ -334,7 +336,6 @@ int main(string[] args){
 								bool isPlanar = vertices.all!(v => v.position[2] == altitude);
 
 								if(isPlanar){
-									import gfm.math.box;
 									auto waterMask = Dds(dds).toBitmap!(ubyte);
 
 									// Build bounding box of water pixels
@@ -1268,6 +1269,152 @@ int main(string[] args){
 			outputFile.writeFile(trn.serialize());
 		}
 		break;
+
+		case "trrn-uv-remap":{
+			bool inPlace = false;
+			string targetPath = null;
+			enum UVMappingAlgo { planar, stretch }
+			UVMappingAlgo uvMapAlgo = UVMappingAlgo.planar;
+			float scale = 1.0;
+
+
+			auto res = getopt(args,
+				"in-place|i", "Provide this flag to overwrite the provided TRX file", &inPlace,
+				"output|o", "Output file or directory. Mandatory if --in-place is not provided.", &targetPath,
+				"type|t", "UV mapping algorithm. Default: 'planar'. Possible values are: " ~ EnumMembers!UVMappingAlgo.stringof[6..$-1], &uvMapAlgo,
+				"scale", "UV scaling. 1 will reproduce NWN2 scaling, values > 1 will produce bigger textures.", &scale,
+				);
+			if(res.helpWanted){
+				improvedGetoptPrinter(
+					"Change terrain texture mapping.\n"
+					~"Note: The TRN files are used by the toolset but not by the game. Remap the TRX file to see the changes in-game.\n"
+					~"If optimized for server, it will also remove water, terrain textures & mesh.\n"
+					~"Usage: "~args[0].baseName~" "~command~" map.trn -o map.trn\n"
+					~"       "~args[0].baseName~" "~command~" -i map.trn",
+					res.options);
+				return 0;
+			}
+			enforce(args.length > 1, "No input file provided");
+
+			if(inPlace){
+				enforce(targetPath is null, "You cannot use --in-place with --output");
+				enforce(args.length >= 2, "No input file");
+			}
+			else{
+				enforce(args.length <=2, "Too many input files provided");
+				if(targetPath is null)
+					targetPath = ".";
+			}
+
+			foreach(file ; args[1 .. $]){
+				auto trn = new Trn(file);
+
+				foreach(ref TrnNWN2MegatilePayload trrn ; trn) with(trrn) {
+					final switch(uvMapAlgo){
+						case UVMappingAlgo.planar:
+							foreach(ref v ; vertices){
+								v.uv[0] = v.position[0] * scale / (-4.0);
+								v.uv[1] = v.position[1] * scale / 4.0;
+							}
+							break;
+						case UVMappingAlgo.stretch:
+							// Megatile bounds
+							auto aabb = box2f(vec2f(vertices[0].position[0 .. 2]), vec2f(vertices[0].position[0 .. 2]));
+							vertices.each!((ref v) => aabb = aabb.expand(vec2f(v.position[0 .. 2])));
+
+							if(vertices.length != 25 * 25 || triangles.length != 24 * 24 * 2){
+								stderr.writefln("Stretch algorithm only works on standard megatiles. Skipping megatile located at %s", (aabb.min + aabb.max) / 2);
+								continue;
+							}
+
+							// Split vertices into lines/cols
+							size_t[][25] verticesLines;
+							size_t[][25] verticesColumns;
+							foreach(i, ref v ; vertices){
+
+								auto relPos = vec2f(v.position[0 .. 2]);
+								relPos -= aabb.min;
+
+								auto gridPos = vec2i(cast(int)round(relPos.x * 24f / 40f), cast(int)round(relPos.y * 24f / 40f));
+
+								verticesLines[gridPos.y] ~= i;
+								verticesColumns[gridPos.x] ~= i;
+							}
+
+							// Sort lines/cols by X/Y value
+							verticesLines[].each!((ref list) => list = list.sort!((a, b) => vertices[a].position[0] < vertices[b].position[0]).array);
+							verticesColumns[].each!((ref list) => list = list.sort!((a, b) => vertices[a].position[1] < vertices[b].position[1]).array);
+
+
+							// Calculate UV X coordinates for each line
+							foreach(iline, ref line ; verticesLines){
+								vertices[line[0]].uv[0] = 0;
+
+								float len = 0;
+								float midLen = 0;
+								foreach(i ; 1 .. line.length){
+									len += (vec3f(vertices[line[i]].position) - vec3f(vertices[line[i - 1]].position)).magnitude;
+
+									if(i == 12){
+										midLen = len;
+										len = 0;
+									}
+
+									vertices[line[i]].uv[0] = len;
+								}
+
+								line[0 .. 12].each!(vid => vertices[vid].uv[0] /= midLen);
+								line[12 .. $].each!(vid => vertices[vid].uv[0] = 1 + vertices[vid].uv[0] / len);
+
+								//writefln("Line %s: %s", iline, line[].map!(vid => [vertices[vid].position[0]: vertices[vid].uv[0]]));
+							}
+							// Calculate UV Y coordinates for each column
+							foreach(icol, ref col ; verticesColumns){
+								vertices[col[0]].uv[1] = 0;
+
+								float len = 0;
+								float midLen = 0;
+								foreach(i ; 1 .. col.length){
+									len += (vec3f(vertices[col[i]].position) - vec3f(vertices[col[i - 1]].position)).magnitude;
+
+									if(i == 12){
+										midLen = len;
+										len = 0;
+									}
+
+									vertices[col[i]].uv[1] = len;
+								}
+
+								col[0 .. 12].each!(vid => vertices[vid].uv[1] /= midLen);
+								col[12 .. $].each!(vid => vertices[vid].uv[1] = 1 + vertices[vid].uv[1] / len);
+
+								//writefln("Col %s: %s", icol, col[].map!(vid => [vertices[vid].position[1]: vertices[vid].uv[1]]));
+							}
+
+							// Fix texture scaling & repeating across adjacent megatiles
+							vertices.each!((ref a){ a.uv[0] += aabb.min.x; a.uv[1] += aabb.min.y; a.uv[] *= 2; });
+							break;
+					}
+				}
+
+				string outPath;
+				if(inPlace)
+					outPath = file;
+				else{
+					if(targetPath.exists && targetPath.isDir)
+						outPath = buildPath(targetPath, file.baseName);
+					else
+						outPath = targetPath;
+				}
+
+				std.file.write(outPath, trn.serialize());
+			}
+
+
+
+		}
+		break;
+
 
 		case "watr-export":{
 
