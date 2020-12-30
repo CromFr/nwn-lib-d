@@ -29,7 +29,7 @@ jobs:
       # Setup
       - name: Install requirements
         run: |
-          sudo apt install -q -y p7zip libxml2-dev make gcc-multilib mingw-w64
+          sudo apt update && sudo apt install -q -y p7zip libxml2-dev make gcc-multilib mingw-w64
 
           echo "========= Install latest LDC ========="
           wget -q https://dlang.org/install.sh -O /tmp/install.sh
