@@ -358,11 +358,28 @@ alias GffVoid = ubyte[];
 /// Gff type Struct ( `GffValue[string]` )
 struct GffStruct {
 	///
-	this(GffValue[string] children, uint32_t structType){
+	this(GffValue[string] children, uint32_t id){
 		foreach(k, ref v ; children){
 			m_children[k] = *cast(ubyte[_gffValueSize]*)&v;
 		}
+		this.id = id;
 	}
+	///
+	this(OrderedAA!(string, GffValue) children, uint32_t id){
+		this.children = children;
+		this.id = id;
+	}
+	/// Copy constructor
+	this(GffStruct other){
+		m_children = other.m_children;
+		id = other.id;
+	}
+
+	/// Duplicate GffStruct content
+	GffStruct dup() const {
+		return GffStruct(this.children.dup(), this.id);
+	}
+
 
 	/// Struct ID
 	uint32_t id = 0;
@@ -441,6 +458,20 @@ private:
 
 /// Gff type List ( `GffStruct[]` )
 struct GffList {
+	///
+	this(GffStruct[] children){
+		this.children = children;
+	}
+
+	/// Copy constructor
+	this(GffList other){
+		children = other.children;
+	}
+
+	/// Duplicate GffList content
+	GffList dup() const {
+		return GffList(children.map!(a => a.dup()).array());
+	}
 
 	/// GffList children list
 	GffStruct[] children;
