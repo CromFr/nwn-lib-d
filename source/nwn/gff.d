@@ -238,6 +238,14 @@ struct GffLocString{
 		this.strings = strings;
 	}
 
+	/// Duplicate GffLocString content
+	GffLocString dup() const {
+		string[int32_t] newStrings;
+		foreach(k, v ; strings)
+			newStrings[k] = v;
+		return GffLocString(strref, newStrings);
+	}
+
 	/// Get the string value without attempting to resolve strref using TLKs
 	string toString() const {
 		if(strings.length > 0){
@@ -377,7 +385,26 @@ struct GffStruct {
 
 	/// Duplicate GffStruct content
 	GffStruct dup() const {
-		return GffStruct(this.children.dup(), this.id);
+		auto dup_children = children.dup();
+		foreach(ref GffValue c ; dup_children){
+			switch(c.type) {
+				case GffType.Struct:
+					c = GffValue(c.get!GffStruct.dup());
+					break;
+				case GffType.List:
+					c = GffValue(c.get!GffList.dup());
+					break;
+				case GffType.LocString:
+					c = GffValue(c.get!GffLocString.dup());
+					break;
+				case GffType.Void:
+					c = GffValue(c.get!GffVoid.dup());
+					break;
+				default:
+					break;
+			}
+		}
+		return GffStruct(dup_children, this.id);
 	}
 
 
