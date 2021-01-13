@@ -2151,7 +2151,7 @@
 		"members": [
 			{
 				"kind": "struct",
-				"line": 13,
+				"line": 17,
 				"char": 1,
 				"members": [
 					{
@@ -2164,18 +2164,18 @@
 								"name": "data"
 							}
 						],
-						"line": 16,
+						"line": 20,
 						"kind": "constructor",
 						"originalType": "ref (in ubyte[] data)",
 						"char": 2,
 						"name": "this",
 						"deco": "FNcIAhZS3nwn3dds3Dds",
 						"endchar": 2,
-						"endline": 65,
+						"endline": 82,
 						"comment": "\n"
 					},
 					{
-						"line": 67,
+						"line": 84,
 						"kind": "variable",
 						"char": 9,
 						"name": "header",
@@ -2185,7 +2185,7 @@
 						"comment": "\n"
 					},
 					{
-						"line": 71,
+						"line": 88,
 						"kind": "variable",
 						"char": 12,
 						"name": "mipmaps",
@@ -2201,7 +2201,7 @@
 								"name": "T"
 							}
 						],
-						"line": 74,
+						"line": 91,
 						"kind": "template",
 						"char": 8,
 						"members": [
@@ -2227,35 +2227,92 @@
 										"name": "mipmap"
 									}
 								],
-								"line": 74,
+								"line": 91,
 								"kind": "function",
 								"char": 8,
 								"name": "getPixel",
 								"type": "ref T(in size_t x, in size_t y, uint mipmap = 0)",
 								"endchar": 2,
-								"endline": 85
+								"endline": 104
 							}
 						],
 						"name": "getPixel",
 						"comment": "Get a specifix pixel casted into a struct T. Size of T must match bytes per pixel.\n"
 					},
 					{
-						"line": 88,
-						"kind": "function",
-						"char": 10,
+						"parameters": [
+							{
+								"kind": "type",
+								"default": "ubyte[4]",
+								"name": "T"
+							}
+						],
+						"line": 107,
+						"kind": "template",
+						"char": 7,
+						"members": [
+							{
+								"storageClass": [
+									"auto"
+								],
+								"parameters": [
+									{
+										"deco": "k",
+										"default": "0",
+										"name": "mipmap"
+									}
+								],
+								"line": 107,
+								"kind": "function",
+								"char": 7,
+								"name": "getPixelGrid",
+								"type": "(uint mipmap = 0)",
+								"endchar": 2,
+								"endline": 119
+							}
+						],
+						"name": "getPixelGrid",
+						"comment": "\n"
+					},
+					{
+						"parameters": [
+							{
+								"kind": "type",
+								"default": "ubyte[4]",
+								"name": "Pixel"
+							}
+						],
+						"line": 123,
+						"kind": "template",
+						"char": 15,
+						"members": [
+							{
+								"parameters": [
+									{
+										"deco": "k",
+										"default": "0",
+										"name": "mipmap"
+									}
+								],
+								"line": 123,
+								"kind": "function",
+								"char": 15,
+								"name": "toBitmap",
+								"type": "Bitmap!Pixel(uint mipmap = 0)",
+								"endchar": 2,
+								"endline": 178
+							}
+						],
 						"name": "toBitmap",
-						"deco": "FZAh",
-						"endchar": 2,
-						"endline": 138,
-						"comment": "Converts the DDS into a BMP file\n"
+						"comment": "Behavior:\n1-byte color => grayscale\n"
 					},
 					{
 						"kind": "struct",
-						"line": 141,
+						"line": 181,
 						"char": 18,
 						"members": [
 							{
-								"line": 146,
+								"line": 186,
 								"kind": "variable",
 								"originalType": "uint32_t",
 								"char": 12,
@@ -2266,13 +2323,13 @@
 								"comment": "Size of the header struct. Always 124\n"
 							},
 							{
-								"line": 148,
+								"line": 188,
 								"kind": "enum",
 								"char": 3,
 								"members": [
 									{
 										"kind": "enum member",
-										"line": 149,
+										"line": 189,
 										"char": 4,
 										"value": "1",
 										"comment": "Required in every .dds file.\n",
@@ -2280,7 +2337,7 @@
 									},
 									{
 										"kind": "enum member",
-										"line": 150,
+										"line": 190,
 										"char": 4,
 										"value": "2",
 										"comment": "Required in every .dds file.\n",
@@ -2288,7 +2345,7 @@
 									},
 									{
 										"kind": "enum member",
-										"line": 151,
+										"line": 191,
 										"char": 4,
 										"value": "4",
 										"comment": "Required in every .dds file.\n",
@@ -2296,7 +2353,7 @@
 									},
 									{
 										"kind": "enum member",
-										"line": 152,
+										"line": 192,
 										"char": 4,
 										"value": "8",
 										"comment": "Required when pitch is provided for an uncompressed texture.\n",
@@ -2304,7 +2361,7 @@
 									},
 									{
 										"kind": "enum member",
-										"line": 153,
+										"line": 193,
 										"char": 4,
 										"value": "4096",
 										"comment": "Required in every .dds file.\n",
@@ -2312,7 +2369,7 @@
 									},
 									{
 										"kind": "enum member",
-										"line": 154,
+										"line": 194,
 										"char": 4,
 										"value": "131072",
 										"comment": "Required in a mipmapped texture.\n",
@@ -2320,7 +2377,7 @@
 									},
 									{
 										"kind": "enum member",
-										"line": 155,
+										"line": 195,
 										"char": 4,
 										"value": "524288",
 										"comment": "Required when pitch is provided for a compressed texture.\n",
@@ -2328,7 +2385,7 @@
 									},
 									{
 										"kind": "enum member",
-										"line": 156,
+										"line": 196,
 										"char": 4,
 										"value": "8388608",
 										"comment": "Required in a depth texture.\n",
@@ -2340,7 +2397,7 @@
 								"comment": "\n"
 							},
 							{
-								"line": 158,
+								"line": 198,
 								"kind": "variable",
 								"originalType": "uint32_t",
 								"char": 12,
@@ -2351,7 +2408,7 @@
 								"comment": "See `Flags`\n"
 							},
 							{
-								"line": 159,
+								"line": 199,
 								"kind": "variable",
 								"originalType": "uint32_t",
 								"char": 12,
@@ -2362,7 +2419,7 @@
 								"comment": "Height in pixels\n"
 							},
 							{
-								"line": 160,
+								"line": 200,
 								"kind": "variable",
 								"originalType": "uint32_t",
 								"char": 12,
@@ -2373,7 +2430,7 @@
 								"comment": "Width in pixels\n"
 							},
 							{
-								"line": 161,
+								"line": 201,
 								"kind": "variable",
 								"originalType": "uint32_t",
 								"char": 12,
@@ -2384,7 +2441,7 @@
 								"comment": "The pitch or number of bytes per scan line in an uncompressed texture; the total number of bytes in the top level texture for a compressed texture.\n"
 							},
 							{
-								"line": 162,
+								"line": 202,
 								"kind": "variable",
 								"originalType": "uint32_t",
 								"char": 12,
@@ -2395,7 +2452,7 @@
 								"comment": "Depth of a volume texture (in pixels), otherwise unused.\n"
 							},
 							{
-								"line": 163,
+								"line": 203,
 								"kind": "variable",
 								"originalType": "uint32_t",
 								"char": 12,
@@ -2406,11 +2463,11 @@
 								"comment": "Number of mipmap levels, otherwise unused.\n"
 							},
 							{
-								"line": 164,
+								"line": 204,
 								"kind": "variable",
 								"originalType": "uint32_t[11]",
 								"char": 16,
-								"name": "reserved1",
+								"name": "_reserved1",
 								"deco": "G11k",
 								"align": 1,
 								"offset": 28,
@@ -2418,11 +2475,11 @@
 							},
 							{
 								"kind": "struct",
-								"line": 166,
+								"line": 206,
 								"char": 10,
 								"members": [
 									{
-										"line": 169,
+										"line": 209,
 										"kind": "variable",
 										"originalType": "uint32_t",
 										"char": 13,
@@ -2433,13 +2490,13 @@
 										"comment": "Structure size; set to 32 (bytes).\n"
 									},
 									{
-										"line": 171,
+										"line": 211,
 										"kind": "enum",
 										"char": 4,
 										"members": [
 											{
 												"kind": "enum member",
-												"line": 172,
+												"line": 212,
 												"char": 5,
 												"value": "1",
 												"comment": "Texture contains alpha data; dwRGBAlphaBitMask contains valid data.\n",
@@ -2447,7 +2504,7 @@
 											},
 											{
 												"kind": "enum member",
-												"line": 173,
+												"line": 213,
 												"char": 5,
 												"value": "2",
 												"comment": "Used in some older DDS files for alpha channel only uncompressed data (dwRGBBitCount contains the alpha channel bitcount; dwABitMask contains valid data)\n",
@@ -2455,7 +2512,7 @@
 											},
 											{
 												"kind": "enum member",
-												"line": 174,
+												"line": 214,
 												"char": 5,
 												"value": "4",
 												"comment": "Texture contains compressed RGB data; dwFourCC contains valid data.\n",
@@ -2463,7 +2520,7 @@
 											},
 											{
 												"kind": "enum member",
-												"line": 175,
+												"line": 215,
 												"char": 5,
 												"value": "64",
 												"comment": "Texture contains uncompressed RGB data; dwRGBBitCount and the RGB masks (dwRBitMask, dwGBitMask, dwBBitMask) contain valid data.\n",
@@ -2471,7 +2528,7 @@
 											},
 											{
 												"kind": "enum member",
-												"line": 176,
+												"line": 216,
 												"char": 5,
 												"value": "512",
 												"comment": "Used in some older DDS files for YUV uncompressed data (dwRGBBitCount contains the YUV bit count; dwRBitMask contains the Y mask, dwGBitMask contains the U mask, dwBBitMask contains the V mask)\n",
@@ -2479,7 +2536,7 @@
 											},
 											{
 												"kind": "enum member",
-												"line": 177,
+												"line": 217,
 												"char": 5,
 												"value": "131072",
 												"comment": "Used in some older DDS files for single channel color uncompressed data (dwRGBBitCount contains the luminance channel bit count; dwRBitMask contains the channel mask). Can be combined with DDPF_ALPHAPIXELS for a two channel DDS file.\n",
@@ -2491,7 +2548,7 @@
 										"comment": "\n"
 									},
 									{
-										"line": 179,
+										"line": 219,
 										"kind": "variable",
 										"originalType": "uint32_t",
 										"char": 13,
@@ -2502,7 +2559,7 @@
 										"comment": "See Flags\n"
 									},
 									{
-										"line": 181,
+										"line": 221,
 										"kind": "enum",
 										"char": 4,
 										"members": [
@@ -2510,56 +2567,56 @@
 												"kind": "enum member",
 												"char": 5,
 												"value": "\"DXT1\"",
-												"line": 182,
+												"line": 222,
 												"name": "DXT1"
 											},
 											{
 												"kind": "enum member",
 												"char": 5,
 												"value": "\"DXT2\"",
-												"line": 183,
+												"line": 223,
 												"name": "DXT2"
 											},
 											{
 												"kind": "enum member",
 												"char": 5,
 												"value": "\"DXT3\"",
-												"line": 184,
+												"line": 224,
 												"name": "DXT3"
 											},
 											{
 												"kind": "enum member",
 												"char": 5,
 												"value": "\"DXT4\"",
-												"line": 185,
+												"line": 225,
 												"name": "DXT4"
 											},
 											{
 												"kind": "enum member",
 												"char": 5,
 												"value": "\"DXT5\"",
-												"line": 186,
+												"line": 226,
 												"name": "DXT5"
 											},
 											{
 												"kind": "enum member",
 												"char": 5,
 												"value": "\"DX10\"",
-												"line": 187,
+												"line": 227,
 												"name": "DX10"
 											},
 											{
 												"kind": "enum member",
 												"char": 5,
 												"value": "\"\\x00\\x00\\x00\\x00\"",
-												"line": 188,
+												"line": 228,
 												"name": "NONE"
 											},
 											{
 												"kind": "enum member",
 												"char": 5,
 												"value": "\"t\\x00\\x00\\x00\"",
-												"line": 189,
+												"line": 229,
 												"name": "NONE2"
 											}
 										],
@@ -2568,7 +2625,7 @@
 										"comment": "\n"
 									},
 									{
-										"line": 191,
+										"line": 231,
 										"kind": "variable",
 										"char": 11,
 										"name": "four_cc",
@@ -2578,7 +2635,7 @@
 										"comment": "Four-character codes for specifying compressed or custom formats. Possible values include: DXT1, DXT2, DXT3, DXT4, or DXT5.\n"
 									},
 									{
-										"line": 192,
+										"line": 232,
 										"kind": "variable",
 										"originalType": "uint32_t",
 										"char": 13,
@@ -2589,7 +2646,7 @@
 										"comment": "Number of bits in an RGB (possibly including alpha) format. Valid when dwFlags includes DDPF_RGB, DDPF_LUMINANCE, or DDPF_YUV.\n"
 									},
 									{
-										"line": 193,
+										"line": 233,
 										"kind": "variable",
 										"originalType": "uint32_t",
 										"char": 13,
@@ -2600,7 +2657,7 @@
 										"comment": "Red (or lumiannce or Y) mask for reading color data. For instance, given the A8R8G8B8 format, the red mask would be 0x00ff0000.\n"
 									},
 									{
-										"line": 194,
+										"line": 234,
 										"kind": "variable",
 										"originalType": "uint32_t",
 										"char": 13,
@@ -2611,7 +2668,7 @@
 										"comment": "Green (or U) mask for reading color data. For instance, given the A8R8G8B8 format, the green mask would be 0x0000ff00.\n"
 									},
 									{
-										"line": 195,
+										"line": 235,
 										"kind": "variable",
 										"originalType": "uint32_t",
 										"char": 13,
@@ -2622,7 +2679,7 @@
 										"comment": "Blue (or V) mask for reading color data. For instance, given the A8R8G8B8 format, the blue mask would be 0x000000ff.\n"
 									},
 									{
-										"line": 196,
+										"line": 236,
 										"kind": "variable",
 										"originalType": "uint32_t",
 										"char": 13,
@@ -2631,13 +2688,22 @@
 										"align": 1,
 										"offset": 28,
 										"comment": "Alpha mask for reading alpha data. dwFlags must include DDPF_ALPHAPIXELS or DDPF_ALPHA. For instance, given the A8R8G8B8 format, the alpha mask would be 0xff000000.\n"
+									},
+									{
+										"line": 238,
+										"kind": "function",
+										"char": 11,
+										"name": "toString",
+										"deco": "xFZAya",
+										"endchar": 4,
+										"endline": 242
 									}
 								],
-								"comment": "\n",
+								"comment": "DirectDraw Pixel Format\n",
 								"name": "DDPF"
 							},
 							{
-								"line": 198,
+								"line": 244,
 								"kind": "variable",
 								"char": 8,
 								"name": "ddpf",
@@ -2647,13 +2713,13 @@
 								"comment": "See `DDPF`\n"
 							},
 							{
-								"line": 200,
+								"line": 246,
 								"kind": "enum",
 								"char": 3,
 								"members": [
 									{
 										"kind": "enum member",
-										"line": 201,
+										"line": 247,
 										"char": 4,
 										"value": "8",
 										"comment": "Optional; must be used on any file that contains more than one surface (a mipmap, a cubic environment map, or mipmapped volume texture).\n",
@@ -2661,7 +2727,7 @@
 									},
 									{
 										"kind": "enum member",
-										"line": 202,
+										"line": 248,
 										"char": 4,
 										"value": "4194304",
 										"comment": "Optional; should be used for a mipmap.\n",
@@ -2669,7 +2735,7 @@
 									},
 									{
 										"kind": "enum member",
-										"line": 203,
+										"line": 249,
 										"char": 4,
 										"value": "4096",
 										"comment": "Required\n",
@@ -2678,10 +2744,10 @@
 								],
 								"name": "CapsFlags",
 								"baseDeco": "i",
-								"comment": "caps vaulues\n"
+								"comment": "caps values\n"
 							},
 							{
-								"line": 205,
+								"line": 251,
 								"kind": "variable",
 								"originalType": "uint32_t",
 								"char": 12,
@@ -2692,13 +2758,13 @@
 								"comment": "See CapsFlags\n"
 							},
 							{
-								"line": 207,
+								"line": 253,
 								"kind": "enum",
 								"char": 3,
 								"members": [
 									{
 										"kind": "enum member",
-										"line": 208,
+										"line": 254,
 										"char": 4,
 										"value": "512",
 										"comment": "Required for a cube map.\n",
@@ -2706,7 +2772,7 @@
 									},
 									{
 										"kind": "enum member",
-										"line": 209,
+										"line": 255,
 										"char": 4,
 										"value": "1024",
 										"comment": "Required when these surfaces are stored in a cube map.\n",
@@ -2714,7 +2780,7 @@
 									},
 									{
 										"kind": "enum member",
-										"line": 210,
+										"line": 256,
 										"char": 4,
 										"value": "2048",
 										"comment": "Required when these surfaces are stored in a cube map.\n",
@@ -2722,7 +2788,7 @@
 									},
 									{
 										"kind": "enum member",
-										"line": 211,
+										"line": 257,
 										"char": 4,
 										"value": "4096",
 										"comment": "Required when these surfaces are stored in a cube map.\n",
@@ -2730,7 +2796,7 @@
 									},
 									{
 										"kind": "enum member",
-										"line": 212,
+										"line": 258,
 										"char": 4,
 										"value": "8192",
 										"comment": "Required when these surfaces are stored in a cube map.\n",
@@ -2738,7 +2804,7 @@
 									},
 									{
 										"kind": "enum member",
-										"line": 213,
+										"line": 259,
 										"char": 4,
 										"value": "16384",
 										"comment": "Required when these surfaces are stored in a cube map.\n",
@@ -2746,7 +2812,7 @@
 									},
 									{
 										"kind": "enum member",
-										"line": 214,
+										"line": 260,
 										"char": 4,
 										"value": "32768",
 										"comment": "Required when these surfaces are stored in a cube map.\n",
@@ -2754,7 +2820,7 @@
 									},
 									{
 										"kind": "enum member",
-										"line": 215,
+										"line": 261,
 										"char": 4,
 										"value": "2097152",
 										"comment": "Required for a volume texture.\n",
@@ -2766,7 +2832,7 @@
 								"comment": "caps2 values\n"
 							},
 							{
-								"line": 217,
+								"line": 263,
 								"kind": "variable",
 								"originalType": "uint32_t",
 								"char": 12,
@@ -2777,37 +2843,24 @@
 								"comment": "See Caps2Flags\n"
 							},
 							{
-								"line": 218,
+								"line": 264,
 								"kind": "variable",
-								"originalType": "uint32_t",
-								"char": 12,
-								"name": "caps3",
-								"deco": "k",
+								"originalType": "uint32_t[3]",
+								"char": 15,
+								"name": "_reserved2",
+								"deco": "G3k",
 								"align": 1,
 								"offset": 112,
 								"comment": "Unused\n"
 							},
 							{
-								"line": 219,
-								"kind": "variable",
-								"originalType": "uint32_t",
-								"char": 12,
-								"name": "caps4",
-								"deco": "k",
-								"align": 1,
-								"offset": 116,
-								"comment": "Unused\n"
-							},
-							{
-								"line": 220,
-								"kind": "variable",
-								"originalType": "uint32_t",
-								"char": 12,
-								"name": "reserved2",
-								"deco": "k",
-								"align": 1,
-								"offset": 120,
-								"comment": "Unused\n"
+								"line": 266,
+								"kind": "function",
+								"char": 10,
+								"name": "toString",
+								"deco": "xFZAya",
+								"endchar": 3,
+								"endline": 270
 							}
 						],
 						"comment": "\n",
@@ -5070,21 +5123,31 @@
 					{
 						"line": 242,
 						"kind": "function",
+						"char": 15,
+						"name": "dup",
+						"deco": "xFZS3nwn3gff12GffLocString",
+						"endchar": 2,
+						"endline": 247,
+						"comment": "Duplicate GffLocString content\n"
+					},
+					{
+						"line": 250,
+						"kind": "function",
 						"char": 9,
 						"name": "toString",
 						"deco": "xFZAya",
 						"endchar": 2,
-						"endline": 254,
+						"endline": 262,
 						"comment": "Get the string value without attempting to resolve strref using TLKs\n"
 					},
 					{
-						"line": 257,
+						"line": 265,
 						"kind": "function",
 						"char": 9,
 						"name": "toPrettyString",
 						"deco": "xFZAya",
 						"endchar": 2,
-						"endline": 259,
+						"endline": 267,
 						"comment": "Get the string value without attempting to resolve strref using TLKs\n"
 					},
 					{
@@ -5097,25 +5160,25 @@
 								"name": "json"
 							}
 						],
-						"line": 262,
+						"line": 270,
 						"kind": "constructor",
 						"originalType": "ref (in nwnlibd.orderedjson.JSONValue json)",
 						"char": 2,
 						"name": "this",
 						"deco": "FNcIS7nwnlibd11orderedjson9JSONValueZS3nwn3gff12GffLocString",
 						"endchar": 2,
-						"endline": 270,
+						"endline": 278,
 						"comment": "JSON to LocString\n"
 					},
 					{
-						"line": 272,
+						"line": 280,
 						"kind": "function",
 						"originalType": "const nwnlibd.orderedjson.JSONValue()",
 						"char": 32,
 						"name": "toJson",
 						"deco": "xFZS7nwnlibd11orderedjson9JSONValue",
 						"endchar": 2,
-						"endline": 280,
+						"endline": 288,
 						"comment": "LocString to JSON\n"
 					},
 					{
@@ -5128,14 +5191,14 @@
 								"name": "value"
 							}
 						],
-						"line": 283,
+						"line": 291,
 						"kind": "function",
 						"originalType": "ref (in string value)",
 						"char": 11,
 						"name": "opAssign",
 						"deco": "FNaNbNcNfIAyaZv",
 						"endchar": 2,
-						"endline": 286,
+						"endline": 294,
 						"comment": "Remove all localization and set its value to a unique string\n"
 					},
 					{
@@ -5148,14 +5211,14 @@
 								"name": "value"
 							}
 						],
-						"line": 289,
+						"line": 297,
 						"kind": "function",
 						"originalType": "ref (in uint32_t value)",
 						"char": 11,
 						"name": "opAssign",
 						"deco": "FNaNbNcNiNfIkZv",
 						"endchar": 2,
-						"endline": 291,
+						"endline": 299,
 						"comment": "Set the strref\n"
 					},
 					{
@@ -5168,13 +5231,13 @@
 								"name": "resolver"
 							}
 						],
-						"line": 296,
+						"line": 304,
 						"kind": "function",
 						"char": 9,
 						"name": "resolve",
 						"deco": "xFIC3nwn3tlk14StrRefResolverZAya",
 						"endchar": 2,
-						"endline": 320,
+						"endline": 328,
 						"comment": "Resolve the localized string using TLKs\n"
 					}
 				],
@@ -5183,7 +5246,7 @@
 			},
 			{
 				"kind": "alias",
-				"line": 355,
+				"line": 363,
 				"char": 1,
 				"deco": "Ah",
 				"comment": "Gff type Void ( $(D ubyte[]) )\n",
@@ -5191,7 +5254,7 @@
 			},
 			{
 				"kind": "struct",
-				"line": 359,
+				"line": 367,
 				"char": 1,
 				"members": [
 					{
@@ -5202,21 +5265,69 @@
 							},
 							{
 								"deco": "k",
-								"name": "structType"
+								"name": "id"
 							}
 						],
-						"line": 361,
+						"line": 369,
 						"kind": "constructor",
-						"originalType": "ref (GffValue[string] children, uint32_t structType)",
+						"originalType": "ref (GffValue[string] children, uint32_t id)",
 						"char": 2,
 						"name": "this",
 						"deco": "FNcHAyaS3nwn3gff8GffValuekZSQuQs9GffStruct",
 						"endchar": 2,
-						"endline": 365,
+						"endline": 374,
 						"comment": "\n"
 					},
 					{
-						"line": 368,
+						"parameters": [
+							{
+								"deco": "S7nwnlibd9orderedaa__T9OrderedAATAyaTS3nwn3gff8GffValueZQBi",
+								"name": "children"
+							},
+							{
+								"deco": "k",
+								"name": "id"
+							}
+						],
+						"line": 376,
+						"kind": "constructor",
+						"originalType": "ref (OrderedAA!(string, GffValue) children, uint32_t id)",
+						"char": 2,
+						"name": "this",
+						"deco": "FNcS7nwnlibd9orderedaa__T9OrderedAATAyaTS3nwn3gff8GffValueZQBikZSQyQw9GffStruct",
+						"endchar": 2,
+						"endline": 379,
+						"comment": "\n"
+					},
+					{
+						"parameters": [
+							{
+								"deco": "S3nwn3gff9GffStruct",
+								"name": "other"
+							}
+						],
+						"line": 381,
+						"kind": "constructor",
+						"originalType": "ref (GffStruct other)",
+						"char": 2,
+						"name": "this",
+						"deco": "FNcS3nwn3gff9GffStructZQu",
+						"endchar": 2,
+						"endline": 384,
+						"comment": "Copy constructor\n"
+					},
+					{
+						"line": 387,
+						"kind": "function",
+						"char": 12,
+						"name": "dup",
+						"deco": "xFZS3nwn3gff9GffStruct",
+						"endchar": 2,
+						"endline": 408,
+						"comment": "Duplicate GffStruct content\n"
+					},
+					{
+						"line": 412,
 						"kind": "variable",
 						"originalType": "uint32_t",
 						"char": 11,
@@ -5227,14 +5338,14 @@
 						"comment": "Struct ID\n"
 					},
 					{
-						"line": 373,
+						"line": 417,
 						"kind": "function",
 						"originalType": "inout @property ref inout(ChildrenAA)()",
 						"char": 25,
 						"name": "children",
 						"deco": "NgFNcNdZNgS7nwnlibd9orderedaa__T9OrderedAATAyaTS3nwn3gff8GffValueZQBi",
 						"endchar": 3,
-						"endline": 375,
+						"endline": 419,
 						"comment": "GffStruct children associative array\n"
 					},
 					{
@@ -5244,14 +5355,14 @@
 								"name": "children"
 							}
 						],
-						"line": 377,
+						"line": 421,
 						"kind": "function",
 						"originalType": "@property void(ChildrenAA children)",
 						"char": 8,
 						"name": "children",
 						"deco": "FNdS7nwnlibd9orderedaa__T9OrderedAATAyaTS3nwn3gff8GffValueZQBiZv",
 						"endchar": 3,
-						"endline": 379,
+						"endline": 423,
 						"comment": "ditto\n"
 					},
 					{
@@ -5262,7 +5373,7 @@
 								"name": "T"
 							}
 						],
-						"line": 386,
+						"line": 430,
 						"kind": "template",
 						"char": 15,
 						"members": [
@@ -5280,13 +5391,13 @@
 										"name": "label"
 									}
 								],
-								"line": 386,
+								"line": 430,
 								"kind": "function",
 								"char": 15,
 								"name": "opIndexAssign",
 								"type": "ref GffValue(T rhs, in string label)",
 								"endchar": 2,
-								"endline": 389
+								"endline": 433
 							}
 						],
 						"name": "opIndexAssign",
@@ -5300,13 +5411,13 @@
 								"name": "tabs"
 							}
 						],
-						"line": 392,
+						"line": 436,
 						"kind": "function",
 						"char": 9,
 						"name": "toPrettyString",
 						"deco": "xFAyaZQe",
 						"endchar": 2,
-						"endline": 404,
+						"endline": 448,
 						"comment": "Converts a GffStruct to a user-friendly string\n"
 					},
 					{
@@ -5319,25 +5430,25 @@
 								"name": "json"
 							}
 						],
-						"line": 408,
+						"line": 452,
 						"kind": "constructor",
 						"originalType": "ref (in nwnlibd.orderedjson.JSONValue json)",
 						"char": 2,
 						"name": "this",
 						"deco": "FNcIS7nwnlibd11orderedjson9JSONValueZS3nwn3gff9GffStruct",
 						"endchar": 2,
-						"endline": 417,
+						"endline": 461,
 						"comment": "JSON to GffStruct\n"
 					},
 					{
-						"line": 419,
+						"line": 463,
 						"kind": "function",
 						"originalType": "const nwnlibd.orderedjson.JSONValue()",
 						"char": 32,
 						"name": "toJson",
 						"deco": "xFZS7nwnlibd11orderedjson9JSONValue",
 						"endchar": 2,
-						"endline": 428,
+						"endline": 472,
 						"comment": "GffStruct to JSON\n"
 					}
 				],
@@ -5346,11 +5457,55 @@
 			},
 			{
 				"kind": "struct",
-				"line": 443,
+				"line": 487,
 				"char": 1,
 				"members": [
 					{
-						"line": 446,
+						"parameters": [
+							{
+								"deco": "AS3nwn3gff9GffStruct",
+								"name": "children"
+							}
+						],
+						"line": 489,
+						"kind": "constructor",
+						"originalType": "ref (GffStruct[] children)",
+						"char": 2,
+						"name": "this",
+						"deco": "FNcAS3nwn3gff9GffStructZSQuQs7GffList",
+						"endchar": 2,
+						"endline": 491,
+						"comment": "\n"
+					},
+					{
+						"parameters": [
+							{
+								"deco": "S3nwn3gff7GffList",
+								"name": "other"
+							}
+						],
+						"line": 494,
+						"kind": "constructor",
+						"originalType": "ref (GffList other)",
+						"char": 2,
+						"name": "this",
+						"deco": "FNcS3nwn3gff7GffListZQs",
+						"endchar": 2,
+						"endline": 496,
+						"comment": "Copy constructor\n"
+					},
+					{
+						"line": 499,
+						"kind": "function",
+						"char": 10,
+						"name": "dup",
+						"deco": "xFZS3nwn3gff7GffList",
+						"endchar": 2,
+						"endline": 501,
+						"comment": "Duplicate GffList content\n"
+					},
+					{
+						"line": 504,
 						"kind": "variable",
 						"char": 14,
 						"name": "children",
@@ -5366,13 +5521,13 @@
 								"name": "tabs"
 							}
 						],
-						"line": 450,
+						"line": 508,
 						"kind": "function",
 						"char": 9,
 						"name": "toPrettyString",
 						"deco": "xFAyaZQe",
 						"endchar": 2,
-						"endline": 461,
+						"endline": 519,
 						"comment": "Converts a GffStruct to a user-friendly string\n"
 					},
 					{
@@ -5385,25 +5540,25 @@
 								"name": "json"
 							}
 						],
-						"line": 464,
+						"line": 522,
 						"kind": "constructor",
 						"originalType": "ref (in nwnlibd.orderedjson.JSONValue json)",
 						"char": 2,
 						"name": "this",
 						"deco": "FNcIS7nwnlibd11orderedjson9JSONValueZS3nwn3gff7GffList",
 						"endchar": 2,
-						"endline": 472,
+						"endline": 530,
 						"comment": "JSON to GffList\n"
 					},
 					{
-						"line": 474,
+						"line": 532,
 						"kind": "function",
 						"originalType": "const nwnlibd.orderedjson.JSONValue()",
 						"char": 32,
 						"name": "toJson",
 						"deco": "xFZS7nwnlibd11orderedjson9JSONValue",
 						"endchar": 2,
-						"endline": 483,
+						"endline": 541,
 						"comment": "GffList to JSON\n"
 					}
 				],
@@ -5412,11 +5567,11 @@
 			},
 			{
 				"kind": "struct",
-				"line": 490,
+				"line": 548,
 				"char": 1,
 				"members": [
 					{
-						"line": 493,
+						"line": 551,
 						"kind": "alias",
 						"originalType": "VariantN!(32, GffByte, GffChar, GffWord, GffShort, GffDWord, GffInt, GffDWord64, GffInt64, GffFloat, GffDouble, GffString, GffResRef, GffLocString, GffVoid, GffStruct, GffList)",
 						"char": 2,
@@ -5425,7 +5580,7 @@
 						"comment": "\n"
 					},
 					{
-						"line": 504,
+						"line": 562,
 						"kind": "variable",
 						"originalType": "Value",
 						"char": 8,
@@ -5442,7 +5597,7 @@
 								"name": "T"
 							}
 						],
-						"line": 509,
+						"line": 567,
 						"kind": "template",
 						"char": 2,
 						"members": [
@@ -5453,13 +5608,13 @@
 										"name": "_value"
 									}
 								],
-								"line": 509,
+								"line": 567,
 								"kind": "constructor",
 								"char": 2,
 								"name": "this",
 								"type": "(T _value)",
 								"endchar": 2,
-								"endline": 511
+								"endline": 569
 							}
 						],
 						"name": "this",
@@ -5472,24 +5627,24 @@
 								"name": "_type"
 							}
 						],
-						"line": 514,
+						"line": 572,
 						"kind": "constructor",
 						"originalType": "ref (GffType _type)",
 						"char": 2,
 						"name": "this",
 						"deco": "FNcE3nwn3gff7GffTypeZSQsQq8GffValue",
 						"endchar": 2,
-						"endline": 534,
+						"endline": 592,
 						"comment": "\n"
 					},
 					{
-						"line": 538,
+						"line": 596,
 						"kind": "function",
 						"char": 11,
 						"name": "type",
 						"deco": "xFNdZE3nwn3gff7GffType",
 						"endchar": 3,
-						"endline": 550,
+						"endline": 608,
 						"comment": "Get currently stored GFF type\n"
 					},
 					{
@@ -5499,18 +5654,18 @@
 								"name": "T"
 							}
 						],
-						"line": 555,
+						"line": 613,
 						"kind": "template",
 						"char": 15,
 						"members": [
 							{
-								"line": 555,
+								"line": 613,
 								"kind": "function",
 								"char": 15,
 								"name": "get",
 								"type": "inout ref inout(T)()",
 								"endchar": 2,
-								"endline": 559
+								"endline": 617
 							}
 						],
 						"name": "get",
@@ -5526,14 +5681,14 @@
 								"name": "label"
 							}
 						],
-						"line": 562,
+						"line": 620,
 						"kind": "function",
 						"originalType": "ref (in string label)",
 						"char": 11,
 						"name": "opIndex",
 						"deco": "FNcIAyaZS3nwn3gff8GffValue",
 						"endchar": 2,
-						"endline": 564,
+						"endline": 622,
 						"comment": "Shorthand for modifying the GffValue as a GffStruct\n"
 					},
 					{
@@ -5544,7 +5699,7 @@
 								"name": "T"
 							}
 						],
-						"line": 566,
+						"line": 624,
 						"kind": "template",
 						"char": 11,
 						"members": [
@@ -5565,13 +5720,13 @@
 										"name": "label"
 									}
 								],
-								"line": 566,
+								"line": 624,
 								"kind": "function",
 								"char": 11,
 								"name": "opIndexAssign",
 								"type": "ref (T rhs, in string label)",
 								"endchar": 2,
-								"endline": 571
+								"endline": 629
 							}
 						],
 						"name": "opIndexAssign",
@@ -5584,14 +5739,14 @@
 								"name": "index"
 							}
 						],
-						"line": 574,
+						"line": 632,
 						"kind": "function",
 						"originalType": "ref (size_t index)",
 						"char": 11,
 						"name": "opIndex",
 						"deco": "FNcmZS3nwn3gff9GffStruct",
 						"endchar": 2,
-						"endline": 576,
+						"endline": 634,
 						"comment": "Shorthand for modifying the GffValue as a GffList\n"
 					},
 					{
@@ -5605,14 +5760,14 @@
 								"name": "index"
 							}
 						],
-						"line": 578,
+						"line": 636,
 						"kind": "function",
 						"originalType": "ref (GffStruct rhs, size_t index)",
 						"char": 11,
 						"name": "opIndexAssign",
 						"deco": "FNcS3nwn3gff9GffStructmZQv",
 						"endchar": 2,
-						"endline": 580,
+						"endline": 638,
 						"comment": "ditto\n"
 					},
 					{
@@ -5622,18 +5777,18 @@
 								"name": "T"
 							}
 						],
-						"line": 583,
+						"line": 641,
 						"kind": "template",
 						"char": 4,
 						"members": [
 							{
-								"line": 583,
+								"line": 641,
 								"kind": "function",
 								"char": 4,
 								"name": "to",
 								"type": "const T()",
 								"endchar": 2,
-								"endline": 604
+								"endline": 662
 							}
 						],
 						"name": "to",
@@ -5649,25 +5804,25 @@
 								"name": "json"
 							}
 						],
-						"line": 607,
+						"line": 665,
 						"kind": "constructor",
 						"originalType": "ref (in nwnlibd.orderedjson.JSONValue json)",
 						"char": 2,
 						"name": "this",
 						"deco": "FNcIS7nwnlibd11orderedjson9JSONValueZS3nwn3gff8GffValue",
 						"endchar": 2,
-						"endline": 628,
+						"endline": 686,
 						"comment": "Create a GffValue by parsing JSON.\nJSON format should be like `{\"type\": \"resref\", \"value\": \"hello world\"}`\n"
 					},
 					{
-						"line": 630,
+						"line": 688,
 						"kind": "function",
 						"originalType": "const nwnlibd.orderedjson.JSONValue()",
 						"char": 32,
 						"name": "toJson",
 						"deco": "xFZS7nwnlibd11orderedjson9JSONValue",
 						"endchar": 2,
-						"endline": 653,
+						"endline": 711,
 						"comment": "Converts to JSON\n"
 					},
 					{
@@ -5678,13 +5833,13 @@
 								"name": "tabs"
 							}
 						],
-						"line": 656,
+						"line": 714,
 						"kind": "function",
 						"char": 9,
 						"name": "toPrettyString",
 						"deco": "xFAyaZQe",
 						"endchar": 2,
-						"endline": 673,
+						"endline": 731,
 						"comment": "Converts to a user-readable string\n"
 					},
 					{
@@ -5694,7 +5849,7 @@
 								"name": "p"
 							}
 						],
-						"line": 490,
+						"line": 548,
 						"kind": "generated function",
 						"originalType": "ref GffValue(GffValue p) return",
 						"char": 1,
@@ -5707,18 +5862,18 @@
 			},
 			{
 				"kind": "class",
-				"line": 680,
+				"line": 738,
 				"char": 1,
 				"members": [
 					{
-						"line": 682,
+						"line": 740,
 						"kind": "constructor",
 						"originalType": "()",
 						"char": 2,
 						"name": "this",
 						"deco": "FZC3nwn3gff3Gff",
 						"endchar": 9,
-						"endline": 682,
+						"endline": 740,
 						"comment": "Empty GFF\n"
 					},
 					{
@@ -5731,14 +5886,14 @@
 								"name": "data"
 							}
 						],
-						"line": 685,
+						"line": 743,
 						"kind": "constructor",
 						"originalType": "(in ubyte[] data)",
 						"char": 2,
 						"name": "this",
 						"deco": "FIAhZC3nwn3gff3Gff",
 						"endchar": 2,
-						"endline": 687,
+						"endline": 745,
 						"comment": "Create a Gff by parsing the binary format\n"
 					},
 					{
@@ -5748,14 +5903,14 @@
 								"name": "file"
 							}
 						],
-						"line": 689,
+						"line": 747,
 						"kind": "constructor",
 						"originalType": "(File file)",
 						"char": 2,
 						"name": "this",
 						"deco": "FS3std5stdio4FileZC3nwn3gff3Gff",
 						"endchar": 2,
-						"endline": 706,
+						"endline": 764,
 						"comment": "Create a Gff by parsing a file in binary format\n"
 					},
 					{
@@ -5768,23 +5923,23 @@
 								"name": "path"
 							}
 						],
-						"line": 708,
+						"line": 766,
 						"kind": "constructor",
 						"originalType": "(in string path)",
 						"char": 2,
 						"name": "this",
 						"deco": "FIAyaZC3nwn3gff3Gff",
 						"endchar": 2,
-						"endline": 710
+						"endline": 768
 					},
 					{
-						"line": 713,
+						"line": 771,
 						"kind": "function",
 						"char": 10,
 						"name": "serialize",
 						"deco": "FZAh",
 						"endchar": 2,
-						"endline": 715,
+						"endline": 773,
 						"comment": "Convert to binary format\n"
 					},
 					{
@@ -5797,45 +5952,45 @@
 								"name": "json"
 							}
 						],
-						"line": 718,
+						"line": 776,
 						"kind": "constructor",
 						"originalType": "(in nwnlibd.orderedjson.JSONValue json)",
 						"char": 2,
 						"name": "this",
 						"deco": "FIS7nwnlibd11orderedjson9JSONValueZC3nwn3gff3Gff",
 						"endchar": 2,
-						"endline": 722,
+						"endline": 780,
 						"comment": "Create a Gff by parsing JSON\n"
 					},
 					{
-						"line": 725,
+						"line": 783,
 						"kind": "function",
 						"originalType": "const nwnlibd.orderedjson.JSONValue()",
 						"char": 32,
 						"name": "toJson",
 						"deco": "xFZS7nwnlibd11orderedjson9JSONValue",
 						"endchar": 2,
-						"endline": 730,
+						"endline": 788,
 						"comment": "Convert to JSON\n"
 					},
 					{
-						"line": 733,
+						"line": 791,
 						"kind": "function",
 						"char": 9,
 						"name": "toPrettyString",
 						"deco": "xFZAya",
 						"endchar": 2,
-						"endline": 736,
+						"endline": 794,
 						"comment": "Converts the GFF into a user-friendly string\n"
 					},
 					{
-						"line": 741,
+						"line": 799,
 						"kind": "function",
 						"char": 16,
 						"name": "fileType",
 						"deco": "xFNdZAya",
 						"endchar": 61,
-						"endline": 741,
+						"endline": 799,
 						"comment": "GFF type name stored in the GFF file\nMax width: 4 chars\n"
 					},
 					{
@@ -5848,23 +6003,23 @@
 								"name": "type"
 							}
 						],
-						"line": 743,
+						"line": 801,
 						"kind": "function",
 						"char": 8,
 						"name": "fileType",
 						"deco": "FNdIAyaZv",
 						"endchar": 3,
-						"endline": 749,
+						"endline": 807,
 						"comment": "ditto\n"
 					},
 					{
-						"line": 752,
+						"line": 810,
 						"kind": "function",
 						"char": 16,
 						"name": "fileVersion",
 						"deco": "xFNdZAya",
 						"endchar": 67,
-						"endline": 752,
+						"endline": 810,
 						"comment": "GFF version stored in the GFF file. Usually \"V3.2\"\nMax width: 4 chars\n"
 					},
 					{
@@ -5877,17 +6032,17 @@
 								"name": "ver"
 							}
 						],
-						"line": 754,
+						"line": 812,
 						"kind": "function",
 						"char": 8,
 						"name": "fileVersion",
 						"deco": "FNdIAyaZv",
 						"endchar": 3,
-						"endline": 760,
+						"endline": 818,
 						"comment": "ditto\n"
 					},
 					{
-						"line": 767,
+						"line": 825,
 						"kind": "variable",
 						"char": 12,
 						"name": "root",
@@ -85679,13 +85834,47 @@
 						"comment": "\n"
 					},
 					{
-						"line": 144,
+						"constraint": "is(T : TrnNWN2TerrainDimPayload) || is(T : TrnNWN2MegatilePayload) || is(T : TrnNWN2WaterPayload) || is(T : TrnNWN2WalkmeshPayload)",
+						"parameters": [
+							{
+								"kind": "type",
+								"name": "T"
+							}
+						],
+						"line": 143,
+						"kind": "template",
+						"char": 2,
+						"members": [
+							{
+								"parameters": [
+									{
+										"type": "T",
+										"storageClass": [
+											"in"
+										],
+										"name": "packet"
+									}
+								],
+								"line": 143,
+								"kind": "constructor",
+								"char": 2,
+								"name": "this",
+								"type": "(in T packet)",
+								"endchar": 2,
+								"endline": 146
+							}
+						],
+						"name": "this",
+						"comment": "\n"
+					},
+					{
+						"line": 150,
 						"kind": "function",
 						"char": 17,
 						"name": "type",
 						"deco": "xFNdZE3nwn3trnQe13TrnPacketType",
 						"endchar": 43,
-						"endline": 144,
+						"endline": 150,
 						"comment": "\n"
 					},
 					{
@@ -85696,18 +85885,18 @@
 								"name": "T"
 							}
 						],
-						"line": 149,
+						"line": 155,
 						"kind": "template",
 						"char": 15,
 						"members": [
 							{
-								"line": 149,
+								"line": 155,
 								"kind": "function",
 								"char": 15,
 								"name": "as",
 								"type": "inout ref inout(T)()",
 								"endchar": 2,
-								"endline": 152
+								"endline": 158
 							}
 						],
 						"name": "as",
@@ -85721,31 +85910,31 @@
 								"name": "T"
 							}
 						],
-						"line": 155,
+						"line": 161,
 						"kind": "template",
 						"char": 38,
 						"members": [
 							{
-								"line": 155,
+								"line": 161,
 								"kind": "function",
 								"char": 38,
 								"name": "as",
 								"type": "inout ref inout(TrnPacketTypeToPayload!T)()",
 								"endchar": 2,
-								"endline": 157
+								"endline": 163
 							}
 						],
 						"name": "as",
 						"comment": "as!(TrnPacketType.NWN2_ASWM)\n"
 					},
 					{
-						"line": 160,
+						"line": 166,
 						"kind": "function",
 						"char": 10,
 						"name": "serialize",
-						"deco": "FZAh",
+						"deco": "xFZAh",
 						"endchar": 2,
-						"endline": 167,
+						"endline": 173,
 						"comment": "Serialize a single TRN packet\n"
 					}
 				],
@@ -85754,18 +85943,18 @@
 			},
 			{
 				"kind": "class",
-				"line": 179,
+				"line": 185,
 				"char": 1,
 				"members": [
 					{
-						"line": 181,
+						"line": 187,
 						"kind": "constructor",
 						"originalType": "()",
 						"char": 2,
 						"name": "this",
 						"deco": "FZC3nwn3trnQe3Trn",
 						"endchar": 9,
-						"endline": 181,
+						"endline": 187,
 						"comment": "Empty TRN file\n"
 					},
 					{
@@ -85778,14 +85967,14 @@
 								"name": "path"
 							}
 						],
-						"line": 184,
+						"line": 190,
 						"kind": "constructor",
 						"originalType": "(in string path)",
 						"char": 2,
 						"name": "this",
 						"deco": "FIAyaZC3nwn3trnQe3Trn",
 						"endchar": 2,
-						"endline": 187,
+						"endline": 193,
 						"comment": "Parse a TRN file\n"
 					},
 					{
@@ -85798,58 +85987,58 @@
 								"name": "rawData"
 							}
 						],
-						"line": 190,
+						"line": 196,
 						"kind": "constructor",
 						"originalType": "(in ubyte[] rawData)",
 						"char": 2,
 						"name": "this",
 						"deco": "FIAhZC3nwn3trnQe3Trn",
 						"endchar": 2,
-						"endline": 221,
+						"endline": 227,
 						"comment": "Parse TRN raw data\n"
 					},
 					{
-						"line": 224,
+						"line": 230,
 						"kind": "function",
 						"char": 10,
 						"name": "serialize",
-						"deco": "FZAh",
+						"deco": "xFZAh",
 						"endchar": 2,
-						"endline": 257,
+						"endline": 263,
 						"comment": "\n"
 					},
 					{
-						"line": 261,
+						"line": 267,
 						"kind": "function",
 						"char": 19,
 						"name": "nwnVersion",
 						"deco": "xFNdZAya",
 						"endchar": 57,
-						"endline": 261,
+						"endline": 267,
 						"comment": "\n"
 					},
 					{
-						"line": 266,
+						"line": 272,
 						"kind": "function",
 						"char": 17,
 						"name": "versionMajor",
 						"deco": "xFNdZk",
 						"endchar": 59,
-						"endline": 266,
+						"endline": 272,
 						"comment": "\n"
 					},
 					{
-						"line": 271,
+						"line": 277,
 						"kind": "function",
 						"char": 17,
 						"name": "versionMinor",
 						"deco": "xFNdZk",
 						"endchar": 59,
-						"endline": 271,
+						"endline": 277,
 						"comment": "\n"
 					},
 					{
-						"line": 276,
+						"line": 282,
 						"kind": "variable",
 						"char": 14,
 						"name": "packets",
@@ -85865,7 +86054,7 @@
 								"name": "T"
 							}
 						],
-						"line": 279,
+						"line": 285,
 						"kind": "template",
 						"char": 6,
 						"members": [
@@ -85879,13 +86068,13 @@
 										"name": "dlg"
 									}
 								],
-								"line": 279,
+								"line": 285,
 								"kind": "function",
 								"char": 6,
 								"name": "opApply",
 								"type": "int(scope int delegate(ref T packet) dlg)",
 								"endchar": 2,
-								"endline": 289
+								"endline": 295
 							}
 						],
 						"name": "opApply",
@@ -85897,11 +86086,11 @@
 			},
 			{
 				"kind": "struct",
-				"line": 316,
+				"line": 322,
 				"char": 1,
 				"members": [
 					{
-						"line": 317,
+						"line": 323,
 						"kind": "variable",
 						"originalType": "uint32_t",
 						"char": 11,
@@ -85911,7 +86100,7 @@
 						"comment": "Width in megatiles\n"
 					},
 					{
-						"line": 318,
+						"line": 324,
 						"kind": "variable",
 						"originalType": "uint32_t",
 						"char": 11,
@@ -85921,7 +86110,7 @@
 						"comment": "Height in megatiles\n"
 					},
 					{
-						"line": 319,
+						"line": 325,
 						"kind": "variable",
 						"originalType": "uint32_t",
 						"char": 11,
@@ -85940,37 +86129,37 @@
 								"name": "payload"
 							}
 						],
-						"line": 322,
+						"line": 328,
 						"kind": "constructor",
 						"originalType": "ref (in ubyte[] payload)",
 						"char": 2,
 						"name": "this",
 						"deco": "FNcIAhZS3nwn3trnQe24TrnNWN2TerrainDimPayload",
 						"endchar": 2,
-						"endline": 326,
+						"endline": 332,
 						"comment": "Build packet with raw data\n"
 					},
 					{
-						"line": 329,
+						"line": 335,
 						"kind": "function",
 						"char": 10,
 						"name": "serialize",
-						"deco": "FZAh",
+						"deco": "xFZAh",
 						"endchar": 2,
-						"endline": 333,
+						"endline": 339,
 						"comment": "\n"
 					}
 				],
-				"comment": "Terrain dimensions\n",
+				"comment": "Terrain dimensions (TRWH)\n",
 				"name": "TrnNWN2TerrainDimPayload"
 			},
 			{
 				"kind": "struct",
-				"line": 337,
+				"line": 343,
 				"char": 1,
 				"members": [
 					{
-						"line": 338,
+						"line": 344,
 						"kind": "variable",
 						"char": 12,
 						"name": "name",
@@ -85980,11 +86169,11 @@
 					},
 					{
 						"kind": "struct",
-						"line": 340,
+						"line": 346,
 						"char": 18,
 						"members": [
 							{
-								"line": 342,
+								"line": 348,
 								"kind": "variable",
 								"char": 12,
 								"name": "name",
@@ -85992,7 +86181,7 @@
 								"offset": 0
 							},
 							{
-								"line": 343,
+								"line": 349,
 								"kind": "variable",
 								"char": 12,
 								"name": "color",
@@ -86005,7 +86194,7 @@
 						"name": "Texture"
 					},
 					{
-						"line": 345,
+						"line": 351,
 						"kind": "variable",
 						"char": 13,
 						"name": "textures",
@@ -86016,11 +86205,11 @@
 					},
 					{
 						"kind": "struct",
-						"line": 347,
+						"line": 353,
 						"char": 18,
 						"members": [
 							{
-								"line": 349,
+								"line": 355,
 								"kind": "variable",
 								"char": 12,
 								"name": "position",
@@ -86029,7 +86218,7 @@
 								"comment": "x y z\n"
 							},
 							{
-								"line": 350,
+								"line": 356,
 								"kind": "variable",
 								"char": 12,
 								"name": "normal",
@@ -86038,7 +86227,7 @@
 								"comment": "normal vector\n"
 							},
 							{
-								"line": 351,
+								"line": 357,
 								"kind": "variable",
 								"char": 12,
 								"name": "tinting",
@@ -86047,7 +86236,7 @@
 								"comment": "BGRA format. A is unused.\n"
 							},
 							{
-								"line": 352,
+								"line": 358,
 								"kind": "variable",
 								"char": 12,
 								"name": "uv",
@@ -86056,7 +86245,7 @@
 								"comment": "Texture coordinates\n"
 							},
 							{
-								"line": 353,
+								"line": 359,
 								"kind": "variable",
 								"char": 12,
 								"name": "weights",
@@ -86069,7 +86258,7 @@
 						"name": "Vertex"
 					},
 					{
-						"line": 355,
+						"line": 361,
 						"kind": "variable",
 						"char": 11,
 						"name": "vertices",
@@ -86079,11 +86268,11 @@
 					},
 					{
 						"kind": "struct",
-						"line": 357,
+						"line": 363,
 						"char": 18,
 						"members": [
 							{
-								"line": 358,
+								"line": 364,
 								"kind": "variable",
 								"originalType": "uint16_t[3]",
 								"char": 15,
@@ -86097,7 +86286,7 @@
 						"name": "Triangle"
 					},
 					{
-						"line": 362,
+						"line": 368,
 						"kind": "variable",
 						"char": 13,
 						"name": "triangles",
@@ -86106,7 +86295,7 @@
 						"comment": "Walkmesh grid triangles positions.\nEach uint16_t an index in `vertices` corresponding to a triangle vertex\n"
 					},
 					{
-						"line": 363,
+						"line": 369,
 						"kind": "variable",
 						"char": 10,
 						"name": "dds_a",
@@ -86115,7 +86304,7 @@
 						"comment": "32 bit DDS bitmap. r,g,b,a defines the intensity of textures 0,1,2,3\n"
 					},
 					{
-						"line": 364,
+						"line": 370,
 						"kind": "variable",
 						"char": 10,
 						"name": "dds_b",
@@ -86125,11 +86314,11 @@
 					},
 					{
 						"kind": "struct",
-						"line": 366,
+						"line": 372,
 						"char": 9,
 						"members": [
 							{
-								"line": 367,
+								"line": 373,
 								"kind": "variable",
 								"char": 12,
 								"name": "name",
@@ -86138,7 +86327,7 @@
 								"comment": "\n"
 							},
 							{
-								"line": 368,
+								"line": 374,
 								"kind": "variable",
 								"char": 12,
 								"name": "texture",
@@ -86148,11 +86337,11 @@
 							},
 							{
 								"kind": "struct",
-								"line": 370,
+								"line": 376,
 								"char": 19,
 								"members": [
 									{
-										"line": 372,
+										"line": 378,
 										"kind": "variable",
 										"char": 13,
 										"name": "position",
@@ -86161,7 +86350,7 @@
 										"comment": "\n"
 									},
 									{
-										"line": 373,
+										"line": 379,
 										"kind": "variable",
 										"char": 13,
 										"name": "direction",
@@ -86170,7 +86359,7 @@
 										"comment": "\n"
 									},
 									{
-										"line": 374,
+										"line": 380,
 										"kind": "variable",
 										"char": 13,
 										"name": "dimension",
@@ -86183,7 +86372,7 @@
 								"name": "Blade"
 							},
 							{
-								"line": 376,
+								"line": 382,
 								"kind": "variable",
 								"char": 11,
 								"name": "blades",
@@ -86196,7 +86385,7 @@
 						"name": "Grass"
 					},
 					{
-						"line": 378,
+						"line": 384,
 						"kind": "variable",
 						"char": 10,
 						"name": "grass",
@@ -86214,57 +86403,57 @@
 								"name": "payload"
 							}
 						],
-						"line": 381,
+						"line": 387,
 						"kind": "constructor",
 						"originalType": "ref (in ubyte[] payload)",
 						"char": 2,
 						"name": "this",
 						"deco": "FNcIAhZS3nwn3trnQe22TrnNWN2MegatilePayload",
 						"endchar": 2,
-						"endline": 417,
+						"endline": 423,
 						"comment": "Build packet with raw data\n"
 					},
 					{
-						"line": 420,
+						"line": 426,
 						"kind": "function",
 						"char": 10,
 						"name": "serialize",
-						"deco": "FZAh",
+						"deco": "xFZAh",
 						"endchar": 2,
-						"endline": 445,
+						"endline": 451,
 						"comment": "\n"
 					},
 					{
-						"line": 448,
+						"line": 454,
 						"kind": "function",
 						"char": 14,
 						"name": "toGenericMesh",
 						"deco": "xFZS3nwn3trn11genericmesh11GenericMesh",
 						"endchar": 2,
-						"endline": 460,
+						"endline": 466,
 						"comment": "Export terrain mesh to a `GenericMesh` struct\n"
 					},
 					{
-						"line": 463,
+						"line": 469,
 						"kind": "function",
 						"char": 7,
 						"name": "validate",
 						"deco": "xFZv",
 						"endchar": 2,
-						"endline": 479,
+						"endline": 490,
 						"comment": "Check if the TRRN contains valid data\n"
 					}
 				],
-				"comment": "Megatile information\n",
+				"comment": "Megatile information (TRRN)\n",
 				"name": "TrnNWN2MegatilePayload"
 			},
 			{
 				"kind": "struct",
-				"line": 483,
+				"line": 494,
 				"char": 1,
 				"members": [
 					{
-						"line": 487,
+						"line": 498,
 						"kind": "variable",
 						"char": 11,
 						"name": "name",
@@ -86273,7 +86462,7 @@
 						"comment": "WATR name.\n\nNWN2 seems to set it to `\"\"` and fill the remaining bytes with garbage.\n"
 					},
 					{
-						"line": 488,
+						"line": 499,
 						"kind": "variable",
 						"char": 12,
 						"name": "unknown",
@@ -86282,7 +86471,7 @@
 						"comment": "\n"
 					},
 					{
-						"line": 489,
+						"line": 500,
 						"kind": "variable",
 						"char": 11,
 						"name": "color",
@@ -86291,7 +86480,7 @@
 						"comment": "R,G,B\n"
 					},
 					{
-						"line": 490,
+						"line": 501,
 						"kind": "variable",
 						"char": 11,
 						"name": "ripple",
@@ -86300,7 +86489,7 @@
 						"comment": "Ripples\n"
 					},
 					{
-						"line": 491,
+						"line": 502,
 						"kind": "variable",
 						"char": 8,
 						"name": "smoothness",
@@ -86309,7 +86498,7 @@
 						"comment": "Smoothness\n"
 					},
 					{
-						"line": 492,
+						"line": 503,
 						"kind": "variable",
 						"char": 8,
 						"name": "reflect_bias",
@@ -86318,7 +86507,7 @@
 						"comment": "Reflection bias\n"
 					},
 					{
-						"line": 493,
+						"line": 504,
 						"kind": "variable",
 						"char": 8,
 						"name": "reflect_power",
@@ -86327,7 +86516,7 @@
 						"comment": "Reflection power\n"
 					},
 					{
-						"line": 494,
+						"line": 505,
 						"kind": "variable",
 						"char": 8,
 						"name": "specular_power",
@@ -86336,7 +86525,7 @@
 						"comment": "Specular map power\n"
 					},
 					{
-						"line": 495,
+						"line": 506,
 						"kind": "variable",
 						"char": 8,
 						"name": "specular_cofficient",
@@ -86346,11 +86535,11 @@
 					},
 					{
 						"kind": "struct",
-						"line": 497,
+						"line": 508,
 						"char": 18,
 						"members": [
 							{
-								"line": 499,
+								"line": 510,
 								"kind": "variable",
 								"char": 12,
 								"name": "name",
@@ -86359,7 +86548,7 @@
 								"comment": "Texture name\n"
 							},
 							{
-								"line": 500,
+								"line": 511,
 								"kind": "variable",
 								"char": 12,
 								"name": "direction",
@@ -86368,7 +86557,7 @@
 								"comment": "Scrolling direction\n"
 							},
 							{
-								"line": 501,
+								"line": 512,
 								"kind": "variable",
 								"char": 9,
 								"name": "rate",
@@ -86377,7 +86566,7 @@
 								"comment": "Scrolling speed\n"
 							},
 							{
-								"line": 502,
+								"line": 513,
 								"kind": "variable",
 								"char": 9,
 								"name": "angle",
@@ -86390,7 +86579,7 @@
 						"name": "Texture"
 					},
 					{
-						"line": 504,
+						"line": 515,
 						"kind": "variable",
 						"char": 13,
 						"name": "textures",
@@ -86400,7 +86589,7 @@
 						"comment": "Water textures\n"
 					},
 					{
-						"line": 505,
+						"line": 516,
 						"kind": "variable",
 						"char": 11,
 						"name": "uv_offset",
@@ -86410,11 +86599,11 @@
 					},
 					{
 						"kind": "struct",
-						"line": 507,
+						"line": 518,
 						"char": 18,
 						"members": [
 							{
-								"line": 509,
+								"line": 520,
 								"kind": "variable",
 								"char": 12,
 								"name": "position",
@@ -86423,19 +86612,19 @@
 								"comment": "x y z\n"
 							},
 							{
-								"line": 510,
+								"line": 521,
 								"kind": "variable",
 								"char": 12,
-								"name": "uv_0",
+								"name": "uvx5",
 								"deco": "G2f",
 								"offset": 12,
-								"comment": "XY5\n"
+								"comment": "XY5 (set to XY1 * 5.0)\n"
 							},
 							{
-								"line": 511,
+								"line": 522,
 								"kind": "variable",
 								"char": 12,
-								"name": "uv_1",
+								"name": "uv",
 								"deco": "G2f",
 								"offset": 20,
 								"comment": "XY1\n"
@@ -86445,7 +86634,7 @@
 						"name": "Vertex"
 					},
 					{
-						"line": 514,
+						"line": 525,
 						"kind": "variable",
 						"char": 11,
 						"name": "vertices",
@@ -86455,11 +86644,11 @@
 					},
 					{
 						"kind": "struct",
-						"line": 516,
+						"line": 527,
 						"char": 18,
 						"members": [
 							{
-								"line": 518,
+								"line": 529,
 								"kind": "variable",
 								"originalType": "uint16_t[3]",
 								"char": 15,
@@ -86473,7 +86662,7 @@
 						"name": "Triangle"
 					},
 					{
-						"line": 522,
+						"line": 533,
 						"kind": "variable",
 						"char": 13,
 						"name": "triangles",
@@ -86482,7 +86671,7 @@
 						"comment": "Walkmesh grid triangles positions.\nEach uint16_t an index in `vertices` corresponding to a triangle vertex\n"
 					},
 					{
-						"line": 523,
+						"line": 534,
 						"kind": "variable",
 						"originalType": "uint32_t[]",
 						"char": 13,
@@ -86492,7 +86681,7 @@
 						"comment": "0 = has water, 1 = no water\n"
 					},
 					{
-						"line": 524,
+						"line": 535,
 						"kind": "variable",
 						"char": 10,
 						"name": "dds",
@@ -86501,7 +86690,7 @@
 						"comment": "DDS bitmap\n"
 					},
 					{
-						"line": 525,
+						"line": 536,
 						"kind": "variable",
 						"originalType": "uint32_t[2]",
 						"char": 14,
@@ -86520,61 +86709,68 @@
 								"name": "payload"
 							}
 						],
-						"line": 529,
+						"line": 540,
 						"kind": "constructor",
 						"originalType": "ref (in ubyte[] payload)",
 						"char": 2,
 						"name": "this",
 						"deco": "FNcIAhZS3nwn3trnQe19TrnNWN2WaterPayload",
 						"endchar": 2,
-						"endline": 560,
+						"endline": 572,
 						"comment": "Build packet with raw data\n"
 					},
 					{
-						"line": 563,
+						"line": 575,
 						"kind": "function",
 						"char": 10,
 						"name": "serialize",
 						"deco": "xFZAh",
 						"endchar": 2,
-						"endline": 589,
+						"endline": 601,
 						"comment": "\n"
 					},
 					{
-						"line": 592,
+						"parameters": [
+							{
+								"deco": "b",
+								"default": "false",
+								"name": "strict"
+							}
+						],
+						"line": 604,
 						"kind": "function",
 						"char": 7,
 						"name": "validate",
-						"deco": "xFZv",
+						"deco": "xFbZv",
 						"endchar": 2,
-						"endline": 609,
+						"endline": 633,
 						"comment": "\n"
 					},
 					{
-						"line": 612,
+						"line": 636,
 						"kind": "function",
 						"char": 9,
 						"name": "dump",
 						"deco": "xFZAya",
 						"endchar": 2,
-						"endline": 652
+						"endline": 676
 					}
 				],
-				"comment": "Water information\n",
+				"comment": "Water information (WATR)\n",
 				"name": "TrnNWN2WaterPayload"
 			},
 			{
 				"kind": "struct",
-				"line": 656,
+				"line": 680,
 				"char": 1,
 				"members": [
 					{
 						"kind": "struct",
-						"line": 659,
+						"line": 683,
 						"char": 18,
 						"members": [
 							{
-								"line": 663,
+								"line": 687,
 								"kind": "variable",
 								"originalType": "uint32_t",
 								"char": 12,
@@ -86585,7 +86781,7 @@
 								"comment": "ASWM version. NWN2Toolset generates version 0x6c, but some NWN2 official campaign files are between 0x69 and 0x6c.\n"
 							},
 							{
-								"line": 665,
+								"line": 689,
 								"kind": "variable",
 								"char": 12,
 								"name": "name",
@@ -86595,7 +86791,7 @@
 								"comment": "ASWM name (probably useless)\n"
 							},
 							{
-								"line": 667,
+								"line": 691,
 								"kind": "variable",
 								"char": 8,
 								"name": "owns_data",
@@ -86605,37 +86801,7 @@
 								"comment": "Always true\n"
 							},
 							{
-								"line": 668,
-								"kind": "variable",
-								"originalType": "uint32_t",
-								"char": 12,
-								"name": "vertices_count",
-								"deco": "k",
-								"align": 1,
-								"offset": 37
-							},
-							{
-								"line": 669,
-								"kind": "variable",
-								"originalType": "uint32_t",
-								"char": 12,
-								"name": "edges_count",
-								"deco": "k",
-								"align": 1,
-								"offset": 41
-							},
-							{
-								"line": 670,
-								"kind": "variable",
-								"originalType": "uint32_t",
-								"char": 12,
-								"name": "triangles_count",
-								"deco": "k",
-								"align": 1,
-								"offset": 45
-							},
-							{
-								"line": 671,
+								"line": 695,
 								"kind": "variable",
 								"originalType": "uint32_t",
 								"char": 12,
@@ -86649,7 +86815,7 @@
 						"name": "Header"
 					},
 					{
-						"line": 674,
+						"line": 698,
 						"kind": "variable",
 						"char": 9,
 						"name": "header",
@@ -86663,7 +86829,7 @@
 						"char": 18,
 						"members": [
 							{
-								"line": 680,
+								"line": 704,
 								"kind": "variable",
 								"char": 12,
 								"name": "position",
@@ -86672,7 +86838,7 @@
 								"offset": 0
 							},
 							{
-								"line": 683,
+								"line": 707,
 								"kind": "variable",
 								"char": 7,
 								"name": "_xyz",
@@ -86681,11 +86847,11 @@
 								"offset": 0
 							}
 						],
-						"line": 676,
+						"line": 700,
 						"name": "Vertex"
 					},
 					{
-						"line": 686,
+						"line": 710,
 						"kind": "variable",
 						"char": 11,
 						"name": "vertices",
@@ -86694,11 +86860,11 @@
 					},
 					{
 						"kind": "struct",
-						"line": 689,
+						"line": 713,
 						"char": 18,
 						"members": [
 							{
-								"line": 692,
+								"line": 716,
 								"kind": "variable",
 								"originalType": "uint32_t[2]",
 								"char": 15,
@@ -86709,7 +86875,7 @@
 								"comment": "Vertex indices drawing the edge line\n"
 							},
 							{
-								"line": 693,
+								"line": 717,
 								"kind": "variable",
 								"originalType": "uint32_t[2]",
 								"char": 15,
@@ -86724,7 +86890,7 @@
 						"name": "Edge"
 					},
 					{
-						"line": 706,
+						"line": 730,
 						"kind": "variable",
 						"char": 9,
 						"name": "edges",
@@ -86733,11 +86899,11 @@
 					},
 					{
 						"kind": "struct",
-						"line": 709,
+						"line": 733,
 						"char": 18,
 						"members": [
 							{
-								"line": 712,
+								"line": 736,
 								"kind": "variable",
 								"originalType": "uint32_t[3]",
 								"char": 15,
@@ -86748,7 +86914,7 @@
 								"comment": "Vertex indices composing the triangle\n"
 							},
 							{
-								"line": 716,
+								"line": 740,
 								"kind": "variable",
 								"originalType": "uint32_t[3]",
 								"char": 15,
@@ -86759,7 +86925,7 @@
 								"comment": "Edges to other triangles (`uint32_t.max` if none, but there should always be 3)\n\nEvery `linked_edges` should have its associated `linked_triangles` at the same index\n"
 							},
 							{
-								"line": 720,
+								"line": 744,
 								"kind": "variable",
 								"originalType": "uint32_t[3]",
 								"char": 15,
@@ -86770,7 +86936,7 @@
 								"comment": "Adjacent triangles (`uint32_t.max` if none)\n\nEvery `linked_triangles` should have its associated `linked_edges` at the same index\n"
 							},
 							{
-								"line": 721,
+								"line": 745,
 								"kind": "variable",
 								"char": 12,
 								"name": "center",
@@ -86780,7 +86946,7 @@
 								"comment": "X / Y coordinates of the center of the triangle. Calculated by avg the 3 vertices coordinates.\n"
 							},
 							{
-								"line": 722,
+								"line": 746,
 								"kind": "variable",
 								"char": 12,
 								"name": "normal",
@@ -86790,7 +86956,7 @@
 								"comment": "Normal vector\n"
 							},
 							{
-								"line": 723,
+								"line": 747,
 								"kind": "variable",
 								"char": 9,
 								"name": "dot_product",
@@ -86800,7 +86966,7 @@
 								"comment": "Dot product at plane\n"
 							},
 							{
-								"line": 724,
+								"line": 748,
 								"kind": "variable",
 								"originalType": "uint16_t",
 								"char": 12,
@@ -86811,7 +86977,7 @@
 								"comment": "Index in the `TrnNWN2WalkmeshPayload.islands` array.\n"
 							},
 							{
-								"line": 725,
+								"line": 749,
 								"kind": "variable",
 								"originalType": "uint16_t",
 								"char": 12,
@@ -86822,13 +86988,13 @@
 								"comment": "See `Flags`\n"
 							},
 							{
-								"line": 727,
+								"line": 751,
 								"kind": "enum",
 								"char": 3,
 								"members": [
 									{
 										"kind": "enum member",
-										"line": 728,
+										"line": 752,
 										"char": 4,
 										"value": "1",
 										"comment": "if the triangle can be walked on. Note the triangle needs path tables to be really walkable\n",
@@ -86836,7 +87002,7 @@
 									},
 									{
 										"kind": "enum member",
-										"line": 729,
+										"line": 753,
 										"char": 4,
 										"value": "4",
 										"comment": "vertices are wound clockwise and not ccw\n",
@@ -86844,7 +87010,7 @@
 									},
 									{
 										"kind": "enum member",
-										"line": 730,
+										"line": 754,
 										"char": 4,
 										"value": "8",
 										"comment": "Floor type (for sound effects)\n",
@@ -86852,7 +87018,7 @@
 									},
 									{
 										"kind": "enum member",
-										"line": 731,
+										"line": 755,
 										"char": 4,
 										"value": "16",
 										"comment": "ditto\n",
@@ -86860,7 +87026,7 @@
 									},
 									{
 										"kind": "enum member",
-										"line": 732,
+										"line": 756,
 										"char": 4,
 										"value": "32",
 										"comment": "ditto\n",
@@ -86868,7 +87034,7 @@
 									},
 									{
 										"kind": "enum member",
-										"line": 733,
+										"line": 757,
 										"char": 4,
 										"value": "64",
 										"comment": "ditto\n",
@@ -86876,7 +87042,7 @@
 									},
 									{
 										"kind": "enum member",
-										"line": 734,
+										"line": 758,
 										"char": 4,
 										"value": "128",
 										"comment": "ditto\n",
@@ -86884,7 +87050,7 @@
 									},
 									{
 										"kind": "enum member",
-										"line": 735,
+										"line": 759,
 										"char": 4,
 										"value": "256",
 										"comment": "ditto\n",
@@ -86892,7 +87058,7 @@
 									},
 									{
 										"kind": "enum member",
-										"line": 736,
+										"line": 760,
 										"char": 4,
 										"value": "512",
 										"comment": "ditto\n",
@@ -86900,7 +87066,7 @@
 									},
 									{
 										"kind": "enum member",
-										"line": 737,
+										"line": 761,
 										"char": 4,
 										"value": "1024",
 										"comment": "ditto\n",
@@ -86908,7 +87074,7 @@
 									},
 									{
 										"kind": "enum member",
-										"line": 738,
+										"line": 762,
 										"char": 4,
 										"value": "2048",
 										"comment": "ditto\n",
@@ -86916,7 +87082,7 @@
 									},
 									{
 										"kind": "enum member",
-										"line": 739,
+										"line": 763,
 										"char": 4,
 										"value": "4096",
 										"comment": "ditto\n",
@@ -86924,7 +87090,7 @@
 									},
 									{
 										"kind": "enum member",
-										"line": 740,
+										"line": 764,
 										"char": 4,
 										"value": "8192",
 										"comment": "ditto\n",
@@ -86934,7 +87100,7 @@
 										"kind": "enum member",
 										"char": 4,
 										"value": "16376",
-										"line": 742,
+										"line": 766,
 										"name": "soundstepFlags"
 									}
 								],
@@ -86946,7 +87112,7 @@
 						"name": "Triangle"
 					},
 					{
-						"line": 782,
+						"line": 806,
 						"kind": "variable",
 						"char": 13,
 						"name": "triangles",
@@ -86954,7 +87120,7 @@
 						"offset": 88
 					},
 					{
-						"line": 785,
+						"line": 809,
 						"kind": "variable",
 						"originalType": "uint32_t",
 						"char": 11,
@@ -86964,7 +87130,7 @@
 						"comment": "Always 31 in TRX files, 15 in TRN files\n"
 					},
 					{
-						"line": 787,
+						"line": 811,
 						"kind": "variable",
 						"char": 8,
 						"name": "tiles_width",
@@ -86973,7 +87139,7 @@
 						"comment": "Width in meters of a terrain tile (most likely to be 10.0)\n"
 					},
 					{
-						"line": 790,
+						"line": 814,
 						"kind": "variable",
 						"originalType": "uint32_t",
 						"char": 11,
@@ -86983,7 +87149,7 @@
 						"comment": "Number of tiles along Y axis\nTODO: double check height = Y\n"
 					},
 					{
-						"line": 793,
+						"line": 817,
 						"kind": "variable",
 						"originalType": "uint32_t",
 						"char": 11,
@@ -86993,7 +87159,7 @@
 						"comment": "Number of tiles along X axis\nTODO: double check width = X\n"
 					},
 					{
-						"line": 795,
+						"line": 819,
 						"kind": "variable",
 						"originalType": "uint32_t",
 						"char": 11,
@@ -87004,7 +87170,7 @@
 					},
 					{
 						"kind": "struct",
-						"line": 798,
+						"line": 822,
 						"char": 9,
 						"members": [
 							{
@@ -87012,7 +87178,7 @@
 								"char": 19,
 								"members": [
 									{
-										"line": 803,
+										"line": 827,
 										"kind": "variable",
 										"char": 13,
 										"name": "name",
@@ -87022,7 +87188,7 @@
 										"comment": "Last time I checked it was complete garbage\n"
 									},
 									{
-										"line": 804,
+										"line": 828,
 										"kind": "variable",
 										"char": 10,
 										"name": "owns_data",
@@ -87032,7 +87198,7 @@
 										"comment": "1 if the tile stores vertices / edges. Usually 0\n"
 									},
 									{
-										"line": 805,
+										"line": 829,
 										"kind": "variable",
 										"originalType": "uint32_t",
 										"char": 13,
@@ -87043,7 +87209,7 @@
 										"comment": "Number of vertices in this tile\n"
 									},
 									{
-										"line": 806,
+										"line": 830,
 										"kind": "variable",
 										"originalType": "uint32_t",
 										"char": 13,
@@ -87054,7 +87220,7 @@
 										"comment": "Number of edges in this tile\n"
 									},
 									{
-										"line": 807,
+										"line": 831,
 										"kind": "variable",
 										"originalType": "uint32_t",
 										"char": 13,
@@ -87065,7 +87231,7 @@
 										"comment": "Number of triangles in this tile (walkable + unwalkable)\n"
 									},
 									{
-										"line": 808,
+										"line": 832,
 										"kind": "variable",
 										"char": 10,
 										"name": "size_x",
@@ -87075,7 +87241,7 @@
 										"comment": "Always 0 ?\n"
 									},
 									{
-										"line": 809,
+										"line": 833,
 										"kind": "variable",
 										"char": 10,
 										"name": "size_y",
@@ -87085,7 +87251,7 @@
 										"comment": "Always 0 ?\n"
 									},
 									{
-										"line": 812,
+										"line": 836,
 										"kind": "variable",
 										"originalType": "uint32_t",
 										"char": 13,
@@ -87096,11 +87262,11 @@
 										"comment": "This value will be added to each triangle index in the PathTable\n"
 									}
 								],
-								"line": 800,
+								"line": 824,
 								"name": "Header"
 							},
 							{
-								"line": 814,
+								"line": 838,
 								"kind": "variable",
 								"char": 10,
 								"name": "header",
@@ -87109,7 +87275,7 @@
 								"offset": 0
 							},
 							{
-								"line": 817,
+								"line": 841,
 								"kind": "variable",
 								"char": 12,
 								"name": "vertices",
@@ -87118,7 +87284,7 @@
 								"comment": "Only used if `header.owns_data == true`\n"
 							},
 							{
-								"line": 820,
+								"line": 844,
 								"kind": "variable",
 								"char": 10,
 								"name": "edges",
@@ -87128,7 +87294,7 @@
 							},
 							{
 								"kind": "struct",
-								"line": 831,
+								"line": 855,
 								"char": 10,
 								"members": [
 									{
@@ -87136,7 +87302,7 @@
 										"char": 20,
 										"members": [
 											{
-												"line": 837,
+												"line": 861,
 												"kind": "enum",
 												"char": 5,
 												"members": [
@@ -87144,14 +87310,14 @@
 														"kind": "enum member",
 														"char": 6,
 														"value": "1",
-														"line": 838,
+														"line": 862,
 														"name": "rle"
 													},
 													{
 														"kind": "enum member",
 														"char": 6,
 														"value": "2",
-														"line": 839,
+														"line": 863,
 														"name": "zcompress"
 													}
 												],
@@ -87159,7 +87325,7 @@
 												"baseDeco": "i"
 											},
 											{
-												"line": 841,
+												"line": 865,
 												"kind": "variable",
 												"originalType": "uint32_t",
 												"char": 14,
@@ -87170,7 +87336,7 @@
 												"comment": "Always 0. Used to set path table compression\n"
 											},
 											{
-												"line": 844,
+												"line": 868,
 												"kind": "variable",
 												"originalType": "uint32_t",
 												"char": 14,
@@ -87181,11 +87347,11 @@
 												"comment": "Always 0 ? probably related to Run-Length Encoding\n"
 											}
 										],
-										"line": 833,
+										"line": 857,
 										"name": "Header"
 									},
 									{
-										"line": 858,
+										"line": 882,
 										"kind": "variable",
 										"char": 11,
 										"name": "header",
@@ -87194,7 +87360,7 @@
 										"offset": 0
 									},
 									{
-										"line": 870,
+										"line": 894,
 										"kind": "variable",
 										"char": 12,
 										"name": "local_to_node",
@@ -87203,7 +87369,7 @@
 										"comment": "\t\t\tList of node indices for each triangle in the tile\n\n\t\t\t`local_to_node[triangle_local_index]` represents an index value to\n\t\t\tbe used with nodes (see `nodes` for how to use it)\n\n\t\t\tAll triangles (even non walkable) must be represented here.\n\t\t\tTriangle indices that are not used in this tile must have a `0xFF`\n\t\t\tvalue.\n"
 									},
 									{
-										"line": 877,
+										"line": 901,
 										"kind": "variable",
 										"originalType": "uint32_t[]",
 										"char": 15,
@@ -87213,7 +87379,7 @@
 										"comment": "\t\t\tNode index to local triangle index\n\n\t\t\tValues must not be uint32_t.max\n"
 									},
 									{
-										"line": 903,
+										"line": 927,
 										"kind": "variable",
 										"char": 12,
 										"name": "nodes",
@@ -87222,7 +87388,7 @@
 										"comment": "\t\t\tNode list\n\n\t\t\tThis is used to determine which triangle a creature should go next\n\t\t\tto reach a destination triangle.\n\n\t\t\t`nodes[header.node_to_local_length * FromLTNIndex + DestLTNIndex]\n\t\t\t& 0b0111_1111` is an index in `node_to_local` array, containing\n\t\t\tthe next triangle to go to in order to reach destination.\n\n\t\t\t`FromLTNIndex`, `DestLTNIndex` are values found inside the\n\t\t\t`local_to_node` array.\n\t\t\t<ul>\n\t\t\t$(LI `value & 0b0111_1111` is an index in `node_to_local` table)\n\t\t\t$(LI `value & 0b1000_0000` is > 0 if there is a clear line of\n\t\t\tsight between the two triangle. It's not clear what LOS is since\n\t\t\ttwo linked triangles on flat ground may not have LOS = 1 in game\n\t\t\tfiles.)\n\t\t\t<\/ul>\n\n\t\t\tIf FromLTNIndex == DestLTNIndex, the value must be set to 255.\n\n\t\t\tNote: does not contain any 127 = 0b0111_1111 values\n"
 									},
 									{
-										"line": 906,
+										"line": 930,
 										"kind": "variable",
 										"originalType": "uint32_t",
 										"char": 13,
@@ -87236,7 +87402,7 @@
 								"name": "PathTable"
 							},
 							{
-								"line": 908,
+								"line": 932,
 								"kind": "variable",
 								"char": 13,
 								"name": "path_table",
@@ -87244,13 +87410,13 @@
 								"offset": 96
 							},
 							{
-								"line": 984,
+								"line": 1009,
 								"kind": "function",
 								"char": 10,
 								"name": "dump",
 								"deco": "xFZAya",
 								"endchar": 3,
-								"endline": 1000
+								"endline": 1025
 							},
 							{
 								"parameters": [
@@ -87263,14 +87429,14 @@
 										"name": "toGTriIndex"
 									}
 								],
-								"line": 1002,
+								"line": 1027,
 								"kind": "function",
 								"originalType": "const ubyte(uint32_t fromGTriIndex, uint32_t toGTriIndex)",
 								"char": 9,
 								"name": "getPathNode",
 								"deco": "xFkkZh",
 								"endchar": 3,
-								"endline": 1016
+								"endline": 1041
 							},
 							{
 								"parameters": [
@@ -87289,14 +87455,14 @@
 										"name": "toGTriIndex"
 									}
 								],
-								"line": 1021,
+								"line": 1046,
 								"kind": "function",
 								"originalType": "const uint32_t[](in uint32_t fromGTriIndex, in uint32_t toGTriIndex)",
 								"char": 14,
 								"name": "findPath",
 								"deco": "xFIkIkZAk",
 								"endchar": 3,
-								"endline": 1042,
+								"endline": 1067,
 								"comment": "\t\tCalculate the fastest route between two triangles of a tile. The tile need to be baked, as it uses existing path tables.\n"
 							},
 							{
@@ -87318,14 +87484,14 @@
 										"name": "strict"
 									}
 								],
-								"line": 1045,
+								"line": 1070,
 								"kind": "function",
 								"originalType": "const void(in TrnNWN2WalkmeshPayload aswm, uint32_t tileIndex, bool strict = false)",
 								"char": 8,
 								"name": "validate",
 								"deco": "xFIS3nwn3trnQe22TrnNWN2WalkmeshPayloadkbZv",
 								"endchar": 3,
-								"endline": 1127,
+								"endline": 1152,
 								"comment": "Check a single tile. You should use `TrnNWN2WalkmeshPayload.validate()` instead\n"
 							}
 						],
@@ -87333,7 +87499,7 @@
 						"name": "Tile"
 					},
 					{
-						"line": 1131,
+						"line": 1156,
 						"kind": "variable",
 						"char": 9,
 						"name": "tiles",
@@ -87343,7 +87509,7 @@
 					},
 					{
 						"kind": "struct",
-						"line": 1142,
+						"line": 1167,
 						"char": 9,
 						"members": [
 							{
@@ -87351,7 +87517,7 @@
 								"char": 19,
 								"members": [
 									{
-										"line": 1146,
+										"line": 1171,
 										"kind": "variable",
 										"originalType": "uint32_t",
 										"char": 13,
@@ -87362,7 +87528,7 @@
 										"comment": "Index of the island in the aswm.islands array. TODO: weird\n"
 									},
 									{
-										"line": 1147,
+										"line": 1172,
 										"kind": "variable",
 										"originalType": "uint32_t",
 										"char": 13,
@@ -87373,7 +87539,7 @@
 										"comment": "Value looks pretty random, but is identical for all islands\n"
 									},
 									{
-										"line": 1148,
+										"line": 1173,
 										"kind": "variable",
 										"char": 11,
 										"name": "center",
@@ -87383,7 +87549,7 @@
 										"comment": "Center of the island. Z is always 0. TODO: find how it is calculated\n"
 									},
 									{
-										"line": 1149,
+										"line": 1174,
 										"kind": "variable",
 										"originalType": "uint32_t",
 										"char": 13,
@@ -87394,11 +87560,11 @@
 										"comment": "Number of triangles in this island\n"
 									}
 								],
-								"line": 1143,
+								"line": 1168,
 								"name": "Header"
 							},
 							{
-								"line": 1151,
+								"line": 1176,
 								"kind": "variable",
 								"char": 10,
 								"name": "header",
@@ -87407,7 +87573,7 @@
 								"offset": 0
 							},
 							{
-								"line": 1152,
+								"line": 1177,
 								"kind": "variable",
 								"originalType": "uint32_t[]",
 								"char": 14,
@@ -87417,7 +87583,7 @@
 								"comment": "Adjacent islands\n"
 							},
 							{
-								"line": 1153,
+								"line": 1178,
 								"kind": "variable",
 								"char": 11,
 								"name": "adjacent_islands_dist",
@@ -87426,7 +87592,7 @@
 								"comment": "Distances between adjacent islands (probably measured between header.center)\n"
 							},
 							{
-								"line": 1164,
+								"line": 1189,
 								"kind": "variable",
 								"originalType": "uint32_t[]",
 								"char": 14,
@@ -87436,20 +87602,20 @@
 								"comment": "\t\tList of triangles that are on the island borders, and which linked_edges\n\t\tcan lead to a triangle that have another triangle.island value.\n\n\t\t<ul>\n\t\t<li>There is no need to register all possible exit triangles. Only one per adjacent island is enough.<\/li>\n\t\t<li>Generally it is 4 walkable triangles: 1 top left, 2 bot left and 1 bot right<\/li>\n\t\t<\/ul>\n"
 							},
 							{
-								"line": 1189,
+								"line": 1214,
 								"kind": "function",
 								"char": 10,
 								"name": "dump",
 								"deco": "xFZAya",
 								"endchar": 3,
-								"endline": 1194
+								"endline": 1219
 							}
 						],
 						"comment": "\tTile or fraction of a tile used for pathfinding through large distances.\n\n\t<ul>\n\t<li>The island boundaries match exactly the tile boundaries<\/li>\n\t<li>Generally you have one island per tile.<\/li>\n\t<li>You can have multiple islands for one tile, like if one side of the tile is not accessible from the other side<\/li>\n\t<\/ul>\n",
 						"name": "Island"
 					},
 					{
-						"line": 1198,
+						"line": 1223,
 						"kind": "variable",
 						"char": 11,
 						"name": "islands",
@@ -87462,7 +87628,7 @@
 						"char": 18,
 						"members": [
 							{
-								"line": 1203,
+								"line": 1228,
 								"kind": "variable",
 								"originalType": "uint16_t",
 								"char": 12,
@@ -87472,7 +87638,7 @@
 								"comment": "Next island index to go to\n"
 							},
 							{
-								"line": 1204,
+								"line": 1229,
 								"kind": "variable",
 								"originalType": "uint16_t",
 								"char": 12,
@@ -87481,7 +87647,7 @@
 								"offset": 2
 							},
 							{
-								"line": 1205,
+								"line": 1230,
 								"kind": "variable",
 								"char": 9,
 								"name": "weight",
@@ -87490,11 +87656,11 @@
 								"comment": "Distance to `next` island.\n"
 							}
 						],
-						"line": 1201,
+						"line": 1226,
 						"name": "IslandPathNode"
 					},
 					{
-						"line": 1207,
+						"line": 1232,
 						"kind": "variable",
 						"char": 19,
 						"name": "islands_path_nodes",
@@ -87511,34 +87677,34 @@
 								"name": "payload"
 							}
 						],
-						"line": 1211,
+						"line": 1236,
 						"kind": "constructor",
 						"originalType": "ref (in ubyte[] payload)",
 						"char": 2,
 						"name": "this",
 						"deco": "FNcIAhZS3nwn3trnQe22TrnNWN2WalkmeshPayload",
 						"endchar": 2,
-						"endline": 1291,
+						"endline": 1316,
 						"comment": "Build packet with raw data\n"
 					},
 					{
-						"line": 1297,
+						"line": 1322,
 						"kind": "function",
 						"char": 10,
 						"name": "serialize",
-						"deco": "FZAh",
+						"deco": "xFZAh",
 						"endchar": 2,
-						"endline": 1310,
+						"endline": 1335,
 						"comment": "\tSerialize TRN packet data\n"
 					},
 					{
-						"line": 1315,
+						"line": 1340,
 						"kind": "function",
 						"char": 10,
 						"name": "serializeUncompressed",
-						"deco": "FZAh",
+						"deco": "xFZAh",
 						"endchar": 2,
-						"endline": 1350,
+						"endline": 1376,
 						"comment": "\tSerialize the aswm data without compressing it. Useful for debugging raw data.\n"
 					},
 					{
@@ -87549,23 +87715,23 @@
 								"name": "strict"
 							}
 						],
-						"line": 1359,
+						"line": 1385,
 						"kind": "function",
 						"char": 7,
 						"name": "validate",
 						"deco": "xFbZv",
 						"endchar": 2,
-						"endline": 1483,
+						"endline": 1515,
 						"comment": "\tCheck if the ASWM contains legit data\n\n\tThrows: ASWMInvalidValueException containing the error message\n\tArgs:\n\tstrict = false to allow some data inconsistencies that does not cause issues with nwn2\n"
 					},
 					{
-						"line": 1488,
+						"line": 1520,
 						"kind": "function",
 						"char": 9,
 						"name": "dump",
 						"deco": "xFZAya",
 						"endchar": 2,
-						"endline": 1533,
+						"endline": 1565,
 						"comment": "\tDump trn data as text\n"
 					},
 					{
@@ -87575,13 +87741,13 @@
 								"name": "removeFunc"
 							}
 						],
-						"line": 1555,
+						"line": 1587,
 						"kind": "function",
 						"char": 7,
 						"name": "removeTriangles",
 						"deco": "FDFIS3nwn3trnQe22TrnNWN2WalkmeshPayload8TriangleZbZv",
 						"endchar": 2,
-						"endline": 1618,
+						"endline": 1650,
 						"comment": "\tRemoves triangles from the mesh, and removes unused vertices and edges accordingly.\n\n\tAlso updates vertex / edge / triangle indices to match new indices.\n\n\tDoes not updates path tables. You need to run `bake()` to re-generate path tables.\n\n\tParams:\n\tremoveFunc = Delegate to check is triangle must be removed.\n"
 					},
 					{
@@ -87599,14 +87765,14 @@
 								"name": "vertTransTable"
 							}
 						],
-						"line": 1630,
+						"line": 1662,
 						"kind": "function",
 						"originalType": "void(uint32_t[] triTransTable, uint32_t[] edgeTransTable, uint32_t[] vertTransTable)",
 						"char": 7,
 						"name": "translateIndices",
 						"deco": "FAkQcQeZv",
 						"endchar": 2,
-						"endline": 1682,
+						"endline": 1714,
 						"comment": "\tTranslate triangle / edge / vertex indices stored in mesh data.\n\n\tEach argument is a table of the length of the existing list where:\n\t<ul>\n\t<li>The index is the index of the current triangle<\/li>\n\t<li>The value is the index of the translated triangle<\/li>\n\t<\/ul>\n\tIf the argument is an empty array, no translation is done. Does NOT update path tables & islands data.\n"
 					},
 					{
@@ -87617,13 +87783,13 @@
 								"name": "removeBorders"
 							}
 						],
-						"line": 1730,
+						"line": 1762,
 						"kind": "function",
 						"char": 7,
 						"name": "bake",
 						"deco": "FbZv",
 						"endchar": 2,
-						"endline": 1907,
+						"endline": 1939,
 						"comment": "\tBake the existing walkmesh by re-creating tiles, islands, path tables, ...\n\n\tDoes not modify the current walkmesh like what you would expect with\n\tplaceable walkmesh / walkmesh cutters.\n\n\tParams:\n\tremoveBorders = true to remove unwalkable map borders from the walkmesh.\n"
 					},
 					{
@@ -87643,14 +87809,14 @@
 								"name": "textureFlags"
 							}
 						],
-						"line": 2101,
+						"line": 2133,
 						"kind": "function",
 						"originalType": "void(in TrnPacket[] trrnPackets, in Triangle.Flags[string] textureFlags)",
 						"char": 7,
 						"name": "setFootstepSounds",
 						"deco": "FIAS3nwn3trnQe9TrnPacketIHAyaEQBaQzQBb22TrnNWN2WalkmeshPayload8Triangle5FlagsZv",
 						"endchar": 2,
-						"endline": 2168,
+						"endline": 2200,
 						"comment": "Set the footstep sound flags for each triangle of the walkmesh\nParams:\ntrrnPackets = TRN packet list containing the needed `TrnNWN2MegatilePayload` packets\ntextureFlags = Associative array listing all textures and their respective footstep sounds\n"
 					},
 					{
@@ -87670,13 +87836,13 @@
 								"name": "terrainmaterials"
 							}
 						],
-						"line": 2174,
+						"line": 2206,
 						"kind": "function",
 						"char": 7,
 						"name": "setFootstepSounds",
 						"deco": "FIAS3nwn3trnQe9TrnPacketICQw5twoda5TwoDAZv",
 						"endchar": 2,
-						"endline": 2201,
+						"endline": 2233,
 						"comment": "ditto\nParams:\ntrrnPackets = TRN packet list containing the needed `TrnNWN2MegatilePayload` packets\nterrainmaterials = terrainmaterials.2da that lists all textures and their respective footstep sounds\n"
 					},
 					{
@@ -87696,14 +87862,14 @@
 								"name": "toIslandIndex"
 							}
 						],
-						"line": 2206,
+						"line": 2238,
 						"kind": "function",
 						"originalType": "const uint16_t[](in uint16_t fromIslandIndex, in uint16_t toIslandIndex)",
 						"char": 13,
 						"name": "findIslandsPath",
 						"deco": "xFItItZAt",
 						"endchar": 2,
-						"endline": 2220,
+						"endline": 2252,
 						"comment": "\tCalculate the fastest route between two islands. The area need to be baked, as it uses existing path tables.\n"
 					},
 					{
@@ -87716,13 +87882,13 @@
 								"name": "mesh"
 							}
 						],
-						"line": 2225,
+						"line": 2257,
 						"kind": "function",
 						"char": 7,
 						"name": "setGenericMesh",
 						"deco": "FIS3nwn3trn11genericmesh11GenericMeshZv",
 						"endchar": 2,
-						"endline": 2260,
+						"endline": 2292,
 						"comment": "\tSet 3d mesh geometry\n"
 					},
 					{
@@ -87733,28 +87899,28 @@
 								"name": "triangleFlags"
 							}
 						],
-						"line": 2269,
+						"line": 2301,
 						"kind": "function",
 						"originalType": "const GenericMesh(uint16_t triangleFlags = Triangle.Flags.walkable)",
 						"char": 14,
 						"name": "toGenericMesh",
 						"deco": "xFtZS3nwn3trn11genericmesh11GenericMesh",
 						"endchar": 2,
-						"endline": 2288,
+						"endline": 2320,
 						"comment": "\tConverts terrain mesh data to a more generic format.\n\n\tParams:\n\ttriangleFlags = Triangle flags to include in the generic mesh.\n\tSet to `uint16_t.max` to include all triangles.\n"
 					},
 					{
-						"line": 2296,
+						"line": 2328,
 						"kind": "function",
 						"char": 7,
 						"name": "buildEdges",
 						"deco": "FZv",
 						"endchar": 2,
-						"endline": 2345,
+						"endline": 2377,
 						"comment": "\tRebuilds edge data by going through every triangle / vertices\n\n\tWarning: NWN2 official baking tool often produces duplicated triangles and\n\tedges around placeable walkmeshes.\n"
 					}
 				],
-				"comment": "Compressed walkmesh (only contained inside TRX files)\n",
+				"comment": "Compressed walkmesh (only contained inside TRX files) (ASWM)\n",
 				"name": "TrnNWN2WalkmeshPayload"
 			}
 		],
@@ -88764,12 +88930,158 @@
 				"char": 6,
 				"name": "NWN_LIB_D_VERSION",
 				"deco": "Aya",
-				"init": "\"v1.0.0-rc3\"",
+				"init": "\"v1.0.0\"",
 				"comment": "nwn-lib-d git version\n"
 			}
 		],
 		"comment": "nwn-lib-d version\n",
 		"name": "nwn.ver"
+	},
+	{
+		"kind": "module",
+		"file": "source/nwnlibd/bitmap.d",
+		"members": [
+			{
+				"kind": "alias",
+				"deco": "S7nwnlibd6bitmap__T6BitmapTG1hZQm",
+				"char": 1,
+				"line": 15,
+				"name": "BitmapGrayscale"
+			},
+			{
+				"kind": "alias",
+				"deco": "S7nwnlibd6bitmap__T6BitmapTG2hZQm",
+				"char": 1,
+				"line": 16,
+				"name": "BitmapGrayscaleA"
+			},
+			{
+				"kind": "alias",
+				"deco": "S7nwnlibd6bitmap__T6BitmapTG3hZQm",
+				"char": 1,
+				"line": 17,
+				"name": "BitmapRGB"
+			},
+			{
+				"kind": "alias",
+				"deco": "S7nwnlibd6bitmap__T6BitmapTG4hZQm",
+				"char": 1,
+				"line": 18,
+				"name": "BitmapRGBA"
+			},
+			{
+				"parameters": [
+					{
+						"kind": "type",
+						"default": "ubyte[4]",
+						"name": "Pixel"
+					}
+				],
+				"line": 27,
+				"kind": "template",
+				"char": 1,
+				"members": [
+					{
+						"kind": "struct",
+						"char": 1,
+						"members": [
+							{
+								"parameters": [
+									{
+										"type": "size_t",
+										"name": "width"
+									},
+									{
+										"type": "size_t",
+										"name": "height"
+									}
+								],
+								"line": 30,
+								"kind": "constructor",
+								"char": 2,
+								"name": "this",
+								"type": "(size_t width, size_t height)",
+								"endchar": 2,
+								"endline": 34
+							},
+							{
+								"parameters": [
+									{
+										"type": "size_t",
+										"storageClass": [
+											"in"
+										],
+										"name": "x"
+									},
+									{
+										"type": "size_t",
+										"storageClass": [
+											"in"
+										],
+										"name": "y"
+									}
+								],
+								"line": 37,
+								"kind": "function",
+								"char": 19,
+								"name": "opIndex",
+								"type": "inout ref inout(Pixel)(in size_t x, in size_t y)",
+								"endchar": 2,
+								"endline": 39,
+								"comment": "Access a given pixel with Bitmap[x, y]\n"
+							},
+							{
+								"line": 61,
+								"kind": "function",
+								"char": 10,
+								"name": "toBMP",
+								"type": "ubyte[]()",
+								"endchar": 2,
+								"endline": 112,
+								"comment": "Rotate the image by increments of 90° counter clockwise\n\nSerialize to a BMP file. Alpha data is lost.\n"
+							},
+							{
+								"line": 115,
+								"kind": "function",
+								"char": 10,
+								"name": "toPNG",
+								"type": "ubyte[]()",
+								"endchar": 2,
+								"endline": 185,
+								"comment": "Serialize to a PNG file\n"
+							},
+							{
+								"kind": "variable",
+								"type": "size_t",
+								"char": 9,
+								"line": 188,
+								"name": "width"
+							},
+							{
+								"kind": "variable",
+								"type": "size_t",
+								"char": 16,
+								"line": 188,
+								"name": "height"
+							},
+							{
+								"kind": "variable",
+								"type": "Pixel[]",
+								"char": 10,
+								"line": 189,
+								"name": "pixels"
+							}
+						],
+						"line": 27,
+						"name": "Bitmap"
+					}
+				],
+				"name": "Bitmap",
+				"comment": "2D bitmap. Each pixel is coded with a fixed number of bytes.\n\nPixel sizes:\nubyte[1] => grayscale\nubyte[2] => grayscale + alpha\nubyte[3] => RGB\nubyte[4] => RGBA\n"
+			}
+		],
+		"comment": "DirectDraw Surfaces (DDS files)\n",
+		"name": "nwnlibd.bitmap"
 	},
 	{
 		"kind": "module",
@@ -91258,6 +91570,44 @@
 					}
 				],
 				"name": "DebugPrintStruct"
+			},
+			{
+				"constraint": "is(ENUM == enum) && isIntegral!VAL",
+				"parameters": [
+					{
+						"kind": "type",
+						"name": "ENUM"
+					},
+					{
+						"kind": "type",
+						"name": "VAL"
+					}
+				],
+				"line": 154,
+				"kind": "template",
+				"char": 8,
+				"members": [
+					{
+						"parameters": [
+							{
+								"type": "VAL",
+								"storageClass": [
+									"in"
+								],
+								"name": "value"
+							}
+						],
+						"line": 154,
+						"kind": "function",
+						"char": 8,
+						"name": "flagsToString",
+						"type": "string(in VAL value)",
+						"endchar": 1,
+						"endline": 170
+					}
+				],
+				"name": "flagsToString",
+				"comment": "Prints an integer as being a combination of bit flags\n"
 			}
 		],
 		"comment": "Internal parsing tools\n",

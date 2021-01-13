@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta charset="UTF-8"/>
-		<title>Variable Dds.Header.reserved2</title>
+		<title>Function Bitmap.toBMP</title>
 		<link rel="stylesheet" type="text/css" href="../../styles/ddox.css"/>
 		<link rel="stylesheet" href="../../prettify/prettify.css" type="text/css"/>
 		<script type="text/javascript" src="../../scripts/jquery.js">/**/</script><script type="text/javascript" src="../../scripts/ddox.js">/**/</script>
@@ -20,7 +20,7 @@
 $('#symbolSearchPane').show();</script>
 			</div>
 			<ul class="tree-view">
-				<li class="tree-view ">
+				<li class="tree-view collapsed">
 					<div class="package ">
 						<a href="../../nwn.html">nwn</a>
 					</div>
@@ -80,7 +80,7 @@ $('#symbolSearchPane').show();</script>
 					</div>
 				</li>
 				<li>
-					<div class="module selected">
+					<div class="module ">
 						<a href="../../nwn/dds.html">dds</a>
 					</div>
 				</li>
@@ -131,10 +131,15 @@ $('#symbolSearchPane').show();</script>
 				</li>
 			</ul>
 				</li>
-				<li class="tree-view collapsed">
+				<li class="tree-view ">
 					<div class="package ">nwnlibd
 					</div>
 			<ul class="tree-view">
+				<li>
+					<div class="module selected">
+						<a href="../../nwnlibd/bitmap.html">bitmap</a>
+					</div>
+				</li>
 				<li>
 					<div class="module ">
 						<a href="../../nwnlibd/geometry.html">geometry</a>
@@ -170,29 +175,19 @@ $('#symbolSearchPane').show();</script>
 			</ul>
 		</nav>
 		<div id="main-contents">
-			<h1>Variable Dds.Header.reserved2</h1><p>Unused
+			<h1>Function Bitmap.toBMP</h1><p>Rotate the image by increments of 90° counter clockwise
 </p>
 			<div class="prototype">
 				<code class="lang-d">
 					<div class="single-prototype">
-			<span class="kwd">struct</span> <a href="../../nwn/dds/Dds.Header.html"><span class="typ">Dds.Header</span></a>
-			<br/>
-			<span class="pun">
-				{
-				<br/>
-			</span>
-			&nbsp;&nbsp;<span class="com">// ...</span>
-			<br/>
-			&nbsp;&nbsp;<span class="typ">uint</span> <span class="pln">reserved2</span>
-			<span class="pun">;</span>
-			<br/>
-			&nbsp;&nbsp;<span class="com">// ...</span>
-			<br/>
-			<span class="pun">}</span>
+			<span class="typ">ubyte</span><span class="pun">[]</span> <span class="pln">toBMP</span><span class="pun">(</span><span class="pun">)</span><span class="pun">;</span>
 					</div>
 				</code>
 			</div>
-			
+			<section><p>Serialize to a BMP file. Alpha data is lost.
+</p>
+</section>
+
 			
 			<footer>
 				<table class="license-info">

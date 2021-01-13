@@ -137,6 +137,11 @@ $('#symbolSearchPane').show();</script>
 			<ul class="tree-view">
 				<li>
 					<div class="module ">
+						<a href="../../nwnlibd/bitmap.html">bitmap</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
 						<a href="../../nwnlibd/geometry.html">geometry</a>
 					</div>
 				</li>
@@ -188,6 +193,20 @@ $('#symbolSearchPane').show();</script>
 					</tr>
 					<tr>
 						<td>
+							<a href="../../nwn/dds/Dds.Header._reserved1.html" class="public"><code>_reserved1</code></a>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">uint</span><span class="pun">[</span><span class="lit">11</span><span class="pun">]</span></code></td><td>Unused
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../nwn/dds/Dds.Header._reserved2.html" class="public"><code>_reserved2</code></a>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">uint</span><span class="pun">[</span><span class="lit">3</span><span class="pun">]</span></code></td><td>Unused
+</td>
+					</tr>
+					<tr>
+						<td>
 							<a href="../../nwn/dds/Dds.Header.caps.html" class="public"><code>caps</code></a>
 						</td>
 						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">uint</span></code></td><td>See CapsFlags
@@ -198,20 +217,6 @@ $('#symbolSearchPane').show();</script>
 							<a href="../../nwn/dds/Dds.Header.caps2.html" class="public"><code>caps2</code></a>
 						</td>
 						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">uint</span></code></td><td>See Caps2Flags
-</td>
-					</tr>
-					<tr>
-						<td>
-							<a href="../../nwn/dds/Dds.Header.caps3.html" class="public"><code>caps3</code></a>
-						</td>
-						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">uint</span></code></td><td>Unused
-</td>
-					</tr>
-					<tr>
-						<td>
-							<a href="../../nwn/dds/Dds.Header.caps4.html" class="public"><code>caps4</code></a>
-						</td>
-						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">uint</span></code></td><td>Unused
 </td>
 					</tr>
 					<tr>
@@ -258,20 +263,6 @@ $('#symbolSearchPane').show();</script>
 					</tr>
 					<tr>
 						<td>
-							<a href="../../nwn/dds/Dds.Header.reserved1.html" class="public"><code>reserved1</code></a>
-						</td>
-						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">uint</span><span class="pun">[</span><span class="lit">11</span><span class="pun">]</span></code></td><td>Unused
-</td>
-					</tr>
-					<tr>
-						<td>
-							<a href="../../nwn/dds/Dds.Header.reserved2.html" class="public"><code>reserved2</code></a>
-						</td>
-						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">uint</span></code></td><td>Unused
-</td>
-					</tr>
-					<tr>
-						<td>
 							<a href="../../nwn/dds/Dds.Header.size.html" class="public"><code>size</code></a>
 						</td>
 						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">uint</span></code></td><td>Size of the header struct. Always 124
@@ -283,6 +274,23 @@ $('#symbolSearchPane').show();</script>
 						</td>
 						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">uint</span></code></td><td>Width in pixels
 </td>
+					</tr>
+				</table>
+			</section>
+			<section><h2>Methods</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../nwn/dds/Dds.Header.toString.html" class="public">
+								<code>toString</code>
+							</a>
+							<span class="tableEntryAnnotation">()</span>
+						</td>
+						<td></td>
 					</tr>
 				</table>
 			</section>
@@ -298,7 +306,8 @@ $('#symbolSearchPane').show();</script>
 								<code>DDPF</code>
 							</a>
 						</td>
-						<td></td>
+						<td>DirectDraw Pixel Format
+</td>
 					</tr>
 				</table>
 			</section>
@@ -323,7 +332,7 @@ $('#symbolSearchPane').show();</script>
 								<code>CapsFlags</code>
 							</a>
 						</td>
-						<td>caps vaulues
+						<td>caps values
 </td>
 					</tr>
 					<tr>

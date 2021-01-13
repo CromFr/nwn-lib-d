@@ -137,6 +137,11 @@ $('#symbolSearchPane').show();</script>
 			<ul class="tree-view">
 				<li>
 					<div class="module ">
+						<a href="../../../nwnlibd/bitmap.html">bitmap</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
 						<a href="../../../nwnlibd/geometry.html">geometry</a>
 					</div>
 				</li>
@@ -183,6 +188,11 @@ $('#symbolSearchPane').show();</script>
 							Function <code>TrnPacket.this</code>
 						</a>
 					</li>
+					<li>
+						<a href="#2">
+							Function <code>TrnPacket.this</code>
+						</a>
+					</li>
 				</ul>
 			</nav><h2 id="0">Function TrnPacket.this</h2><p>Create an packet with default values
 </p>
@@ -211,6 +221,22 @@ $('#symbolSearchPane').show();</script>
 			&nbsp;&nbsp;<span class="kwd">in </span><span class="kwd">const</span><span class="pun">(</span><span class="typ">ubyte</span><span class="pun">[]</span><span class="pun">)</span> <span class="pln">payloadData</span>
 			<br/>
 			<span class="pun">)</span><span class="pun">;</span>
+					</div>
+				</code>
+			</div>
+			
+			<h2 id="2">Function TrnPacket.this</h2><p></p>
+			<div class="prototype">
+				<code class="lang-d">
+					<div class="single-prototype">
+			<span class="pln">this</span>(T)
+			<span class="pun">(</span>
+			<br/>
+			&nbsp;&nbsp;<span class="kwd">in </span><span class="pln">T</span> <span class="pln">packet</span>
+			<br/>
+			<span class="pun">)</span>
+			<br/>
+			<span class="kwd">if</span> <span class="pun">(</span><span class="kwd">is</span><span class="pun">(</span><span class="pln">T </span><span class="pun">: </span><span class="typ">TrnNWN2TerrainDimPayload</span><span class="pun">) || </span><span class="kwd">is</span><span class="pun">(</span><span class="pln">T </span><span class="pun">: </span><span class="typ">TrnNWN2MegatilePayload</span><span class="pun">) || </span><span class="kwd">is</span><span class="pun">(</span><span class="pln">T </span><span class="pun">: </span><span class="typ">TrnNWN2WaterPayload</span><span class="pun">) || </span><span class="kwd">is</span><span class="pun">(</span><span class="pln">T </span><span class="pun">: </span><span class="typ">TrnNWN2WalkmeshPayload</span><span class="pun">)</span><span class="pun">);</span>
 					</div>
 				</code>
 			</div>
