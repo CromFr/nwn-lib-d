@@ -360,7 +360,7 @@ struct GffStruct {
 	///
 	this(GffValue[string] children, uint32_t id){
 		foreach(k, ref v ; children){
-			m_children[k] = *cast(ubyte[_gffValueSize]*)&v;
+			children[k] = v;
 		}
 		this.id = id;
 	}
