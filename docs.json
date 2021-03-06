@@ -1025,7 +1025,7 @@
 						"line": 29,
 						"char": 2,
 						"value": "cast(ushort)2001u",
-						"comment": "\n",
+						"comment": "LaTeX? (guess)\n",
 						"name": "tex"
 					},
 					{
@@ -1057,7 +1057,7 @@
 						"line": 33,
 						"char": 2,
 						"value": "cast(ushort)2007u",
-						"comment": "\n",
+						"comment": "LUA scripts? (guess)\n",
 						"name": "lua"
 					},
 					{
@@ -1089,7 +1089,7 @@
 						"line": 37,
 						"char": 2,
 						"value": "cast(ushort)2011u",
-						"comment": "\n",
+						"comment": "Module archive (erf-like)\n",
 						"name": "mod"
 					},
 					{
@@ -1145,7 +1145,7 @@
 						"line": 44,
 						"char": 2,
 						"value": "cast(ushort)2018u",
-						"comment": "\n",
+						"comment": "Talk table\n",
 						"name": "tlk"
 					},
 					{
@@ -1353,7 +1353,7 @@
 						"line": 70,
 						"char": 2,
 						"value": "cast(ushort)2048u",
-						"comment": "\n",
+						"comment": "Cascading Style Sheet? (guess)\n",
 						"name": "css"
 					},
 					{
@@ -1441,7 +1441,7 @@
 						"line": 81,
 						"char": 2,
 						"value": "cast(ushort)2059u",
-						"comment": "\n",
+						"comment": "DirectX texture file\n",
 						"name": "fourpc"
 					},
 					{
@@ -1457,7 +1457,7 @@
 						"line": 83,
 						"char": 2,
 						"value": "cast(ushort)2061u",
-						"comment": "\n",
+						"comment": "HAK ERF resource container\n",
 						"name": "hak"
 					},
 					{
@@ -1473,7 +1473,7 @@
 						"line": 85,
 						"char": 2,
 						"value": "cast(ushort)2063u",
-						"comment": "\n",
+						"comment": "BIK Video\n",
 						"name": "bik"
 					},
 					{
@@ -1529,7 +1529,7 @@
 						"line": 92,
 						"char": 2,
 						"value": "cast(ushort)3002u",
-						"comment": "\n",
+						"comment": "Area terrain info\n",
 						"name": "trn"
 					},
 					{
@@ -1537,7 +1537,7 @@
 						"line": 93,
 						"char": 2,
 						"value": "cast(ushort)3003u",
-						"comment": "\n",
+						"comment": "Tree blueprint\n",
 						"name": "utr"
 					},
 					{
@@ -1553,7 +1553,7 @@
 						"line": 95,
 						"char": 2,
 						"value": "cast(ushort)3005u",
-						"comment": "\n",
+						"comment": "Light blueprint\n",
 						"name": "ult"
 					},
 					{
@@ -1561,7 +1561,7 @@
 						"line": 96,
 						"char": 2,
 						"value": "cast(ushort)3006u",
-						"comment": "\n",
+						"comment": "Special Effect XML File (NWN2)\n",
 						"name": "sef"
 					},
 					{
@@ -1569,7 +1569,7 @@
 						"line": 97,
 						"char": 2,
 						"value": "cast(ushort)3007u",
-						"comment": "\n",
+						"comment": "Particle effect XML file (NWN2)\n",
 						"name": "pfx"
 					},
 					{
@@ -1577,7 +1577,7 @@
 						"line": 98,
 						"char": 2,
 						"value": "cast(ushort)3008u",
-						"comment": "\n",
+						"comment": "Campaign definition GFF file\n",
 						"name": "cam"
 					},
 					{
@@ -1585,7 +1585,7 @@
 						"line": 99,
 						"char": 2,
 						"value": "cast(ushort)3009u",
-						"comment": "\n",
+						"comment": "Lightning effect XML file (NWN2)\n",
 						"name": "lfx"
 					},
 					{
@@ -1593,7 +1593,7 @@
 						"line": 100,
 						"char": 2,
 						"value": "cast(ushort)3010u",
-						"comment": "\n",
+						"comment": "Beam effect XML file (NWN2)\n",
 						"name": "bfx"
 					},
 					{
@@ -1601,7 +1601,7 @@
 						"line": 101,
 						"char": 2,
 						"value": "cast(ushort)3011u",
-						"comment": "\n",
+						"comment": "Encounter blueprint\n",
 						"name": "upe"
 					},
 					{
@@ -1625,7 +1625,7 @@
 						"line": 104,
 						"char": 2,
 						"value": "cast(ushort)3014u",
-						"comment": "\n",
+						"comment": "Linear particle effect XML file (NWN2)\n",
 						"name": "ifx"
 					},
 					{
@@ -1633,7 +1633,7 @@
 						"line": 105,
 						"char": 2,
 						"value": "cast(ushort)3015u",
-						"comment": "\n",
+						"comment": "Prefab definition file\n",
 						"name": "pfb"
 					},
 					{
@@ -1641,7 +1641,7 @@
 						"line": 106,
 						"char": 2,
 						"value": "cast(ushort)3016u",
-						"comment": "\n",
+						"comment": "Compressed zip file\n",
 						"name": "zip"
 					},
 					{
@@ -1657,7 +1657,7 @@
 						"line": 108,
 						"char": 2,
 						"value": "cast(ushort)3018u",
-						"comment": "\n",
+						"comment": "Billboard effect XML file (NWN2)\n",
 						"name": "bbx"
 					},
 					{
@@ -1665,7 +1665,7 @@
 						"line": 109,
 						"char": 2,
 						"value": "cast(ushort)3019u",
-						"comment": "\n",
+						"comment": "Trail effect XML file (NWN2)\n",
 						"name": "tfx"
 					},
 					{
@@ -1673,7 +1673,7 @@
 						"line": 110,
 						"char": 2,
 						"value": "cast(ushort)3020u",
-						"comment": "\n",
+						"comment": "Walkmesh 3D object\n",
 						"name": "wlk"
 					},
 					{
@@ -1681,7 +1681,7 @@
 						"line": 111,
 						"char": 2,
 						"value": "cast(ushort)3021u",
-						"comment": "\n",
+						"comment": "XML\n",
 						"name": "xml"
 					},
 					{
@@ -1705,7 +1705,7 @@
 						"line": 114,
 						"char": 2,
 						"value": "cast(ushort)3034u",
-						"comment": "\n",
+						"comment": "Lightning effect XML file (NWN2)\n",
 						"name": "ltx"
 					},
 					{
@@ -1713,7 +1713,7 @@
 						"line": 115,
 						"char": 2,
 						"value": "cast(ushort)3035u",
-						"comment": "\n",
+						"comment": "Baked terrain data\n",
 						"name": "trx"
 					},
 					{
@@ -1721,7 +1721,7 @@
 						"line": 116,
 						"char": 2,
 						"value": "cast(ushort)4000u",
-						"comment": "\n",
+						"comment": "3D MDB object\n",
 						"name": "mdb"
 					},
 					{
@@ -1737,7 +1737,7 @@
 						"line": 118,
 						"char": 2,
 						"value": "cast(ushort)4002u",
-						"comment": "\n",
+						"comment": "Lipsync files (NWN2)\n",
 						"name": "spt"
 					},
 					{
@@ -1745,7 +1745,7 @@
 						"line": 119,
 						"char": 2,
 						"value": "cast(ushort)4003u",
-						"comment": "\n",
+						"comment": "Skeleton file\n",
 						"name": "gr2"
 					},
 					{
@@ -1769,7 +1769,7 @@
 						"line": 122,
 						"char": 2,
 						"value": "cast(ushort)4007u",
-						"comment": "\n",
+						"comment": "Jpeg image\n",
 						"name": "jpg"
 					},
 					{
@@ -1777,7 +1777,7 @@
 						"line": 123,
 						"char": 2,
 						"value": "cast(ushort)4008u",
-						"comment": "\n",
+						"comment": "Persistent World Content? (guess) / ERF resource archive\n",
 						"name": "pwc"
 					},
 					{
@@ -1793,7 +1793,7 @@
 						"line": 125,
 						"char": 2,
 						"value": "cast(ushort)9997u",
-						"comment": "\n",
+						"comment": "Encapsulated Resource Format\n",
 						"name": "erf"
 					},
 					{
@@ -1801,7 +1801,7 @@
 						"line": 126,
 						"char": 2,
 						"value": "cast(ushort)9998u",
-						"comment": "\n",
+						"comment": "NWN1 resource container\n",
 						"name": "bif"
 					},
 					{
@@ -85181,7 +85181,7 @@
 								"char": 16,
 								"name": "illumination",
 								"deco": "E3nwn3trn11genericmesh11GenericMesh8Material12Illumniation",
-								"init": "cast(Illumniation)cast(ubyte)255u",
+								"init": "Illumniation.None",
 								"offset": 152,
 								"comment": "illum\n"
 							}
@@ -88930,7 +88930,7 @@
 				"char": 6,
 				"name": "NWN_LIB_D_VERSION",
 				"deco": "Aya",
-				"init": "\"v1.0.0\"",
+				"init": "\"v1.0.1\"",
 				"comment": "nwn-lib-d git version\n"
 			}
 		],
@@ -90881,13 +90881,12 @@
 								"storageClass": [
 									"in"
 								],
-								"default": "cast(JSONOptions)0",
+								"default": "JSONOptions.none",
 								"name": "options"
 							}
 						],
 						"line": 875,
 						"kind": "function",
-						"originalType": "const @safe string(in JSONOptions options = JSONOptions.none)",
 						"char": 12,
 						"name": "toString",
 						"deco": "xFNfIE7nwnlibd11orderedjson11JSONOptionsZAya",
@@ -90940,13 +90939,12 @@
 								"storageClass": [
 									"in"
 								],
-								"default": "cast(JSONOptions)0",
+								"default": "JSONOptions.none",
 								"name": "options"
 							}
 						],
 						"line": 892,
 						"kind": "function",
-						"originalType": "const @safe string(in JSONOptions options = JSONOptions.none)",
 						"char": 12,
 						"name": "toPrettyString",
 						"deco": "xFNfIE7nwnlibd11orderedjson11JSONOptionsZAya",
@@ -91094,7 +91092,7 @@
 						"storageClass": [
 							"in"
 						],
-						"default": "cast(JSONOptions)0",
+						"default": "JSONOptions.none",
 						"name": "options"
 					}
 				],
@@ -91733,7 +91731,7 @@
 								],
 								"line": 20,
 								"kind": "generated function",
-								"originalType": "pure nothrow @nogc ref WFVertex(WFVertex p) return",
+								"originalType": "ref WFVertex(WFVertex p) return",
 								"char": 9,
 								"name": "opAssign",
 								"deco": "FNaNbNcNiNjNfS7nwnlibd12wavefrontobj12WavefrontObj8WFVertexZQBv"
@@ -91814,6 +91812,20 @@
 								"deco": "Aya",
 								"offset": 64,
 								"comment": "\n"
+							},
+							{
+								"parameters": [
+									{
+										"deco": "S7nwnlibd12wavefrontobj12WavefrontObj6WFFace",
+										"name": "p"
+									}
+								],
+								"line": 39,
+								"kind": "generated function",
+								"originalType": "ref WFFace(WFFace p) return",
+								"char": 9,
+								"name": "opAssign",
+								"deco": "FNaNbNcNiNjNfS7nwnlibd12wavefrontobj12WavefrontObj6WFFaceZQBt"
 							}
 						],
 						"comment": "\n",
