@@ -368,7 +368,7 @@ struct GffStruct {
 	///
 	this(GffValue[string] children, uint32_t id){
 		foreach(k, ref v ; children){
-			children[k] = v;
+			this[k] = v;
 		}
 		this.id = id;
 	}
