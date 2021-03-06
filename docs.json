@@ -88930,7 +88930,7 @@
 				"char": 6,
 				"name": "NWN_LIB_D_VERSION",
 				"deco": "Aya",
-				"init": "\"v1.0.1\"",
+				"init": "\"v1.0.2\"",
 				"comment": "nwn-lib-d git version\n"
 			}
 		],
