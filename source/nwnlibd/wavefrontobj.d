@@ -248,11 +248,11 @@ class WavefrontObj {
 						enforce(0 < v && v <= vertices.length,
 							format!"objects[%s][%s].faces[%d].vertices[%d] %d is out of bounds"(oname, gname, fi, vi, v));
 					if(!f.textCoords.isNull)
-						foreach(vi, ref v ; f.textCoords)
+						foreach(vi, ref v ; f.textCoords.get())
 							enforce(0 < v && v <= textCoords.length,
 								format!"objects[%s][%s].faces[%d].textCoords[%d] %d is out of bounds"(oname, gname, fi, vi, v));
 					if(!f.normals.isNull)
-						foreach(vi, ref v ; f.normals)
+						foreach(vi, ref v ; f.normals.get())
 							enforce(0 < v && v <= normals.length,
 								format!"objects[%s][%s].faces[%d].normals[%d] %d is out of bounds"(oname, gname, fi, vi, v));
 				}
