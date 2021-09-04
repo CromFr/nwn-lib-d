@@ -82,9 +82,7 @@ int main(string[] args){
 			return 1;
 
 		case "info":
-			bool strict = false;
-			auto res = getopt(args,
-				"strict", "Check some inconsistencies that does not cause issues with nwn2\nDefault: false", &strict);
+			auto res = getopt(args);
 			if(res.helpWanted){
 				improvedGetoptPrinter(
 					"Print TRN file information\n"
@@ -634,11 +632,13 @@ int main(string[] args){
 			string objName;
 			string outFile;
 			string terrain2daPath;
+			bool keepBorders;
 			auto res = getopt(args,
 				config.required, "trn", "TRN file to set the walkmesh of", &trnFile,
 				config.required, "obj", "Wavefront OBJ file to import", &objFile,
 				"terrain2da", "Path to terrainmaterials.2da, to generate footstep sounds", &terrain2daPath,
 				"obj-name", "Object name to import. Default: the first object declared.", &objName,
+				"keep-borders", "Keep the ASWM triangles in the exterior area borders.", &keepBorders,
 				"output|o", "Output file or directory where to write the obj file. Default: the file provided by --trn", &outFile,
 				);
 
@@ -650,7 +650,7 @@ int main(string[] args){
 					res.options);
 				return 0;
 			}
-			enforce(args.length == 1, "Too many arguments");
+			enforce(args.length == 1, "Wrong number of arguments");
 
 			if(outFile is null)
 				outFile = trnFile;
@@ -670,7 +670,7 @@ int main(string[] args){
 			foreach(ref TrnNWN2WalkmeshPayload aswm ; trn){
 				aswm.setGenericMesh(mesh);
 
-				aswm.bake();
+				aswm.bake(!keepBorders);
 
 				if(terrainmaterials !is null)
 					aswm.setFootstepSounds(trn.packets, terrainmaterials);
