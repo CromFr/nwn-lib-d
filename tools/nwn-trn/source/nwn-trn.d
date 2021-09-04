@@ -1187,16 +1187,19 @@ int main(string[] args){
 								if(wfobj.vertices[v - 1].color.isNull)
 									color = [255, 255, 255, 255];
 								else
-									color = (wfobj.vertices[v - 1].color[] ~ 1.0)
+									color = (wfobj.vertices[v - 1].color.get()[] ~ 1.0)
 										.map!(a => (a * 255).to!ubyte)
 										.array[0 .. 4];
 
+								enforce(!t.normals.isNull, "No normal vector for vertex " ~ i.to!string);
+								enforce(!t.textCoords.isNull, "No texture coordinate for vertex " ~ i.to!string);
+
 								trrn.vertices ~= TrnNWN2MegatilePayload.Vertex(
 									wfobj.vertices[v - 1].position.v[0 .. 3],
-									wfobj.normals[t.normals[i] - 1].v[0 .. 3],
+									wfobj.normals[t.normals.get()[i] - 1].v[0 .. 3],
 									color,
-									wfobj.textCoords[t.textCoords[i] - 1].v[0 .. 2],
-									wfobj.textCoords[t.textCoords[i] - 1][].map!(a => cast(float)(fabs(a) / 10.0)).array[0 .. 2],
+									wfobj.textCoords[t.textCoords.get()[i] - 1].v[0 .. 2],
+									wfobj.textCoords[t.textCoords.get()[i] - 1][].map!(a => cast(float)(fabs(a) / 10.0)).array[0 .. 2],
 								);
 							}
 
@@ -1616,7 +1619,11 @@ int main(string[] args){
 							// Add vertices as needed
 							vtxTransTable[v] = watr.vertices.length.to!uint16_t;
 
-							auto uv_1 = wfobj.textCoords[t.textCoords[i] - 1];
+							Vector!(float, 2) uv_1;
+							if(!t.textCoords.isNull)
+								uv_1 = wfobj.textCoords[t.textCoords.get()[i] - 1];
+							else
+								uv_1 = wfobj.vertices[v - 1].position.v[0 .. 2];
 							auto uv_0 = uv_1 * 5.0;
 
 							watr.vertices ~= TrnNWN2WaterPayload.Vertex(

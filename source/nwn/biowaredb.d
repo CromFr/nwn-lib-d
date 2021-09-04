@@ -1114,7 +1114,7 @@ unittest{
 
 
 	//Variable deleting
-	var = db.getVariable(PCID("player", "id"), "varname");
+	var = db.getVariable(PCID("player", "id"), "varname").get();
 	assert(var.deleted == false);
 	db.deleteVariable(PCID("player", "id"), "varname");
 	assert(db.getVariable(PCID("player", "id"), "varname").isNull);
