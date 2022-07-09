@@ -599,13 +599,19 @@ int _main(string[] args){
 			auto json = gff.toJson;
 			outputFile.writeln(outputFormat==Format.json? json.toPrettyString : json.toString);
 			break;
+		case Format.dump:
+			import nwn.fastgff: FastGff;
+			const outData = gff.serialize();
+			auto fastGff = new FastGff(outData);
+			outputFile.writeln(fastGff.dump());
+			break;
 		default:
 			assert(0, outputFormat.to!string~" serialization not implemented");
 	}
 	return 0;
 }
 
-enum Format{ detect, gff, json, json_minified, pretty }
+enum Format{ detect, gff, json, json_minified, pretty, dump }
 
 Format guessFormat(in string fileName){
 	import std.path: extension;
@@ -628,6 +634,9 @@ Format guessFormat(in string fileName){
 
 		case ".txt":
 			return Format.pretty;
+
+		case ".dump":
+			return Format.dump;
 
 		default:
 			throw new ArgException("Unrecognized file extension: '"~ext~"'");

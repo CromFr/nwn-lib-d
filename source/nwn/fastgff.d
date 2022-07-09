@@ -571,6 +571,47 @@ class FastGff{
 				~ root.toPrettyString;
 	}
 
+	string dump() const {
+		import nwnlibd.parseutils: dumpByteArray;
+		import std.math: log10;
+		import std.string: leftJustify, rightJustify;
+		string ret;
+		ret ~= "========== HEADER ==========\n";
+		ret ~= header.toString() ~ "\n";
+		ret ~= "\n========== STRUCTS ==========\n";
+		foreach(i, ref s ; structs)
+			ret ~= i.to!string ~ ": " ~ s.toString() ~ "\n";
+		ret ~= "\n========== FIELDS ==========\n";
+		foreach(i, ref f ; fields)
+			ret ~= i.to!string ~ ": " ~ f.toString() ~ "\n";
+		ret ~= "\n========== LABELS ==========\n";
+		foreach(i, ref l ; labels)
+			ret ~= i.to!string ~ ": " ~ l.toString() ~ "\n";
+		ret ~= "\n========== FIELD_DATA ==========\n";
+		ret ~= dumpByteArray(fieldData);
+		ret ~= "\n========== FIELD_INDICES ==========\n";
+		const fiSpacing = cast(int)(log10(fields.length)) + 2;
+		const fiNumSpacing = cast(int)(log10(fieldIndices.length)) + 1;
+		foreach(i, ref fi ; fieldIndices){
+			if(i % 10 == 0)
+				ret ~= (i.to!string ~ ": ").leftJustify(fiNumSpacing + 2);
+			ret ~= fi.to!string.rightJustify(fiSpacing);
+			if(i % 10 == 9 && i + 1 < fieldIndices.length)
+				ret ~= "\n";
+		}
+		ret ~= "\n\n========== LIST_INDICES ==========\n";
+		const liSpacing = cast(int)(log10(structs.length)) + 2;
+		const liNumSpacing = cast(int)(log10(listIndices.length)) + 1;
+		foreach(i, ref li ; listIndices){
+			if(i % 10 == 0)
+				ret ~= (i.to!string ~ ": ").leftJustify(liNumSpacing + 2);
+			ret ~= li.to!string.rightJustify(liSpacing);
+			if(i % 10 == 9 && i + 1 < listIndices.length)
+				ret ~= "\n";
+		}
+		return ret;
+	}
+
 
 private:
 	Header header;
@@ -629,12 +670,12 @@ private:
 
 		string toString() const{
 			return "Header: |"~file_type.to!string~"|"~file_version.to!string~"|\n"
-			      ~"  struct: "~struct_offset.to!string~" ("~struct_count.to!string~")\n"
-			      ~"  field: "~field_offset.to!string~" ("~field_count.to!string~")\n"
-			      ~"  label: "~label_offset.to!string~" ("~label_count.to!string~")\n"
-			      ~"  field_data: "~field_data_offset.to!string~" ("~field_data_count.to!string~")\n"
-			      ~"  field_indices: "~field_indices_offset.to!string~" ("~field_indices_count.to!string~")\n"
-			      ~"  list_indices: "~list_indices_offset.to!string~" ("~list_indices_count.to!string~")\n";
+			      ~"  struct: offset="~struct_offset.to!string~" cnt="~struct_count.to!string~"\n"
+			      ~"  field: offset="~field_offset.to!string~" cnt="~field_count.to!string~"\n"
+			      ~"  label: offset="~label_offset.to!string~" cnt="~label_count.to!string~"\n"
+			      ~"  field_data: offset="~field_data_offset.to!string~" cnt="~field_data_count.to!string~"\n"
+			      ~"  field_indices: offset="~field_indices_offset.to!string~" cnt="~field_indices_count.to!string~"\n"
+			      ~"  list_indices: offset="~list_indices_offset.to!string~" cnt="~list_indices_count.to!string;
 		}
 	}
 	static align(1) struct Struct{
@@ -643,7 +684,7 @@ private:
 		uint32_t id;
 		uint32_t data_or_data_offset;
 		uint32_t field_count;
-		debug string toString() const {
+		string toString() const {
 			return format!"Struct(id=%d dodo=%d fc=%d)"(id, data_or_data_offset, field_count);
 		}
 	}
@@ -653,7 +694,7 @@ private:
 		GffType type;
 		uint32_t label_index;
 		uint32_t data_or_data_offset;
-		debug string toString() const {
+		string toString() const {
 			return format!"Field(t=%s lblidx=%d dodo=%d)"(type.to!GffType, label_index, data_or_data_offset);
 		}
 	}
