@@ -7,7 +7,7 @@ authors "Thibaut CHARLES (CromFr)"
 targetType "library"
 targetName "nwn-d"
 stringImportPaths "unittest"
-dependency "gfm:math" version="~>7.0.0"
+dependency "gfm:math" version="~>8.0.6"
 preBuildCommands `echo "/// nwn-lib-d version
 module nwn.ver;
 

@@ -281,7 +281,7 @@ struct JSONValue
        (*a)["hello"] = "world";  // segmentation fault
        ---
      */
-    @property ref inout(JSONValue[string]) object() inout pure @system
+    @property ref inout(JSONValue[string]) object() inout pure @system return
     {
         enforce!JSONException(type == JSONType.object,
                                 "JSONValue is not an object");
@@ -327,7 +327,7 @@ struct JSONValue
        (*a)[0] = "world";  // segmentation fault
        ---
      */
-    @property ref inout(JSONValue[]) array() inout pure @system
+    @property ref inout(JSONValue[]) array() inout pure @system return
     {
         enforce!JSONException(type == JSONType.array,
                                 "JSONValue is not an array");

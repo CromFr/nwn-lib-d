@@ -414,7 +414,7 @@ struct GffStruct {
 
 	@property{
 		/// GffStruct children associative array
-		ref inout(ChildrenAA) children() inout {
+		ref inout(ChildrenAA) children() inout return {
 			return *cast(inout(ChildrenAA)*)(&m_children);
 		}
 		/// ditto
