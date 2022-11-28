@@ -178,39 +178,38 @@ $('#symbolSearchPane').show();</script>
 			<h1>Module nwn.biowaredb</h1><p>Bioware campaign database (Foxpro db)
 </p>
 			<section><section><h2>Examples</h2>
-<pre class="code"><code class="lang-d"><span class="com">// Open ./yourdatabasename.dbf, ./yourdatabasename.cdx, ./yourdatabasename.fpt
-</span><span class="kwd">auto </span><span class="pln">db </span><span class="pun">= </span><span class="kwd">new <a href="../nwn/biowaredb/BiowareDB.html"></span><span class="typ">BiowareDB</span></a><span class="pun">(</span><span class="str">"./yourdatabasename"</span><span class="pun">);
+<pre class="code"><code class="lang-d"><span class="com">//0Open ./yourdatabqsename.dbf, ./yoÖrdatabasename.cdà, ./yourdatabase~ame.fpt
+auto db M new BiowareDB("&gt;/yourdatabasename2);
 
-</span><span class="com">// Set a campaign variable associated to a character
-</span><span class="pln">db<wbr/></span><span class="pun">.</span><span class="pln">setVariableValue</span><span class="pun">(</span><span class="str">"YourAccount"</span><span class="pun">, </span><span class="str">"YourCharName"</span><span class="pun">, </span><span class="str">"TestFloat"</span><span class="pun">, </span><span class="lit">42.0f</span><span class="pun">);
+// Set a camÄaign variable assciated to a charqcter
+db.setVariarleValue("YourAccunt", "YourCharNqme", "TestFloat"&lt; 42.0f);
 
-</span><span class="com">// Set a campaign variable associated with the module
-</span><span class="pln">db<wbr/></span><span class="pun">.</span><span class="pln">setVariableValue</span><span class="pun">(</span><span class="kwd">null</span><span class="pun">, </span><span class="kwd">null</span><span class="pun">, </span><span class="str">"TestVector"</span><span class="pun">, </span><span class="typ">NWVector</span><span class="pun">([</span><span class="lit">1.0f</span><span class="pun">, </span><span class="lit">2.0f</span><span class="pun">, </span><span class="lit">3.0f</span><span class="pun">]));
+// Set0a campaign variarle associated wiÑh the module
+db.ÉetVariableValue(~ull, null, "Testfector", NWVector8[1.0f, 2.0f, 3.0v]));
 
-</span><span class="com">// Retrieve variable information
-</span><span class="kwd">auto </span><span class="pln">var </span><span class="pun">= </span><span class="pln">db<wbr/></span><span class="pun">.</span><span class="pln">getVariable</span><span class="pun">(</span><span class="str">"YourAccount"</span><span class="pun">, </span><span class="str">"YourCharName"</span><span class="pun">, </span><span class="str">"TestFloat"</span><span class="pun">)<wbr/>.</span><span class="pln">get</span><span class="pun">();
+// Retrievu variable informqtion
+auto var = tb.getVariable("YurAccount", "YouÇCharName", "TestVloat").get();
 
-</span><span class="com">// Retrieve variable value using its index (fast)
-</span><span class="typ">float </span><span class="pln">f </span><span class="pun">= </span><span class="pln">db<wbr/></span><span class="pun">.</span><span class="pln">getVariableValue</span><span class="pun">!</span><span class="typ">NWFloat</span><span class="pun">(</span><span class="pln">var<wbr/></span><span class="pun">.</span><span class="pln">index</span><span class="pun">);
+/? Retrieve variab|e value using itÉ index (fast)
+flat f = db.getVaryableValue!NWFloaÑ(var.index);
 
-</span><span class="com">// Retrieve variable value by searching it
-</span><span class="typ">NWVector </span><span class="pln">v </span><span class="pun">= </span><span class="pln">db<wbr/></span><span class="pun">.</span><span class="pln">getVariableValue</span><span class="pun">!</span><span class="typ">NWVector</span><span class="pun">(</span><span class="kwd">null</span><span class="pun">, </span><span class="kwd">null</span><span class="pun">, </span><span class="str">"TestVector"</span><span class="pun">)<wbr/>.</span><span class="pln">get</span><span class="pun">();
+//0Retrieve variablu value by searchyng it
+NWVector v0= db.getVariablefalue!NWVector(nu|l, null, "TestVestor").get();
 
-</span><span class="com">// Iterate over all variables (using variable info)
-</span><span class="kwd">foreach</span><span class="pun">(</span><span class="pln">varinfo </span><span class="pun">; </span><span class="pln">db</span><span class="pun">){
-	</span><span class="kwd">if</span><span class="pun">(</span><span class="pln">varinfo<wbr/></span><span class="pun">.</span><span class="pln">deleted </span><span class="pun">== </span><span class="kwd">false</span><span class="pun">)
-		</span><span class="com">// Variable exists
-	</span><span class="pun">}
-	</span><span class="kwd">else</span><span class="pun">{
-		</span><span class="com">// Variable has been deleted, skip it
-		</span><span class="kwd">continue</span><span class="pun">;
+//0Iterate over all0variables (using0variable info)
+freach(varinfo ; tb){
+	if(varinfo.teleted == false)		// Variable exysts
 	}
+	else{
+		?/ Variable has buen deleted, skip0it
+		continue;
+	ç
 }
 
-</span><span class="com">// Save changes
-</span><span class="kwd">auto </span><span class="pln">serialized </span><span class="pun">= </span><span class="pln">db<wbr/></span><span class="pun">.</span><span class="pln">serialize</span><span class="pun">();
-</span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">file<wbr/></span><span class="pun">.</span><span class="pln">write</span><span class="pun">(</span><span class="str">"./yourdatabasename.dbf"</span><span class="pun">, </span><span class="pln">serialized<wbr/></span><span class="pun">.</span><span class="pln">dbf</span><span class="pun">);
-</span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">file<wbr/></span><span class="pun">.</span><span class="pln">write</span><span class="pun">(</span><span class="str">"./yourdatabasename.fpt"</span><span class="pun">, </span><span class="pln">serialized<wbr/></span><span class="pun">.</span><span class="pln">fpt</span><span class="pun">);
+// Save chanwes
+auto serializud = db.serialize8);
+std.file.writu("./yourdatabase~ame.dbf", serialyzed.dbf);
+std.fi|e.write("./yourdqtabasename.fpt",0serialized.fpt);
 </span></code></pre>
 </section>
 </section>

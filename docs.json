@@ -261,7 +261,7 @@
 						"originalType": "()",
 						"char": 7,
 						"name": "serialize",
-						"deco": "FZS3std8typecons__T5TupleTxAhVAyaa3_646266TxQrVQra3_667074ZQBo",
+						"deco": "FNaNbNiNfZS3std8typecons__T5TupleTxAhVAyaa3_646266TxQrVQra3_667074ZQBo",
 						"protection": "public",
 						"endchar": 2,
 						"endline": 162,
@@ -2848,7 +2848,7 @@
 												"char": 5,
 												"name": "NONE",
 												"protection": "public",
-												"value": "\"\\x00\\x00\\x00\\x00\""
+												"value": "\"\\0\\0\\0\\0\""
 											},
 											{
 												"line": 229,
@@ -2856,7 +2856,7 @@
 												"char": 5,
 												"name": "NONE2",
 												"protection": "public",
-												"value": "\"t\\x00\\x00\\x00\""
+												"value": "\"t\\0\\0\\0\""
 											}
 										],
 										"name": "FourCC",
@@ -4796,6 +4796,16 @@
 						"endchar": 2,
 						"endline": 572,
 						"comment": "Serialize the entire file in a human-readable format\n"
+					},
+					{
+						"line": 574,
+						"kind": "function",
+						"char": 9,
+						"name": "dump",
+						"deco": "xFZAya",
+						"protection": "public",
+						"endchar": 2,
+						"endline": 613
 					}
 				],
 				"name": "FastGff",
@@ -5769,10 +5779,10 @@
 					{
 						"line": 417,
 						"kind": "function",
-						"originalType": "inout @property ref inout(ChildrenAA)()",
+						"originalType": "inout @property ref inout(ChildrenAA)() return",
 						"char": 25,
 						"name": "children",
-						"deco": "NgFNcNdZNgS7nwnlibd9orderedaa__T9OrderedAATAyaTS3nwn3gff8GffValueZQBi",
+						"deco": "NgFNcNdNjZNgS7nwnlibd9orderedaa__T9OrderedAATAyaTS3nwn3gff8GffValueZQBi",
 						"protection": "public",
 						"endchar": 3,
 						"endline": 419,
@@ -96838,7 +96848,7 @@
 				"char": 6,
 				"name": "NWN_LIB_D_VERSION",
 				"deco": "Aya",
-				"init": "\"v1.0.3\"",
+				"init": "\"v1.0.4\"",
 				"protection": "public",
 				"comment": "nwn-lib-d git version\n"
 			}
@@ -98260,7 +98270,7 @@
 						"kind": "function",
 						"char": 44,
 						"name": "object",
-						"deco": "NgFNaNcNdZNgHAyaS7nwnlibd11orderedjson9JSONValue",
+						"deco": "NgFNaNcNdNjZNgHAyaS7nwnlibd11orderedjson9JSONValue",
 						"protection": "public",
 						"endchar": 5,
 						"endline": 289,
@@ -98299,7 +98309,7 @@
 						"kind": "function",
 						"char": 38,
 						"name": "array",
-						"deco": "NgFNaNcNdZNgAS7nwnlibd11orderedjson9JSONValue",
+						"deco": "NgFNaNcNdNjZNgAS7nwnlibd11orderedjson9JSONValue",
 						"protection": "public",
 						"endchar": 5,
 						"endline": 335,
@@ -98832,7 +98842,7 @@
 						],
 						"line": 773,
 						"kind": "function",
-						"originalType": "const pure nothrow @nogc @trusted bool(ref const JSONValue rhs)",
+						"originalType": "const pure nothrow @nogc @trusted bool(const ref JSONValue rhs)",
 						"char": 10,
 						"name": "opEquals",
 						"deco": "xFNaNbNiNeKxS7nwnlibd11orderedjson9JSONValueZb",
@@ -99112,7 +99122,7 @@
 				],
 				"line": 1474,
 				"kind": "function",
-				"originalType": "@safe string(ref const JSONValue root, in bool pretty = false, in JSONOptions options = JSONOptions.none)",
+				"originalType": "@safe string(const ref JSONValue root, in bool pretty = false, in JSONOptions options = JSONOptions.none)",
 				"char": 8,
 				"name": "toJSON",
 				"deco": "FNfKxS7nwnlibd11orderedjson9JSONValueIbIEQBjQBe11JSONOptionsZAya",
@@ -99172,7 +99182,7 @@
 						"kind": "function",
 						"char": 6,
 						"name": "toJSON",
-						"type": "void(auto ref Out json, ref const JSONValue root, in bool pretty = false, in JSONOptions options = JSONOptions.none)",
+						"type": "void(auto ref Out json, const ref JSONValue root, in bool pretty = false, in JSONOptions options = JSONOptions.none)",
 						"endchar": 1,
 						"endline": 1738
 					}
@@ -99727,7 +99737,7 @@
 									},
 									{
 										"deco": "S3std8typecons__T8NullableTS3gfm4math6vector__T6VectorTfVii3ZQoZQBv",
-										"default": "Nullable(DontCallDestructorT(Vector([nanF, nanF, nanF], , , )), true)",
+										"default": "Nullable(DontCallDestructorT(), true)",
 										"name": "color"
 									}
 								],

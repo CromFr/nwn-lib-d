@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta charset="UTF-8"/>
-		<title>Function JSONValue.objectNoRef</title>
+		<title>Function FastGff.dump</title>
 		<link rel="stylesheet" type="text/css" href="../../styles/ddox.css"/>
 		<link rel="stylesheet" href="../../prettify/prettify.css" type="text/css"/>
 		<script type="text/javascript" src="../../scripts/jquery.js">/**/</script><script type="text/javascript" src="../../scripts/ddox.js">/**/</script>
@@ -20,7 +20,7 @@
 $('#symbolSearchPane').show();</script>
 			</div>
 			<ul class="tree-view">
-				<li class="tree-view collapsed">
+				<li class="tree-view ">
 					<div class="package ">
 						<a href="../../nwn.html">nwn</a>
 					</div>
@@ -90,7 +90,7 @@ $('#symbolSearchPane').show();</script>
 					</div>
 				</li>
 				<li>
-					<div class="module ">
+					<div class="module selected">
 						<a href="../../nwn/fastgff.html">fastgff</a>
 					</div>
 				</li>
@@ -131,7 +131,7 @@ $('#symbolSearchPane').show();</script>
 				</li>
 			</ul>
 				</li>
-				<li class="tree-view ">
+				<li class="tree-view collapsed">
 					<div class="package ">nwnlibd
 					</div>
 			<ul class="tree-view">
@@ -151,7 +151,7 @@ $('#symbolSearchPane').show();</script>
 					</div>
 				</li>
 				<li>
-					<div class="module selected">
+					<div class="module ">
 						<a href="../../nwnlibd/orderedjson.html">orderedjson</a>
 					</div>
 				</li>
@@ -175,53 +175,34 @@ $('#symbolSearchPane').show();</script>
 			</ul>
 		</nav>
 		<div id="main-contents">
-			<h1>Function JSONValue.objectNoRef</h1><p>Value getter for <code class="lang-d"><a href="../../nwnlibd/orderedjson/JSONType.html#object"><span class="typ">JSONType<wbr/></span><span class="pun">.</span><span class="pln">object</span></a></code>.
- Unlike <code class="lang-d"><a href="../../nwnlibd/orderedjson/JSONValue.object.html"><span class="pln">object</span></a></code>, this retrieves the object by value and can be used in @safe code.
-</p>
+			<h1>Function FastGff.dump</h1><p></p>
 			<div class="prototype">
 				<code class="lang-d">
 					<div class="single-prototype">
-			<span class="kwd">inout </span><span class="kwd">inout</span><span class="pun">(</span><a href="../../nwnlibd/orderedjson/JSONValue.html"><span class="typ">JSONValue</span></a><span class="pun">[</span><span class="typ">string</span><span class="pun">]</span><span class="pun">)</span> <span class="pln">objectNoRef</span><span class="pun">(</span><span class="pun">)</span><span class="pln"> </span><span class="kwd">pure @property @trusted</span><span class="pun">;</span>
+			<span class="typ">string</span> <span class="pln">dump</span><span class="pun">(</span><span class="pun">)</span><span class="pln"> </span><span class="kwd">const</span><span class="pun">;</span>
 					</div>
 				</code>
 			</div>
-			<section><p>A caveat is that, if the returned value is null, modifications will not be visible:
-</p>
-<pre class="code"><code class="lang-d"><a href="../../nwnlibd/orderedjson/JSONValue.html"><span class="typ">JSONValue </span><span class="pln">k</span></a><span class="pln">son</span><span class="pun">;
-</span><span class="pln">json<wbr/></span><span class="pun">.</span><span class="pln">object</span><span class="pun">!= </span><span class="kwd">null</span><span class="pun">;
-</span><span class="pln">json<wbr/></span><span class="pun">.</span><span class="pln">objectNoRef</span><span class="pun">[</span></code></pre>
-</section>
-
-			<section><h2>Throws</h2>
-<p><code class="lang-d"><a href="../../nwnlibd/orderedjson/JSONException.html"><span class="typ">JSONException</span></a></code> for read access if <code class="lang-d"><a href="../../nwnlibd/orderedjson/JSONValue.type.html"><span class="pln">type</span></a></code> is not
- <code class="lang-d"><a href="../../nwnlibd/orderedjson/JSONType.html#object"><span class="typ">JSONType<wbr/></span><span class="pun">.</span><span class="pln">object</span></a></code>.
-</p>
-</section>
-
+			
+			
 			<footer>
 				<table class="license-info">
 					<tr>
 						<th>Authors</th>
 						<td>
-							<p>Jeremie Pelletier, David Herberth
-</p>
-
+							
 						</td>
 					</tr>
 					<tr>
 						<th>Copyright</th>
 						<td>
-							<p>Copyright Jeremie Pelletier 2008 - 2009.
-</p>
-
+							
 						</td>
 					</tr>
 					<tr>
 						<th>License</th>
 						<td>
-							<p>www.boost.org/LICENSE_1_0.txt, Boost License 1.0.
-</p>
-
+							
 						</td>
 					</tr>
 				</table>

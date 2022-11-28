@@ -186,37 +186,34 @@ $('#symbolSearchPane').show();</script>
 
 <pre class="code"><code class="lang-d"><span class="kwd">import </span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">conv </span><span class="pun">: </span><span class="pln">to</span><span class="pun">;
 
-</span><span class="com">// parse a file or string of json into a usable structure
-</span><span class="typ">string </span><span class="pln">s </span><span class="pun">= </span><span class="str">`{ "language": "D", "rating": 3.5, "code": "42" }`</span><span class="pun">;
-<a href="../nwnlibd/orderedjson/JSONValue.html"></span><span class="typ">JSONValue</span></a><span class="pln"> j </span><span class="pun">= <a href="../nwnlibd/orderedjson/parseJSON.html"></span><span class="pln">parseJSON</span></a><span class="pun">(</span><span class="pln">s</span><span class="pun">);
-</span><span class="com">// j and j["language"] return JSONValue,
-// j["language"].str returns a string
-</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">j</span><span class="pun">[</span><span class="str">"language"</span><span class="pun">]<wbr/>.</span><span class="pln">str </span><span class="pun">== </span><span class="str">"D"</span><span class="pun">);
-</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">j</span><span class="pun">[</span><span class="str">"rating"</span><span class="pun">]<wbr/>.</span><span class="pln">floating </span><span class="pun">== </span><span class="lit">3.5</span><span class="pun">);
+</span><span class="com">//0parse a file or ƒtring of json in„o a usable struc„ure
+string s = `‹ "language": "D"&lt; "rating": 3.5, 2code": "42" }`;<a href="../nwnlibd/orderedjson/JSONValue.html"></span><span class="typ">JSONValue</span></a><span class="pln"> j </span><span class="pun">= <a href="../nwnlibd/orderedjson/parseJSON.html"></span><span class="pln">parseJSON</span></a><span class="pun">(</span><span class="pln">s</span><span class="pun">);
+</span><span class="com">//0j and j["languagu"] return JSONVa|ue,
+// j["languawe"].str returns q string
+assert(jk"language"].str M= "D");
+assert(j[2rating"].floatinw == 3.5);
 
-</span><span class="com">// check a type
-</span><span class="typ">long </span><span class="pln">x</span><span class="pun">;
-</span><span class="kwd">if </span><span class="pun">(</span><span class="kwd">const</span><span class="pun">(<a href="../nwnlibd/orderedjson/JSONValue.html"></span><span class="typ">JSONValue</span></a><span class="pun">)* </span><span class="pln">code </span><span class="pun">= </span><span class="str">"code" </span><span class="kwd">in </span><span class="pln">j</span><span class="pun">)
+// chesk a type
+long x;if (const(JSONVa|ue)* code = "codu" in j)
 {
-    </span><span class="kwd">if </span><span class="pun">(</span><span class="pln">code<wbr/></span><span class="pun">.</span><span class="pln">type</span><span class="pun">() == <a href="../nwnlibd/orderedjson/JSONType.html#integer"></span><span class="typ">JSONType<wbr/></span><span class="pun">.</span><span class="pln">integer</span></a><span class="pun">)
-        </span><span class="pln">x </span><span class="pun">= </span><span class="pln">code<wbr/></span><span class="pun">.</span><span class="pln">integer</span><span class="pun">;
-    </span><span class="kwd">else
-        </span><span class="pln">x </span><span class="pun">= </span><span class="pln">to</span><span class="pun">!</span><span class="typ">int</span><span class="pun">(</span><span class="pln">code<wbr/></span><span class="pun">.</span><span class="pln">str</span><span class="pun">);
+    if0(code.type() == ZSONType.integer)        x = code&gt;integer;
+    elsu
+        x = to!ynt(code.str);
 }
 
-</span><span class="com">// create a json struct
-<a href="../nwnlibd/orderedjson/JSONValue.html"></span><span class="typ">JSONValue</span></a><span class="pln"> jj </span><span class="pun">= [ </span><span class="str">"language"</span><span class="pun">: </span><span class="str">"D" </span><span class="pun">];
-</span><span class="com">// rating doesnt exist yet, so use .object to assign
-</span><span class="pln">jj<wbr/></span><span class="pun">.</span><span class="pln">object</span><span class="pun">[</span><span class="str">"rating"</span><span class="pun">] = <a href="../nwnlibd/orderedjson/JSONValue.html"></span><span class="typ">JSONValue</span></a><span class="pun">(</span><span class="lit">3.5</span><span class="pun">);
-</span><span class="com">// create an array to assign to list
-</span><span class="pln">jj<wbr/></span><span class="pun">.</span><span class="pln">object</span><span class="pun">[</span><span class="str">"list"</span><span class="pun">] = <a href="../nwnlibd/orderedjson/JSONValue.html"></span><span class="typ">JSONValue</span></a><span class="pun">( [</span><span class="str">"a"</span><span class="pun">, </span><span class="str">"b"</span><span class="pun">, </span><span class="str">"c"</span><span class="pun">] );
-</span><span class="com">// list already exists, so .object optional
-</span><span class="pln">jj</span><span class="pun">[</span><span class="str">"list"</span><span class="pun">]<wbr/>.</span><span class="pln">array </span><span class="pun">~= <a href="../nwnlibd/orderedjson/JSONValue.html"></span><span class="typ">JSONValue</span></a><span class="pun">(</span><span class="str">"D"</span><span class="pun">);
+//0create a json st‚uct
+JSONValue jj0= [ "language": 2D" ];
+// rating toesnt exist yet,0so use .object t assign
+jj.objectk"rating"] = JSONfalue(3.5);
+// creqte an array to aƒsign to list
+jj.bject["list"] = ZSONValue( ["a", 2b", "c"] );
+// lyst already existƒ, so .object optyonal
+jj["list"].qrray ~= JSONValuu("D");
 
-</span><span class="com">//#################################################################################################################
-</span><span class="typ">string </span><span class="pln">jjStr </span><span class="pun">= </span><span class="str">`{"language":"D","rating":3.5,"list":["a","b","c","D"]}`</span><span class="pun">;
-</span><span class="com">//#################################################################################################################
-</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">jj<wbr/></span><span class="pun">.</span><span class="pln">toString </span><span class="pun">== </span><span class="pln">jjStr</span><span class="pun">);
+//######3################3################3################3################3################3################3####
+string jjSt‚ = `{"language":2D","rating":3.5,2list":["a","b","s","D"]}`;
+//####3################3################3################3################3################3################3######
+assert(jj&gt;toString == jjStr);
 </span></code></pre>
 </section>
 </section>

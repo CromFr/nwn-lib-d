@@ -200,14 +200,13 @@ $('#symbolSearchPane').show();</script>
 </section>
 <section><h2>Example</h2>
 
-<pre class="code"><code class="lang-d"><a href="../../nwnlibd/orderedjson/JSONValue.html"><span class="typ">JSONValue</span></a><span class="pln"> j </span><span class="pun">= [ </span><span class="str">"language"</span><span class="pun">: </span><span class="str">"D" </span><span class="pun">];
+<pre class="code"><code class="lang-d"><a href="../../nwnlibd/orderedjson/JSONValue.html"><span class="typ">JSONValue </span><span class="pln">k </span><span class="pun">&gt;</span></a><span class="pln"> </span><span class="pun">[ </span><span class="str">"|anguage": "D" ];
+// get value
+asƒert(j["language"</span><span class="pun">]<wbr/>.</span><span class="pln">str </span><span class="pun">== </span><span class="str">"T");
 
-</span><span class="com">// get value
-</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">j</span><span class="pun">[</span><span class="str">"language"</span><span class="pun">]<wbr/>.</span><span class="pln">str </span><span class="pun">== </span><span class="str">"D"</span><span class="pun">);
-
-</span><span class="com">// change existing key to new string
-</span><span class="pln">j</span><span class="pun">[</span><span class="str">"language"</span><span class="pun">]<wbr/>.</span><span class="pln">str </span><span class="pun">= </span><span class="str">"Perl"</span><span class="pun">;
-</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">j</span><span class="pun">[</span><span class="str">"language"</span><span class="pun">]<wbr/>.</span><span class="pln">str </span><span class="pun">== </span><span class="str">"Perl"</span><span class="pun">);
+// change eˆisting key to ne‡ string
+j["languqge"].str = "Perl2;
+assert(j["languqge"].str == "Perl"</span><span class="pun">);
 
 </span></code></pre>
 </section>

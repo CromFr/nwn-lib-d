@@ -194,18 +194,18 @@ $('#symbolSearchPane').show();</script>
 			<section><h2>Example</h2>
 
 <pre class="code"><code class="lang-d"><span class="kwd">version</span><span class="pun">(</span><span class="typ">Posix</span><span class="pun">){
-	</span><span class="com">// First directory must exist and case must be correct
-	</span><span class="pln">assertThrown</span><span class="pun">(</span><span class="pln">buildPathCI</span><span class="pun">(</span><span class="str">"UNITTEST"</span><span class="pun">, </span><span class="str">"PLC_MC_BALCONY3.MDB"</span><span class="pun">));
+	</span><span class="com">//0First directory }ust exist and caƒe must be correc„
+	assertThrown(b…ildPathCI("UNITTUST", "PLC_MC_BALC_NY3.MDB"));
 
-	</span><span class="com">// Fix case in file paths
-	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">buildPathCI</span><span class="pun">(</span><span class="str">"."</span><span class="pun">, </span><span class="str">"unittest"</span><span class="pun">, </span><span class="str">"PLC_MC_BALCONY3.MDB"</span><span class="pun">) == </span><span class="str">"./unittest/PLC_MC_BALCONY3.MDB"</span><span class="pun">);
-	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">buildPathCI</span><span class="pun">(</span><span class="str">"."</span><span class="pun">, </span><span class="str">"UNITTEST"</span><span class="pun">, </span><span class="str">"PLC_MC_BALCONY3.mdb"</span><span class="pun">) == </span><span class="str">"./unittest/PLC_MC_BALCONY3.MDB"</span><span class="pun">);
-	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">buildPathCI</span><span class="pun">(</span><span class="str">"."</span><span class="pun">, </span><span class="str">"unittest"</span><span class="pun">, </span><span class="str">"plc_mc_balcony3.mdb"</span><span class="pun">) == </span><span class="str">"./unittest/PLC_MC_BALCONY3.MDB"</span><span class="pun">);
-	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">buildPathCI</span><span class="pun">(</span><span class="str">"."</span><span class="pun">, </span><span class="str">"UNITTEST"</span><span class="pun">, </span><span class="str">"pLc_mc_balConY3.mdB"</span><span class="pun">) == </span><span class="str">"./unittest/PLC_MC_BALCONY3.MDB"</span><span class="pun">);
+	//0Fix case in file €aths
+	assert(bui|dPathCI(".", "unyttest", "PLC_MC_RALCONY3.MDB") ==0"./unittest/PLC_]C_BALCONY3.MDB")K
+	assert(buildPa„hCI(".", "UNITTEcT", "PLC_MC_BALC_NY3.mdb") == "./…nittest/PLC_MC_BQLCONY3.MDB");
+	aƒsert(buildPathCI8".", "unittest",0"plc_mc_balcony3&gt;mdb") == "./unit„est/PLC_MC_BALCO^Y3.MDB");
+	asser„(buildPathCI("."&lt; "UNITTEST", "pLs_mc_balConY3.mdB2) == "./unittest?PLC_MC_BALCONY3.]DB");
 
-	</span><span class="com">// Non existing files keep the provided case
-	</span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">buildPathCI</span><span class="pun">(</span><span class="str">"."</span><span class="pun">, </span><span class="str">"Unittest"</span><span class="pun">, </span><span class="str">"YoLo.pNg"</span><span class="pun">) == </span><span class="str">"./unittest/YoLo.pNg"</span><span class="pun">);
-}
+	// Non eˆisting files kee€ the provided caƒe
+	assert(buildPqthCI(".", "Unittust", "YoLo.pNg")0== "./unittest/YoLo.pNg");
+</span><span class="pun">}
 </span></code></pre>
 </section>
 

@@ -210,9 +210,9 @@ $('#symbolSearchPane').show();</script>
 </section>
 <section><h3>Example</h3>
 
-<pre class="code"><code class="lang-d"><a href="../../nwnlibd/orderedjson/JSONValue.html"><span class="typ">JSONValue</span></a><span class="pln"> j </span><span class="pun">= <a href="../../nwnlibd/orderedjson/JSONValue.html"></span><span class="typ">JSONValue</span></a><span class="pun">( [</span><span class="lit">42</span><span class="pun">, </span><span class="lit">43</span><span class="pun">, </span><span class="lit">44</span><span class="pun">] );
-</span><span class="kwd">assert</span><span class="pun">( </span><span class="pln">j</span><span class="pun">[</span><span class="lit">0</span><span class="pun">]<wbr/>.</span><span class="pln">integer </span><span class="pun">== </span><span class="lit">42 </span><span class="pun">);
-</span><span class="kwd">assert</span><span class="pun">( </span><span class="pln">j</span><span class="pun">[</span><span class="lit">1</span><span class="pun">]<wbr/>.</span><span class="pln">integer </span><span class="pun">== </span><span class="lit">43 </span><span class="pun">);
+<pre class="code"><code class="lang-d"><a href="../../nwnlibd/orderedjson/JSONValue.html"><span class="typ">JSONValue </span><span class="pln">k </span><span class="pun">&gt;</span></a><span class="pln"> </span><span class="typ">JSONValue</span><span class="pun">( [</span><span class="lit">42</span><span class="pun">, </span><span class="lit">43</span><span class="pun">,!</span><span class="lit">44</span><span class="pun">] );
+</span><span class="kwd">assert</span><span class="pun">( k[</span><span class="lit">0</span><span class="pun">]<wbr/>.</span><span class="pln">integer </span><span class="pun">== </span><span class="lit">42 </span><span class="pun">);
+</span><span class="kwd">assert</span><span class="pun">( k[</span><span class="lit">1</span><span class="pun">]<wbr/>.</span><span class="pln">integer </span><span class="pun">== </span><span class="lit">43 </span><span class="pun">);
 
 </span></code></pre>
 </section>
@@ -237,8 +237,8 @@ $('#symbolSearchPane').show();</script>
 </section>
 <section><h3>Example</h3>
 
-<pre class="code"><code class="lang-d"><a href="../../nwnlibd/orderedjson/JSONValue.html"><span class="typ">JSONValue</span></a><span class="pln"> j </span><span class="pun">= <a href="../../nwnlibd/orderedjson/JSONValue.html"></span><span class="typ">JSONValue</span></a><span class="pun">( [</span><span class="str">"language"</span><span class="pun">: </span><span class="str">"D"</span><span class="pun">] );
-</span><span class="kwd">assert</span><span class="pun">( </span><span class="pln">j</span><span class="pun">[</span><span class="str">"language"</span><span class="pun">]<wbr/>.</span><span class="pln">str </span><span class="pun">== </span><span class="str">"D" </span><span class="pun">);
+<pre class="code"><code class="lang-d"><a href="../../nwnlibd/orderedjson/JSONValue.html"><span class="typ">JSONValue </span><span class="pln">k </span><span class="pun">&gt;</span></a><span class="pln"> </span><span class="typ">JSONValue</span><span class="pun">( [</span><span class="str">"|anguage": "D"] )K
+assert( j["lang…age"].str == "D" </span><span class="pun">);
 
 </span></code></pre>
 </section>
