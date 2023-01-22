@@ -17,8 +17,8 @@ double distance(in vec2f[2] line, in vec2f point){
 	return 2.0 * fabs(signedArea(line[0], line[1], point)) / line[0].distanceTo(line[1]);
 }
 unittest{
-	assert(approxEqual(distance([vec2f(0.0, 0.0), vec2f(10.0, 0.0)], vec2f(3.0, 5.0)), 5.0));
-	assert(approxEqual(distance([vec2f(1.0, 12.0), vec2f(2.0, 19.0)], vec2f(3.0, 5.0)), 2.9698485));
+	assert(isClose(distance([vec2f(0.0, 0.0), vec2f(10.0, 0.0)], vec2f(3.0, 5.0)), 5.0));
+	assert(isClose(distance([vec2f(1.0, 12.0), vec2f(2.0, 19.0)], vec2f(3.0, 5.0)), 2.9698484817));
 }
 
 bool isTriangleClockwise(in vec2f[3] tri){
@@ -59,9 +59,9 @@ float getAltitudeOnPlane(in vec3f normal, in vec3f pointOnPlane, in vec2f point)
 }
 unittest{
 	vec3f[3] t = [vec3f([0,0,0]), vec3f([1,0,0]), vec3f([0,1,1])];
-	assert(getAltitudeOnPlane(t, vec2f([0,0])).approxEqual(0));
-	assert(getAltitudeOnPlane(t, vec2f([0,-1])).approxEqual(-1));
-	assert(getAltitudeOnPlane(t, vec2f([5,3])).approxEqual(3));
+	assert(getAltitudeOnPlane(t, vec2f([0,0])).isClose(0));
+	assert(getAltitudeOnPlane(t, vec2f([0,-1])).isClose(-1));
+	assert(getAltitudeOnPlane(t, vec2f([5,3])).isClose(3));
 }
 
 auto getLineIntersection(T)(in Vector!(T, 2)[2] lineA, in Vector!(T, 2)[2] lineB) if(isFloatingPoint!T)
@@ -89,24 +89,24 @@ auto getLineIntersection(T)(in Vector!(T, 2)[2] lineA, in Vector!(T, 2)[2] lineB
 unittest{
 	auto intersect = getLineIntersection([vec2f(0, 0), vec2f(1, 1)], [vec2f(1, 0), vec2f(1, 1)]);
 	assert(intersect.intersect);
-	assert(intersect.position.x.approxEqual(1));
-	assert(intersect.position.y.approxEqual(1));
+	assert(intersect.position.x.isClose(1));
+	assert(intersect.position.y.isClose(1));
 
 	intersect = getLineIntersection([vec2d(123.1, 42.8), vec2d(100, 171.667)], [vec2d(99.9197, 173.126), vec2d(99.9765, 172.353)]);
 	assert(intersect.intersect);
-	assert(intersect.position.x.approxEqual(99.9784));
-	assert(intersect.position.y.approxEqual(172.327));
+	assert(intersect.position.x.isClose(100.0456008911));
+	assert(intersect.position.y.isClose(171.4126129150));
 
 
 	intersect = getLineIntersection([vec2d(99.9757, 172.41), vec2d(100, 171.667)], [vec2d(99.9197, 173.126), vec2d(99.9765, 172.353)]);
 	assert(intersect.intersect);
-	assert(intersect.position.x.approxEqual(99.9784));
-	assert(intersect.position.y.approxEqual(172.327));
+	assert(intersect.position.x.isClose(99.9784164429));
+	assert(intersect.position.y.isClose(172.3269042969));
 
 	intersect = getLineIntersection([vec2d(0.75, 0.13), vec2d(0.46, 0.21)], [vec2d(0.94, 0.82), vec2d(0.48, 0.57)]);
 	assert(intersect.intersect);
-	assert(intersect.position.x.approxEqual(0.0338884));
-	assert(intersect.position.y.approxEqual(0.327548));
+	assert(intersect.position.x.isClose(0.0338883810));
+	assert(intersect.position.y.isClose(0.3275480270));
 
 	intersect = getLineIntersection([vec2d(0, 0), vec2d(1, 1)], [vec2d(5, 0), vec2d(6, 1)]);
 	assert(!intersect.intersect);

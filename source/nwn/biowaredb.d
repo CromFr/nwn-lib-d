@@ -944,7 +944,7 @@ private:
 
 unittest{
 	import std.range.primitives;
-	import std.math: fabs, approxEqual;
+	import std.math: fabs, isClose;
 
 	auto db = new BiowareDB(
 		cast(immutable ubyte[])import("testcampaign.dbf"),
@@ -960,7 +960,7 @@ unittest{
 	assert(var.playerid == PCID());
 	assert(var.timestamp == DateTime(2017,06,25, 23,19,26));
 	assert(var.type == 'F');
-	assert(db.getVariableValue!NWFloat(var.index).approxEqual(13.37f));
+	assert(db.getVariableValue!NWFloat(var.index).isClose(13.37f));
 
 	var = db[1];
 	assert(var.deleted == false);
@@ -1055,7 +1055,7 @@ unittest{
 	var = db[0];
 	assert(var.timestamp != DateTime(2017,06,25, 23,19,26));
 	assert(var.type == 'F');
-	assert(db.getVariableValue!NWFloat(var.index).approxEqual(42.42f));
+	assert(db.getVariableValue!NWFloat(var.index).isClose(42.42f));
 
 	db.setVariableValue(1, 12);
 	var = db[1];

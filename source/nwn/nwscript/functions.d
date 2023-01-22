@@ -210,7 +210,7 @@ unittest{
 
 		assert(GetLocalInt(obj, "TestInt") == 5);
 
-		assert(approxEqual(GetLocalFloat(obj, "TestFloat"), 5.3f));
+		assert(isClose(GetLocalFloat(obj, "TestFloat"), 5.3f));
 		assert(GetLocalString(obj, "TestString") == "Hello");
 		assert(GetLocalString(obj, "yolooo") == "");
 		assert(GetLocalObject(obj, "TestInt") == OBJECT_INVALID);

@@ -1,7 +1,8 @@
 {
 	"fileVersion": 1,
 	"versions": {
-		"gfm": "7.0.8",
+		"gfm": "8.0.6",
+		"intel-intrinsics": "1.11.1",
 		"nwn-lib-d": {"path":"../../"}
 	}
 }

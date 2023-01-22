@@ -19,7 +19,7 @@ module nwnlibd.orderedjson;
 
 import std.array;
 import std.conv;
-import std.range.primitives;
+import std.range;
 import std.traits;
 
 ///
@@ -54,7 +54,7 @@ import std.traits;
     // list already exists, so .object optional
     jj["list"].array ~= JSONValue("D");
 
-    //#################################################################################################################
+    //### nwn-lib-d ###################################################################################################
     string jjStr = `{"language":"D","rating":3.5,"list":["a","b","c","D"]}`;
     //#################################################################################################################
     assert(jj.toString == jjStr);
@@ -119,7 +119,7 @@ JSON value node
 */
 struct JSONValue
 {
-    //#################################################################################################################
+    //### nwn-lib-d ###################################################################################################
     public string[] objectKeyOrder;
     //#################################################################################################################
 
@@ -158,14 +158,14 @@ struct JSONValue
      * Throws: `JSONException` for read access if `type` is not
      * `JSONType.string`.
      */
-    @property string str() const pure @trusted
+    @property string str() const pure @trusted return scope
     {
         enforce!JSONException(type == JSONType.string,
                                 "JSONValue is not a string");
         return store.str;
     }
     /// ditto
-    @property string str(string v) pure nothrow @nogc @safe
+    @property string str(return scope string v) pure nothrow @nogc @trusted return // TODO make @safe
     {
         assign(v);
         return v;
@@ -288,7 +288,7 @@ struct JSONValue
         return store.object;
     }
     /// ditto
-    @property JSONValue[string] object(JSONValue[string] v) pure nothrow @nogc @safe
+    @property JSONValue[string] object(return scope JSONValue[string] v) pure nothrow @nogc @trusted // TODO make @safe
     {
         assign(v);
         return v;
@@ -327,14 +327,14 @@ struct JSONValue
        (*a)[0] = "world";  // segmentation fault
        ---
      */
-    @property ref inout(JSONValue[]) array() inout pure @system return
+    @property ref inout(JSONValue[]) array() scope return inout pure @system
     {
         enforce!JSONException(type == JSONType.array,
                                 "JSONValue is not an array");
         return store.array;
     }
     /// ditto
-    @property JSONValue[] array(JSONValue[] v) pure nothrow @nogc @safe
+    @property JSONValue[] array(return scope JSONValue[] v) pure nothrow @nogc @trusted scope // TODO make @safe
     {
         assign(v);
         return v;
@@ -374,11 +374,10 @@ struct JSONValue
      * A convenience getter that returns this `JSONValue` as the specified D type.
      * Note: only numeric, `bool`, `string`, `JSONValue[string]` and `JSONValue[]` types are accepted
      * Throws: `JSONException` if `T` cannot hold the contents of this `JSONValue`
-     *         `ConvException` if there is a type overflow issue
+     *         `ConvException` in case of integer overflow when converting to `T`
      */
     @property inout(T) get(T)() inout const pure @safe
     {
-        import std.conv : to;
         static if (is(immutable T == immutable string))
         {
             return str;
@@ -410,7 +409,7 @@ struct JSONValue
             case JSONType.integer:
                 return integer.to!T;
             default:
-                throw new JSONException("JSONValue is not a number type");
+                throw new JSONException("JSONValue is not a an integral type");
             }
         }
         else
@@ -549,7 +548,7 @@ struct JSONValue
         }
         else
         {
-            static assert(false, text(`unable to convert type "`, T.Stringof, `" to json`));
+            static assert(false, text(`unable to convert type "`, T.stringof, `" to json`));
         }
     }
 
@@ -642,7 +641,7 @@ struct JSONValue
      * Hash syntax for json objects.
      * Throws: `JSONException` if `type` is not `JSONType.object`.
      */
-    ref inout(JSONValue) opIndex(string k) inout pure @safe
+    ref inout(JSONValue) opIndex(return scope string k) inout pure @safe
     {
         auto o = this.objectNoRef;
         return *enforce!JSONException(k in o,
@@ -675,7 +674,7 @@ struct JSONValue
         }
 
         aa[key] = value;
-        //#################################################################################################################
+        //### nwn-lib-d ###################################################################################################
         if(this.objectKeyOrder.length > 0)
             this.objectKeyOrder ~= key;
         else
@@ -748,13 +747,13 @@ struct JSONValue
      * Tests wether a key can be found in an object.
      *
      * Returns:
-     *      when found, the `const(JSONValue)*` that matches to the key,
+     *      when found, the `inout(JSONValue)*` that matches to the key,
      *      otherwise `null`.
      *
      * Throws: `JSONException` if the right hand side argument `JSONType`
      * is not `object`.
      */
-    auto opBinaryRight(string op : "in")(string k) const @safe
+    inout(JSONValue)* opBinaryRight(string op : "in")(string k) inout @safe
     {
         return k in this.objectNoRef;
     }
@@ -763,6 +762,8 @@ struct JSONValue
     {
         JSONValue j = [ "language": "D", "author": "walter" ];
         string a = ("author" in j).str;
+        *("author" in j) = "Walter";
+        assert(j["author"].str == "Walter");
     }
 
     bool opEquals(const JSONValue rhs) const @nogc nothrow pure @safe
@@ -940,7 +941,7 @@ Params:
     options = enable decoding string representations of NaN/Inf as float values
 */
 JSONValue parseJSON(T)(T json, int maxDepth = -1, JSONOptions options = JSONOptions.none)
-if (isInputRange!T && !isInfinite!T && isSomeChar!(ElementEncodingType!T))
+if (isSomeFiniteCharInputRange!T)
 {
     import std.ascii : isDigit, isHexDigit, toUpper, toLower;
     import std.typecons : Nullable, Yes;
@@ -1205,7 +1206,7 @@ if (isInputRange!T && !isInfinite!T && isSomeChar!(ElementEncodingType!T))
                 }
 
                 JSONValue[string] obj;
-                //#################################################################################################################
+                //### nwn-lib-d ###################################################################################################
                 string[] keyOrder;
                 //#################################################################################################################
                 do
@@ -1221,13 +1222,13 @@ if (isInputRange!T && !isInfinite!T && isSomeChar!(ElementEncodingType!T))
                     JSONValue member;
                     parseValue(member);
                     obj[name] = member;
-                    //#################################################################################################################
+                    //### nwn-lib-d ###################################################################################################
                     keyOrder ~= name;
                     //#################################################################################################################
                 }
                 while (testChar(','));
                 value.object = obj;
-                //#################################################################################################################
+                //### nwn-lib-d ###################################################################################################
                 value.objectKeyOrder = keyOrder;
                 //#################################################################################################################
 
@@ -1457,7 +1458,7 @@ Params:
     options = enable decoding string representations of NaN/Inf as float values
 */
 JSONValue parseJSON(T)(T json, JSONOptions options)
-if (isInputRange!T && !isInfinite!T && isSomeChar!(ElementEncodingType!T))
+if (isSomeFiniteCharInputRange!T)
 {
     return parseJSON!T(json, -1, options);
 }
@@ -1557,19 +1558,15 @@ if (isOutputRange!(Out,char))
             toStringImpl!char(str);
     }
 
-    // recursive @safe inference is broken here
-    // workaround: if json.put is @safe, we should be too,
-    // so annotate the recursion as @safe manually
-    static if (isSafe!({ json.put(""); }))
-    {
-        void delegate(ref const JSONValue, ulong) @safe toValue;
-    }
-    else
-    {
-        void delegate(ref const JSONValue, ulong) @system toValue;
-    }
+    /* make the function infer @system when json.put() is @system
+     */
+    if (0)
+        json.put(' ');
 
-    void toValueImpl(ref const JSONValue value, ulong indentLevel)
+    /* Mark as @trusted because json.put() may be @system. This has difficulty
+     * inferring @safe because it is recursive.
+     */
+    void toValueImpl(ref const JSONValue value, ulong indentLevel) @trusted
     {
         void putTabs(ulong additionalIndent = 0)
         {
@@ -1614,10 +1611,10 @@ if (isOutputRange!(Out,char))
                             json.put(':');
                             if (pretty)
                                 json.put(' ');
-                            toValue(member, indentLevel + 1);
+                            toValueImpl(member, indentLevel + 1);
                         }
                     }
-                    //#################################################################################################################
+                    //### nwn-lib-d ###################################################################################################
                     //import std.algorithm.sorting : sort;
                     //// https://issues.dlang.org/show_bug.cgi?id=14439
                     //// auto names = obj.keys;  // aa.keys can't be called in @safe code
@@ -1658,7 +1655,7 @@ if (isOutputRange!(Out,char))
                         if (i)
                             putCharAndEOL(',');
                         putTabs(1);
-                        toValue(el, indentLevel + 1);
+                        toValueImpl(el, indentLevel + 1);
                     }
                     putEOL();
                     putTabs();
@@ -1679,7 +1676,7 @@ if (isOutputRange!(Out,char))
                 break;
 
             case JSONType.float_:
-                import std.math : isNaN, isInfinity;
+                import std.math.traits : isNaN, isInfinity;
 
                 auto val = value.store.floating;
 
@@ -1709,12 +1706,17 @@ if (isOutputRange!(Out,char))
                 }
                 else
                 {
-                    import std.format : format;
+                    import std.algorithm.searching : canFind;
+                    import std.format : sformat;
                     // The correct formula for the number of decimal digits needed for lossless round
                     // trips is actually:
                     //     ceil(log(pow(2.0, double.mant_dig - 1)) / log(10.0) + 1) == (double.dig + 2)
                     // Anything less will round off (1 + double.epsilon)
-                    json.put("%.18g".format(val));
+                    char[25] buf;
+                    auto result = buf[].sformat!"%.18g"(val);
+                    json.put(result);
+                    if (!result.canFind('e') && !result.canFind('.'))
+                        json.put(".0");
                 }
                 break;
 
@@ -1732,9 +1734,7 @@ if (isOutputRange!(Out,char))
         }
     }
 
-    toValue = &toValueImpl;
-
-    toValue(root, 0);
+    toValueImpl(root, 0);
 }
 
  // https://issues.dlang.org/show_bug.cgi?id=12897
@@ -1755,11 +1755,66 @@ if (isOutputRange!(Out,char))
 // https://issues.dlang.org/show_bug.cgi?id=20511
 @system unittest
 {
-    import std.format : formattedWrite;
+    import std.format.write : formattedWrite;
     import std.range : nullSink, outputRangeObject;
 
     outputRangeObject!(const(char)[])(nullSink)
         .formattedWrite!"%s"(JSONValue.init);
+}
+
+// Issue 16432 - JSON incorrectly parses to string
+@safe unittest
+{
+    // Floating points numbers are rounded to the nearest integer and thus get
+    // incorrectly parsed
+
+    import std.math.operations : isClose;
+
+    string s = "{\"rating\": 3.0 }";
+    JSONValue j = parseJSON(s);
+    assert(j["rating"].type == JSONType.float_);
+    j = j.toString.parseJSON;
+    assert(j["rating"].type == JSONType.float_);
+    assert(isClose(j["rating"].floating, 3.0));
+
+    s = "{\"rating\": -3.0 }";
+    j = parseJSON(s);
+    assert(j["rating"].type == JSONType.float_);
+    j = j.toString.parseJSON;
+    assert(j["rating"].type == JSONType.float_);
+    assert(isClose(j["rating"].floating, -3.0));
+
+    // https://issues.dlang.org/show_bug.cgi?id=13660
+    auto jv1 = JSONValue(4.0);
+    auto textual = jv1.toString();
+    auto jv2 = parseJSON(textual);
+    assert(jv1.type == JSONType.float_);
+    assert(textual == "4.0");
+    assert(jv2.type == JSONType.float_);
+}
+
+@safe unittest
+{
+    // Adapted from https://github.com/dlang/phobos/pull/5005
+    // Result from toString is not checked here, because this
+    // might differ (%e-like or %f-like output) depending
+    // on OS and compiler optimization.
+    import std.math.operations : isClose;
+
+    // test positive extreme values
+    JSONValue j;
+    j["rating"] = 1e18 - 65;
+    assert(isClose(j.toString.parseJSON["rating"].floating, 1e18 - 65));
+
+    j["rating"] = 1e18 - 64;
+    assert(isClose(j.toString.parseJSON["rating"].floating, 1e18 - 64));
+
+    // negative extreme values
+    j["rating"] = -1e18 + 65;
+    assert(isClose(j.toString.parseJSON["rating"].floating, -1e18 + 65));
+
+    j["rating"] = -1e18 + 64;
+    assert(isClose(j.toString.parseJSON["rating"].floating, -1e18 + 64));
 }
 
 /**
@@ -2082,7 +2137,7 @@ EOF";
 @safe unittest
 {
     import std.exception : assertThrown;
-    import std.math : isNaN, isInfinity;
+    import std.math.traits : isNaN, isInfinity;
 
     // expected representations of NaN and Inf
     enum {
@@ -2156,7 +2211,7 @@ pure nothrow @safe unittest
 
     static bool test(const double num0)
     {
-        import std.math : feqrel;
+        import std.math.operations : feqrel;
         const json0 = JSONValue(num0);
         const num1 = to!double(toJSON(json0));
         static if (realInDoublePrecision)
@@ -2354,7 +2409,7 @@ pure nothrow @safe unittest
 @safe unittest
 {
     import std.array : appender;
-    import std.format : formattedWrite;
+    import std.format.write : formattedWrite;
 
     string s =
 `{
