@@ -450,9 +450,9 @@ struct GffStruct {
 
 	/// JSON to GffStruct
 	this(in nwnlibd.orderedjson.JSONValue json){
-		assert(json.type == JSONType.object, "json value " ~ json.toPrettyString ~ " is not an object");
-		assert(json["type"].str == "struct", "json object "~ json.toPrettyString ~" is not a GffStruct");
-		assert(json["value"].type == JSONType.object, "json .value "~ json.toPrettyString ~" is not an object");
+		enforce(json.type == JSONType.object, "json value " ~ json.toPrettyString ~ " is not an object");
+		enforce(json["type"].str == "struct", "json .type "~ json.toPrettyString ~" is not a sruct");
+		enforce(json["value"].type == JSONType.object, "json .value "~ json.toPrettyString ~" is not an object");
 		if(auto structId = ("__struct_id" in json))
 			id = structId.get!uint32_t;
 		foreach(ref label ; json["value"].objectKeyOrder){
@@ -464,7 +464,7 @@ struct GffStruct {
 		JSONValue ret;
 		ret["type"] = "struct";
 		ret["__struct_id"] = id;
-		ret["value"] = JSONValue();
+		ret["value"] = JSONValue(cast(JSONValue[string])null);
 		foreach(ref kv ; children.byKeyValue){
 			ret["value"][kv.key] = kv.value.toJson();
 		}

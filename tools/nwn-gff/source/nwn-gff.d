@@ -178,7 +178,7 @@ int _main(string[] args){
 			break;
 		case Format.json, Format.json_minified:
 			import nwnlibd.orderedjson;
-			gff = new Gff(parseJSON(cast(string)inputFile.readAll.idup));
+			gff = new Gff(parseJSON(cast(string)inputFile.readAll.idup, -1, JSONOptions.specialFloatLiterals));
 			break;
 		case Format.pretty:
 			enforce(0, inputFormat.to!string~" parsing not supported");
@@ -405,7 +405,7 @@ int _main(string[] args){
 
 				if(path[$ - 1][col + 1 .. $] == "json"){
 					// valueSpec is in JSON format
-					auto json = valueSpec.parseJSON;
+					auto json = valueSpec.parseJSON(-1, JSONOptions.specialFloatLiterals);
 					enforce!GffPathException(json.type == JSONType.object, "JSON values must be an objects");
 					enforce!GffPathException("type" in json, "JSON object must contain a \"type\" key");
 
@@ -597,7 +597,7 @@ int _main(string[] args){
 			break;
 		case Format.json, Format.json_minified:
 			auto json = gff.toJson;
-			outputFile.writeln(outputFormat==Format.json? json.toPrettyString : json.toString);
+			outputFile.writeln(outputFormat==Format.json? json.toPrettyString(JSONOptions.specialFloatLiterals) : json.toString(JSONOptions.specialFloatLiterals));
 			break;
 		case Format.dump:
 			import nwn.fastgff: FastGff;
