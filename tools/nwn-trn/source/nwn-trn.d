@@ -866,21 +866,23 @@ int main(string[] args){
 				// Extract all walkmesh cutters data
 				alias WMCutter = vec2f[];
 				WMCutter[] wmCutters;
-				foreach(trigger ; git["TriggerList"].get!GffList){
-					if(trigger["Type"].get!GffInt == 3){
-						// Walkmesh cutter
-						auto start = [trigger["XPosition"].get!GffFloat, trigger["YPosition"].get!GffFloat];
+				if(!noWmCutters){
+					foreach(trigger ; git["TriggerList"].get!GffList){
+						if(trigger["Type"].get!GffInt == 3){
+							// Walkmesh cutter
+							auto start = [trigger["XPosition"].get!GffFloat, trigger["YPosition"].get!GffFloat];
 
-						// what about: XOrientation YOrientation ZOrientation ?
-						WMCutter cutter;
-						foreach(point ; trigger["Geometry"].get!GffList){
-							cutter ~= vec2f(
-								start[0] + point["PointX"].get!GffFloat,
-								start[1] + point["PointY"].get!GffFloat,
-							);
+							// what about: XOrientation YOrientation ZOrientation ?
+							WMCutter cutter;
+							foreach(point ; trigger["Geometry"].get!GffList){
+								cutter ~= vec2f(
+									start[0] + point["PointX"].get!GffFloat,
+									start[1] + point["PointY"].get!GffFloat,
+								);
+							}
+
+							wmCutters ~= cutter;
 						}
-
-						wmCutters ~= cutter;
 					}
 				}
 
@@ -890,21 +892,24 @@ int main(string[] args){
 
 				foreach(ref TrnNWN2WalkmeshPayload aswm ; trn){
 
-					stderr.writeln("Cutting mesh");
-					auto mesh = aswm.toGenericMesh();
-					foreach(i, ref wmCutter ; wmCutters){
-						stderr.writefln("  Walkmesh cutter %d / %d", i + 1, wmCutters.length);
-						if(wmCutter.length < 3){
-							stderr.writeln("    Warning: Invalid walkmesh cutter geometry (cutter n°%d has only %d vertices)", i + 1, wmCutter.length);
-							continue;
+
+					if(!noWmCutters){
+						stderr.writeln("Cutting mesh");
+						auto mesh = aswm.toGenericMesh();
+						foreach(i, ref wmCutter ; wmCutters){
+							stderr.writefln("  Walkmesh cutter %d / %d", i + 1, wmCutters.length);
+							if(wmCutter.length < 3){
+								stderr.writeln("    Warning: Invalid walkmesh cutter geometry (cutter n°%d has only %d vertices)", i + 1, wmCutter.length);
+								continue;
+							}
+							if(isPolygonComplex(wmCutter)){
+								stderr.writeln("    Warning: Complex / self intersecting walkmesh cutters are not supported yet: ", wmCutter);
+								continue;
+							}
+							mesh.polygonCut(wmCutter);
 						}
-						if(isPolygonComplex(wmCutter)){
-							stderr.writeln("    Warning: Complex / self intersecting walkmesh cutters are not supported yet: ", wmCutter);
-							continue;
-						}
-						mesh.polygonCut(wmCutter);
+						aswm.setGenericMesh(mesh);
 					}
-					aswm.setGenericMesh(mesh);
 
 					stderr.writeln("Calculating path tables");
 					aswm.tiles_flags = 31;
