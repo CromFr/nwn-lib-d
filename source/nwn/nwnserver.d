@@ -27,11 +27,11 @@ class NWNServer{
 
 	/// Send ping request to the server and measure latency in msecs
 	double ping(){
-		import std.datetime.stopwatch: StopWatch, to, TickDuration;
+		import std.datetime.stopwatch: StopWatch, to;
 		StopWatch sw;
 		sw.start();
 		queryBNLM(0, 0);
-		return (cast(TickDuration)sw.peek()).to!("msecs", double);
+		return sw.peek().total!"usecs"() / 1000.0;
 	}
 
 	///

@@ -228,7 +228,7 @@ struct Dds {
 				NONE = "\0\0\0\0",
 				NONE2 = "t\0\0\0",
 			}
-			FourCC four_cc;/// Four-character codes for specifying compressed or custom formats. Possible values include: DXT1, DXT2, DXT3, DXT4, or DXT5.
+			char[4] four_cc;/// Four-character codes for specifying compressed or custom formats. Possible values include: DXT1, DXT2, DXT3, DXT4, or DXT5.
 			uint32_t rgb_bit_count;/// Number of bits in an RGB (possibly including alpha) format. Valid when dwFlags includes DDPF_RGB, DDPF_LUMINANCE, or DDPF_YUV.
 			uint32_t r_bit_mask;/// Red (or lumiannce or Y) mask for reading color data. For instance, given the A8R8G8B8 format, the red mask would be 0x00ff0000.
 			uint32_t g_bit_mask;/// Green (or U) mask for reading color data. For instance, given the A8R8G8B8 format, the green mask would be 0x0000ff00.

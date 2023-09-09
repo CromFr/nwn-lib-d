@@ -99,7 +99,7 @@ int main(string[] args){
 	switch(outputFormat){
 		case Format.text:
 			import std.math: log10;
-			int idColLength = cast(int)log10(offset + tlk.length) + 1;
+			int idColLength = cast(int)log10(cast(double)(offset + tlk.length)) + 1;
 			foreach(strref, str ; tlk){
 				import std.typecons: Yes;
 				foreach(i, ref line ; str.splitLines(Yes.keepTerminator)){

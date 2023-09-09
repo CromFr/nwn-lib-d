@@ -238,7 +238,7 @@ struct Chains(T){
 					);
 				else
 					chains[chainPos[0].index].insertFront(
-						(chains[chainPos[1].index] ~ middleVertices)[]
+						(chains[chainPos[1].index].array ~ middleVertices)[]
 					);
 			}
 			else{

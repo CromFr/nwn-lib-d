@@ -590,8 +590,8 @@ class FastGff{
 		ret ~= "\n========== FIELD_DATA ==========\n";
 		ret ~= dumpByteArray(fieldData);
 		ret ~= "\n========== FIELD_INDICES ==========\n";
-		const fiSpacing = cast(int)(log10(fields.length)) + 2;
-		const fiNumSpacing = cast(int)(log10(fieldIndices.length)) + 1;
+		const fiSpacing = cast(int)(log10(cast(double)fields.length)) + 2;
+		const fiNumSpacing = cast(int)(log10(cast(double)fieldIndices.length)) + 1;
 		foreach(i, ref fi ; fieldIndices){
 			if(i % 10 == 0)
 				ret ~= (i.to!string ~ ": ").leftJustify(fiNumSpacing + 2);
@@ -600,8 +600,8 @@ class FastGff{
 				ret ~= "\n";
 		}
 		ret ~= "\n\n========== LIST_INDICES ==========\n";
-		const liSpacing = cast(int)(log10(structs.length)) + 2;
-		const liNumSpacing = cast(int)(log10(listIndices.length)) + 1;
+		const liSpacing = cast(int)(log10(cast(double)structs.length)) + 2;
+		const liNumSpacing = cast(int)(log10(cast(double)listIndices.length)) + 1;
 		foreach(i, ref li ; listIndices){
 			if(i % 10 == 0)
 				ret ~= (i.to!string ~ ": ").leftJustify(liNumSpacing + 2);

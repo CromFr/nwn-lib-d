@@ -404,7 +404,7 @@ class TwoDA{
 		//column width calculation
 		import std.math: log10, floor;
 		size_t[] columnsWidth =
-			(cast(int)log10(rows)+2)
+			(cast(int)log10(cast(double)rows)+2)
 			~(columnList
 				.map!(a => (a.length < 4 ? 4 : a.length) + 1)
 				.array);

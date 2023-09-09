@@ -95,7 +95,7 @@ int main(string[] args){
 
 			const db = new BiowareDB(dbName, false);
 			auto dbLen = db.length;
-			int indexLength = cast(int)log10(dbLen) + 1;
+			int indexLength = cast(int)log10(cast(double)dbLen) + 1;
 			if(indexLength < 3)
 				indexLength = 3;
 

@@ -173,7 +173,7 @@ int main(string[] args){
 			auto erf = new NWN2Erf(cast(ubyte[])args[1].read);
 
 			import std.math: log10;
-			int idxColWidth = cast(int)(log10(erf.files.length))+1;
+			int idxColWidth = cast(int)(log10(cast(double)erf.files.length))+1;
 			foreach(i, const ref file ; erf.files){
 				writeln(i.to!string.rightJustify(idxColWidth),"|",
 					file.name.leftJustify(32+1),
