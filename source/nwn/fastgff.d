@@ -103,7 +103,7 @@ struct GffResRef{
 
 	///
 	this(in char[] value){
-		assert(value.length <= 32, "Resref cannot be longer than 32 characters");
+		enforce(value.length <= 32, "Resref cannot be longer than 32 characters");
 		data[0 .. value.length] = value;
 		if(value.length < data.length)
 			data[value.length .. $] = 0;
@@ -114,7 +114,7 @@ struct GffResRef{
 
 	version(FastGffWrite)
 	void opAssign(in string str){
-		assert(str.length <= 32, "Value is too long");
+		enforce(str.length <= 32, "Value is too long");
 		data = str.stringToCharArray!(char[32]);
 	}
 
@@ -285,7 +285,7 @@ private:
 struct GffList{
 	/// Get nth child GffStruct
 	const(GffStruct) opIndex(size_t index) const{
-		assert(gff !is null && index < length, "Out of bound");
+		enforce(gff !is null && index < length, "Out of bound");
 		return const(GffStruct)(gff, gff.getStruct(structIndexList[index]));
 	}
 

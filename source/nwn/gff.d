@@ -833,7 +833,7 @@ private:
 private struct GffRawParser{
 	@disable this();
 	this(in ubyte[] _data){
-		assert(_data.length >= RawHeader.sizeof, "Data length is so small it cannot even contain the header");
+		enforce(_data.length >= RawHeader.sizeof, "Data length is so small it cannot even contain the header");
 
 		data = _data;
 		headerPtr       = cast(const RawHeader*)      (data.ptr);
@@ -844,7 +844,7 @@ private struct GffRawParser{
 		fieldIndicesPtr = cast(const RawFieldIndices*)(data.ptr + headerPtr.field_indices_offset);
 		listIndicesPtr  = cast(const RawListIndices*) (data.ptr + headerPtr.list_indices_offset);
 
-		assert(data.length == headerPtr.list_indices_offset+headerPtr.list_indices_count,
+		enforce(data.length == headerPtr.list_indices_offset+headerPtr.list_indices_count,
 			"Data length do not match header");
 	}
 
@@ -910,27 +910,27 @@ private struct GffRawParser{
 	const void*         listIndicesPtr;
 
 	const(RawStruct*) getRawStruct(in size_t index) const {
-		assert(index < headerPtr.struct_count, "index "~index.to!string~" out of bounds");
+		enforce(index < headerPtr.struct_count, "index "~index.to!string~" out of bounds");
 		return &structsPtr[index];
 	}
 	const(RawField*) getRawField(in size_t index) const {
-		assert(index < headerPtr.field_count, "index "~index.to!string~" out of bounds");
+		enforce(index < headerPtr.field_count, "index "~index.to!string~" out of bounds");
 		return &fieldsPtr[index];
 	}
 	const(RawLabel*) getRawLabel(in size_t index) const {
-		assert(index < headerPtr.label_count, "index "~index.to!string~" out of bounds");
+		enforce(index < headerPtr.label_count, "index "~index.to!string~" out of bounds");
 		return &labelsPtr[index];
 	}
 	const(RawFieldData*) getRawFieldData(in size_t offset) const {
-		assert(offset < headerPtr.field_data_count, "offset "~offset.to!string~" out of bounds");
+		enforce(offset < headerPtr.field_data_count, "offset "~offset.to!string~" out of bounds");
 		return cast(const RawFieldData*)(fieldDatasPtr + offset);
 	}
 	const(RawFieldIndices*) getRawFieldIndices(in size_t offset) const {
-		assert(offset < headerPtr.field_indices_count, "offset "~offset.to!string~" out of bounds");
+		enforce(offset < headerPtr.field_indices_count, "offset "~offset.to!string~" out of bounds");
 		return cast(const RawFieldIndices*)(fieldIndicesPtr + offset);
 	}
 	const(RawListIndices*) getRawListIndices(in size_t offset) const {
-		assert(offset < headerPtr.list_indices_count, "offset "~offset.to!string~" out of bounds");
+		enforce(offset < headerPtr.list_indices_count, "offset "~offset.to!string~" out of bounds");
 		return cast(const RawListIndices*)(listIndicesPtr + offset);
 	}
 
@@ -1217,7 +1217,7 @@ private struct GffRawSerializer{
 			gff_verbose_rtIndent ~= "│ ";
 		}
 
-		assert(label.length <= 16, "Label too long");//TODO: Throw exception on GffNode.label set
+		enforce(label.length <= 16, "Label too long");//TODO: Throw exception on GffNode.label set
 
 		if(auto i = (label in knownLabels)){
 			fields[createdFieldIndex].label_index = *i;
@@ -1260,7 +1260,7 @@ private struct GffRawSerializer{
 				fieldDatas ~= (cast(ubyte*)value.get!GffString.ptr)[0..strLen].dup;
 				break;
 			case ResRef:
-				assert(value.get!GffResRef.length <= 32, "Resref too long (max length: 32 characters)");
+				enforce(value.get!GffResRef.length <= 32, "Resref too long (max length: 32 characters)");
 				immutable strLen = cast(uint8_t)value.get!GffResRef.length;
 
 				fields[createdFieldIndex].data_or_data_offset = cast(uint32_t)fieldDatas.length;
@@ -1331,11 +1331,11 @@ private struct GffRawSerializer{
 	ubyte[] serialize(Gff gff){
 		registerStruct(gff.root);
 
-		assert(gff.fileType.length <= 4);
+		enforce(gff.fileType.length <= 4);
 		header.file_type = "    ";
 		header.file_type[0..gff.fileType.length] = gff.fileType.dup;
 
-		assert(gff.fileVersion.length <= 4);
+		enforce(gff.fileVersion.length <= 4);
 		header.file_version = "    ";
 		header.file_version[0..gff.fileVersion.length] = gff.fileVersion.dup;
 
