@@ -96854,7 +96854,7 @@
 				"char": 6,
 				"name": "NWN_LIB_D_VERSION",
 				"deco": "Aya",
-				"init": "\"v1.0.5\"",
+				"init": "\"v1.0.6\"",
 				"protection": "public",
 				"comment": "nwn-lib-d git version\n"
 			}
