@@ -180,15 +180,15 @@ $('#symbolSearchPane').show();</script>
 			<div class="prototype">
 				<code class="lang-d">
 					<div class="single-prototype">
-			<span class="kwd">ref inout </span><span class="kwd">inout</span><span class="pun">(</span><a href="../../nwnlibd/orderedjson/JSONValue.html"><span class="typ">JSONValue</span></a><span class="pun">[]</span><span class="pun">)</span> <span class="pln">array</span><span class="pun">(</span><span class="pun">)</span><span class="pln"> </span><span class="kwd">pure @property return</span><span class="pun">;</span>
+			<span class="kwd">ref inout </span><span class="kwd">inout</span><span class="pun">(</span><a href="../../nwnlibd/orderedjson/JSONValue.html"><span class="typ">JSONValue</span></a><span class="pun">[]</span><span class="pun">)</span> <span class="pln">array</span><span class="pun">(</span><span class="pun">)</span><span class="pln"> </span><span class="kwd">pure @property scope return</span><span class="pun">;</span>
 			<br/>
 			<br/>
 			<a href="../../nwnlibd/orderedjson/JSONValue.html"><span class="typ">JSONValue</span></a><span class="pun">[]</span> <span class="pln">array</span>
 			<span class="pun">(</span>
 			<br/>
-			&nbsp;&nbsp;<a href="../../nwnlibd/orderedjson/JSONValue.html"><span class="typ">JSONValue</span></a><span class="pun">[]</span> <span class="pln">v</span>
+			&nbsp;&nbsp;<span class="kwd">scope return </span><a href="../../nwnlibd/orderedjson/JSONValue.html"><span class="typ">JSONValue</span></a><span class="pun">[]</span> <span class="pln">v</span>
 			<br/>
-			<span class="pun">)</span><span class="pln"> </span><span class="kwd">pure nothrow @property @nogc @safe</span><span class="pun">;</span>
+			<span class="pun">)</span><span class="pln"> </span><span class="kwd">pure nothrow @property @nogc scope @trusted</span><span class="pun">;</span>
 					</div>
 				</code>
 			</div>

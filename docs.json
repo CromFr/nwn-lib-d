@@ -2867,9 +2867,9 @@
 									{
 										"line": 231,
 										"kind": "variable",
-										"char": 11,
+										"char": 12,
 										"name": "four_cc",
-										"deco": "E3nwn3dds3Dds6Header4DDPF6FourCC",
+										"deco": "G4a",
 										"align": 1,
 										"protection": "public",
 										"offset": 8,
@@ -6136,7 +6136,9 @@
 							{
 								"deco": "xAya",
 								"storageClass": [
-									"in"
+									"scope",
+									"in",
+									"return"
 								],
 								"name": "label"
 							}
@@ -7170,11 +7172,14 @@
 						"comment": "\n"
 					},
 					{
+						"storageClass": [
+							"scope"
+						],
 						"line": 24,
 						"kind": "destructor",
 						"char": 2,
 						"name": "~this",
-						"deco": "FZv",
+						"deco": "FNlZv",
 						"protection": "public",
 						"endchar": 2,
 						"endline": 26
@@ -91521,7 +91526,7 @@
 				],
 				"name": "GetLocalObject",
 				"protection": "public",
-				"comment": "\nExample:\n$(DDOX_UNITTEST_HEADER __unittest_L201_C1)\n---\nimport std.math;\nimmutable dogeUtc = cast(immutable ubyte[])import(\"doge.utc\");\n{\n\tauto obj = new nwn.gff.Gff(dogeUtc).root;\n\n\tSetLocalInt(obj, \"TestInt\", 5);\n\tSetLocalFloat(obj, \"TestFloat\", 5.3);\n\tSetLocalString(obj, \"TestString\", \"Hello\");\n\n\tassert(GetLocalInt(obj, \"TestInt\") == 5);\n\n\tassert(approxEqual(GetLocalFloat(obj, \"TestFloat\"), 5.3f));\n\tassert(GetLocalString(obj, \"TestString\") == \"Hello\");\n\tassert(GetLocalString(obj, \"yolooo\") == \"\");\n\tassert(GetLocalObject(obj, \"TestInt\") == OBJECT_INVALID);\n\n\tDeleteLocalInt(obj, \"TestString\");\n\tassert(GetLocalString(obj, \"TestString\") == \"Hello\");\n\tDeleteLocalString(obj, \"TestString\");\n\tassert(GetLocalString(obj, \"TestString\") == \"\");\n}\n{\n\tauto obj = new nwn.fastgff.FastGff(dogeUtc).root;\n\tassert(GetLocalInt(obj, \"aaabbb\") == 0);\n}\n\n\n---\n$(DDOX_UNITTEST_FOOTER __unittest_L201_C1)\n"
+				"comment": "\nExample:\n$(DDOX_UNITTEST_HEADER __unittest_L201_C1)\n---\nimport std.math;\nimmutable dogeUtc = cast(immutable ubyte[])import(\"doge.utc\");\n{\n\tauto obj = new nwn.gff.Gff(dogeUtc).root;\n\n\tSetLocalInt(obj, \"TestInt\", 5);\n\tSetLocalFloat(obj, \"TestFloat\", 5.3);\n\tSetLocalString(obj, \"TestString\", \"Hello\");\n\n\tassert(GetLocalInt(obj, \"TestInt\") == 5);\n\n\tassert(isClose(GetLocalFloat(obj, \"TestFloat\"), 5.3f));\n\tassert(GetLocalString(obj, \"TestString\") == \"Hello\");\n\tassert(GetLocalString(obj, \"yolooo\") == \"\");\n\tassert(GetLocalObject(obj, \"TestInt\") == OBJECT_INVALID);\n\n\tDeleteLocalInt(obj, \"TestString\");\n\tassert(GetLocalString(obj, \"TestString\") == \"Hello\");\n\tDeleteLocalString(obj, \"TestString\");\n\tassert(GetLocalString(obj, \"TestString\") == \"\");\n}\n{\n\tauto obj = new nwn.fastgff.FastGff(dogeUtc).root;\n\tassert(GetLocalInt(obj, \"aaabbb\") == 0);\n}\n\n\n---\n$(DDOX_UNITTEST_FOOTER __unittest_L201_C1)\n"
 			},
 			{
 				"line": 243,
@@ -96053,6 +96058,7 @@
 							{
 								"deco": "xAh",
 								"storageClass": [
+									"scope",
 									"in"
 								],
 								"name": "rawData"
@@ -96848,7 +96854,7 @@
 				"char": 6,
 				"name": "NWN_LIB_D_VERSION",
 				"deco": "Aya",
-				"init": "\"v1.0.4\"",
+				"init": "\"v1.0.5\"",
 				"protection": "public",
 				"comment": "nwn-lib-d git version\n"
 			}
@@ -98130,7 +98136,7 @@
 						"kind": "function",
 						"char": 22,
 						"name": "str",
-						"deco": "xFNaNdNeZAya",
+						"deco": "xFNaNdNjNlNeZAya",
 						"protection": "public",
 						"endchar": 5,
 						"endline": 166,
@@ -98140,6 +98146,10 @@
 						"parameters": [
 							{
 								"deco": "Aya",
+								"storageClass": [
+									"scope",
+									"return"
+								],
 								"name": "v"
 							}
 						],
@@ -98147,7 +98157,7 @@
 						"kind": "function",
 						"char": 22,
 						"name": "str",
-						"deco": "FNaNbNdNiNfAyaZQe",
+						"deco": "FNaNbNdNiNjNeNkMAyaZQe",
 						"protection": "public",
 						"endchar": 5,
 						"endline": 172,
@@ -98280,6 +98290,10 @@
 						"parameters": [
 							{
 								"deco": "HAyaS7nwnlibd11orderedjson9JSONValue",
+								"storageClass": [
+									"scope",
+									"return"
+								],
 								"name": "v"
 							}
 						],
@@ -98287,7 +98301,7 @@
 						"kind": "function",
 						"char": 33,
 						"name": "object",
-						"deco": "FNaNbNdNiNfHAyaS7nwnlibd11orderedjson9JSONValueZQBl",
+						"deco": "FNaNbNdNiNeNkMHAyaS7nwnlibd11orderedjson9JSONValueZQBl",
 						"protection": "public",
 						"endchar": 5,
 						"endline": 295,
@@ -98309,7 +98323,7 @@
 						"kind": "function",
 						"char": 38,
 						"name": "array",
-						"deco": "NgFNaNcNdNjZNgAS7nwnlibd11orderedjson9JSONValue",
+						"deco": "NgFNaNcNdNlNjZNgAS7nwnlibd11orderedjson9JSONValue",
 						"protection": "public",
 						"endchar": 5,
 						"endline": 335,
@@ -98319,6 +98333,10 @@
 						"parameters": [
 							{
 								"deco": "AS7nwnlibd11orderedjson9JSONValue",
+								"storageClass": [
+									"scope",
+									"return"
+								],
 								"name": "v"
 							}
 						],
@@ -98326,7 +98344,7 @@
 						"kind": "function",
 						"char": 27,
 						"name": "array",
-						"deco": "FNaNbNdNiNfAS7nwnlibd11orderedjson9JSONValueZQBi",
+						"deco": "FNaNbNdNiNlNeNkMAS7nwnlibd11orderedjson9JSONValueZQBi",
 						"protection": "public",
 						"endchar": 5,
 						"endline": 341,
@@ -98372,12 +98390,12 @@
 								"name": "get",
 								"type": "inout const pure @property @safe inout(T)()",
 								"endchar": 5,
-								"endline": 420
+								"endline": 419
 							}
 						],
 						"name": "get",
 						"protection": "public",
-						"comment": " Generic type value getter\n A convenience getter that returns this `JSONValue` as the specified D type.\n Note: only numeric, `bool`, `string`, `JSONValue[string]` and `JSONValue[]` types are accepted\n Throws: `JSONException` if `T` cannot hold the contents of this `JSONValue`\n         `ConvException` if there is a type overflow issue\n"
+						"comment": " Generic type value getter\n A convenience getter that returns this `JSONValue` as the specified D type.\n Note: only numeric, `bool`, `string`, `JSONValue[string]` and `JSONValue[]` types are accepted\n Throws: `JSONException` if `T` cannot hold the contents of this `JSONValue`\n         `ConvException` in case of integer overflow when converting to `T`\n"
 					},
 					{
 						"parameters": [
@@ -98387,18 +98405,18 @@
 								"name": "T"
 							}
 						],
-						"line": 422,
+						"line": 421,
 						"kind": "template",
 						"char": 24,
 						"members": [
 							{
-								"line": 422,
+								"line": 421,
 								"kind": "function",
 								"char": 24,
 								"name": "get",
 								"type": "inout pure @property @trusted inout(T)()",
 								"endchar": 5,
-								"endline": 425
+								"endline": 424
 							}
 						],
 						"name": "get",
@@ -98412,18 +98430,18 @@
 								"name": "T"
 							}
 						],
-						"line": 427,
+						"line": 426,
 						"kind": "template",
 						"char": 24,
 						"members": [
 							{
-								"line": 427,
+								"line": 426,
 								"kind": "function",
 								"char": 24,
 								"name": "get",
 								"type": "inout pure @property @trusted inout(T)()",
 								"endchar": 5,
-								"endline": 430
+								"endline": 429
 							}
 						],
 						"name": "get",
@@ -98438,7 +98456,7 @@
 								"name": "T"
 							}
 						],
-						"line": 584,
+						"line": 583,
 						"kind": "template",
 						"char": 5,
 						"members": [
@@ -98449,18 +98467,18 @@
 										"name": "arg"
 									}
 								],
-								"line": 584,
+								"line": 583,
 								"kind": "constructor",
 								"char": 5,
 								"name": "this",
 								"type": "(T arg)",
 								"endchar": 5,
-								"endline": 587
+								"endline": 586
 							}
 						],
 						"name": "this",
 						"protection": "public",
-						"comment": " Constructor for `JSONValue`. If `arg` is a `JSONValue`\n its value and type will be copied to the new `JSONValue`.\n Note that this is a shallow copy: if type is `JSONType.object`\n or `JSONType.array` then only the reference to the data will\n be copied.\n Otherwise, `arg` must be implicitly convertible to one of the\n following types: `typeof(null)`, `string`, `ulong`,\n `long`, `double`, an associative array `V[K]` for any `V`\n and `K` i.e. a JSON object, any array or `bool`. The type will\n be set accordingly.\nExample:\n$(DDOX_UNITTEST_HEADER __unittest_L600_C11)\n---\nJSONValue j = JSONValue( \"a string\" );\nj = JSONValue(42);\n\nj = JSONValue( [1, 2, 3] );\nassert(j.type == JSONType.array);\n\nj = JSONValue( [\"language\": \"D\"] );\nassert(j.type == JSONType.object);\n\n\n---\n$(DDOX_UNITTEST_FOOTER __unittest_L600_C11)\n"
+						"comment": " Constructor for `JSONValue`. If `arg` is a `JSONValue`\n its value and type will be copied to the new `JSONValue`.\n Note that this is a shallow copy: if type is `JSONType.object`\n or `JSONType.array` then only the reference to the data will\n be copied.\n Otherwise, `arg` must be implicitly convertible to one of the\n following types: `typeof(null)`, `string`, `ulong`,\n `long`, `double`, an associative array `V[K]` for any `V`\n and `K` i.e. a JSON object, any array or `bool`. The type will\n be set accordingly.\nExample:\n$(DDOX_UNITTEST_HEADER __unittest_L599_C11)\n---\nJSONValue j = JSONValue( \"a string\" );\nj = JSONValue(42);\n\nj = JSONValue( [1, 2, 3] );\nassert(j.type == JSONType.array);\n\nj = JSONValue( [\"language\": \"D\"] );\nassert(j.type == JSONType.object);\n\n\n---\n$(DDOX_UNITTEST_FOOTER __unittest_L599_C11)\n"
 					},
 					{
 						"constraint": "isStaticArray!T",
@@ -98470,7 +98488,7 @@
 								"name": "T"
 							}
 						],
-						"line": 589,
+						"line": 588,
 						"kind": "template",
 						"char": 5,
 						"members": [
@@ -98484,13 +98502,13 @@
 										"name": "arg"
 									}
 								],
-								"line": 589,
+								"line": 588,
 								"kind": "constructor",
 								"char": 5,
 								"name": "this",
 								"type": "(ref T arg)",
 								"endchar": 5,
-								"endline": 592
+								"endline": 591
 							}
 						],
 						"name": "this",
@@ -98505,7 +98523,7 @@
 								"name": "T"
 							}
 						],
-						"line": 594,
+						"line": 593,
 						"kind": "template",
 						"char": 5,
 						"members": [
@@ -98519,13 +98537,13 @@
 										"name": "arg"
 									}
 								],
-								"line": 594,
+								"line": 593,
 								"kind": "constructor",
 								"char": 5,
 								"name": "this",
 								"type": "inout (inout T arg)",
 								"endchar": 5,
-								"endline": 598
+								"endline": 597
 							}
 						],
 						"name": "this",
@@ -98540,7 +98558,7 @@
 								"name": "T"
 							}
 						],
-						"line": 612,
+						"line": 611,
 						"kind": "template",
 						"char": 10,
 						"members": [
@@ -98551,13 +98569,13 @@
 										"name": "arg"
 									}
 								],
-								"line": 612,
+								"line": 611,
 								"kind": "function",
 								"char": 10,
 								"name": "opAssign",
 								"type": "void(T arg)",
 								"endchar": 5,
-								"endline": 615
+								"endline": 614
 							}
 						],
 						"name": "opAssign",
@@ -98571,7 +98589,7 @@
 								"name": "T"
 							}
 						],
-						"line": 617,
+						"line": 616,
 						"kind": "template",
 						"char": 10,
 						"members": [
@@ -98585,13 +98603,13 @@
 										"name": "arg"
 									}
 								],
-								"line": 617,
+								"line": 616,
 								"kind": "function",
 								"char": 10,
 								"name": "opAssign",
 								"type": "void(ref T arg)",
 								"endchar": 5,
-								"endline": 620
+								"endline": 619
 							}
 						],
 						"name": "opAssign",
@@ -98604,7 +98622,7 @@
 								"name": "i"
 							}
 						],
-						"line": 626,
+						"line": 625,
 						"kind": "function",
 						"originalType": "inout pure ref @safe inout(JSONValue)(size_t i)",
 						"char": 26,
@@ -98612,25 +98630,29 @@
 						"deco": "NgFNaNcNfmZNgS7nwnlibd11orderedjson9JSONValue",
 						"protection": "public",
 						"endchar": 5,
-						"endline": 632,
-						"comment": " Array syntax for json arrays.\n Throws: `JSONException` if `type` is not `JSONType.array`.\nExample:\n$(DDOX_UNITTEST_HEADER __unittest_L634_C11)\n---\nJSONValue j = JSONValue( [42, 43, 44] );\nassert( j[0].integer == 42 );\nassert( j[1].integer == 43 );\n\n\n---\n$(DDOX_UNITTEST_FOOTER __unittest_L634_C11)\n"
+						"endline": 631,
+						"comment": " Array syntax for json arrays.\n Throws: `JSONException` if `type` is not `JSONType.array`.\nExample:\n$(DDOX_UNITTEST_HEADER __unittest_L633_C11)\n---\nJSONValue j = JSONValue( [42, 43, 44] );\nassert( j[0].integer == 42 );\nassert( j[1].integer == 43 );\n\n\n---\n$(DDOX_UNITTEST_FOOTER __unittest_L633_C11)\n"
 					},
 					{
 						"parameters": [
 							{
 								"deco": "Aya",
+								"storageClass": [
+									"scope",
+									"return"
+								],
 								"name": "k"
 							}
 						],
-						"line": 645,
+						"line": 644,
 						"kind": "function",
 						"char": 26,
 						"name": "opIndex",
-						"deco": "NgFNaNcNfAyaZNgS7nwnlibd11orderedjson9JSONValue",
+						"deco": "NgFNaNcNfNkMAyaZNgS7nwnlibd11orderedjson9JSONValue",
 						"protection": "public",
 						"endchar": 5,
-						"endline": 650,
-						"comment": " Hash syntax for json objects.\n Throws: `JSONException` if `type` is not `JSONType.object`.\nExample:\n$(DDOX_UNITTEST_HEADER __unittest_L652_C11)\n---\nJSONValue j = JSONValue( [\"language\": \"D\"] );\nassert( j[\"language\"].str == \"D\" );\n\n\n---\n$(DDOX_UNITTEST_FOOTER __unittest_L652_C11)\n"
+						"endline": 649,
+						"comment": " Hash syntax for json objects.\n Throws: `JSONException` if `type` is not `JSONType.object`.\nExample:\n$(DDOX_UNITTEST_HEADER __unittest_L651_C11)\n---\nJSONValue j = JSONValue( [\"language\": \"D\"] );\nassert( j[\"language\"].str == \"D\" );\n\n\n---\n$(DDOX_UNITTEST_FOOTER __unittest_L651_C11)\n"
 					},
 					{
 						"parameters": [
@@ -98639,7 +98661,7 @@
 								"name": "T"
 							}
 						],
-						"line": 667,
+						"line": 666,
 						"kind": "template",
 						"char": 10,
 						"members": [
@@ -98658,18 +98680,18 @@
 										"name": "key"
 									}
 								],
-								"line": 667,
+								"line": 666,
 								"kind": "function",
 								"char": 10,
 								"name": "opIndexAssign",
 								"type": "void(auto ref T value, string key)",
 								"endchar": 5,
-								"endline": 685
+								"endline": 684
 							}
 						],
 						"name": "opIndexAssign",
 						"protection": "public",
-						"comment": " Operator sets `value` for element of JSON object by `key`.\n\n If JSON value is null, then operator initializes it with object and then\n sets `value` for it.\n\n Throws: `JSONException` if `type` is not `JSONType.object`\n or `JSONType.null_`.\nExample:\n$(DDOX_UNITTEST_HEADER __unittest_L687_C11)\n---\nJSONValue j = JSONValue( [\"language\": \"D\"] );\nj[\"language\"].str = \"Perl\";\nassert( j[\"language\"].str == \"Perl\" );\n\n\n---\n$(DDOX_UNITTEST_FOOTER __unittest_L687_C11)\n"
+						"comment": " Operator sets `value` for element of JSON object by `key`.\n\n If JSON value is null, then operator initializes it with object and then\n sets `value` for it.\n\n Throws: `JSONException` if `type` is not `JSONType.object`\n or `JSONType.null_`.\nExample:\n$(DDOX_UNITTEST_HEADER __unittest_L686_C11)\n---\nJSONValue j = JSONValue( [\"language\": \"D\"] );\nj[\"language\"].str = \"Perl\";\nassert( j[\"language\"].str == \"Perl\" );\n\n\n---\n$(DDOX_UNITTEST_FOOTER __unittest_L686_C11)\n"
 					},
 					{
 						"parameters": [
@@ -98678,7 +98700,7 @@
 								"name": "T"
 							}
 						],
-						"line": 694,
+						"line": 693,
 						"kind": "template",
 						"char": 10,
 						"members": [
@@ -98693,13 +98715,13 @@
 										"name": "i"
 									}
 								],
-								"line": 694,
+								"line": 693,
 								"kind": "function",
 								"char": 10,
 								"name": "opIndexAssign",
 								"type": "void(T arg, size_t i)",
 								"endchar": 5,
-								"endline": 701
+								"endline": 700
 							}
 						],
 						"name": "opIndexAssign",
@@ -98718,7 +98740,7 @@
 								"name": "T"
 							}
 						],
-						"line": 710,
+						"line": 709,
 						"kind": "template",
 						"char": 15,
 						"members": [
@@ -98729,13 +98751,13 @@
 										"name": "arg"
 									}
 								],
-								"line": 710,
+								"line": 709,
 								"kind": "function",
 								"char": 15,
 								"name": "opBinary",
 								"type": "JSONValue(T arg)",
 								"endchar": 5,
-								"endline": 725
+								"endline": 724
 							}
 						],
 						"name": "opBinary",
@@ -98754,7 +98776,7 @@
 								"name": "T"
 							}
 						],
-						"line": 727,
+						"line": 726,
 						"kind": "template",
 						"char": 10,
 						"members": [
@@ -98765,13 +98787,13 @@
 										"name": "arg"
 									}
 								],
-								"line": 727,
+								"line": 726,
 								"kind": "function",
 								"char": 10,
 								"name": "opOpAssign",
 								"type": "void(T arg)",
 								"endchar": 5,
-								"endline": 743
+								"endline": 742
 							}
 						],
 						"name": "opOpAssign",
@@ -98786,32 +98808,29 @@
 								"name": "op"
 							}
 						],
-						"line": 757,
+						"line": 756,
 						"kind": "template",
-						"char": 10,
+						"char": 23,
 						"members": [
 							{
-								"storageClass": [
-									"auto"
-								],
 								"parameters": [
 									{
 										"type": "string",
 										"name": "k"
 									}
 								],
-								"line": 757,
+								"line": 756,
 								"kind": "function",
-								"char": 10,
+								"char": 23,
 								"name": "opBinaryRight",
-								"type": "const @safe (string k)",
+								"type": "inout @safe inout(JSONValue)*(string k)",
 								"endchar": 5,
-								"endline": 760
+								"endline": 759
 							}
 						],
 						"name": "opBinaryRight",
 						"protection": "public",
-						"comment": " Support for the `in` operator.\n\n Tests wether a key can be found in an object.\n\n Returns:\n      when found, the `const(JSONValue)*` that matches to the key,\n      otherwise `null`.\n\n Throws: `JSONException` if the right hand side argument `JSONType`\n is not `object`.\nExample:\n$(DDOX_UNITTEST_HEADER __unittest_L762_C11)\n---\nJSONValue j = [ \"language\": \"D\", \"author\": \"walter\" ];\nstring a = (\"author\" in j).str;\n\n\n---\n$(DDOX_UNITTEST_FOOTER __unittest_L762_C11)\n"
+						"comment": " Support for the `in` operator.\n\n Tests wether a key can be found in an object.\n\n Returns:\n      when found, the `inout(JSONValue)*` that matches to the key,\n      otherwise `null`.\n\n Throws: `JSONException` if the right hand side argument `JSONType`\n is not `object`.\nExample:\n$(DDOX_UNITTEST_HEADER __unittest_L761_C11)\n---\nJSONValue j = [ \"language\": \"D\", \"author\": \"walter\" ];\nstring a = (\"author\" in j).str;\n*(\"author\" in j) = \"Walter\";\nassert(j[\"author\"].str == \"Walter\");\n\n\n---\n$(DDOX_UNITTEST_FOOTER __unittest_L761_C11)\n"
 					},
 					{
 						"parameters": [
@@ -98820,7 +98839,7 @@
 								"name": "rhs"
 							}
 						],
-						"line": 768,
+						"line": 769,
 						"kind": "function",
 						"originalType": "const pure nothrow @nogc @safe bool(const JSONValue rhs)",
 						"char": 10,
@@ -98828,7 +98847,7 @@
 						"deco": "xFNaNbNiNfxS7nwnlibd11orderedjson9JSONValueZb",
 						"protection": "public",
 						"endchar": 5,
-						"endline": 771
+						"endline": 772
 					},
 					{
 						"parameters": [
@@ -98840,7 +98859,7 @@
 								"name": "rhs"
 							}
 						],
-						"line": 773,
+						"line": 774,
 						"kind": "function",
 						"originalType": "const pure nothrow @nogc @trusted bool(const ref JSONValue rhs)",
 						"char": 10,
@@ -98848,7 +98867,7 @@
 						"deco": "xFNaNbNiNeKxS7nwnlibd11orderedjson9JSONValueZb",
 						"protection": "public",
 						"endchar": 5,
-						"endline": 828
+						"endline": 829
 					},
 					{
 						"parameters": [
@@ -98860,7 +98879,7 @@
 								"name": "dg"
 							}
 						],
-						"line": 839,
+						"line": 840,
 						"kind": "function",
 						"originalType": "@system int(scope int delegate(size_t index, ref JSONValue) dg)",
 						"char": 9,
@@ -98868,7 +98887,7 @@
 						"deco": "FMDFmKS7nwnlibd11orderedjson9JSONValueZiZi",
 						"protection": "public",
 						"endchar": 5,
-						"endline": 851,
+						"endline": 852,
 						"comment": "Implements the foreach `opApply` interface for json arrays.\n"
 					},
 					{
@@ -98881,14 +98900,14 @@
 								"name": "dg"
 							}
 						],
-						"line": 854,
+						"line": 855,
 						"kind": "function",
 						"char": 9,
 						"name": "opApply",
 						"deco": "FMDFAyaKS7nwnlibd11orderedjson9JSONValueZiZi",
 						"protection": "public",
 						"endchar": 5,
-						"endline": 868,
+						"endline": 869,
 						"comment": "Implements the foreach `opApply` interface for json objects.\n"
 					},
 					{
@@ -98902,14 +98921,14 @@
 								"name": "options"
 							}
 						],
-						"line": 875,
+						"line": 876,
 						"kind": "function",
 						"char": 12,
 						"name": "toString",
 						"deco": "xFNfIE7nwnlibd11orderedjson11JSONOptionsZAya",
 						"protection": "public",
 						"endchar": 5,
-						"endline": 878,
+						"endline": 879,
 						"comment": " Implicitly calls `toJSON` on this JSONValue.\n\n $(I options) can be used to tweak the conversion behavior.\n"
 					},
 					{
@@ -98919,7 +98938,7 @@
 								"name": "Out"
 							}
 						],
-						"line": 881,
+						"line": 882,
 						"kind": "template",
 						"char": 10,
 						"members": [
@@ -98938,13 +98957,13 @@
 										"name": "options"
 									}
 								],
-								"line": 881,
+								"line": 882,
 								"kind": "function",
 								"char": 10,
 								"name": "toString",
 								"type": "const void(Out sink, in JSONOptions options = JSONOptions.none)",
 								"endchar": 5,
-								"endline": 884
+								"endline": 885
 							}
 						],
 						"name": "toString",
@@ -98962,14 +98981,14 @@
 								"name": "options"
 							}
 						],
-						"line": 892,
+						"line": 893,
 						"kind": "function",
 						"char": 12,
 						"name": "toPrettyString",
 						"deco": "xFNfIE7nwnlibd11orderedjson11JSONOptionsZAya",
 						"protection": "public",
 						"endchar": 5,
-						"endline": 895,
+						"endline": 896,
 						"comment": " Implicitly calls `toJSON` on this JSONValue, like `toString`, but\n also passes $(I true) as $(I pretty) argument.\n\n $(I options) can be used to tweak the conversion behavior\n"
 					},
 					{
@@ -98979,7 +98998,7 @@
 								"name": "Out"
 							}
 						],
-						"line": 898,
+						"line": 899,
 						"kind": "template",
 						"char": 10,
 						"members": [
@@ -98998,13 +99017,13 @@
 										"name": "options"
 									}
 								],
-								"line": 898,
+								"line": 899,
 								"kind": "function",
 								"char": 10,
 								"name": "toPrettyString",
 								"type": "const void(Out sink, in JSONOptions options = JSONOptions.none)",
 								"endchar": 5,
-								"endline": 901
+								"endline": 902
 							}
 						],
 						"name": "toPrettyString",
@@ -99017,14 +99036,14 @@
 				"comment": "JSON value node\n"
 			},
 			{
-				"constraint": "isInputRange!T && !isInfinite!T && isSomeChar!(ElementEncodingType!T)",
+				"constraint": "isSomeFiniteCharInputRange!T",
 				"parameters": [
 					{
 						"kind": "type",
 						"name": "T"
 					}
 				],
-				"line": 942,
+				"line": 943,
 				"kind": "template",
 				"char": 11,
 				"members": [
@@ -99045,13 +99064,13 @@
 								"name": "options"
 							}
 						],
-						"line": 942,
+						"line": 943,
 						"kind": "function",
 						"char": 11,
 						"name": "parseJSON",
 						"type": "JSONValue(T json, int maxDepth = -1, JSONOptions options = JSONOptions.none)",
 						"endchar": 1,
-						"endline": 1408
+						"endline": 1409
 					}
 				],
 				"name": "parseJSON",
@@ -99059,14 +99078,14 @@
 				"comment": "Parses a serialized string and returns a tree of JSON values.\nThrows: $(LREF JSONException) if string does not follow the JSON grammar or the depth exceeds the max depth,\n        $(LREF ConvException) if a number in the input cannot be represented by a native D type.\nParams:\n    json = json-formatted string to parse\n    maxDepth = maximum depth of nesting allowed, -1 disables depth checking\n    options = enable decoding string representations of NaN/Inf as float values\n"
 			},
 			{
-				"constraint": "isInputRange!T && !isInfinite!T && isSomeChar!(ElementEncodingType!T)",
+				"constraint": "isSomeFiniteCharInputRange!T",
 				"parameters": [
 					{
 						"kind": "type",
 						"name": "T"
 					}
 				],
-				"line": 1459,
+				"line": 1460,
 				"kind": "template",
 				"char": 11,
 				"members": [
@@ -99081,13 +99100,13 @@
 								"name": "options"
 							}
 						],
-						"line": 1459,
+						"line": 1460,
 						"kind": "function",
 						"char": 11,
 						"name": "parseJSON",
 						"type": "JSONValue(T json, JSONOptions options)",
 						"endchar": 1,
-						"endline": 1463
+						"endline": 1464
 					}
 				],
 				"name": "parseJSON",
@@ -99120,7 +99139,7 @@
 						"name": "options"
 					}
 				],
-				"line": 1474,
+				"line": 1475,
 				"kind": "function",
 				"originalType": "@safe string(const ref JSONValue root, in bool pretty = false, in JSONOptions options = JSONOptions.none)",
 				"char": 8,
@@ -99128,7 +99147,7 @@
 				"deco": "FNfKxS7nwnlibd11orderedjson9JSONValueIbIEQBjQBe11JSONOptionsZAya",
 				"protection": "public",
 				"endchar": 1,
-				"endline": 1479,
+				"endline": 1480,
 				"comment": "Takes a tree of JSON values and returns the serialized string.\n\nAny Object types will be serialized in a key-sorted order.\n\nIf `pretty` is false no whitespaces are generated.\nIf `pretty` is true serialized string is formatted to be human-readable.\nSet the $(LREF JSONOptions.specialFloatLiterals) flag is set in `options` to encode NaN/Infinity as strings.\n"
 			},
 			{
@@ -99139,7 +99158,7 @@
 						"name": "Out"
 					}
 				],
-				"line": 1482,
+				"line": 1483,
 				"kind": "template",
 				"char": 6,
 				"members": [
@@ -99178,7 +99197,7 @@
 								"name": "options"
 							}
 						],
-						"line": 1482,
+						"line": 1483,
 						"kind": "function",
 						"char": 6,
 						"name": "toJSON",
@@ -99192,7 +99211,7 @@
 				"comment": "\n"
 			},
 			{
-				"line": 1768,
+				"line": 1823,
 				"kind": "class",
 				"char": 1,
 				"base": "object.Exception",
@@ -99214,7 +99233,7 @@
 								"name": "pos"
 							}
 						],
-						"line": 1770,
+						"line": 1825,
 						"kind": "constructor",
 						"originalType": "pure nothrow @safe (string msg, int line = 0, int pos = 0)",
 						"char": 5,
@@ -99222,7 +99241,7 @@
 						"deco": "FNaNbNfAyaiiZC7nwnlibd11orderedjson13JSONException",
 						"protection": "public",
 						"endchar": 5,
-						"endline": 1776
+						"endline": 1831
 					},
 					{
 						"parameters": [
@@ -99239,7 +99258,7 @@
 								"name": "line"
 							}
 						],
-						"line": 1778,
+						"line": 1833,
 						"kind": "constructor",
 						"originalType": "pure nothrow @safe (string msg, string file, size_t line)",
 						"char": 5,
@@ -99247,7 +99266,7 @@
 						"deco": "FNaNbNfAyaQdmZC7nwnlibd11orderedjson13JSONException",
 						"protection": "public",
 						"endchar": 5,
-						"endline": 1781
+						"endline": 1836
 					}
 				],
 				"name": "JSONException",
@@ -99255,7 +99274,7 @@
 				"comment": "Exception thrown on JSON errors\n"
 			}
 		],
-		"comment": "JavaScript Object Notation\n\nCopyright: Copyright Jeremie Pelletier 2008 - 2009.\nLicense:   $(HTTP www.boost.org/LICENSE_1_0.txt, Boost License 1.0).\nAuthors:   Jeremie Pelletier, David Herberth\nReferences: $(LINK http://json.org/), $(LINK http://seriot.ch/parsing_json.html)\nSource:    $(PHOBOSSRC std/json.d)\nExample:\n$(DDOX_UNITTEST_HEADER __unittest_L26_C9)\n---\nimport std.conv : to;\n\n// parse a file or string of json into a usable structure\nstring s = `{ \"language\": \"D\", \"rating\": 3.5, \"code\": \"42\" }`;\nJSONValue j = parseJSON(s);\n// j and j[\"language\"] return JSONValue,\n// j[\"language\"].str returns a string\nassert(j[\"language\"].str == \"D\");\nassert(j[\"rating\"].floating == 3.5);\n\n// check a type\nlong x;\nif (const(JSONValue)* code = \"code\" in j)\n{\n    if (code.type() == JSONType.integer)\n        x = code.integer;\n    else\n        x = to!int(code.str);\n}\n\n// create a json struct\nJSONValue jj = [ \"language\": \"D\" ];\n// rating doesnt exist yet, so use .object to assign\njj.object[\"rating\"] = JSONValue(3.5);\n// create an array to assign to list\njj.object[\"list\"] = JSONValue( [\"a\", \"b\", \"c\"] );\n// list already exists, so .object optional\njj[\"list\"].array ~= JSONValue(\"D\");\n\n//#################################################################################################################\nstring jjStr = `{\"language\":\"D\",\"rating\":3.5,\"list\":[\"a\",\"b\",\"c\",\"D\"]}`;\n//#################################################################################################################\nassert(jj.toString == jjStr);\n\n---\n$(DDOX_UNITTEST_FOOTER __unittest_L26_C9)\n",
+		"comment": "JavaScript Object Notation\n\nCopyright: Copyright Jeremie Pelletier 2008 - 2009.\nLicense:   $(HTTP www.boost.org/LICENSE_1_0.txt, Boost License 1.0).\nAuthors:   Jeremie Pelletier, David Herberth\nReferences: $(LINK http://json.org/), $(LINK http://seriot.ch/parsing_json.html)\nSource:    $(PHOBOSSRC std/json.d)\nExample:\n$(DDOX_UNITTEST_HEADER __unittest_L26_C9)\n---\nimport std.conv : to;\n\n// parse a file or string of json into a usable structure\nstring s = `{ \"language\": \"D\", \"rating\": 3.5, \"code\": \"42\" }`;\nJSONValue j = parseJSON(s);\n// j and j[\"language\"] return JSONValue,\n// j[\"language\"].str returns a string\nassert(j[\"language\"].str == \"D\");\nassert(j[\"rating\"].floating == 3.5);\n\n// check a type\nlong x;\nif (const(JSONValue)* code = \"code\" in j)\n{\n    if (code.type() == JSONType.integer)\n        x = code.integer;\n    else\n        x = to!int(code.str);\n}\n\n// create a json struct\nJSONValue jj = [ \"language\": \"D\" ];\n// rating doesnt exist yet, so use .object to assign\njj.object[\"rating\"] = JSONValue(3.5);\n// create an array to assign to list\njj.object[\"list\"] = JSONValue( [\"a\", \"b\", \"c\"] );\n// list already exists, so .object optional\njj[\"list\"].array ~= JSONValue(\"D\");\n\n//### nwn-lib-d ###################################################################################################\nstring jjStr = `{\"language\":\"D\",\"rating\":3.5,\"list\":[\"a\",\"b\",\"c\",\"D\"]}`;\n//#################################################################################################################\nassert(jj.toString == jjStr);\n\n---\n$(DDOX_UNITTEST_FOOTER __unittest_L26_C9)\n",
 		"name": "nwnlibd.orderedjson"
 	},
 	{
