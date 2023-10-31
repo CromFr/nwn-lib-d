@@ -61,6 +61,19 @@ int _main(string[] args){
 			"Parsing and serialization tool for GFF files like ifo, are, bic, uti, ...",
 			res.options,
 			multilineStr!`
+				===============|  Formats  |===============
+				Formats supported by the -i and -k arguments:
+
+				Name                 R W
+				detect               x x  Guess based on file extension
+				gff                  x x  Binary GFF (standard NWN GFF file)
+				json                 x x  JSON
+				json_minified        x x  Compact JSON
+				json_legacy          x x  JSON compatible with Niv nwn-gff
+				json_legacy_minified x x  Compact JSON compatible with Niv nwn-gff
+				pretty                 x  Easy to read text format
+				dump                   x  Dump internal GFF information
+
 				===============|  Setting nodes  |===============
 				There are 3 ways to set a GFF value:
 
@@ -172,19 +185,20 @@ int _main(string[] args){
 	Gff gff;
 	File inputFile = inputPath == "-"? stdin : File(inputPath, "r");
 
-	switch(inputFormat){
+	final switch(inputFormat){
 		case Format.gff:
 			gff = new Gff(inputFile);
 			break;
-		case Format.json, Format.json_minified:
+		case Format.json, Format.json_minified, Format.json_legacy, Format.json_legacy_minified:
 			import nwnlibd.orderedjson;
 			gff = new Gff(parseJSON(cast(string)inputFile.readAll.idup, -1, JSONOptions.specialFloatLiterals));
 			break;
 		case Format.pretty:
+		case Format.dump:
 			enforce(0, inputFormat.to!string~" parsing not supported");
 			break;
-		default:
-			enforce(0, inputFormat.to!string~" parsing not implemented");
+		case Format.detect:
+			assert(0);
 	}
 	inputFile.close();
 
@@ -588,7 +602,7 @@ int _main(string[] args){
 
 	//Serialization
 	File outputFile = outputPath is null || outputPath == "-" ? stdout : File(outputPath, "w");
-	switch(outputFormat){
+	final switch(outputFormat){
 		case Format.gff:
 			outputFile.rawWrite(gff.serialize());
 			break;
@@ -596,7 +610,11 @@ int _main(string[] args){
 			outputFile.writeln(gff.toPrettyString());
 			break;
 		case Format.json, Format.json_minified:
-			auto json = gff.toJson;
+			auto json = gff.toJson();
+			outputFile.writeln(outputFormat==Format.json? json.toPrettyString(JSONOptions.specialFloatLiterals) : json.toString(JSONOptions.specialFloatLiterals));
+			break;
+		case Format.json_legacy, Format.json_legacy_minified:
+			auto json = gff.toJson(false);
 			outputFile.writeln(outputFormat==Format.json? json.toPrettyString(JSONOptions.specialFloatLiterals) : json.toString(JSONOptions.specialFloatLiterals));
 			break;
 		case Format.dump:
@@ -605,13 +623,13 @@ int _main(string[] args){
 			auto fastGff = new FastGff(outData);
 			outputFile.writeln(fastGff.dump());
 			break;
-		default:
-			assert(0, outputFormat.to!string~" serialization not implemented");
+		case Format.detect:
+			assert(0);
 	}
 	return 0;
 }
 
-enum Format{ detect, gff, json, json_minified, pretty, dump }
+enum Format{ detect, gff, json, json_minified, json_legacy, json_legacy_minified, pretty, dump }
 
 Format guessFormat(in string fileName){
 	import std.path: extension;

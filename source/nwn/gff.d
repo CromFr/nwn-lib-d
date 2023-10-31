@@ -452,21 +452,47 @@ struct GffStruct {
 	this(in nwnlibd.orderedjson.JSONValue json){
 		enforce(json.type == JSONType.object, "json value " ~ json.toPrettyString ~ " is not an object");
 		enforce(json["type"].str == "struct", "json .type "~ json.toPrettyString ~" is not a sruct");
-		enforce(json["value"].type == JSONType.object, "json .value "~ json.toPrettyString ~" is not an object");
+		enforce(json["value"].type == JSONType.object || json["value"].type == JSONType.array,
+			"json .value "~ json.toPrettyString ~" must be an object or a list");
 		if(auto structId = ("__struct_id" in json))
 			id = structId.get!uint32_t;
-		foreach(ref label ; json["value"].objectKeyOrder){
-			children[label] = GffValue(json["value"][label]);
+
+		if(json["value"].type == JSONType.array){
+			foreach(ref entry ; json["value"].array){
+				auto label = entry["label"].str;
+				children.dirtyAppendKeyValue(label, GffValue(entry));
+			}
+		}
+		else{
+			foreach(ref label ; json["value"].objectKeyOrder){
+				children[label] = GffValue(json["value"][label]);
+			}
 		}
 	}
 	/// GffStruct to JSON
-	nwnlibd.orderedjson.JSONValue toJson() const {
+	nwnlibd.orderedjson.JSONValue toJson(bool structAsList = true) const {
 		JSONValue ret;
 		ret["type"] = "struct";
 		ret["__struct_id"] = id;
-		ret["value"] = JSONValue(cast(JSONValue[string])null);
-		foreach(ref kv ; children.byKeyValue){
-			ret["value"][kv.key] = kv.value.toJson();
+		if(structAsList){
+			ret["value"] = JSONValue(cast(JSONValue[])null);
+			foreach(ref kv ; children.byKeyValue){
+				auto value = kv.value.toJson();
+				value["label"] = kv.key;
+
+				// Reorder label
+				const idx = value.objectKeyOrder[$ - 1];
+				value.objectKeyOrder = idx ~ value.objectKeyOrder[0 .. $ - 1];
+
+				ret["value"].array ~= value;
+				//ret["value"].array ~= JSONValue(["label": JSONValue(kv.key), "value": kv.value.toJson()]);
+			}
+		}
+		else{
+			ret["value"] = JSONValue(cast(JSONValue[string])null);
+			foreach(ref kv ; children.byKeyValue){
+				ret["value"][kv.key] = kv.value.toJson();
+			}
 		}
 		return ret;
 	}
@@ -529,13 +555,13 @@ struct GffList {
 		}
 	}
 	/// GffList to JSON
-	nwnlibd.orderedjson.JSONValue toJson() const {
+	nwnlibd.orderedjson.JSONValue toJson(bool structAsList = true) const {
 		JSONValue ret;
 		ret["type"] = "list";
 		ret["value"] = JSONValue(cast(JSONValue[])null);
 		ret["value"].array.length = children.length;
 		foreach(i, ref child ; children){
-			ret["value"][i] = child.toJson();
+			ret["value"][i] = child.toJson(structAsList);
 		}
 		return ret;
 	}
@@ -701,7 +727,7 @@ struct GffValue {
 		}
 	}
 	/// Converts to JSON
-	nwnlibd.orderedjson.JSONValue toJson() const {
+	nwnlibd.orderedjson.JSONValue toJson(bool structAsList = true) const {
 		JSONValue ret;
 		final switch(type) with(GffType) {
 			case Byte:      ret["value"] = get!GffByte; break;
@@ -718,8 +744,8 @@ struct GffValue {
 			case ResRef:    ret["value"] = get!GffResRef.value; break;
 			case LocString: return get!GffLocString.toJson;
 			case Void:      ret["value"] = Base64.encode(get!GffVoid).to!string; break;
-			case Struct:    return get!GffStruct.toJson;
-			case List:      return get!GffList.toJson;
+			case Struct:    return get!GffStruct.toJson(structAsList);
+			case List:      return get!GffList.toJson(structAsList);
 			case Invalid:   assert(0, "No type set");
 		}
 		ret["type"] = type.gffTypeToCompatStr;
@@ -796,8 +822,8 @@ class Gff{
 	}
 
 	/// Convert to JSON
-	nwnlibd.orderedjson.JSONValue toJson() const {
-		auto ret = root.toJson();
+	nwnlibd.orderedjson.JSONValue toJson(bool structAsList = true) const {
+		auto ret = root.toJson(structAsList);
 		ret["__data_type"] = fileType;
 		ret["__data_version"] = fileVersion;
 		return ret;

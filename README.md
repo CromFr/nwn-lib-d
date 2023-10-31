@@ -24,8 +24,9 @@ __[Download nwn-lib-d tools](https://github.com/CromFr/nwn-lib-d/releases)__
     |      Format     |      Parsing       |   Serialization    |                                              Comment                                               |
     | :-------------: | :----------------: | :----------------: | -------------------------------------------------------------------------------------------------- |
     |      `gff`      | :white_check_mark: | :white_check_mark: | NWN binary. Generated binary file match exactly official NWN2 files (needs to be tested with NWN1) |
-    |      `json`     | :white_check_mark: | :white_check_mark: | Json, compatible with [Niv nwn-lib](https://github.com/niv/nwn-lib)                                |
+    |      `json`     | :white_check_mark: | :white_check_mark: | Json                                                                                               |
     | `json_minified` | :white_check_mark: | :white_check_mark: | Same as `json` but minified                                                                        |
+    |  `json_legacy`  | :white_check_mark: | :white_check_mark: | Json, compatible with [Niv nwn-lib](https://github.com/niv/nwn-lib)                                |
     |     `pretty`    |        :x:         | :white_check_mark: | Human-readable                                                                                     |
 
   + Pros
