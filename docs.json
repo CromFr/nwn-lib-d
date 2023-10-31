@@ -5881,19 +5881,26 @@
 						"deco": "FNcIS7nwnlibd11orderedjson9JSONValueZS3nwn3gff9GffStruct",
 						"protection": "public",
 						"endchar": 2,
-						"endline": 461,
+						"endline": 471,
 						"comment": "JSON to GffStruct\n"
 					},
 					{
-						"line": 463,
+						"parameters": [
+							{
+								"deco": "b",
+								"default": "true",
+								"name": "structAsList"
+							}
+						],
+						"line": 473,
 						"kind": "function",
-						"originalType": "const nwnlibd.orderedjson.JSONValue()",
+						"originalType": "const nwnlibd.orderedjson.JSONValue(bool structAsList = true)",
 						"char": 32,
 						"name": "toJson",
-						"deco": "xFZS7nwnlibd11orderedjson9JSONValue",
+						"deco": "xFbZS7nwnlibd11orderedjson9JSONValue",
 						"protection": "public",
 						"endchar": 2,
-						"endline": 472,
+						"endline": 498,
 						"comment": "GffStruct to JSON\n"
 					}
 				],
@@ -5902,7 +5909,7 @@
 				"comment": "Gff type Struct ( `GffValue[string]` )\n"
 			},
 			{
-				"line": 487,
+				"line": 513,
 				"kind": "struct",
 				"char": 1,
 				"members": [
@@ -5913,7 +5920,7 @@
 								"name": "children"
 							}
 						],
-						"line": 489,
+						"line": 515,
 						"kind": "constructor",
 						"originalType": "ref (GffStruct[] children)",
 						"char": 2,
@@ -5921,7 +5928,7 @@
 						"deco": "FNcAS3nwn3gff9GffStructZSQuQs7GffList",
 						"protection": "public",
 						"endchar": 2,
-						"endline": 491,
+						"endline": 517,
 						"comment": "\n"
 					},
 					{
@@ -5931,7 +5938,7 @@
 								"name": "other"
 							}
 						],
-						"line": 494,
+						"line": 520,
 						"kind": "constructor",
 						"originalType": "ref (GffList other)",
 						"char": 2,
@@ -5939,22 +5946,22 @@
 						"deco": "FNcS3nwn3gff7GffListZQs",
 						"protection": "public",
 						"endchar": 2,
-						"endline": 496,
+						"endline": 522,
 						"comment": "Copy constructor\n"
 					},
 					{
-						"line": 499,
+						"line": 525,
 						"kind": "function",
 						"char": 10,
 						"name": "dup",
 						"deco": "xFZS3nwn3gff7GffList",
 						"protection": "public",
 						"endchar": 2,
-						"endline": 501,
+						"endline": 527,
 						"comment": "Duplicate GffList content\n"
 					},
 					{
-						"line": 504,
+						"line": 530,
 						"kind": "variable",
 						"char": 14,
 						"name": "children",
@@ -5971,14 +5978,14 @@
 								"name": "tabs"
 							}
 						],
-						"line": 508,
+						"line": 534,
 						"kind": "function",
 						"char": 9,
 						"name": "toPrettyString",
 						"deco": "xFAyaZQe",
 						"protection": "public",
 						"endchar": 2,
-						"endline": 519,
+						"endline": 545,
 						"comment": "Converts a GffStruct to a user-friendly string\n"
 					},
 					{
@@ -5991,7 +5998,7 @@
 								"name": "json"
 							}
 						],
-						"line": 522,
+						"line": 548,
 						"kind": "constructor",
 						"originalType": "ref (in nwnlibd.orderedjson.JSONValue json)",
 						"char": 2,
@@ -5999,19 +6006,26 @@
 						"deco": "FNcIS7nwnlibd11orderedjson9JSONValueZS3nwn3gff7GffList",
 						"protection": "public",
 						"endchar": 2,
-						"endline": 530,
+						"endline": 556,
 						"comment": "JSON to GffList\n"
 					},
 					{
-						"line": 532,
+						"parameters": [
+							{
+								"deco": "b",
+								"default": "true",
+								"name": "structAsList"
+							}
+						],
+						"line": 558,
 						"kind": "function",
-						"originalType": "const nwnlibd.orderedjson.JSONValue()",
+						"originalType": "const nwnlibd.orderedjson.JSONValue(bool structAsList = true)",
 						"char": 32,
 						"name": "toJson",
-						"deco": "xFZS7nwnlibd11orderedjson9JSONValue",
+						"deco": "xFbZS7nwnlibd11orderedjson9JSONValue",
 						"protection": "public",
 						"endchar": 2,
-						"endline": 541,
+						"endline": 567,
 						"comment": "GffList to JSON\n"
 					}
 				],
@@ -6020,12 +6034,12 @@
 				"comment": "Gff type List ( `GffStruct[]` )\n"
 			},
 			{
-				"line": 548,
+				"line": 574,
 				"kind": "struct",
 				"char": 1,
 				"members": [
 					{
-						"line": 551,
+						"line": 577,
 						"kind": "alias",
 						"originalType": "VariantN!(32, GffByte, GffChar, GffWord, GffShort, GffDWord, GffInt, GffDWord64, GffInt64, GffFloat, GffDouble, GffString, GffResRef, GffLocString, GffVoid, GffStruct, GffList)",
 						"char": 2,
@@ -6035,7 +6049,7 @@
 						"comment": "\n"
 					},
 					{
-						"line": 562,
+						"line": 588,
 						"kind": "variable",
 						"originalType": "Value",
 						"char": 8,
@@ -6053,7 +6067,7 @@
 								"name": "T"
 							}
 						],
-						"line": 567,
+						"line": 593,
 						"kind": "template",
 						"char": 2,
 						"members": [
@@ -6064,13 +6078,13 @@
 										"name": "_value"
 									}
 								],
-								"line": 567,
+								"line": 593,
 								"kind": "constructor",
 								"char": 2,
 								"name": "this",
 								"type": "(T _value)",
 								"endchar": 2,
-								"endline": 569
+								"endline": 595
 							}
 						],
 						"name": "this",
@@ -6084,7 +6098,7 @@
 								"name": "_type"
 							}
 						],
-						"line": 572,
+						"line": 598,
 						"kind": "constructor",
 						"originalType": "ref (GffType _type)",
 						"char": 2,
@@ -6092,18 +6106,18 @@
 						"deco": "FNcE3nwn3gff7GffTypeZSQsQq8GffValue",
 						"protection": "public",
 						"endchar": 2,
-						"endline": 592,
+						"endline": 618,
 						"comment": "\n"
 					},
 					{
-						"line": 596,
+						"line": 622,
 						"kind": "function",
 						"char": 11,
 						"name": "type",
 						"deco": "xFNdZE3nwn3gff7GffType",
 						"protection": "public",
 						"endchar": 3,
-						"endline": 608,
+						"endline": 634,
 						"comment": "Get currently stored GFF type\n"
 					},
 					{
@@ -6113,18 +6127,18 @@
 								"name": "T"
 							}
 						],
-						"line": 613,
+						"line": 639,
 						"kind": "template",
 						"char": 15,
 						"members": [
 							{
-								"line": 613,
+								"line": 639,
 								"kind": "function",
 								"char": 15,
 								"name": "get",
 								"type": "inout ref inout(T)()",
 								"endchar": 2,
-								"endline": 617
+								"endline": 643
 							}
 						],
 						"name": "get",
@@ -6143,7 +6157,7 @@
 								"name": "label"
 							}
 						],
-						"line": 620,
+						"line": 646,
 						"kind": "function",
 						"originalType": "ref (in string label)",
 						"char": 11,
@@ -6151,7 +6165,7 @@
 						"deco": "FNcIAyaZS3nwn3gff8GffValue",
 						"protection": "public",
 						"endchar": 2,
-						"endline": 622,
+						"endline": 648,
 						"comment": "Shorthand for modifying the GffValue as a GffStruct\n"
 					},
 					{
@@ -6162,7 +6176,7 @@
 								"name": "T"
 							}
 						],
-						"line": 624,
+						"line": 650,
 						"kind": "template",
 						"char": 11,
 						"members": [
@@ -6183,13 +6197,13 @@
 										"name": "label"
 									}
 								],
-								"line": 624,
+								"line": 650,
 								"kind": "function",
 								"char": 11,
 								"name": "opIndexAssign",
 								"type": "ref (T rhs, in string label)",
 								"endchar": 2,
-								"endline": 629
+								"endline": 655
 							}
 						],
 						"name": "opIndexAssign",
@@ -6203,7 +6217,7 @@
 								"name": "index"
 							}
 						],
-						"line": 632,
+						"line": 658,
 						"kind": "function",
 						"originalType": "ref (size_t index)",
 						"char": 11,
@@ -6211,7 +6225,7 @@
 						"deco": "FNcmZS3nwn3gff9GffStruct",
 						"protection": "public",
 						"endchar": 2,
-						"endline": 634,
+						"endline": 660,
 						"comment": "Shorthand for modifying the GffValue as a GffList\n"
 					},
 					{
@@ -6225,7 +6239,7 @@
 								"name": "index"
 							}
 						],
-						"line": 636,
+						"line": 662,
 						"kind": "function",
 						"originalType": "ref (GffStruct rhs, size_t index)",
 						"char": 11,
@@ -6233,8 +6247,19 @@
 						"deco": "FNcS3nwn3gff9GffStructmZQv",
 						"protection": "public",
 						"endchar": 2,
-						"endline": 638,
+						"endline": 664,
 						"comment": "ditto\n"
+					},
+					{
+						"line": 667,
+						"kind": "function",
+						"char": 11,
+						"name": "dup",
+						"deco": "xFZS3nwn3gff8GffValue",
+						"protection": "public",
+						"endchar": 2,
+						"endline": 680,
+						"comment": "Duplicates the GFF value\n"
 					},
 					{
 						"parameters": [
@@ -6243,18 +6268,18 @@
 								"name": "T"
 							}
 						],
-						"line": 641,
+						"line": 683,
 						"kind": "template",
 						"char": 4,
 						"members": [
 							{
-								"line": 641,
+								"line": 683,
 								"kind": "function",
 								"char": 4,
 								"name": "to",
 								"type": "const T()",
 								"endchar": 2,
-								"endline": 662
+								"endline": 704
 							}
 						],
 						"name": "to",
@@ -6271,7 +6296,7 @@
 								"name": "json"
 							}
 						],
-						"line": 665,
+						"line": 707,
 						"kind": "constructor",
 						"originalType": "ref (in nwnlibd.orderedjson.JSONValue json)",
 						"char": 2,
@@ -6279,19 +6304,26 @@
 						"deco": "FNcIS7nwnlibd11orderedjson9JSONValueZS3nwn3gff8GffValue",
 						"protection": "public",
 						"endchar": 2,
-						"endline": 686,
+						"endline": 728,
 						"comment": "Create a GffValue by parsing JSON.\nJSON format should be like `{\"type\": \"resref\", \"value\": \"hello world\"}`\n"
 					},
 					{
-						"line": 688,
+						"parameters": [
+							{
+								"deco": "b",
+								"default": "true",
+								"name": "structAsList"
+							}
+						],
+						"line": 730,
 						"kind": "function",
-						"originalType": "const nwnlibd.orderedjson.JSONValue()",
+						"originalType": "const nwnlibd.orderedjson.JSONValue(bool structAsList = true)",
 						"char": 32,
 						"name": "toJson",
-						"deco": "xFZS7nwnlibd11orderedjson9JSONValue",
+						"deco": "xFbZS7nwnlibd11orderedjson9JSONValue",
 						"protection": "public",
 						"endchar": 2,
-						"endline": 711,
+						"endline": 753,
 						"comment": "Converts to JSON\n"
 					},
 					{
@@ -6302,14 +6334,14 @@
 								"name": "tabs"
 							}
 						],
-						"line": 714,
+						"line": 756,
 						"kind": "function",
 						"char": 9,
 						"name": "toPrettyString",
 						"deco": "xFAyaZQe",
 						"protection": "public",
 						"endchar": 2,
-						"endline": 731,
+						"endline": 773,
 						"comment": "Converts to a user-readable string\n"
 					},
 					{
@@ -6319,7 +6351,7 @@
 								"name": "p"
 							}
 						],
-						"line": 548,
+						"line": 574,
 						"kind": "generated function",
 						"originalType": "ref GffValue(GffValue p) return",
 						"char": 1,
@@ -6333,12 +6365,12 @@
 				"comment": "GFF value that can contain any type of GFF node\n"
 			},
 			{
-				"line": 738,
+				"line": 780,
 				"kind": "class",
 				"char": 1,
 				"members": [
 					{
-						"line": 740,
+						"line": 782,
 						"kind": "constructor",
 						"originalType": "()",
 						"char": 2,
@@ -6346,7 +6378,7 @@
 						"deco": "FZC3nwn3gff3Gff",
 						"protection": "public",
 						"endchar": 9,
-						"endline": 740,
+						"endline": 782,
 						"comment": "Empty GFF\n"
 					},
 					{
@@ -6359,7 +6391,7 @@
 								"name": "data"
 							}
 						],
-						"line": 743,
+						"line": 785,
 						"kind": "constructor",
 						"originalType": "(in ubyte[] data)",
 						"char": 2,
@@ -6367,7 +6399,7 @@
 						"deco": "FIAhZC3nwn3gff3Gff",
 						"protection": "public",
 						"endchar": 2,
-						"endline": 745,
+						"endline": 787,
 						"comment": "Create a Gff by parsing the binary format\n"
 					},
 					{
@@ -6377,7 +6409,7 @@
 								"name": "file"
 							}
 						],
-						"line": 747,
+						"line": 789,
 						"kind": "constructor",
 						"originalType": "(File file)",
 						"char": 2,
@@ -6385,7 +6417,7 @@
 						"deco": "FS3std5stdio4FileZC3nwn3gff3Gff",
 						"protection": "public",
 						"endchar": 2,
-						"endline": 764,
+						"endline": 806,
 						"comment": "Create a Gff by parsing a file in binary format\n"
 					},
 					{
@@ -6398,7 +6430,7 @@
 								"name": "path"
 							}
 						],
-						"line": 766,
+						"line": 808,
 						"kind": "constructor",
 						"originalType": "(in string path)",
 						"char": 2,
@@ -6406,17 +6438,17 @@
 						"deco": "FIAyaZC3nwn3gff3Gff",
 						"protection": "public",
 						"endchar": 2,
-						"endline": 768
+						"endline": 810
 					},
 					{
-						"line": 771,
+						"line": 813,
 						"kind": "function",
 						"char": 10,
 						"name": "serialize",
 						"deco": "FZAh",
 						"protection": "public",
 						"endchar": 2,
-						"endline": 773,
+						"endline": 815,
 						"comment": "Convert to binary format\n"
 					},
 					{
@@ -6429,7 +6461,7 @@
 								"name": "json"
 							}
 						],
-						"line": 776,
+						"line": 818,
 						"kind": "constructor",
 						"originalType": "(in nwnlibd.orderedjson.JSONValue json)",
 						"char": 2,
@@ -6437,41 +6469,48 @@
 						"deco": "FIS7nwnlibd11orderedjson9JSONValueZC3nwn3gff3Gff",
 						"protection": "public",
 						"endchar": 2,
-						"endline": 780,
+						"endline": 822,
 						"comment": "Create a Gff by parsing JSON\n"
 					},
 					{
-						"line": 783,
+						"parameters": [
+							{
+								"deco": "b",
+								"default": "true",
+								"name": "structAsList"
+							}
+						],
+						"line": 825,
 						"kind": "function",
-						"originalType": "const nwnlibd.orderedjson.JSONValue()",
+						"originalType": "const nwnlibd.orderedjson.JSONValue(bool structAsList = true)",
 						"char": 32,
 						"name": "toJson",
-						"deco": "xFZS7nwnlibd11orderedjson9JSONValue",
+						"deco": "xFbZS7nwnlibd11orderedjson9JSONValue",
 						"protection": "public",
 						"endchar": 2,
-						"endline": 788,
+						"endline": 830,
 						"comment": "Convert to JSON\n"
 					},
 					{
-						"line": 791,
+						"line": 833,
 						"kind": "function",
 						"char": 9,
 						"name": "toPrettyString",
 						"deco": "xFZAya",
 						"protection": "public",
 						"endchar": 2,
-						"endline": 794,
+						"endline": 836,
 						"comment": "Converts the GFF into a user-friendly string\n"
 					},
 					{
-						"line": 799,
+						"line": 841,
 						"kind": "function",
 						"char": 16,
 						"name": "fileType",
 						"deco": "xFNdZAya",
 						"protection": "public",
 						"endchar": 61,
-						"endline": 799,
+						"endline": 841,
 						"comment": "GFF type name stored in the GFF file\nMax width: 4 chars\n"
 					},
 					{
@@ -6484,25 +6523,25 @@
 								"name": "type"
 							}
 						],
-						"line": 801,
+						"line": 843,
 						"kind": "function",
 						"char": 8,
 						"name": "fileType",
 						"deco": "FNdIAyaZv",
 						"protection": "public",
 						"endchar": 3,
-						"endline": 807,
+						"endline": 849,
 						"comment": "ditto\n"
 					},
 					{
-						"line": 810,
+						"line": 852,
 						"kind": "function",
 						"char": 16,
 						"name": "fileVersion",
 						"deco": "xFNdZAya",
 						"protection": "public",
 						"endchar": 67,
-						"endline": 810,
+						"endline": 852,
 						"comment": "GFF version stored in the GFF file. Usually \"V3.2\"\nMax width: 4 chars\n"
 					},
 					{
@@ -6515,18 +6554,18 @@
 								"name": "ver"
 							}
 						],
-						"line": 812,
+						"line": 854,
 						"kind": "function",
 						"char": 8,
 						"name": "fileVersion",
 						"deco": "FNdIAyaZv",
 						"protection": "public",
 						"endchar": 3,
-						"endline": 818,
+						"endline": 860,
 						"comment": "ditto\n"
 					},
 					{
-						"line": 825,
+						"line": 867,
 						"kind": "variable",
 						"char": 12,
 						"name": "root",
@@ -96854,7 +96893,7 @@
 				"char": 6,
 				"name": "NWN_LIB_D_VERSION",
 				"deco": "Aya",
-				"init": "\"v1.0.6\"",
+				"init": "\"v1.1.0\"",
 				"protection": "public",
 				"comment": "nwn-lib-d git version\n"
 			}

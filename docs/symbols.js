@@ -7704,6 +7704,7 @@ var symbols = [
 {name: 'nwn.gff.gffTypeToCompatStr', kind: "functiondeclaration", path: './nwn/gff/gffTypeToCompatStr.html', attributes: []},
 {name: 'nwn.gff.gffTypeToNative', kind: "templatedeclaration", path: './nwn/gff/gffTypeToNative.html', attributes: []},
 {name: 'nwn.gff.GffValue', kind: "structdeclaration", path: './nwn/gff/GffValue.html', attributes: []},
+{name: 'nwn.gff.GffValue.dup', kind: "functiondeclaration", path: './nwn/gff/GffValue.dup.html', attributes: ["const"]},
 {name: 'nwn.gff.GffValue.get', kind: "functiondeclaration", path: './nwn/gff/GffValue.get.html', attributes: ["inout", "ref"]},
 {name: 'nwn.gff.GffValue.opIndex', kind: "functiondeclaration", path: './nwn/gff/GffValue.opIndex.html', attributes: []},
 {name: 'nwn.gff.GffValue.opIndexAssign', kind: "functiondeclaration", path: './nwn/gff/GffValue.opIndexAssign.html', attributes: ["auto", "ref"]},
