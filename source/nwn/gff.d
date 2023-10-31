@@ -637,6 +637,22 @@ struct GffValue {
 		return value.get!GffList[index] = rhs;
 	}
 
+	/// Duplicates the GFF value
+	GffValue dup() const {
+		JSONValue ret;
+		final switch(type) with(GffType) {
+			case Byte, Char, Word, Short, DWord, Int, DWord64, Int64, Float, Double:
+				return this;
+			case String:    return GffValue(cast(GffString)get!GffString().dup());
+			case ResRef:    return GffValue(cast(GffResRef)get!GffResRef().dup());
+			case LocString: return GffValue(get!GffLocString().dup());
+			case Void:      return GffValue(get!GffVoid().dup());
+			case Struct:    return GffValue(get!GffStruct().dup());
+			case List:      return GffValue(get!GffList().dup());
+			case Invalid:   assert(0, "No type set");
+		}
+	}
+
 	/// Converts the stored value into the given type
 	T to(T)() const {
 		final switch(type) with(GffType) {
