@@ -4,7 +4,7 @@ module nwn.nwscript.functions;
 import std.stdint;
 import std.array;
 import std.string;
-import std.conv: to;
+import std.conv: to, ConvException;
 import std.meta;
 
 import nwn.tlk;
@@ -487,9 +487,17 @@ NWString FloatToString(NWFloat fFloat, NWInt nWidth=18, NWInt nDecimals=9){
 }
 ///
 NWInt StringToInt(NWString sNumber){
-	return sNumber.to!NWInt;
+	try {
+		return sNumber.to!NWInt;
+	} catch(ConvException) {
+		return 0;
+	}
 }
 ///
 NWFloat StringToFloat(NWString sNumber){
-	return sNumber.to!NWFloat;
+	try {
+		return sNumber.to!NWFloat;
+	} catch(ConvException) {
+		return 0.0;
+	}
 }
