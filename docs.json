@@ -92007,7 +92007,7 @@
 				"deco": "FAyaZi",
 				"protection": "public",
 				"endchar": 1,
-				"endline": 491,
+				"endline": 495,
 				"comment": "\n"
 			},
 			{
@@ -92017,7 +92017,7 @@
 						"name": "sNumber"
 					}
 				],
-				"line": 493,
+				"line": 497,
 				"kind": "function",
 				"originalType": "NWFloat(NWString sNumber)",
 				"char": 9,
@@ -92025,7 +92025,7 @@
 				"deco": "FAyaZf",
 				"protection": "public",
 				"endchar": 1,
-				"endline": 495,
+				"endline": 503,
 				"comment": "\n"
 			}
 		],
@@ -96893,7 +96893,7 @@
 				"char": 6,
 				"name": "NWN_LIB_D_VERSION",
 				"deco": "Aya",
-				"init": "\"v1.1.0\"",
+				"init": "\"v1.1.1\"",
 				"protection": "public",
 				"comment": "nwn-lib-d git version\n"
 			}
