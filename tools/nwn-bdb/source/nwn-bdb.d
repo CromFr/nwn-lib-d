@@ -33,6 +33,9 @@ int main(string[] args){
 	if(args.length >= 2 && (args[1] == "-h" || args[1] == "--help")){
 		writeln("Bioware database (foxpro .dbf) tool");
 		writefln("Usage: %s (search)", args[0].baseName);
+		writeln("Available subcommands:");
+        	writeln("  search    Search specific variables inside a database file");
+        	writeln("Use '", args[0].baseName, " <subcommand> --help' for details on a specific subcommand.");
 		return args.length <= 1;
 	}
 	if(args.any!(a => a == "--version")){
