@@ -31,6 +31,7 @@ int main(string[] args){
 	if(args.length <= 1 || args[1] == "--help" || args[1] == "-h"){
 		writeln("Parsing and serialization tool for ERF archive files (erf, hak, mod, pwc, ...)");
 		writefln("Usage: %s (create|extract|info|list)", args[0].baseName);
+		writeln("Use '", args[0].baseName, " <subcommand> --help' for details on a specific subcommand.");
 		return args.length <= 1;
 	}
 	if(args.any!(a => a == "--version")){
@@ -51,7 +52,7 @@ int main(string[] args){
 				"o|output", "Output file name", &outputPath,
 				"t|type", "File type. If not provided the type will be guessed from the file extension. Valid values are: hak, mod, erf, pwc", &type,
 				"date", "Set erf build date field. Format 'YYYY-MM-DD', or just 'now'. Defaults to 1900-01-01", &buildDateStr);
-			if(res1.helpWanted){
+			if(res1.helpWanted || args.any!(a => a == "--help" || a == "-h")){
 				improvedGetoptPrinter(
 					"Pack multiple files into a single NWN2 ERF/HAK/MOD file\n"
 					~"Example: "~args[0].baseName~" create -o out_file.erf file1 file2 ...",
@@ -112,7 +113,7 @@ int main(string[] args){
 				"o|output", "Output folder path", &outputPath,
 				"r|recover", "Recover files from truncated file", &recover,
 			);
-			if(res1.helpWanted){
+			if(res1.helpWanted || args.any!(a => a == "--help" || a == "-h")){
 				improvedGetoptPrinter(
 					"Extract an ERF file content\n"
 					~"Example: "~args[0].baseName~" extract -o dir/ yourfile.erf",
