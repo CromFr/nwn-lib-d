@@ -27,6 +27,7 @@ int main(string[] args){
 	if(args.length >= 2 && (args[1] == "-h" || args[1] == "--help")){
 		writeln("Send requests to NWN2 servers.");
 		writefln("Usage: %s (ping|bnes|bnds|bnxi|bnlm)", args[0].baseName);
+		writeln("Use '", args[0].baseName, " <subcommand> --help' for details on a specific subcommand.");
 		return 0;
 	}
 	if(args.any!(a => a == "--version")){
@@ -162,4 +163,6 @@ unittest {
 
 	assertThrown(main(["nwn-srv","bnxi"]));
 	assert(main(["nwn-srv","bnxi", "--help"]) == 0);
+	assert(main(["nwn-srv", "ping", "--help"]) == 0);
+    	assert(main(["nwn-srv", "bnes", "--help"]) == 0);
 }
