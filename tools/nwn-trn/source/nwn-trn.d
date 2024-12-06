@@ -59,6 +59,8 @@ void usage(in string cmd){
 	writeln("  aswm-check: Checks if a TRX file contains valid data");
 	writeln("  aswm-dump: Print walkmesh data using a (barely) human-readable format");
 	writeln("  aswm-bake: Re-bake all tiles of an already baked walkmesh");
+	writeln();
+	writeln("Use '", cmd.baseName, " <subcommand> --help' for details on a specific subcommand.");
 }
 
 int main(string[] args){
