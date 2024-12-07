@@ -15,12 +15,12 @@ jobs:
         platform: ["linux-gnu", "windows-msvc"]
         arch: ["i686", "x86_64"]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Dub cache
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: ~/.dub
           key: ${{ runner.os }}-dub-${{ hashFiles('**/dub.json') }}
@@ -116,7 +116,7 @@ jobs:
           done
 
       - name: Upload bin artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: "nwn-lib-d-tools-${{ matrix.platform }}-${{ matrix.arch }}"
           path: bin
@@ -139,7 +139,7 @@ jobs:
 
       - name: Upload documentation artifacts
         if: matrix.platform == 'linux-gnu' && matrix.arch == 'x86_64'
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: "documentation.tar.xz"
           path: documentation.tar.xz
@@ -181,7 +181,7 @@ jobs:
                 -XDELETE "https://api.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID"
           fi
 
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         if: steps.rel_info.outputs.tag != ''
         with:
           fetch-depth: 0
@@ -242,7 +242,7 @@ jobs:
 
       - name: Download artifacts
         if: steps.rel_info.outputs.tag != ''
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: "nwn-lib-d-tools-${{ matrix.platform }}-${{ matrix.arch }}"
           path: "nwn-lib-d-tools"
@@ -291,7 +291,7 @@ jobs:
       # GH pages
       - name: Download documentation artifact
         if: steps.rel_info.outputs.tag != '' && matrix.platform == 'linux-gnu' && matrix.arch == 'x86_64'
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: "documentation.tar.xz"
 
@@ -302,7 +302,7 @@ jobs:
 
       - name: Deploy documentation
         if: steps.rel_info.outputs.tag != '' && matrix.platform == 'linux-gnu' && matrix.arch == 'x86_64'
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./public
