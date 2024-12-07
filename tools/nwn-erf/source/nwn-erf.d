@@ -31,6 +31,7 @@ int main(string[] args){
 	if(args.length <= 1 || args[1] == "--help" || args[1] == "-h"){
 		writeln("Parsing and serialization tool for ERF archive files (erf, hak, mod, pwc, ...)");
 		writefln("Usage: %s (create|extract|info|list)", args[0].baseName);
+		writeln("Use '", args[0].baseName, " <subcommand> --help' for details on a specific subcommand.");
 		return args.length <= 1;
 	}
 	if(args.any!(a => a == "--version")){
