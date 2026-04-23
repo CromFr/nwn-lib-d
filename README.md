@@ -1,3 +1,8 @@
+# Warning
+
+This project is in maintenance mode. My focus has switched to [nwn-lib-rs](https://gitlab.com/CromFr/nwn-lib-rs) that provides silimar library features and tools, but is safer and is built with a programming language that's more likely to stay around.
+
+
 # nwn-lib-d
 Multi-platform D library & tooling for handling Neverwinter Nights 1 & 2 resource files
 
